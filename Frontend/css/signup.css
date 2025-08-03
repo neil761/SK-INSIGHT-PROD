@@ -1,0 +1,107 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Times New Roman', Times, serif;
+    background: linear-gradient(to bottom, #0A2C59 30%, #ffffff 30%);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.container1 {
+    text-align: center;
+    margin-top: 20px;
+}
+
+.logo {
+    width: 80px;
+    height: auto;
+    margin-bottom: 10px;
+    margin-left: 35%;
+}
+
+.title1 {
+    font-size: 20px;
+    color: #ffffff;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.title2 h1 {
+    font-size: 20px;
+    color: #ffffff;
+    margin: 5px 0;
+}
+
+.container {
+    width: 100%;
+    max-width: 400px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    margin-top: 30px;
+}
+
+/* Tablet adjustments */
+@media (min-width: 768px) {
+    .logo {
+        width: 100px;
+    }
+
+    .title1 {
+        font-size: 20px;
+    }
+
+    .title2 h1 {
+        font-size: 20px;
+    }
+
+    .container {
+        padding: 30px;
+    }
+}
+
+/* Desktop Split Screen (1024px and above) */
+@media (min-width: 1024px) {
+    body {
+        background: linear-gradient(to right, #0A2C59 50%, #ffffff 50%);
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0;
+    }
+
+    .container1 {
+        margin-top: -10%;
+        width: 50%;
+        text-align: center;
+    }
+
+    .logo {
+        width: 120px;
+        margin: 0 auto 20px auto;
+        display: block;
+    }
+
+    .title1 {
+        font-size: 40px;
+        color: white;
+    }
+
+    .title2 h1 {
+        font-size: 40px;
+        color: white;
+    }
+
+    .container {
+        width: 100%;
+        max-width: 400px;
+        padding: 40px;
+    }
+}
