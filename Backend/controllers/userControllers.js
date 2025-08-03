@@ -1,11 +1,11 @@
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const nodemailer = require('nodemailer');
-const path = require('path');
-const asyncHandler = require('express-async-handler');
-const extractBirthdayFromImage = require('../utils/extractBirthday');
-const { normalizeDate } = require('../utils/dateUtils');
-const fs = require('fs');
+const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const path = require("path");
+const asyncHandler = require("express-async-handler");
+const extractBirthdayFromImage = require("../utils/extractBirthday");
+const { normalizeDate } = require("../utils/dateUtils");
+const fs = require("fs");
 
 exports.createUser = async (req, res) => {
   try {
@@ -14,7 +14,7 @@ exports.createUser = async (req, res) => {
 
     // Generate JWT
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-      expiresIn: '7d'
+      expiresIn: "7d",
     });
 
     res.status(201).json({ user, token });
@@ -22,7 +22,6 @@ exports.createUser = async (req, res) => {
     res.status(400).json({ error: err.message });
   }
 };
-
 
 // READ ALL
 exports.getUsers = async (req, res) => {
@@ -37,8 +36,8 @@ exports.getUsers = async (req, res) => {
 // READ ONE
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     res.json(user);
   } catch (err) {
@@ -46,21 +45,20 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-
 // UPDATE
 exports.updateUser = async (req, res) => {
   try {
     const userIdToUpdate = req.params.id;
     const currentUserId = req.user._id.toString();
-    const isAdmin = req.user.role === 'admin';
+    const isAdmin = req.user.role === "admin";
 
     // Allow only admin or the user themselves
     if (!isAdmin && userIdToUpdate !== currentUserId) {
-      return res.status(403).json({ error: 'Access denied' });
+      return res.status(403).json({ error: "Access denied" });
     }
 
     const user = await User.findById(userIdToUpdate);
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     // Prevent normal users from updating protected fields
     if (!isAdmin) {
@@ -69,7 +67,7 @@ exports.updateUser = async (req, res) => {
     }
 
     // If admin is promoting someone to admin, auto-verify
-    if (req.body.role === 'admin' && user.role !== 'admin') {
+    if (req.body.role === "admin" && user.role !== "admin") {
       req.body.isVerified = true;
     }
 
@@ -77,10 +75,10 @@ exports.updateUser = async (req, res) => {
     Object.assign(user, req.body);
     await user.save();
 
-    const updatedUser = await User.findById(userIdToUpdate).select('-password');
+    const updatedUser = await User.findById(userIdToUpdate).select("-password");
 
     res.json({
-      message: 'User updated successfully',
+      message: "User updated successfully",
       user: updatedUser,
     });
   } catch (err) {
@@ -88,18 +86,16 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-
-
 // DELETE
 exports.deleteUser = async (req, res) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.params.id);
 
     if (!deletedUser) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: "User not found" });
     }
 
-    res.json({ message: 'User deleted successfully' });
+    res.json({ message: "User deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -108,8 +104,8 @@ exports.deleteUser = async (req, res) => {
 // Get current user (for authenticated routes)
 exports.getCurrentUser = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    const user = await User.findById(req.user._id).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found" });
 
     res.json(user);
   } catch (err) {
@@ -121,8 +117,9 @@ exports.sendVerificationOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
 
   const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: 'User not found' });
-  if (user.isVerified) return res.status(400).json({ message: 'User already verified' });
+  if (!user) return res.status(404).json({ message: "User not found" });
+  if (user.isVerified)
+    return res.status(400).json({ message: "User already verified" });
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const otpExpires = Date.now() + 10 * 60 * 1000;
@@ -134,9 +131,9 @@ exports.sendVerificationOtp = asyncHandler(async (req, res) => {
   await user.save();
 
   const transporter = nodemailer.createTransport({
-    service: 'gmail',
+    service: "gmail",
     auth: {
-      user: process.env.GMAIL_USER,  // ✅ match your .env
+      user: process.env.GMAIL_USER, // ✅ match your .env
       pass: process.env.GMAIL_PASS,
     },
   });
@@ -144,22 +141,83 @@ exports.sendVerificationOtp = asyncHandler(async (req, res) => {
   await transporter.sendMail({
     from: `"SK Insight" <${process.env.GMAIL_USER}>`,
     to: user.email,
-    subject: 'Your OTP Code',
-    html: `<h2>Your OTP Code is: ${otp}</h2><p>This code expires in 10 minutes.</p>`,
+    subject: "Your OTP Code",
+    html: `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SK Insight OTP</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f7fc;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 30px auto;
+      background: #ffffff;
+      border-radius: 10px;
+      padding: 40px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+      text-align: center;
+    }
+    .logo {
+      max-width: 120px;
+      margin-bottom: 20px;
+    }
+    h2 {
+      color: #0A2C59;
+      margin-bottom: 10px;
+    }
+    .otp {
+      font-size: 28px;
+      font-weight: bold;
+      letter-spacing: 6px;
+      color: #0A2C59;
+      margin: 20px 0;
+    }
+    p {
+      color: #333;
+      font-size: 16px;
+      margin-bottom: 10px;
+    }
+    .footer {
+      font-size: 12px;
+      color: #888;
+      margin-top: 30px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <img class="logo" src="https://res.cloudinary.com/dnmawrba8/image/upload/v1754197673/logo_no_bg_ycz1nn.png" alt="SK Insight Logo" />
+    <h2>Your OTP Code</h2>
+    <p>Use the following code to verify your email. It is valid for 10 minutes.</p>
+    <div class="otp">${otp}</div>
+    <p>If you didn’t request this, please ignore this email.</p>
+    <div class="footer">
+      &copy; ${new Date().getFullYear()} SK Insight. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>
+`,
   });
 
-  res.json({ message: 'OTP sent to your email.' });
+  res.json({ message: "OTP sent to your email." });
 });
-
 
 exports.verifyEmailOtp = asyncHandler(async (req, res) => {
   const { email, otp } = req.body;
 
   const user = await User.findOne({ email });
-  if (!user) return res.status(404).json({ message: 'User not found' });
+  if (!user) return res.status(404).json({ message: "User not found" });
 
   if (user.isVerified) {
-    return res.status(400).json({ message: 'User already verified' });
+    return res.status(400).json({ message: "User already verified" });
   }
 
   if (user.otpLockedUntil && user.otpLockedUntil > Date.now()) {
@@ -169,18 +227,14 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
     });
   }
 
-  if (
-    user.otpCode === otp &&
-    user.otpExpires &&
-    user.otpExpires > Date.now()
-  ) {
+  if (user.otpCode === otp && user.otpExpires && user.otpExpires > Date.now()) {
     user.isVerified = true;
     user.otpCode = undefined;
     user.otpExpires = undefined;
     user.otpAttempts = 0;
     user.otpLockedUntil = undefined;
     await user.save();
-    return res.json({ message: 'Email successfully verified.' });
+    return res.json({ message: "Email successfully verified." });
   } else {
     user.otpAttempts = (user.otpAttempts || 0) + 1;
 
@@ -191,7 +245,7 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
 
     await user.save();
     return res.status(400).json({
-      message: 'Invalid or expired OTP.',
+      message: "Invalid or expired OTP.",
       attemptsLeft: Math.max(0, 5 - user.otpAttempts),
     });
   }
@@ -200,11 +254,17 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
 exports.smartRegister = asyncHandler(async (req, res) => {
   const { username, email, password, birthday } = req.body;
 
-  if (!req.file) return res.status(400).json({ message: 'ID image is required' });
+  if (!req.file)
+    return res.status(400).json({ message: "ID image is required" });
 
-  const extractedBirthday = await extractBirthdayFromImage(req.file.path, birthday);
+  const extractedBirthday = await extractBirthdayFromImage(
+    req.file.path,
+    birthday
+  );
   if (!extractedBirthday) {
-    return res.status(400).json({ message: 'Birthday does not match ID image' });
+    return res
+      .status(400)
+      .json({ message: "Birthday does not match ID image" });
   }
 
   const birthDate = new Date(birthday);
@@ -213,11 +273,11 @@ exports.smartRegister = asyncHandler(async (req, res) => {
   const m = today.getMonth() - birthDate.getMonth();
   if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
 
-  const accessLevel = age >= 15 && age <= 30 ? 'full' : 'limited';
+  const accessLevel = age >= 15 && age <= 30 ? "full" : "limited";
 
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return res.status(400).json({ message: 'Email already registered' });
+    return res.status(400).json({ message: "Email already registered" });
   }
 
   const newUser = await User.create({
@@ -230,18 +290,20 @@ exports.smartRegister = asyncHandler(async (req, res) => {
     idImage: req.file.filename,
   });
 
-  const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
 
   res.status(201).json({
-    message: 'Registration successful',
+    message: "Registration successful",
     user: {
       id: newUser._id,
       username: newUser.username,
       email: newUser.email,
       age: newUser.age,
       accessLevel: newUser.accessLevel,
-      isVerified: newUser.isVerified
+      isVerified: newUser.isVerified,
     },
-    token
+    token,
   });
 });
