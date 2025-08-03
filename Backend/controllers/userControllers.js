@@ -1,7 +1,11 @@
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 const nodemailer = require('nodemailer');
+const path = require('path');
 const asyncHandler = require('express-async-handler');
+const extractBirthdayFromImage = require('../utils/extractBirthday');
+const { normalizeDate } = require('../utils/dateUtils');
+const fs = require('fs');
 
 exports.createUser = async (req, res) => {
   try {
@@ -191,4 +195,53 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
       attemptsLeft: Math.max(0, 5 - user.otpAttempts),
     });
   }
+});
+
+exports.smartRegister = asyncHandler(async (req, res) => {
+  const { username, email, password, birthday } = req.body;
+
+  if (!req.file) return res.status(400).json({ message: 'ID image is required' });
+
+  const extractedBirthday = await extractBirthdayFromImage(req.file.path, birthday);
+  if (!extractedBirthday) {
+    return res.status(400).json({ message: 'Birthday does not match ID image' });
+  }
+
+  const birthDate = new Date(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
+
+  const accessLevel = age >= 15 && age <= 30 ? 'full' : 'limited';
+
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return res.status(400).json({ message: 'Email already registered' });
+  }
+
+  const newUser = await User.create({
+    username,
+    email,
+    password,
+    birthday: birthDate,
+    age,
+    accessLevel,
+    idImage: req.file.filename,
+  });
+
+  const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+  res.status(201).json({
+    message: 'Registration successful',
+    user: {
+      id: newUser._id,
+      username: newUser.username,
+      email: newUser.email,
+      age: newUser.age,
+      accessLevel: newUser.accessLevel,
+      isVerified: newUser.isVerified
+    },
+    token
+  });
 });
