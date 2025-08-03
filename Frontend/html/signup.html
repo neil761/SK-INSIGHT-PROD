@@ -4,13 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/Frontend/css/signup.css">
+    <link rel="stylesheet" href="/css/signup.css">
     <title>Document</title>
 </head>
 <body>
     <div class="container1">
         <div class="img1">
-            <img src="/Frontend/assets/logo.png" alt="logo" class="logo">
+          <img src="/assets/logo.png" alt="logo" class="logo">
+
         </div>
         <div class="title1">
             <h2>SANGGUNIANG KABATAAN</h2>
@@ -24,7 +25,7 @@
     <div class="container">
         <h1 class="text-center text-xl font-bold">Sign Up</h1>
         <form id="signupForm">
-            <input type="text" name="username" placeholder="Username" required
+          <input type="text" name="username" placeholder="Username" required
               class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
             
             <input type="email" name="email" placeholder="Email" required
@@ -39,14 +40,24 @@
             <label>ID Image:</label><br>
             <input type="file" id="idImage" name="idImage" required
               class="border border-black rounded px-3 py-2 w-full mb-5 focus:outline-none focus:border-blue-500">
-            
-            <div class="button flex justify-center">
-                <button type="submit" class="bg-blue-900 text-white py-2 px-6 rounded hover:bg-blue-800">Confirm</button>
-            </div>
-          </form>
+      
+          <div class="button flex justify-center">
+              <button type="submit" class="bg-blue-900 text-white py-2 px-6 rounded hover:bg-blue-800">
+                  Confirm
+              </button>
+          </div>
+          <p class="acc text-l text-gray-700">
+            Already have an account?
+            <a href="/html/login.html" class="text-blue-600 underline hover:text-blue-800">Click here</a>
+        </p>
+        
+      </form>
+
           
       </div>
-      <script src="/Frontend/js/signup.js"></script>
+      
+      <script src="/js/signup.js" defer></script>
+
 </body>
 
 </html>
