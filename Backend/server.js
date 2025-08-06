@@ -15,8 +15,6 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-
-// Serve static files from the Frontend folder
 app.use(express.static(path.join(__dirname, '../Frontend')));
 
 
@@ -26,6 +24,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/kkprofiling', require('./routes/kkProfileRoutes'));
 app.use('/api/formstatus', require('./routes/formStatusRoutes'));
 app.use('/api/lgbtqprofiling', lgbtqRoutes);
+
+app.use(express.static("public"));
+app.use("/api/formcycle", require("./routes/formCycleRoutes"));
+
 
 const PORT = process.env.PORT || 5000;
 
