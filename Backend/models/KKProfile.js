@@ -1,8 +1,12 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
 const kkProfileSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
-  cycleId: String,
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  formCycle: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "FormCycle",
+    required: true,
+  },
 
   lastname: String,
   firstname: String,
@@ -34,13 +38,13 @@ const kkProfileSchema = new mongoose.Schema({
   attendedKKAssembly: Boolean,
   attendanceCount: {
     type: String,
-    enum: ['1-2 times', '3-4 times', '5 and above'],
+    enum: ["1-2 times", "3-4 times", "5 and above"],
   },
   reasonDidNotAttend: {
     type: String,
-    enum: ['there was no kk assembly', 'not interested'],
+    enum: ["there was no kk assembly", "not interested"],
   },
-  profileImage: { type: String, required: false }, 
+  profileImage: { type: String, required: false },
 
   submittedAt: {
     type: Date,
@@ -48,4 +52,4 @@ const kkProfileSchema = new mongoose.Schema({
   },
 });
 
-module.exports = mongoose.model('KKProfile', kkProfileSchema);
+module.exports = mongoose.model("KKProfile", kkProfileSchema);

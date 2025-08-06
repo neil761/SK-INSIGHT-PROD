@@ -23,6 +23,7 @@ app.use("/api/formstatus", require("./routes/formStatusRoutes")); // Optional
 
 app.use(express.static("public"));
 app.use("/api/lgbtqprofiling", lgbtqRoutes);
+app.use("/api/formcycle", require("./routes/formCycleRoutes"));
 
 const PORT = process.env.PORT || 5000;
 
