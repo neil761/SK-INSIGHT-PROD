@@ -1,13 +1,13 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const dotenv = require('dotenv');
-const cors = require('cors');
-const userRoutes = require('./routes/userRoutes');
-const authRoutes = require('./routes/authRoutes');
-const lgbtqRoutes = require('./routes/lgbtqProfileRoutes');
-const path = require('path');
+const express = require("express");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+const cors = require("cors");
+const userRoutes = require("./routes/userRoutes");
+const authRoutes = require("./routes/authRoutes");
+const lgbtqRoutes = require("./routes/lgbtqProfileRoutes");
+const path = require("path");
 
-require('dotenv').config();
+require("dotenv").config();
 
 const app = express();
 
@@ -18,9 +18,6 @@ app.use(express.json());
 
 // Serve static files from the Frontend folder
 app.use(express.static(path.join(__dirname, '../Frontend')));
-
-
-
 
 
 // Routes
@@ -44,3 +41,4 @@ mongoose.connect(process.env.MONGO_URI)
         console.error(err);
         process.exit(1);
     });
+
