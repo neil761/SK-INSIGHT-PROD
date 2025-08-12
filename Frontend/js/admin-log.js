@@ -3,55 +3,55 @@ document.addEventListener('DOMContentLoaded', () => {
     const passwordField = document.getElementById('passwordField');
     const togglePassword = document.getElementById('togglePassword');
 
-    // Show/Hide password toggle
+    // Show/Hide Password Toggle
     togglePassword.addEventListener('click', () => {
         const isPassword = passwordField.type === 'password';
         passwordField.type = isPassword ? 'text' : 'password';
+
         togglePassword.innerHTML = isPassword 
             ? '<i class="fa-solid fa-eye-slash"></i>' 
             : '<i class="fa-solid fa-eye"></i>';
     });
 
-    // Login form submit
+    // Login Form Submit
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const email = loginForm.email.value;
-        const password = passwordField.value;
+        const username = loginForm.username.value.trim();
+        const password = passwordField.value.trim();
 
         try {
-            const response = await fetch('http://localhost:5000/api/auth/login', {
+            const res = await fetch('http://localhost:5000/api/auth/admin-login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password })
+                body: JSON.stringify({ username, password })
             });
 
-            const data = await response.json();
+            const data = await res.json();
 
-            if (response.ok) {
+            if (res.ok) {
                 Swal.fire({
                     icon: 'success',
-                    title: 'Login Successful!',
-                    text: `Welcome back, ${data.user.username || 'User'}!`,
+                    title: 'Login Successful',
+                    text: data.message || 'Welcome Admin!',
                     timer: 1000,
                     showConfirmButton: false
                 }).then(() => {
-                    localStorage.setItem('token', data.token);
-                    window.location.href = '/html/index.html';
+                    window.location.href = '/html/admin-dashboard.html';
                 });
             } else {
                 Swal.fire({
                     icon: 'error',
                     title: 'Login Failed',
-                    text: data.error || 'Please check your credentials.',
+                    text: data.message || 'Invalid credentials'
                 });
             }
-        } catch (error) {
-            console.error('Error:', error);
+        } catch (err) {
+            console.error('Error:', err);
             Swal.fire({
                 icon: 'error',
-                title: 'Network Error',
-                text: 'An error occurred. Please try again.',
+                title: 'Error',
+                text: 'Something went wrong. Please try again.'
             });
         }
     });

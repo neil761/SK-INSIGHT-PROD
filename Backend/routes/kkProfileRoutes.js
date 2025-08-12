@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+const kkProfileCtrl = require('../controllers/kkProfileController');
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 
 const {
@@ -23,6 +24,7 @@ router.get("/me/image", protect, getProfileImage);
 // Admin-only routes
 router.get("/all", protect, authorizeRoles("admin"), getAllKKProfiles);
 router.get("/export", protect, authorizeRoles("admin"), exportProfilesToExcel);
+router.get('/filter', protect, kkProfileCtrl.filterProfilesByCycle);
 
 // Profile submission with image
 router.post(

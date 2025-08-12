@@ -7,6 +7,28 @@ const sendEmail = require("../utils/sendEmail");
 
 const getResetPasswordEmail = require("../utils/templates/resetPasswordEmail");
 
+// /api/auth/admin-login
+exports.adminLogin = async (req, res) => {
+  try {
+    const { username, password } = req.body;
+      
+    const admin = await User.findOne({ username, role: 'admin' });
+    if (!admin) {
+      return res.status(404).json({ message: 'Admin not found' });
+    }
+
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    // Send token or session
+    res.json({ message: 'Admin login successful' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error });
+  }
+};
+
 // POST /api/auth/login
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
