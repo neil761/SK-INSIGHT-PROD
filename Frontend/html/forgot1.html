@@ -4,13 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="/css/login.css">
+    <link rel="stylesheet" href="/css/forgot1.css">
     <title>Document</title>
 </head>
 <body>
+
     <div class="sign">
         <div class="left-side">
             <div class="container1">
@@ -29,32 +28,21 @@
     
         <div class="right-side">
             <div class="container">
-                <h1 class="text-center text-xl font-bold">Log In</h1>
+                <h1 class="text-center text-xl font-bold">Forgot your Password</h1>
+                <p class="text-xl text-center m-5">Enter your email below to reset your password.</p>
                 <form id="loginForm">
                     <input type="email" name="email" placeholder="Email" required
                     class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
-                  
-                  <input type="password" name="password" placeholder="Password" required
-                    class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
-                  
-                    <a href="/html/forgot1.html" class="text-blue-500">Forgot Password</a>
-                  
-      
+
                 <div class="button flex justify-center">
                     <button type="submit" class="bg-blue-900 text-white py-2 px-6 rounded hover:bg-blue-800">
-                        Log in
+                        <a href="/html/forgot2.html">Send Reset Link</a>
                     </button>
                 </div>
-                <h3 class="acc text-l text-gray-700">
-                  Didn't have an account?
-                  <a href="/html/signup.html" class="text-blue-600 underline hover:text-blue-800">Click here</a>
-                </h3>
-                
               </form>
             </div>
         </div>
-      
-      <script src="/js/login.js" defer></script>
+    </div>
 
 </body>
 
