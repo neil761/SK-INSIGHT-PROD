@@ -314,3 +314,36 @@ exports.getProfileImage = async (req, res) => {
     res.status(500).json({ error: "Error fetching image" });
   }
 };
+
+// Filter KK Profiles by cycle number and year
+exports.filterProfilesByCycle = async (req, res) => {
+  try {
+    const { cycleNumber, year } = req.query;
+
+    if (!cycleNumber || !year) {
+      return res
+        .status(400)
+        .json({ error: "cycleNumber and year are required" });
+    }
+
+    const cycle = await FormCycle.findOne({
+      formName: "KK Profiling",
+      cycleNumber: Number(cycleNumber),
+      year: Number(year),
+    });
+
+    if (!cycle) {
+      return res.status(404).json({ error: "Cycle not found" });
+    }
+
+    const profiles = await KKProfile.find({ formCycle: cycle._id }).populate(
+      "user",
+      "username email"
+    );
+
+    res.status(200).json(profiles);
+  } catch (error) {
+    console.error("KK filter error:", error);
+    res.status(500).json({ error: "Failed to filter KK profiles" });
+  }
+};

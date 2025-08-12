@@ -1,6 +1,7 @@
-const LGBTQProfile = require("../models/LGBTQProfile");
-const KKProfile = require("../models/KKProfile");
+const FormCycle = require("../models/FormCycle");
 const FormStatus = require("../models/FormStatus");
+const KKProfile = require("../models/KKProfile");
+const LGBTQProfile = require("../models/LGBTQProfile");
 const ExcelJS = require("exceljs");
 
 // Submit new profile
@@ -16,7 +17,7 @@ exports.submitLGBTQProfile = async (req, res) => {
 
     const existing = await LGBTQProfile.findOne({
       user: userId,
-      cycleId: formStatus.cycleId,
+      formCycle: formStatus.cycleId, // FIXED
     });
     if (existing) {
       return res
@@ -29,7 +30,7 @@ exports.submitLGBTQProfile = async (req, res) => {
 
     const newProfile = new LGBTQProfile({
       user: userId,
-      cycleId: formStatus.cycleId,
+      formCycle: formStatus.cycleId, // FIXED
       sexAssignedAtBirth,
       lgbtqClassification,
       idImage,
@@ -40,6 +41,7 @@ exports.submitLGBTQProfile = async (req, res) => {
       .status(201)
       .json({ message: "LGBTQIA+ Profile submitted successfully" });
   } catch (error) {
+    console.error("LGBTQ submit error:", error);
     res.status(500).json({ error: "Server error while submitting form" });
   }
 };
@@ -70,7 +72,7 @@ const attachKKInfo = async (profile) => {
 exports.getAllProfiles = async (req, res) => {
   try {
     const { cycleId } = req.query;
-    const query = cycleId ? { cycleId: parseInt(cycleId) } : {};
+    const query = cycleId ? { formCycle: cycleId } : {}; // FIXED
     const profiles = await LGBTQProfile.find(query).populate(
       "user",
       "username email"
@@ -105,7 +107,7 @@ exports.getMyProfile = async (req, res) => {
     });
     const profile = await LGBTQProfile.findOne({
       user: req.user.id,
-      cycleId: formStatus?.cycleId || 1,
+      formCycle: formStatus?.cycleId, // FIXED
     }).populate("user", "username email");
 
     if (!profile)
@@ -158,7 +160,7 @@ exports.deleteProfileById = async (req, res) => {
 exports.exportProfilesToExcel = async (req, res) => {
   try {
     const { cycleId } = req.query;
-    const query = cycleId ? { cycleId: parseInt(cycleId) } : {};
+    const query = cycleId ? { formCycle: cycleId } : {}; // FIXED
     const profiles = await LGBTQProfile.find(query).populate(
       "user",
       "username email"
@@ -184,7 +186,7 @@ exports.exportProfilesToExcel = async (req, res) => {
       sheet.addRow({
         username: profile.user.username,
         email: profile.user.email,
-        cycleId: profile.cycleId,
+        cycleId: profile.formCycle, // FIXED
         sexAssignedAtBirth: profile.sexAssignedAtBirth,
         lgbtqClassification: profile.lgbtqClassification,
         lastname: kk?.lastname,
@@ -207,5 +209,45 @@ exports.exportProfilesToExcel = async (req, res) => {
     res.end();
   } catch (err) {
     res.status(500).json({ error: "Failed to export to Excel" });
+  }
+};
+
+// Filter profiles by cycle number and year
+// Filter profiles by cycle number and year
+exports.filterProfilesByCycle = async (req, res) => {
+  try {
+    const { cycleNumber, year } = req.query;
+
+    // Validate inputs
+    if (!cycleNumber || !year) {
+      return res
+        .status(400)
+        .json({ error: "cycleNumber and year are required" });
+    }
+
+    // Find the cycle for LGBTQIA+ Profiling
+    const cycle = await FormCycle.findOne({
+      formName: "LGBTQIA+ Profiling",
+      cycleNumber: Number(cycleNumber),
+      year: Number(year),
+    });
+
+    if (!cycle) {
+      return res.status(404).json({ error: "Cycle not found" });
+    }
+
+    // Find all profiles that match the cycle
+    const profiles = await LGBTQProfile.find({ formCycle: cycle._id }).populate(
+      "user",
+      "username email"
+    );
+
+    // Enrich with KK Info
+    const enriched = await Promise.all(profiles.map(attachKKInfo));
+
+    res.status(200).json(enriched);
+  } catch (error) {
+    console.error("Error filtering profiles by cycle:", error);
+    res.status(500).json({ error: "Server error while filtering profiles" });
   }
 };

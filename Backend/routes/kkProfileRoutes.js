@@ -11,6 +11,7 @@ const {
   exportProfilesToExcel,
   getMyProfile,
   getProfileImage,
+  filterProfilesByCycle,
 } = require("../controllers/kkProfileController");
 
 const upload = require("../middleware/uploadProfileImage");
@@ -30,6 +31,8 @@ router.post(
   upload.single("profileImage"), // handles multipart/form-data
   submitKKProfile
 );
+
+router.get("/cycle", protect, authorizeRoles("admin"), filterProfilesByCycle);
 
 // Admin or Owner can manage a specific profile
 router.get("/:id", protect, authorizeRoles("admin"), getProfileById);
