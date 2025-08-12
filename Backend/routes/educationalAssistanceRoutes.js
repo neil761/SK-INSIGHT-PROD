@@ -22,7 +22,23 @@ router.get(
   authorizeRoles("admin"),
   ctrl.filterApplications
 );
+
+router.get(
+  "/status",
+  protect,
+  authorizeRoles("admin"),
+  ctrl.getApplicationsByStatus
+);
+
 router.get("/:id", protect, authorizeRoles("admin"), ctrl.getApplicationById);
 router.delete("/:id", protect, authorizeRoles("admin"), ctrl.deleteApplication);
+
+// ✅ New admin status update route
+router.patch(
+  "/:id/status",
+  protect,
+  authorizeRoles("admin"),
+  ctrl.updateApplicationStatus
+);
 
 module.exports = router;

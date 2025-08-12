@@ -15,15 +15,22 @@ exports.submitApplication = async (req, res) => {
       return res.status(403).json({ error: "Form is currently closed" });
     }
 
-    // Check for existing submission in current cycle
-    const existing = await EducationalAssistance.findOne({
+    // ✅ Get latest application in this cycle
+    const latestApp = await EducationalAssistance.findOne({
       user: userId,
       formCycle: formStatus.cycleId,
-    });
-    if (existing) {
-      return res
-        .status(409)
-        .json({ error: "You already submitted an application for this cycle" });
+    }).sort({ createdAt: -1 });
+
+    // ✅ Only allow resubmission after rejection
+    if (latestApp && latestApp.status === "pending") {
+      return res.status(409).json({
+        error: "You already have a pending application for this cycle",
+      });
+    }
+    if (latestApp && latestApp.status === "approved") {
+      return res.status(409).json({
+        error: "You have already been approved for this cycle",
+      });
     }
 
     // Parse arrays if they're strings
@@ -34,11 +41,18 @@ exports.submitApplication = async (req, res) => {
       req.body.expenses = JSON.parse(req.body.expenses);
     }
 
+    // Always use 'user' (not 'userId') and ensure it's set
     const data = {
       ...req.body,
-      user: userId,
+      user: userId, // <-- this must match your schema!
       formCycle: formStatus.cycleId,
+      status: "pending",
+      resubmissionCount: latestApp ? latestApp.resubmissionCount + 1 : 0,
     };
+
+    if (!data.user) {
+      return res.status(400).json({ error: "User not found in request." });
+    }
 
     if (req.file) {
       data.signature = req.file.path;
@@ -167,5 +181,72 @@ exports.filterApplicationsByCycle = async (req, res) => {
   } catch (error) {
     console.error("Filter error:", error);
     res.status(500).json({ error: "Failed to filter applications" });
+  }
+};
+
+exports.updateApplicationStatus = async (req, res) => {
+  try {
+    const { status, rejectionReason } = req.body;
+
+    if (!["pending", "approved", "rejected"].includes(status)) {
+      return res.status(400).json({ error: "Invalid status value" });
+    }
+
+    const app = await EducationalAssistance.findById(req.params.id);
+    if (!app) return res.status(404).json({ error: "Application not found" });
+
+    app.status = status;
+    app.rejectionReason =
+      status === "rejected" ? rejectionReason || "No reason provided" : null;
+
+    await app.save();
+
+    res.json({ message: "Status updated successfully", application: app });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Server error while updating status" });
+  }
+};
+// Admin - Get applications by status (pending, rejected, accepted)
+exports.getApplicationsByStatus = async (req, res) => {
+  try {
+    const { status, cycleId, cycleNumber, year } = req.query;
+
+    // Validate status
+    const allowedStatuses = ["pending", "rejected", "approved", "accepted"];
+    if (status && !allowedStatuses.includes(status)) {
+      return res.status(400).json({
+        error:
+          "Invalid status. Must be pending, approved, accepted, or rejected",
+      });
+    }
+
+    // Build query object
+    const query = {};
+    if (status) query.status = status;
+
+    // Support filtering by cycleId OR by cycleNumber+year
+    if (cycleId) {
+      query.formCycle = cycleId;
+    } else if (cycleNumber && year) {
+      const cycle = await FormCycle.findOne({
+        formName: "Educational Assistance",
+        cycleNumber: Number(cycleNumber),
+        year: Number(year),
+      });
+      if (!cycle) {
+        return res.status(404).json({ error: "Cycle not found" });
+      }
+      query.formCycle = cycle._id;
+    }
+
+    const applications = await EducationalAssistance.find(query)
+      .populate("user", "username email")
+      .sort({ createdAt: -1 });
+
+    res.json(applications);
+  } catch (error) {
+    console.error("Get by status/cycle error:", error);
+    res.status(500).json({ error: "Failed to fetch applications" });
   }
 };
