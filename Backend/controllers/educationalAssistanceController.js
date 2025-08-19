@@ -121,10 +121,31 @@ exports.getAllApplications = async (req, res) => {
     // 1. If all=true, return all cycles (optionally filter by classification)
     if (all === "true") {
       if (classification) filter.youthClassification = classification;
-      const applications = await EducationalAssistance.find(filter)
-        .populate("formCycle")
-        .populate("user", "username email");
-      return res.json(applications);
+
+      // Aggregate: group by user, get latest application
+      const applications = await EducationalAssistance.aggregate([
+        { $match: filter },
+        { $sort: { createdAt: -1 } },
+        {
+          $group: {
+            _id: "$user",
+            latestApplication: { $first: "$$ROOT" },
+          },
+        },
+      ]);
+
+      // Populate user and formCycle for each result
+      const populated = await Promise.all(
+        applications.map(async (app) => {
+          const populatedUser = await EducationalAssistance.populate(
+            app.latestApplication,
+            [{ path: "user", select: "username email" }, { path: "formCycle" }]
+          );
+          return populatedUser;
+        })
+      );
+
+      return res.json(populated);
     }
 
     // 2. If year & cycle specified, use that cycle
@@ -149,11 +170,30 @@ exports.getAllApplications = async (req, res) => {
     filter.formCycle = cycleDoc._id;
     if (classification) filter.youthClassification = classification;
 
-    const applications = await EducationalAssistance.find(filter)
-      .populate("formCycle")
-      .populate("user", "username email");
+    // Aggregate: group by user, get latest application for this cycle
+    const applications = await EducationalAssistance.aggregate([
+      { $match: filter },
+      { $sort: { createdAt: -1 } },
+      {
+        $group: {
+          _id: "$user",
+          latestApplication: { $first: "$$ROOT" },
+        },
+      },
+    ]);
 
-    res.json(applications);
+    // Populate user and formCycle for each result
+    const populated = await Promise.all(
+      applications.map(async (app) => {
+        const populatedUser = await EducationalAssistance.populate(
+          app.latestApplication,
+          [{ path: "user", select: "username email" }, { path: "formCycle" }]
+        );
+        return populatedUser;
+      })
+    );
+
+    res.json(populated);
   } catch (err) {
     console.error("getAllApplications error:", err);
     res.status(500).json({ error: "Server error" });
