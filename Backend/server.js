@@ -9,10 +9,16 @@ const educationalRoutes = require("./routes/educationalAssistanceRoutes");
 const AnnouncementRoutes = require("./routes/announcementRoutes");
 const path = require("path");
 const Announcement = require("./models/Announcement");
+const http = require("http");
+const socketio = require("socket.io");
 
 require("dotenv").config();
 
 const app = express();
+const server = http.createServer(app);
+const io = socketio(server, {
+  cors: { origin: "*" },
+});
 
 // Middleware
 app.use(cors());
@@ -28,7 +34,7 @@ app.use("/api/formstatus", require("./routes/formStatusRoutes"));
 app.use("/api/lgbtqprofiling", lgbtqRoutes);
 app.use("/api/educational-assistance", educationalRoutes);
 app.use("/api/announcements", AnnouncementRoutes);
-
+app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use(express.static("public"));
 app.use("/api/formcycle", require("./routes/formCycleRoutes"));
 
@@ -39,7 +45,7 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
-    app.listen(PORT, () => {
+    server.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
   })
@@ -53,4 +59,12 @@ process.on("uncaughtException", (err) => {
 });
 process.on("unhandledRejection", (reason, promise) => {
   console.error("Unhandled Rejection:", reason);
+});
+
+// Make io available in controllers
+app.set("io", io);
+
+io.on("connection", (socket) => {
+  console.log("Admin connected:", socket.id);
+  // You can add authentication here if needed
 });

@@ -1,18 +1,14 @@
 const EducationalAssistance = require("../models/EducationalAssistance");
 const FormCycle = require("../models/FormCycle");
-const FormStatus = require("../models/FormStatus");
 const sendRejectionEmail = require("../utils/sendRejectionEmail");
+const Notification = require("../models/Notification");
+const FormStatus = require("../models/FormStatus");
 
-// Helper to get the present (open) cycle
 async function getPresentCycle(formName) {
-  console.log("getPresentCycle called with formName:", formName);
   const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
     "cycleId"
   );
-  console.log("FormStatus found:", status ? status._id : null);
-  if (!status || !status.cycleId) {
-    throw new Error("No active form cycle");
-  }
+  if (!status || !status.cycleId) throw new Error("No active form cycle");
   return status.cycleId;
 }
 
@@ -72,8 +68,35 @@ exports.submitApplication = async (req, res) => {
       data.signature = req.file.path;
     }
 
-    const newApp = new EducationalAssistance(data);
+    const presentCycle = await getPresentCycle("Educational Assistance");
+    const newApp = new EducationalAssistance({
+      ...data,
+      formCycle: presentCycle._id,
+    });
     await newApp.save();
+
+    // Create notification with cycleId and read: false
+    const notif = new Notification({
+      type: "educational-assistance",
+      event: "newSubmission",
+      message: `New Educational Assistance submission from user ${userId}`,
+      referenceId: newApp._id,
+      cycleId: presentCycle._id,
+      createdAt: new Date(),
+      read: false,
+    });
+    await notif.save();
+
+    // Real-time notification (Socket.IO)
+    if (req.app.get("io")) {
+      req.app.get("io").emit("educational-assistance:newSubmission", {
+        id: newApp._id,
+        user: userId,
+        createdAt: newApp.createdAt,
+        status: newApp.status,
+        message: notif.message,
+      });
+    }
 
     res.status(201).json({ message: "Application submitted successfully" });
   } catch (err) {
@@ -202,13 +225,19 @@ exports.getAllApplications = async (req, res) => {
 
 // Admin - get by ID
 exports.getApplicationById = async (req, res) => {
-  try {
-    const app = await EducationalAssistance.findById(req.params.id);
-    if (!app) return res.status(404).json({ message: "Not found" });
-    res.json(app);
-  } catch (err) {
-    res.status(500).json({ message: "Server error" });
-  }
+  const app = await EducationalAssistance.findById(req.params.id).populate(
+    "user",
+    "username email"
+  );
+  if (!app) return res.status(404).json({ error: "Application not found" });
+
+  // Mark related notifications as read
+  await Notification.updateMany(
+    { referenceId: app._id, type: "educational-assistance", read: false },
+    { $set: { read: true } }
+  );
+
+  res.json(app);
 };
 
 // Admin - filter by fields (e.g. surname, school)
@@ -439,4 +468,11 @@ exports.getCyclesAndPresent = async (req, res) => {
       .status(500)
       .json({ error: "Failed to load cycles", details: err.message });
   }
+};
+
+exports.getNotifications = async (req, res) => {
+  const notifs = await Notification.find({ type: "educational-assistance" })
+    .sort({ createdAt: -1 })
+    .limit(50);
+  res.json(notifs);
 };
