@@ -127,3 +127,32 @@ exports.resetPassword = async (req, res) => {
 
   res.json({ message: "Password has been reset" });
 };
+
+// POST /api/auth/admin-login
+exports.adminLogin = async (req, res) => {
+  const { username, password } = req.body;
+
+  const user = await User.findOne({ username, role: "admin" });
+  if (!user) {
+    return res.status(401).json({ message: "Invalid username or password" });
+  }
+
+  const isMatch = await user.comparePassword(password);
+  if (!isMatch) {
+    return res.status(401).json({ message: "Invalid username or password" });
+  }
+
+  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+    expiresIn: "7d",
+  });
+
+  res.json({
+    message: "Admin login successful",
+    user: {
+      _id: user._id,
+      username: user.username,
+      role: user.role,
+    },
+    token,
+  });
+};
