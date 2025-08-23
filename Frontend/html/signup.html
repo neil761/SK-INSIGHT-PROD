@@ -3,61 +3,82 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="/css/signup.css">
     <title>Document</title>
 </head>
 <body>
-    <div class="container1">
-        <div class="img1">
-          <img src="/assets/logo.png" alt="logo" class="logo">
 
+  <div class="sign">
+    <div class="left-side">
+        <div class="container1">
+            <div class="img1">
+                <img src="/assets/logo.png" alt="logo" class="logo">
+            </div>
+            <div class="title1">
+                SANGGUNIANG KABATAAN
+            </div>
+            <div class="title2">
+                <h1>BARANGAY</h1>
+                <h1>PUTING BATO WEST</h1>
+            </div>
         </div>
-        <div class="title1">
-            <h2>SANGGUNIANG KABATAAN</h2>
-        </div>
-        <div class="title2">
-            <h1>BARANGAY</h1>
-            <h1>PUTING BATO WEST</h1>
-        </div>
-        
     </div>
-    <div class="container">
-        <h1 class="text-center text-xl font-bold">Sign Up</h1>
-        <form id="signupForm">
-          <input type="text" name="username" placeholder="Username" required
-              class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
-            
-            <input type="email" name="email" placeholder="Email" required
-              class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
-            
-            <input type="password" name="password" placeholder="Password" required
-              class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
-            
-            <input type="text" id="birthday" name="birthday" placeholder="YYYY-MM-DD" required
-              class="border bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
-            
-            <label>ID Image:</label><br>
-            <input type="file" id="idImage" name="idImage" required
-              class="border border-black rounded px-3 py-2 w-full mb-5 focus:outline-none focus:border-blue-500">
-      
-          <div class="button flex justify-center">
-              <button type="submit" class="bg-blue-900 text-white py-2 px-6 rounded hover:bg-blue-800">
-                  Confirm
-              </button>
-          </div>
-          <p class="acc text-l text-gray-700">
-            Already have an account?
-            <a href="/html/login.html" class="text-blue-600 underline hover:text-blue-800">Click here</a>
-        </p>
-        
-      </form>
 
+    <div class="right-side">
+        <div class="container">
+            <h1 class="text-center text-xl font-bold">Sign Up</h1>
+            <form id="signupForm">
+
+              <!-- Username -->
+              <input type="text" name="username" placeholder="Username" required
+                  class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
+                
+              <!-- Email -->
+              <input type="email" name="email" placeholder="Email" required
+                  class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
+                
+              <!-- Password with eye icon -->
+              <div class="relative mb-3">
+                  <input type="password" name="password" placeholder="Password" required
+                      id="passwordField"
+                      class="border bg-gray-100 border-black rounded px-3 py-2 w-full focus:outline-none focus:border-blue-500 pr-10">
+                  <span id="togglePassword" 
+                      class="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500">
+                      <i class="fa-solid fa-eye"></i>
+                  </span>
+              </div>
+                
+              <!-- Birthday -->
+              <input type="text" id="birthday" name="birthday" placeholder="YYYY-MM-DD" required
+                  class="border bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
+                
+              <!-- ID Image -->
+              <label>ID Image:</label><br>
+              <input type="file" id="idImage" name="idImage" required
+                  class="border border-black rounded px-3 py-2 w-full mb-5 focus:outline-none focus:border-blue-500">
           
-      </div>
-      
+              <!-- Submit -->
+              <div class="button flex justify-center">
+                  <button type="submit" class="bg-blue-900 text-white py-2 px-6 rounded hover:bg-blue-800">
+                      Confirm
+                  </button>
+              </div>
+
+              <!-- Already have account -->
+              <p class="acc text-l text-gray-700">
+                Already have an account?
+                <a href="/html/login.html" class="text-blue-600 underline hover:text-blue-800">Click here</a>
+              </p>
+            
+          </form>
+        </div>
+    </div>
+</div>
       <script src="/js/signup.js" defer></script>
 
 </body>
-
 </html>

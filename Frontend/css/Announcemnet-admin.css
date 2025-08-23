@@ -1,0 +1,127 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body{
+    font-family: 'Poppins', sans-serif;
+    background-color: #D1E1F5;
+}
+
+.sidebar {
+    height: 100vh;
+    width: 250px;
+    background-color: #0A2C59; 
+    color: white;
+    position: fixed;
+    left: 0;
+    top: 0;
+    padding: 20px;
+}
+
+.logos{
+    display: flex;
+    align-items: center;   
+    gap: 10px;               
+}
+
+.title-container {
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column; 
+    line-height: 1.2; 
+}
+
+.admin{
+    font-size: small;
+    color: #FED600;
+}
+
+.logo{
+    width: 20vw;
+    max-width: 100px;
+    height: auto;
+    margin-top: 20px;
+}
+
+.sidebar a {
+    display: block;
+    color: white;
+    padding: 12px;
+    text-decoration: none;
+    border-radius: 5px;
+    margin: 5px 0;
+    transition: background 0.3s;
+}
+
+.menu{
+    margin-top: 20px;
+}
+
+.dashh{
+    background-color: #07B0F2;
+    border-radius: 5px;
+}
+
+.dash{
+    margin-left: 10px;
+}
+
+.educ{
+    margin-left: 5px;
+    font-size: 15.2px;
+}
+
+.dashs{
+    margin-left: 3px;
+}
+
+.dashb{
+    margin-left: 10px;
+}
+
+.Kk{
+    margin-left: 5px;
+}
+
+.kk{
+    margin-left: 13px;
+}
+
+.log{
+    margin-top: 90%;
+}
+
+.content{
+    margin-left: 250px;
+    padding: 10px;
+}
+
+.parent {
+    display: flex;
+    justify-content: flex-end;
+    padding-bottom: 10px;
+}
+
+.title{
+    padding: 20px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    font-family: Arial, sans-serif;
+    margin-left: 66%;
+    margin-top: 50px;
+  }
+
+.add{
+    background-color: #ffffffcc;
+    color: #000000;
+    padding: 10px 20px;
+    border-radius: 5px;
+    text-decoration: none;
+    transition: background-color 0.3s;
+    border: rgba(0, 0, 0, 0.605) 0.2px solid;
+}
