@@ -27,28 +27,29 @@ body {
 }
 
 .logo {
-    width: 20vw;
-    max-width: 100px;
+    width: 30vw;
+    max-width: 150px;
     height: auto;
     margin: 0 auto 10px auto;
 }
 
 .title1 {
-    font-size: 20px;
+    font-size: clamp(10px, 1.8vw, 16px);
     color: #ffffff;
     letter-spacing: 1px;
     margin-top: 10px;
-    white-space: nowrap; /* Force in one line */
-    overflow: hidden;
-    text-overflow: ellipsis;
-    display: inline-block;
-    min-width: 300px; /* Ensure wide enough to fit */
+    line-height: 1.2;
+    word-wrap: break-word;
+    text-align: center;
 }
 
 .title2 h1 {
-    font-size: 20px;
+    font-size: clamp(10px, 1.8vw, 16px);
     color: #ffffff;
-    margin: 5px 0;
+    margin: 3px 0;
+    line-height: 1.2;
+    word-wrap: break-word;
+    text-align: center;
 }
 
 .container {
@@ -69,10 +70,10 @@ body {
 /* Tablet adjustments */
 @media (min-width: 768px) {
     .logo {
-        width: 100px;
+        width: 150px;
     }
 
-    .title1 {
+    .title1 h2 {
         font-size: 20px;
     }
 
@@ -81,7 +82,7 @@ body {
     }
 
     .container {
-        padding: 30px;
+        padding: 40px;
     }
 }
 
@@ -128,14 +129,15 @@ body {
     .container {
         margin: 10%;
         max-width: 400px;
+        padding: 40px;
     }
 
     .logo {
-        width: 120px;
+        width: 180px;
         margin: 0 auto 20px auto;
     }
 
-    .title1 {
+    .title1 h2 {
         font-size: 30px;
         min-width: 400px; 
     }
