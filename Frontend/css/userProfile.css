@@ -1,0 +1,46 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  background: #eaf2fb;
+  color: #0a1a3a;
+}
+
+/* Navbar */
+.navbar {
+  background: #0A2C59;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 20px 30px 0 30px;   /* ⬅️ space sa taas at gilid */
+    padding: 15px 30px;
+  border-radius: 15px;     
+  box-shadow: 0 4px 10px rgba(0,0,0,0.2); 
+}
+
+.navbar img {
+  height: 40px;
+  border-radius: 50%;
+}
+
+.navbar .title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-right {
+  display: flex;
+  gap: 15px;
+  font-size: 20px;
+}
