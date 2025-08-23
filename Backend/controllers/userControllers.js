@@ -1,10 +1,10 @@
 const User = require("../models/User");
+const { extractFromIDImage } = require("../utils/extractBirthday");
+const { normalizeDate } = require("../utils/dateUtils");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const path = require("path");
 const asyncHandler = require("express-async-handler");
-const extractBirthdayFromImage = require("../utils/extractBirthday");
-const { normalizeDate } = require("../utils/dateUtils");
 const fs = require("fs");
 
 exports.createUser = async (req, res) => {
@@ -307,3 +307,74 @@ exports.smartRegister = asyncHandler(async (req, res) => {
     token,
   });
 });
+
+// POST /api/users/smart-register
+exports.smartRegister = async (req, res) => {
+  try {
+    const { username, email, password, birthday } = req.body;
+    const idImagePath = req.file.path;
+
+    // OCR extraction
+    const { birthday: ocrBirthday, address: ocrAddress } =
+      await extractFromIDImage(idImagePath);
+
+    // Log extracted birthday and address
+    console.log("Extracted birthday (controller):", ocrBirthday);
+    console.log("Extracted address (controller):", ocrAddress);
+
+    // Birthday validation
+    if (!ocrBirthday || ocrBirthday !== normalizeDate(birthday)) {
+      return res.status(400).json({ message: "Birthday does not match ID." });
+    }
+
+    // Address validation (accept "CALACA" or "CALACA CITY", any case)
+    if (
+      !ocrAddress ||
+      !/puting bato west/i.test(ocrAddress) ||
+      !/(calaca|calaca city)/i.test(ocrAddress) ||
+      !/batangas/i.test(ocrAddress)
+    ) {
+      return res.status(400).json({
+        message: "Address must be Puting Bato West, Calaca City, Batangas.",
+      });
+    }
+
+    // Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser)
+      return res.status(400).json({ error: "Email already in use" });
+
+    // Clean up the extracted address before saving
+    let cleanedAddress = ocrAddress
+      ? ocrAddress.replace(/\s*\([^)]+\)\s*$/, "").trim()
+      : ocrAddress;
+
+    // Create and save new user with cleaned verified address
+    const user = new User({
+      username,
+      email,
+      password,
+      birthday: ocrBirthday,
+      verifiedAddress: cleanedAddress,
+    });
+    await user.save();
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    res.status(201).json({
+      message: "Smart registration successful",
+      user: {
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        verifiedAddress: user.verifiedAddress,
+      },
+      token,
+    });
+  } catch (err) {
+    console.error("Smart registration error:", err);
+    res.status(500).json({ message: "Server error during registration." });
+  }
+};

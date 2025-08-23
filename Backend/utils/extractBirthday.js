@@ -3,48 +3,60 @@ const moment = require("moment");
 const Tesseract = require("tesseract.js");
 const { normalizeDate } = require("./dateUtils");
 
-async function extractBirthdayFromImage(imagePath, typedBirthday) {
-  try {
-    const {
-      data: { text },
-    } = await Tesseract.recognize(imagePath, "eng");
-    console.log("🔍 OCR Output:", text);
+// Helper to extract birthday and address from OCR text
+function extractBirthdayAndAddress(ocrText) {
+  // Log raw OCR text for debugging
+  console.log("Raw OCR text:", ocrText);
 
-    const regex =
-      /\b(?:\d{4}[-\/.]\d{2}[-\/.]\d{2}|\d{2}[-\/.]\d{2}[-\/.]\d{4}|[A-Z][A-Z]+[\s-]+\d{1,2}[,\s-]+\d{4}|\d{2}-[A-Za-z]{3}-\d{4})\b/g;
-
-    const matches = text.match(regex);
-    console.log("📅 Found Date Matches:", matches);
-
-    const typed = moment(typedBirthday, "YYYY-MM-DD", true);
-    if (!typed.isValid()) {
-      console.log("❌ Invalid typed birthday format. Must be YYYY-MM-DD.");
-      return null;
+  // Birthday extraction (support text month formats)
+  const birthdayRegexes = [
+    /(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4})/, // 31/03/2004
+    /(\d{4}[\/\-\.]\d{2}[\/\-\.]\d{2})/, // 2004-03-31
+    /([A-Z]{3,9} \d{1,2}, \d{4})/i, // MARCH 31, 2004
+  ];
+  let birthday = null;
+  for (const regex of birthdayRegexes) {
+    const match = ocrText.match(regex);
+    if (match) {
+      birthday = normalizeDate(match[0]);
+      break;
     }
-
-    const normalizedTyped = typed.format("YYYY-MM-DD");
-    console.log("🎯 Typed birthday (normalized):", normalizedTyped);
-
-    if (matches) {
-      for (let raw of matches) {
-        const parsedFormatted = normalizeDate(raw);
-        console.log(`🔎 Trying: "${raw}" → ${parsedFormatted}`);
-
-        if (parsedFormatted === normalizedTyped) {
-          console.log("✅ Birthday match found!");
-          return parsedFormatted;
-        }
-      }
-    }
-
-    console.log("❌ No matching birthday found.");
-    return null;
-  } catch (err) {
-    console.error("🚫 OCR error:", err);
-    return null;
-  } finally {
-    fs.unlink(imagePath, () => {});
   }
+
+  // Address extraction (accept "CALACA" or "CALACA CITY", any case)
+  const addressKeywords = ["puting bato west", "batangas"];
+  // Accept either "calaca" or "calaca city"
+  const calacaRegex = /calaca(\s+city)?/i;
+
+  let address = null;
+  const lowerText = ocrText.toLowerCase().replace(/\s+/g, " ");
+  if (
+    addressKeywords.every((k) => lowerText.includes(k)) &&
+    calacaRegex.test(lowerText)
+  ) {
+    address =
+      ocrText
+        .split("\n")
+        .find(
+          (line) =>
+            addressKeywords.every((k) => line.toLowerCase().includes(k)) &&
+            calacaRegex.test(line)
+        ) || "Puting Bato West, Calaca, Batangas";
+  }
+
+  // Log extracted birthday and address for debugging
+  console.log("Extracted birthday (helper):", birthday);
+  console.log("Extracted address (helper):", address);
+
+  return { birthday, address };
 }
 
-module.exports = extractBirthdayFromImage;
+// Main OCR function
+async function extractFromIDImage(imagePath) {
+  const {
+    data: { text },
+  } = await Tesseract.recognize(imagePath, "eng");
+  return extractBirthdayAndAddress(text);
+}
+
+module.exports = { extractFromIDImage, extractBirthdayAndAddress };
