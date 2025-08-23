@@ -1,0 +1,21 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background-color: #D1E1F5;
+    min-height: 100vh;
+}
+
+
+/* Tablet adjustments */
+@media (min-width: 768px) {
+
+}
+
+/* Desktop Split Screen (1024px and above) */
+@media (min-width: 1024px) {
+  
+}
