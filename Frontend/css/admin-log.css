@@ -3,14 +3,12 @@
 }
 
 body {
-    margin: 0;
     font-family: 'Poppins', sans-serif;
-    background: linear-gradient(to bottom, #0A2C59 30%, #ffffff 30%);
-    min-height: 100vh;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
+    background: linear-gradient(to right, #0A2C59 50%, #ffffff 50%);
+    flex-direction: row;
+    justify-content: space-between;
     align-items: center;
+    padding: 0;
 }
 
 .sign {
@@ -27,8 +25,8 @@ body {
 }
 
 .logo {
-    width: 30vw;
-    max-width: 150px;
+    width: 20vw;
+    max-width: 100px;
     height: auto;
     margin: 0 auto 10px auto;
 }
@@ -43,108 +41,27 @@ body {
     text-overflow: ellipsis;
     display: inline-block;
     min-width: 300px; /* Ensure wide enough to fit */
-    font-family: 'Times New Roman', serif;
 }
 
 .title2 h1 {
     font-size: 20px;
     color: #ffffff;
     margin: 5px 0;
-    font-family: 'Times New Roman', serif;
 }
 
 .container {
     width: 50%;
     max-width: 400px;
-    padding: 40px;
+    padding: 20px;
     background-color: white;
-    border-radius: 20px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-radius: 15px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
     margin: 50px auto 0 auto;
-}
-
-.container h1 {
-    color: #1f2937;
-    font-size: 24px;
-    font-weight: 600;
-    margin-bottom: 30px;
-}
-
-.container input[type="text"],
-.container input[type="password"] {
-    background-color: #f9fafb;
-    border: 1px solid #d1d5db;
-    border-radius: 8px;
-    padding: 12px 12px 12px 40px;
-    font-size: 14px;
-    transition: all 0.3s ease;
-}
-
-.container input[type="text"]:focus,
-.container input[type="password"]:focus {
-    background-color: white;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.container input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #3b82f6;
-}
-
-.container button {
-    background-color: #3b82f6;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 12px 24px;
-    font-size: 16px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-.container button:hover {
-    background-color: #2563eb;
-}
-
-.container a {
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-/* Icon color - Black */
-.relative .absolute.inset-y-0.left-3.flex.items-center.text-gray-500 {
-    color: #000000 !important;
-}
-
-.relative .absolute.inset-y-0.right-3.flex.items-center.cursor-pointer.text-gray-500 {
-    color: #000000 !important;
 }
 
 .acc {
     margin-top: 10%;
     text-align: center;
-}
-
-/* Tablet adjustments */
-@media (min-width: 768px) {
-    .logo {
-        width: 150px;
-    }
-
-    .title1 {
-        font-size: 20px;
-    }
-
-    .title2 h1 {
-        font-size: 20px;
-    }
-
-    .container {
-        padding: 40px;
-    }
 }
 
 /* Desktop Split Screen (1024px and above) */
@@ -190,11 +107,10 @@ body {
     .container {
         margin: 10%;
         max-width: 400px;
-        padding: 40px;
     }
 
     .logo {
-        width: 180px;
+        width: 120px;
         margin: 0 auto 20px auto;
     }
 
