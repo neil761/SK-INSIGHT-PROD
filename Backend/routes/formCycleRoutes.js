@@ -3,6 +3,10 @@ const router = express.Router();
 const ctrl = require("../controllers/formCycleController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 
+// Import models
+const FormCycle = require("../models/FormCycle");
+const FormStatus = require("../models/FormStatus");
+
 // PUT /api/formcycle/toggle
 router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
   try {
@@ -34,7 +38,6 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
     await newCycle.save();
 
     // Update or create FormStatus for this form
-    const FormStatus = require("../models/FormStatus");
     let formStatus = await FormStatus.findOne({ formName });
     if (!formStatus) {
       formStatus = new FormStatus({
