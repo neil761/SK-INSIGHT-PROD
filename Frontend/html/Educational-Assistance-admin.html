@@ -1,150 +1,141 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SK-INSIGHT</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="../css/Educational-Assistance-admin.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SK-INSIGHT</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="../css/Educational-Assistance-admin.css">
 </head>
 <body>
-    <div class="sidebar">
-        <h3 class="text-2xl font-normal">Sangguniang Kabataan</h3>
-        <div class="logos">
-            <img src="../assets/logo.png" alt="logo" class="logo">
-            <div class="title-container">
-                <p class="text-lg font-semibold">SK Officials</p>
-                <p class="admin">Admin</p>
-            </div>
-        </div>
-        
-        
-        <div class="menu">
-                <a href="admin-dashboard.html" class="flex items-center space-x-2">
-                    <i class="dashs fas fa-columns"></i>
-                    <span class="dashb">Dashboard</span>
-                </a>
-            <a href="KK-Profile.html" class="flex items-center space-x-2">
-                <i class="Kk fas fa-id-badge"></i>
-                <span class="kk">KK Profile</span>
-            </a>
-            <a href="LGBTQ-Profile.html" class="flex items-center space-x-2">
-                <i class="fas fa-rainbow"></i>
-                <span class="dash">LGBTQ Profile</span>
-            </a>
-            <div class="dashh">
-                <a href="Educational-Assistance-admin.html" class="flex items-center space-x-2">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span class="educ">Educational Assistance</span>
-                </a>
-            </div>
-            <a href="Announcement-admin.html" class="flex items-center space-x-2">
-                <i class="fas fa-bell"></i>
-                <span class="dash">Announcement</span>
-            </a>
-            <a href="user-account.html" class="flex items-center space-x-2">
-                <i class="fas fa-user"></i>
-                <span class="dash">User Accounts</span>
-            </a>
-            <a href="exports.html" class="flex items-center space-x-2">
-                <i class="fas fa-file-export"></i>
-                <span class="dash">Exports</span>
-            </a>
-            <div class="log">
-                <a href="admin-log.html" class="flex items-center space-x-2">
-                    <i class="fas fa-right-from-bracket"></i>
-                    <span class="dash">Log out</span>
-                </a>
-            </div>
-        </div>
-        
+  <!-- Sidebar (unchanged) -->
+  <div class="sidebar">
+    <h3 class="text-2xl font-normal">Sangguniang Kabataan</h3>
+    <div class="logos">
+      <img src="../assets/logo.png" alt="logo" class="logo">
+      <div class="title-container">
+        <p class="text-lg font-semibold">SK Officials</p>
+        <p class="admin">Admin</p>
+      </div>
     </div>
-
-    <div class="content">
-        <div class="parent">
-            <div class="date">
-              <p>Good Morning</p>
-              <p>;wurojkldnvsx</p>
-            </div>
-          </div>
-        <hr>
-
-        <div class="title">
-          <!-- First row -->
-          <div class="row">
-            <h1>Educational Assistance</h1>
-            <div class="filter-row">
-              <label for="cycleNumber" class="cycle">Year:</label>
-              <select id="cycleNumber" class="cycle-select">
-                <option value="">All</option>
-                <option value="1">2025</option>
-                <option value="2">2024</option>
-                <option value="3">2023</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Second row -->
-          <div class="row">
-            <p>List of Educational Assistance Applicants...</p>
-            <div class="filter-rows">
-              <label for="year" class="year">Cycle Number:</label>
-              <select id="year" class="cycle-select">
-                <option value="">All</option>
-                <option value="2023">Cycle 1</option>
-                <option value="2024">Cycle 2</option>
-                <option value="2025">Cycle 3</option>
-              </select>
-              <button id="yearFilterBtn" class="filt">Filter</button>
-            </div>
-          </div>
-
-            
-        </div>
-
-        <div class="buts">
-          <div class="search-container">
-              <input type="text" class="search-input" placeholder="🔍 Search Resident" />
-          </div>
-
-          <div class="dropdown">
-              <button class="dropdown-button" type="button">Filter Classification</button>
-              <div class="dropdown-content">
-                  <a href="#">Filter Classification</a>
-                  <a href="#">Select Group</a>
-                  <a href="#">Download List</a>
-              </div>
-          </div>
-        </div>
-
-        <div class="tables">
-            <table>
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Resident's Name</th>
-                    <th>Age</th>
-                    <th>Purok</th>
-                    <th>Gender</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
-        </div>
-
-
-
+    <div class="menu">
+      <a href="admin-dashboard.html"><i class="fas fa-columns"></i> Dashboard</a>
+      <a href="KK-Profile.html"><i class="fas fa-id-badge"></i> KK Profile</a>
+      <a href="LGBTQ-Profile.html"><i class="fas fa-rainbow"></i> LGBTQ Profile</a>
+      <div class="dashh">
+        <a href="Educational-Assistance-admin.html"><i class="fas fa-graduation-cap"></i> Educational Assistance</a>
+      </div>
+      <a href="Announcement-admin.html"><i class="fas fa-bell"></i> Announcement</a>
+      <a href="user-account.html"><i class="fas fa-user"></i> User Accounts</a>
+      <a href="exports.html"><i class="fas fa-file-export"></i> Exports</a>
+      <div class="log">
+        <a href="admin-log.html"><i class="fas fa-right-from-bracket"></i> Log out</a>
+      </div>
     </div>
+  </div>
 
+  <!-- Content -->
+  <div class="content">
+    <header class="page-header">
+      <h1>Educational Assistance</h1>
+      <p class="subtitle">Manage applicants and track their application status</p>
+    </header>
+
+    <!-- Filters Bar -->
+    <section class="filters-bar">
+      <div class="filter-group">
+        <label for="cycleNumber">Year:</label>
+        <select id="cycleNumber" class="cycle-select">
+          <option value="">All</option>
+          <option value="2025">2025</option>
+          <option value="2024">2024</option>
+          <option value="2023">2023</option>
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="year">Cycle:</label>
+        <select id="year" class="cycle-select">
+          <option value="">All</option>
+          <option value="1">Cycle 1</option>
+          <option value="2">Cycle 2</option>
+          <option value="3">Cycle 3</option>
+        </select>
+      </div>
+
+      <div class="filter-group search-wrapper">
+        <input type="text" class="search-input" placeholder="🔍 Search Resident...">
+      </div>
+    </section>
+
+    <!-- Tabs -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="pending"><i class="fas fa-clock"></i> Pending</button>
+      <button class="tab-btn" data-tab="approved"><i class="fas fa-check-circle"></i> Approved</button>
+      <button class="tab-btn" data-tab="rejected"><i class="fas fa-times-circle"></i> Rejected</button>
+    </nav>
+
+    <!-- Tables -->
+    <section class="tables">
+      <div class="tab-content active" id="pending">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Resident's Name</th>
+              <th>Age</th>
+              <th>Purok</th>
+              <th>Gender</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Juan Dela Cruz</td><td>18</td><td>Purok 1</td><td>Male</td>
+              <td><button class="action-btn"><i class="fas fa-eye"></i> Review</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tab-content" id="approved">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Resident's Name</th>
+              <th>Age</th>
+              <th>Purok</th>
+              <th>Gender</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Maria Santos</td><td>20</td><td>Purok 2</td><td>Female</td>
+              <td><button class="action-btn"><i class="fas fa-file-alt"></i> View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="tab-content" id="rejected">
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Resident's Name</th>
+              <th>Age</th>
+              <th>Purok</th>
+              <th>Gender</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>1</td><td>Carlos Reyes</td><td>19</td><td>Purok 3</td><td>Male</td>
+              <td><button class="action-btn"><i class="fas fa-file-alt"></i> View</button></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <script src="../js/Educational-Assistance-admin.js"></script>
 </body>
 </html>
