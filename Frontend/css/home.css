@@ -1,37 +1,38 @@
-
 /* Reset */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: Arial, sans-serif;
 }
 
+/* Body */
 body {
-  background: #eaf2fb;
+  font-family: 'Poppins', Arial, sans-serif;
+  background-color: #D1E1F5;
   color: #0a1a3a;
-  padding-top: 5rem;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;   /* keeps footer at bottom */
+  padding-top: 6rem;        /* space for fixed navbar */
 }
 
 /* Navbar */
 .navbar {
-  position: fixed;            /* stays on top when scrolling */
-  top: 1rem;                  /* distance from top */
-  left: 50%;                  /* start at horizontal center */
-  transform: translateX(-50%);/* center it exactly */
-  width: 90%;                 /* navbar width (not full screen) */         /* optional max width */
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
   background: #0A2C59;
   color: #fff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 15px 30px;
-  border-radius: 15px;        /* rounded corners */
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3); /* stronger shadow for floating effect */
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
   z-index: 1000;
 }
-
-
 
 .navbar img {
   height: 40px;
@@ -57,24 +58,24 @@ body {
 
 /* Card */
 .card {
-  width: 80%;
+  width: 90%;
+  max-width: 900px;          /* limit size on large screens */
   background: #fff;
   display: flex;
   flex-direction: column;   
   align-items: center;      
   border-radius: 2vh;
-  margin: 3% auto;          /* ✅ smaller margin */
-  padding: 1.5% 2%;         /* ✅ less padding inside */
+  margin: 3% auto;
+  padding: 1.5% 2%;
   text-align: center;       
 }
 
 .card img {
-  width: 60%;               /* ✅ smaller image */
+  width: 110%;
+  max-width: 420px;
   border-radius: 15px;
-  margin-bottom: 15px;      /* ✅ less space below image */
+  margin-bottom: 15px;
 }
-
-
 
 .card .tag {
   display: inline-block;
@@ -121,60 +122,55 @@ body {
   font-weight: bold;
 }
 
-/* Responsive */
+/* Responsive Adjustments */
 @media (max-width: 768px) {
   .navbar {
-    flex-direction: row;      /* keep row layout */
-    align-items: center;
-    justify-content: space-between;
-    padding: 10px 20px;       /* smaller padding on mobile */
-  }
-
-  .navbar-left {
-    flex: 1;                  /* take left space */
-    display: flex;
-    align-items: center;
+    padding: 10px 20px;
   }
 
   .navbar-right {
-    display: flex;
-    gap: 10px;                /* spacing between icons */
-    font-size: 20px;
+    gap: 10px;
   }
 
   .card {
-    margin: 20px;
+    width: 80%;
+    max-width: 400px;
+    padding: 15px;
+  }
+
+  .card img {
+    width: 60%;
+    max-width: 220px;
   }
 }
 
+@media (max-width: 480px) {
+  .card {
+    width: 95%;
+    max-width: 320px;
+    padding: 10px;
+  }
 
-* {
-    box-sizing: border-box;
+  .card img {
+    width: 55%;
+    max-width: 180px;
+  }
+
+  .card h2 {
+    font-size: 16px;
+  }
+
+  .card p {
+    font-size: 13px;
+  }
 }
 
-body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background-color: #D1E1F5;
-    min-height: 100vh;
-}
-
-
-/* Tablet adjustments */
-@media (min-width: 768px) {
-
-}
-
-/* Desktop Split Screen (1024px and above) */
-@media (min-width: 1024px) {
-  
-}
 /* Footer */
 .footer {
   background: #0A2C59;
   color: #fff;
   padding: 40px 60px 20px;
-  margin-top: 50px;
+  margin-top: auto; /* pushes footer down */
 }
 
 .footer-container {
@@ -247,13 +243,7 @@ body {
   color: #cfd9e8;
 }
 
-/* ✅ Responsive Footer */
-@media (max-width: 992px) {
-  .footer-container {
-    gap: 30px;
-  }
-}
-
+/* Responsive Footer */
 @media (max-width: 768px) {
   .footer-container {
     flex-direction: column;
@@ -266,12 +256,6 @@ body {
   .footer-middle,
   .footer-right {
     width: 100%;
-  }
-
-  .footer-right ul li,
-  .footer-middle ul li {
-    display: flex;
-    justify-content: center;
   }
 }
 
@@ -302,4 +286,3 @@ body {
     font-size: 12px;
   }
 }
-
