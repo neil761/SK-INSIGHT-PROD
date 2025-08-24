@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const FormCycle = require("../models/FormCycle");
+const ctrl = require("../controllers/formCycleController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 
 // PUT /api/formcycle/toggle
@@ -57,5 +57,9 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
     res.status(500).json({ error: "Failed to toggle form cycle" });
   }
 });
+
+router.get("/kk", protect, authorizeRoles("admin"), ctrl.getKkCycles);
+router.get("/lgbtq", protect, authorizeRoles("admin"), ctrl.getLgbtqCycles);
+router.get("/educ", protect, authorizeRoles("admin"), ctrl.getEducCycles);
 
 module.exports = router;

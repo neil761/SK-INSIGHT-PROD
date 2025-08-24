@@ -1,319 +1,278 @@
+// kkprofile.js
+
+// 🔹 Redirect to login if no token
 if (!localStorage.getItem("token")) {
   window.location.href = "/html/admin-log.html";
 }
+
 document.addEventListener("DOMContentLoaded", () => {
-    console.log("kkprofile.js loaded");
+  console.log("kkprofile.js loaded ✅");
 
-    const tableBody = document.querySelector(".tables tbody");
+  const tableBody = document.querySelector(".tables tbody");
+  const yearSelect = document.getElementById("yearSelect");
+  const cycleSelect = document.getElementById("cycleSelect");
+  const filterBtn = document.getElementById("filterBtn");
+  const searchInput = document.getElementById("searchInput");
+  const classificationDropdown = document.getElementById(
+    "classificationDropdown"
+  );
+  const groupDropdown = document.getElementById("groupDropdown");
 
-    // 🔹 Store all profiles globally so we can filter client-side
-    let allProfiles = [];
+  let currentFilters = {};
 
-    // 🔹 Filter mapping
-    const filterOptions = {
-        "Work Status": ["Employed", "Unemployed", "Self-Employed", "Currently looking for a Job", "Not interested in looking for a Job"],
-        "Youth Age Group": ["Child Youth", "Core Youth", "Young Youth"],
-        "Educational Background": [
-            "Elementary Undergraduate", "Elementary Graduate",
-            "High School Undergraduate", "High School Graduate",
-            "Vocational Graduate", "College Undergraduate",
-            "College Graduate", "Masters Level", "Masters Graduate",
-            "Doctorate Level", "Doctorate Graduate"
-        ],
-        "Civil Status": ["Single", "Live-in", "Married", "Unknown", "Separated", "Annulled", "Divorced", "Widowed"],
-        "Youth Classification": ["In School Youth", "Out of School Youth", "Working Youth", "Youth with Specific Needs"],
-        "Purok": ["1","2","3","4","5","6","7","8","9","10"]
+  // 🔹 Fetch and populate available years & cycles
+  async function fetchCycles() {
+    try {
+      const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch cycles");
+
+      const cycles = await res.json();
+
+      // Group cycles by year
+      const yearMap = {};
+      cycles.forEach((c) => {
+        if (!yearMap[c.year]) yearMap[c.year] = [];
+        yearMap[c.year].push(c.cycleNumber);
+      });
+
+      // Populate yearSelect
+      yearSelect.innerHTML = `<option value="">Select Year</option>`;
+      Object.keys(yearMap)
+        .sort((a, b) => b - a) // descending
+        .forEach((year) => {
+          const opt = document.createElement("option");
+          opt.value = year;
+          opt.textContent = year;
+          yearSelect.appendChild(opt);
+        });
+
+      // When year changes, update cycleSelect
+      yearSelect.addEventListener("change", () => {
+        const selectedYear = yearSelect.value;
+        cycleSelect.innerHTML = `<option value="">Select Cycle</option>`;
+        if (selectedYear && yearMap[selectedYear]) {
+          yearMap[selectedYear].forEach((cy) => {
+            const opt = document.createElement("option");
+            opt.value = cy;
+            opt.textContent = `Cycle ${cy}`;
+            cycleSelect.appendChild(opt);
+          });
+        }
+      });
+    } catch (err) {
+      console.error("Error fetching cycles:", err);
+    }
+  }
+
+  // 🔹 Fetch profiles with filters
+  async function fetchProfiles(filters = {}) {
+    try {
+      const query = new URLSearchParams(filters).toString();
+      const res = await fetch(
+        `http://localhost:5000/api/kkprofiling${query ? "?" + query : ""}`,
+        {
+          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        }
+      );
+
+      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+
+      const profiles = await res.json();
+      renderProfiles(profiles);
+    } catch (err) {
+      console.error("Error fetching profiles:", err);
+      tableBody.innerHTML = `<tr><td colspan="6">Error loading profiles</td></tr>`;
+    }
+  }
+
+  // 🔹 Render profiles into table
+  function renderProfiles(profiles) {
+    tableBody.innerHTML = "";
+    if (!profiles.length) {
+      tableBody.innerHTML = `<tr><td colspan="6">No profiles found</td></tr>`;
+      return;
+    }
+
+    profiles.forEach((p, i) => {
+      const suffix =
+        p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+      const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+      const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+
+      const row = document.createElement("tr");
+      row.innerHTML = `
+        <td>${i + 1}</td>
+        <td>${fullName}</td>
+        <td>${p.age}</td>
+        <td>${p.purok || "-"}</td>
+        <td>${p.gender}</td>
+        <td><button class="view-btn" data-id="${p._id}">View</button></td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    // Attach modal openers
+    document.querySelectorAll(".view-btn").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const res = await fetch(
+          `http://localhost:5000/api/kkprofiling/${btn.dataset.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        const profile = await res.json();
+        showProfileModal(profile);
+      })
+    );
+  }
+
+  // 🔹 Show modal with profile details
+  function showProfileModal(p) {
+    const modal = document.getElementById("profileModal");
+    const details = document.getElementById("profileDetails");
+    const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+    const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+
+    details.innerHTML = `
+      <p><strong>Name:</strong> ${p.firstname} ${mi} ${p.lastname} ${suffix}</p>
+      <p><strong>Age:</strong> ${p.age}</p>
+      <p><strong>Gender:</strong> ${p.gender}</p>
+      <p><strong>Purok:</strong> ${p.purok || "-"}</p>
+      <p><strong>Status:</strong> ${p.civilStatus || "-"}</p>
+    `;
+    modal.style.display = "flex";
+    document.querySelector(".close-btn").onclick = () =>
+      (modal.style.display = "none");
+  }
+
+  // 🔹 Cycle filter (year + cycle)
+  filterBtn.addEventListener("click", () => {
+    currentFilters.year = yearSelect.value || "";
+    currentFilters.cycle = cycleSelect.value || "";
+    fetchProfiles(currentFilters);
+  });
+
+  // 🔹 Search filter
+  searchInput.addEventListener("keyup", () => {
+    currentFilters.search = searchInput.value.trim();
+    fetchProfiles(currentFilters);
+  });
+
+  // 🔹 Available filter options
+  const filterOptions = {
+    "Work Status": ["Employed", "Unemployed", "Self-Employed"],
+    "Youth Age Group": ["Child Youth", "Core Youth", "Young Youth"],
+    "Educational Background": ["Elementary", "High School", "College"],
+    "Civil Status": ["Single", "Married", "Widowed"],
+    "Youth Classification": [
+      "In School Youth",
+      "Out of School Youth",
+      "Working Youth",
+    ],
+    Purok: ["1", "2", "3", "4", "5"],
+    "Registered SK Voter": ["true", "false"],
+    "Registered National Voter": ["true", "false"],
+    "Voted Last SK Election": ["true", "false"],
+  };
+
+  // 🔹 Classification dropdown setup
+  const classificationBtn =
+    classificationDropdown.querySelector(".dropdown-button");
+  const classificationContent =
+    classificationDropdown.querySelector(".dropdown-content");
+
+  Object.keys(filterOptions).forEach((cat) => {
+    const a = document.createElement("a");
+    a.textContent = cat;
+    a.href = "#";
+    a.onclick = (e) => {
+      e.preventDefault();
+      classificationBtn.textContent = cat;
+      buildGroupDropdown(cat);
+      classificationContent.style.display = "none";
     };
+    classificationContent.appendChild(a);
+  });
 
-    // Keep track of current filter state
-    let selectedClassification = "";
-    let selectedGroup = "";
-
-    // 🔹 Fetch all KK Profiles from backend
-    async function fetchProfiles() {
-        try {
-            const res = await fetch("http://localhost:5000/api/kkprofiling", {
-                method: "GET",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${localStorage.getItem("token")}`
-                }
-            });
-
-            if (!res.ok) throw new Error(`Error: ${res.status}`);
-
-            allProfiles = await res.json();
-            renderProfiles(allProfiles);
-
-        } catch (error) {
-            console.error("Error fetching profiles:", error);
-            tableBody.innerHTML = `<tr><td colspan="6">Failed to load profiles.</td></tr>`;
-        }
-    }
-
-    // 🔹 Render profiles into table
-    function renderProfiles(profiles) {
-        tableBody.innerHTML = "";
-
-        if (profiles.length === 0) {
-            tableBody.innerHTML = `<tr><td colspan="6">No profiles found.</td></tr>`;
-            return;
-        }
-
-        profiles.forEach((profile, index) => {
-            const suffix = profile.suffix && profile.suffix.toLowerCase() !== "n/a" ? profile.suffix : "";
-            const middleInitial = profile.middlename ? profile.middlename.charAt(0).toUpperCase() + "." : "";
-            const fullName = `${profile.lastname}, ${profile.firstname} ${middleInitial} ${suffix}`.trim();
-
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${fullName}</td>
-                <td>${profile.age}</td>
-                <td>${profile.purok || "-"}</td>
-                <td>${profile.gender}</td>
-                <td><button class="view-btn" data-id="${profile._id}">View Full Details</button></td>
-            `;
-            tableBody.appendChild(row);
-        });
-
-        // Attach modal buttons
-        document.querySelectorAll(".view-btn").forEach(btn => {
-            btn.addEventListener("click", async (e) => {
-                const id = e.target.dataset.id;
-                const res = await fetch(`http://localhost:5000/api/kkprofiling/${id}`, {
-                    headers: { "Authorization": `Bearer ${localStorage.getItem("token")}` }
-                });
-                const profile = await res.json();
-                showProfileModal(profile);
-            });
-        });
-    }
-
-
-    // ====== CYCLE FILTERS ======
-
-// Grab elements
-const yearSelect = document.getElementById("cycleNumber");
-const cycleSelect = document.getElementById("year");
-const yearFilterBtn = document.getElementById("yearFilterBtn");
-const tbody = document.querySelector("table tbody");
-const tableRows = tbody.querySelectorAll("tr");
-
-// Store original rows (so we can reset filter later)
-const originalRows = Array.from(tableRows).map(row => row.cloneNode(true));
-
-// Function to filter rows based on selected values
-function applyFilters() {
-    const selectedYear = yearSelect.value;
-    const selectedCycle = cycleSelect.value;
-
-    // Reset table first
-    tbody.innerHTML = "";
-    let filteredRows = originalRows;
-
-    if (selectedYear) {
-        filteredRows = filteredRows.filter(row => {
-            // Example: assuming Year is in 3rd column (index 2)
-            const yearCol = row.cells[2]?.textContent.trim();
-            return yearCol === selectedYear;
-        });
-    }
-
-    if (selectedCycle) {
-        filteredRows = filteredRows.filter(row => {
-            // Example: assuming Cycle Number is in 4th column (index 3)
-            const cycleCol = row.cells[3]?.textContent.trim();
-            return cycleCol === selectedCycle;
-        });
-    }
-
-    // Re-render rows
-    filteredRows.forEach(row => tbody.appendChild(row.cloneNode(true)));
-}
-
-// Dropdown auto-filter
-yearSelect.addEventListener("change", () => {
-    applyFilters();
-    yearSelect.blur(); // closes dropdown automatically
-});
-
-cycleSelect.addEventListener("change", () => {
-    applyFilters();
-    cycleSelect.blur(); // closes dropdown automatically
-});
-
-// Filter button (optional)
-yearFilterBtn.addEventListener("click", applyFilters);
-
-
-    // ===== SEARCH BAR FUNCTION =====
-const searchInput = document.querySelector(".search-input");
-const table = document.querySelector("table tbody");
-
-searchInput.addEventListener("keyup", function () {
-    const filter = searchInput.value.toLowerCase();
-    const rows = table.querySelectorAll("tr");
-
-    rows.forEach(row => {
-        const cells = row.querySelectorAll("td");
-        let match = false;
-
-        cells.forEach(cell => {
-            if (cell.textContent.toLowerCase().includes(filter)) {
-                match = true;
-            }
-        });
-
-        if (match) {
-            row.style.display = "";
-        } else {
-            row.style.display = "none";
-        }
-    });
-});
-
-
-    // 🔹 Apply filter
-    function applyFilter(classification, group) {
-        let filtered = [...allProfiles];
-
-        switch (classification) {
-            case "Work Status":
-                filtered = filtered.filter(profile => profile.workStatus === group);
-                break;
-            case "Youth Age Group":
-                filtered = filtered.filter(profile => profile.youthAgeGroup === group);
-                break;
-            case "Educational Background":
-                filtered = filtered.filter(profile => profile.educationalBackground === group);
-                break;
-            case "Civil Status":
-                filtered = filtered.filter(profile => profile.civilStatus === group);
-                break;
-            case "Youth Classification":
-                filtered = filtered.filter(profile => profile.youthClassification === group);
-                break;
-            case "Purok":
-                filtered = filtered.filter(profile => profile.purok?.toString() === group);
-                break;
-            default:
-                break;
-        }
-
-        renderProfiles(filtered);
-    }
-
-    // 🔹 Setup dropdown logic
-    const classificationDropdown = document.querySelector(".dropdown");
-    const groupDropdown = document.querySelector(".dropdowns");
-
-    // ✅ Toggle dropdown function
-    function toggleDropdown(dropdownContent) {
-        dropdownContent.style.display = dropdownContent.style.display === "block" ? "none" : "block";
-    }
-
-    // Handle classification dropdown
-    const classificationButton = classificationDropdown.querySelector(".dropdown-button");
-    const classificationContent = classificationDropdown.querySelector(".dropdown-content");
-
-    classificationButton.addEventListener("click", () => toggleDropdown(classificationContent));
-
-    classificationContent.querySelectorAll("a").forEach(a => {
-        a.addEventListener("click", () => {
-            selectedClassification = a.textContent.trim();
-            classificationButton.textContent = selectedClassification;
-
-            // Close classification dropdown automatically
-            classificationContent.style.display = "none";
-
-            // Reset group dropdown options
-            const groupContent = groupDropdown.querySelector(".dropdown-content");
-            groupContent.innerHTML = "";
-
-            if (filterOptions[selectedClassification]) {
-                filterOptions[selectedClassification].forEach(opt => {
-                    const optionEl = document.createElement("a");
-                    optionEl.href = "#";
-                    optionEl.textContent = opt;
-
-                    optionEl.addEventListener("click", () => {
-                        selectedGroup = opt;
-                        groupDropdown.querySelector(".dropdown-buttons").textContent = opt;
-
-                        // ✅ Close group dropdown automatically
-                        groupContent.style.display = "none";
-
-                        // ✅ Apply filter immediately
-                        applyFilter(selectedClassification, selectedGroup);
-                    });
-
-                    groupContent.appendChild(optionEl);
-                });
-            }
-
-            // Reset group dropdown label
-            groupDropdown.querySelector(".dropdown-buttons").textContent = "Select Group";
-        });
-    });
-
-    // Handle group dropdown toggle
-    const groupButton = groupDropdown.querySelector(".dropdown-buttons");
+  // 🔹 Build group dropdown options
+  function buildGroupDropdown(category) {
     const groupContent = groupDropdown.querySelector(".dropdown-content");
+    const groupBtn = groupDropdown.querySelector(".dropdown-buttons");
+    groupContent.innerHTML = "";
+    groupBtn.textContent = "Select Option";
 
-    groupButton.addEventListener("click", () => toggleDropdown(groupContent));
+    filterOptions[category].forEach((opt) => {
+      const g = document.createElement("a");
+      g.textContent = opt;
+      g.href = "#";
+      g.onclick = (e) => {
+        e.preventDefault();
+        groupBtn.textContent = opt;
 
-    // 🔹 Show Modal
-    function showProfileModal(profile) {
-        const modal = document.getElementById("profileModal");
-        const details = document.getElementById("profileDetails");
+        // 🧹 Clear old filters
+        delete currentFilters.workStatus;
+        delete currentFilters.youthAgeGroup;
+        delete currentFilters.educationalBackground;
+        delete currentFilters.civilStatus;
+        delete currentFilters.youthClassification;
+        delete currentFilters.purok;
+        delete currentFilters.registeredSKVoter;
+        delete currentFilters.registeredNationalVoter;
+        delete currentFilters.votedLastSKElection;
 
-        const suffix = profile.suffix && profile.suffix.toLowerCase() !== "n/a" ? profile.suffix : "";
-        const middleInitial = profile.middlename ? profile.middlename.charAt(0).toUpperCase() + "." : "";
+        // ✅ Apply new filter
+        currentFilters.all = "true";
+        if (category === "Work Status") currentFilters.workStatus = opt;
+        if (category === "Youth Age Group") currentFilters.youthAgeGroup = opt;
+        if (category === "Educational Background")
+          currentFilters.educationalBackground = opt;
+        if (category === "Civil Status") currentFilters.civilStatus = opt;
+        if (category === "Youth Classification")
+          currentFilters.youthClassification = opt;
+        if (category === "Purok") currentFilters.purok = opt;
+        if (category === "Registered SK Voter")
+          currentFilters.registeredSKVoter = opt;
+        if (category === "Registered National Voter")
+          currentFilters.registeredNationalVoter = opt;
+        if (category === "Voted Last SK Election")
+          currentFilters.votedLastSKElection = opt;
 
-        let formattedBirthday = "-";
-        if (profile.birthday) {
-            const date = new Date(profile.birthday);
-            formattedBirthday = date.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "2-digit" });
-        }
+        fetchProfiles(currentFilters);
+        groupContent.style.display = "none";
+      };
+      groupContent.appendChild(g);
+    });
+  }
 
-        details.innerHTML = `
-          <div style="text-align:center; margin-bottom:15px;">
-            <img src="${profile.image || 'default.png'}" alt="Profile Image" width="150" style="border-radius:8px;"/>
-          </div>
-          <div>
-            <p><strong>Name:</strong> ${profile.firstname} ${middleInitial} ${profile.lastname} ${suffix}</p>
-            <hr><p><strong>Address:</strong> ${profile.address}</p>
-            <hr><p><strong>Age:</strong> ${profile.age} &nbsp;&nbsp; <strong>Gender:</strong> ${profile.gender}</p>
-            <hr><p><strong>Birthday:</strong> ${formattedBirthday} &nbsp;&nbsp; <strong>Email:</strong> ${profile.email}</p>
-            <hr><p><strong>Contact Number:</strong> ${profile.contactNumber || "-"}</p>
-            <hr><p><strong>Civil Status:</strong> ${profile.civilStatus || "-"}</p>
-            <hr><p><strong>Youth Age Group:</strong> ${profile.youthAgeGroup || "-"}</p>
-            <hr><p><strong>Youth Classification:</strong> ${profile.youthClassification || "-"}</p>
-            <hr><p><strong>Educational Background:</strong> ${profile.educationalBackground || "-"}</p>
-            <hr><p><strong>Work Status:</strong> ${profile.workStatus || "-"}</p>
-            <hr><p><strong>Registered SK Voter:</strong> ${profile.registeredSkVoter || "-"}</p>
-            <hr><p><strong>Registered National Voter:</strong> ${profile.registeredNationalVoter || "-"}</p>
-            <hr><p><strong>Voted Last SK Election:</strong> ${profile.votedLastSkElection || "-"}</p>
-            <hr><p><strong>Already Attended KK Assembly:</strong> ${profile.attendedKkAssembly || "-"}</p>
-            <hr><p><strong>If Yes, how many times:</strong> ${profile.howManyTimes || "-"}</p>
-            <hr><p><strong>If No, Why:</strong> ${profile.ifNoWhy || "-"}</p>
-          </div>
-        `;
+  // 🔹 Dropdown toggles
+  classificationBtn.addEventListener("click", () => {
+    classificationContent.style.display =
+      classificationContent.style.display === "block" ? "none" : "block";
+  });
 
-        modal.style.display = "flex";
-        document.querySelector(".close-btn").onclick = () => modal.style.display = "none";
-        window.onclick = (event) => { if (event.target === modal) modal.style.display = "none"; };
-        document.getElementById("printBtn").onclick = () => {
-            const w = window.open('', '', 'height=600,width=800');
-            w.document.write('<html><head><title>Print Profile</title></head><body>');
-            w.document.write(details.innerHTML);
-            w.document.write('</body></html>');
-            w.document.close();
-            w.print();
-        };
+  groupDropdown
+    .querySelector(".dropdown-buttons")
+    .addEventListener("click", () => {
+      const groupContent = groupDropdown.querySelector(".dropdown-content");
+      groupContent.style.display =
+        groupContent.style.display === "block" ? "none" : "block";
+    });
+
+  // 🔹 Close dropdowns on outside click
+  window.addEventListener("click", (e) => {
+    if (!classificationDropdown.contains(e.target)) {
+      classificationContent.style.display = "none";
     }
+    if (!groupDropdown.contains(e.target)) {
+      groupDropdown.querySelector(".dropdown-content").style.display = "none";
+    }
+  });
 
-    // 🔹 Load profiles on page load
-    fetchProfiles();
+  // 🔹 Initial load
+  fetchCycles(); // load year + cycle dropdowns
+  fetchProfiles(); // load profiles
 });
