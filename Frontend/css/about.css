@@ -8,6 +8,7 @@
   body {
     background: #eaf2fb;
     color: #0a1a3a;
+    
   }
   
  /* Navbar */
@@ -47,21 +48,21 @@
   
 /* About Section */
 .about-card {
-    display: flex;
+    width: 80%;
     background: #fff;
-    margin: 20px 30px 0 30px;       
-    padding: 40px;
-    border-radius: 20px;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    display: flex;
+    justify-content: center;
     align-items: center;
-    gap: 40px;
+    border-radius: 2vh;
+    margin: 5% auto; 
+    padding: 3%;
   }
   
   /* Image */
   .about-left img {
     width: 400px;
     height: auto;
-    object-fit: contain;
+    padding: 5%;
   }
   
   /* Right Content */
@@ -85,15 +86,14 @@
   
   /* ✅ Responsive Design */
   @media (max-width: 992px) {
-    .about-card {
+    .about-card { 
       flex-direction: column;   
       text-align: center;
-      padding: 30px;
-      margin: 30px 20px;  /* same spacing as navbar scaling */
+
     }
   
     .about-left img {
-      width: 220px;            
+      width: 400px;            
       margin-bottom: 20px;
     }
   
@@ -108,9 +108,6 @@
   
   @media (max-width: 600px) {
     .about-card {
-      padding: 20px;
-      gap: 20px;
-      margin: 20px 15px; /* tighter margin para safe sa small screen */
     }
   
     .about-left img {
