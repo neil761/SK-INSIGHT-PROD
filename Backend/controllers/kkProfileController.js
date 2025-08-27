@@ -3,6 +3,9 @@ const FormCycle = require("../models/FormCycle");
 const FormStatus = require("../models/FormStatus");
 const ExcelJS = require("exceljs");
 const mongoose = require("mongoose");
+const User = require("../models/User"); // Assuming the User model is in the same directory
+const path = require("path");
+const fs = require("fs");
 
 // Helper to get the present (open) cycle
 async function getPresentCycle(formName) {
@@ -82,6 +85,11 @@ exports.submitKKProfile = async (req, res) => {
         .json({ error: "Reason for not attending is required" });
     }
 
+    // Check for uploaded profile image
+    if (!req.file || !req.file.filename) {
+      return res.status(400).json({ error: "Profile image is required to submit KK Profile." });
+    }
+
     const newProfile = new KKProfile({
       user: userId,
       formCycle: formCycle._id,
@@ -114,7 +122,7 @@ exports.submitKKProfile = async (req, res) => {
       reasonDidNotAttend: !req.body.attendedKKAssembly
         ? req.body.reasonDidNotAttend
         : undefined,
-      profileImage: req.file ? req.file.path : undefined,
+      profileImage: req.file.filename, // <-- use uploaded file
     });
 
     await newProfile.save();
@@ -463,5 +471,21 @@ exports.getCyclesAndPresent = async (req, res) => {
     res.json({ allCycles, presentCycle });
   } catch (err) {
     res.status(500).json({ error: "Failed to load cycles" });
+  }
+};
+
+exports.getKKProfileImageById = async (req, res) => {
+  try {
+    const kkProfile = await KKProfile.findById(req.params.id);
+    if (!kkProfile || !kkProfile.profileImage) {
+      return res.status(404).json({ error: "KK Profile or profile image not found" });
+    }
+    const imagePath = path.join(__dirname, "../uploads/profile_images", kkProfile.profileImage);
+    fs.access(imagePath, fs.constants.F_OK, (err) => {
+      if (err) return res.status(404).json({ error: "Image file not found" });
+      res.sendFile(imagePath);
+    });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
   }
 };

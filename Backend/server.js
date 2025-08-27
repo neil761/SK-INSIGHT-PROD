@@ -38,6 +38,7 @@ app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use(express.static("public"));
 app.use("/api/formcycle", require("./routes/formCycleRoutes"));
 
+
 const PORT = process.env.PORT || 5000;
 
 // MongoDB connection

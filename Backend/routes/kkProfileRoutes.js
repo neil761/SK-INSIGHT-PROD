@@ -48,4 +48,13 @@ router.get(
   authorizeRoles("admin"),
   ctrl.getCyclesAndPresent
 );
+
+// Admin: Get KK Profile image by KKProfile ID
+router.get(
+  "/image/:id",
+  protect,
+  authorizeRoles("admin"),
+  ctrl.getKKProfileImageById
+);
+
 module.exports = router;

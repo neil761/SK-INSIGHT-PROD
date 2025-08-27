@@ -251,66 +251,14 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
   }
 });
 
-exports.smartRegister = asyncHandler(async (req, res) => {
-  const { username, email, password, birthday } = req.body;
-
-  if (!req.file)
-    return res.status(400).json({ message: "ID image is required" });
-
-  const extractedBirthday = await extractBirthdayFromImage(
-    req.file.path,
-    birthday
-  );
-  if (!extractedBirthday) {
-    return res
-      .status(400)
-      .json({ message: "Birthday does not match ID image" });
-  }
-
-  const birthDate = new Date(birthday);
-  const today = new Date();
-  let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) age--;
-
-  const accessLevel = age >= 15 && age <= 30 ? "full" : "limited";
-
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return res.status(400).json({ message: "Email already registered" });
-  }
-
-  const newUser = await User.create({
-    username,
-    email,
-    password,
-    birthday: birthDate,
-    age,
-    accessLevel,
-    idImage: req.file.filename,
-  });
-
-  const token = jwt.sign({ id: newUser._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
-
-  res.status(201).json({
-    message: "Registration successful",
-    user: {
-      id: newUser._id,
-      username: newUser.username,
-      email: newUser.email,
-      age: newUser.age,
-      accessLevel: newUser.accessLevel,
-      isVerified: newUser.isVerified,
-    },
-    token,
-  });
-});
 
 // POST /api/users/smart-register
 exports.smartRegister = async (req, res) => {
   try {
+    if (!req.file || !req.file.path) {
+      return res.status(400).json({ message: "No ID image uploaded." });
+    }
+
     const { username, email, password, birthday } = req.body;
     const idImagePath = req.file.path;
 
@@ -322,21 +270,23 @@ exports.smartRegister = async (req, res) => {
     console.log("Extracted birthday (controller):", ocrBirthday);
     console.log("Extracted address (controller):", ocrAddress);
 
-    // Birthday validation
-    if (!ocrBirthday || ocrBirthday !== normalizeDate(birthday)) {
-      return res.status(400).json({ message: "Birthday does not match ID." });
-    }
-
     // Address validation (accept "CALACA" or "CALACA CITY", any case)
-    if (
-      !ocrAddress ||
-      !/puting bato west/i.test(ocrAddress) ||
-      !/(calaca|calaca city)/i.test(ocrAddress) ||
-      !/batangas/i.test(ocrAddress)
-    ) {
+    const addressValid =
+      ocrAddress &&
+      /puting bato west/i.test(ocrAddress) &&
+      /(calaca|calaca city)/i.test(ocrAddress) &&
+      /batangas/i.test(ocrAddress);
+
+    if (!addressValid) {
       return res.status(400).json({
         message: "Address must be Puting Bato West, Calaca City, Batangas.",
       });
+    }
+
+    // Tiered access level logic
+    let accessLevel = "partial";
+    if (ocrBirthday && ocrBirthday === normalizeDate(birthday)) {
+      accessLevel = "full";
     }
 
     // Check if email already exists
@@ -349,13 +299,15 @@ exports.smartRegister = async (req, res) => {
       ? ocrAddress.replace(/\s*\([^)]+\)\s*$/, "").trim()
       : ocrAddress;
 
-    // Create and save new user with cleaned verified address
+    // Create and save new user with accessLevel
     const user = new User({
       username,
       email,
       password,
       birthday: ocrBirthday,
       verifiedAddress: cleanedAddress,
+      accessLevel,
+      idImage: path.basename(idImagePath),
     });
     await user.save();
 
@@ -370,6 +322,7 @@ exports.smartRegister = async (req, res) => {
         username: user.username,
         email: user.email,
         verifiedAddress: user.verifiedAddress,
+        accessLevel: user.accessLevel,
       },
       token,
     });

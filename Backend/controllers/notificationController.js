@@ -9,14 +9,20 @@ async function getPresentCycle(formName) {
   return status.cycleId;
 }
 
-// Get all notifications for present cycle
+// Get all notifications for present cycle (with status)
 exports.getAllNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
-    }).sort({ createdAt: -1 });
+    })
+      .populate({
+        path: "referenceId",
+        select: "status",
+        model: "EducationalAssistance",
+      })
+      .sort({ createdAt: -1 });
     res.json(notifs);
   } catch (err) {
     console.error("getAllNotifications error:", err);
@@ -24,7 +30,7 @@ exports.getAllNotifications = async (req, res) => {
   }
 };
 
-// Get only unread notifications for present cycle
+// Get only unread notifications for present cycle (with status)
 exports.getUnreadNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
@@ -32,8 +38,41 @@ exports.getUnreadNotifications = async (req, res) => {
       type: "educational-assistance",
       cycleId: cycle._id,
       read: false,
-    }).sort({ createdAt: -1 });
-    res.json(notifs);
+    })
+      .populate({
+        path: "referenceId",
+        select: "status firstname middlename surname createdAt",
+        model: "EducationalAssistance",
+      })
+      .sort({ createdAt: -1 });
+
+    const now = Date.now();
+    // Filter out overdue notifications (pending > 2 days)
+    const response = notifs
+      .filter(
+        (n) =>
+          n.referenceId &&
+          (n.referenceId.status !== "pending" ||
+            now - new Date(n.referenceId.createdAt).getTime() <= TWO_DAYS_MS)
+      )
+      .map((n) => ({
+        _id: n._id,
+        type: n.type,
+        event: n.event,
+        message: n.message,
+        referenceId: n.referenceId?._id || n.referenceId,
+        cycleId: n.cycleId,
+        createdAt: n.createdAt,
+        read: n.read,
+        status: n.referenceId?.status || "unknown",
+        fullname: n.referenceId
+          ? `${n.referenceId.firstname || ""} ${
+              n.referenceId.middlename || ""
+            } ${n.referenceId.surname || ""}`.trim()
+          : "Unknown",
+      }));
+
+    res.json(response);
   } catch (err) {
     console.error("getUnreadNotifications error:", err);
     res
@@ -76,7 +115,7 @@ exports.markAllAsRead = async (req, res) => {
   }
 };
 
-// Get only read notifications for present cycle
+// Get only read notifications for present cycle (with status)
 exports.getReadNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
@@ -84,10 +123,67 @@ exports.getReadNotifications = async (req, res) => {
       type: "educational-assistance",
       cycleId: cycle._id,
       read: true,
-    }).sort({ createdAt: -1 });
+    })
+      .populate({
+        path: "referenceId",
+        select: "status",
+        model: "EducationalAssistance",
+      })
+      .sort({ createdAt: -1 });
     res.json(notifs);
   } catch (err) {
     console.error("getReadNotifications error:", err);
     res.status(500).json({ error: "Server error fetching read notifications" });
+  }
+};
+
+const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+
+exports.getOverdueNotifications = async (req, res) => {
+  try {
+    const cycle = await getPresentCycle("Educational Assistance");
+    const notifs = await Notification.find({
+      type: "educational-assistance",
+      cycleId: cycle._id,
+      read: false,
+    })
+      .populate({
+        path: "referenceId",
+        select: "status firstname middlename surname createdAt",
+        model: "EducationalAssistance",
+        match: { status: "pending" },
+      })
+      .sort({ createdAt: -1 });
+
+    const now = Date.now();
+    // Filter for those pending > 2 days and flatten format like unread
+    const response = notifs
+      .filter(
+        (n) =>
+          n.referenceId &&
+          n.referenceId.status === "pending" &&
+          now - new Date(n.referenceId.createdAt).getTime() > TWO_DAYS_MS
+      )
+      .map((n) => ({
+        _id: n._id,
+        type: n.type,
+        event: n.event,
+        message: n.message,
+        referenceId: n.referenceId?._id || n.referenceId,
+        cycleId: n.cycleId,
+        createdAt: n.createdAt,
+        read: n.read,
+        status: n.referenceId?.status || "unknown",
+        fullname: n.referenceId
+          ? `${n.referenceId.firstname || ""} ${
+              n.referenceId.middlename || ""
+            } ${n.referenceId.surname || ""}`.trim()
+          : "Unknown",
+      }));
+
+    res.json(response);
+  } catch (err) {
+    console.error("getOverdueNotifications error:", err);
+    res.status(500).json({ error: "Server error fetching overdue notifications" });
   }
 };

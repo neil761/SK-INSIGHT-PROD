@@ -1,7 +1,7 @@
 const mongoose = require("mongoose");
 
 const kkProfileSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   formCycle: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "FormCycle",
@@ -44,7 +44,7 @@ const kkProfileSchema = new mongoose.Schema({
     type: String,
     enum: ["there was no kk assembly", "not interested"],
   },
-  profileImage: { type: String, required: false },
+  profileImage: { type: String, required: true },
 
   submittedAt: {
     type: Date,
