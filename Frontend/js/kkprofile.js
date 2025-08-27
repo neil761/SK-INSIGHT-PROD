@@ -150,7 +150,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Put image + name in header
   header.innerHTML = `
-    <img src="${p.profileImage || 'default.jpg'}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px;" />
+    <img src="${p.profileImage || 'default.jpg'}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
     <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
   `;
 
