@@ -1,0 +1,153 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background-color: #D1E1F5;
+    color: #0a1a3a;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;   /* keeps footer at bottom */
+    padding-top: 6rem;        /* space for fixed navbar */
+}
+
+/* Navbar */
+.navbar {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    background: #0A2C59;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.navbar img {
+    height: 40px;
+    border-radius: 50%;
+}
+
+.navbar .title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-right {
+    display: flex;
+    gap: 15px;
+    font-size: 20px;
+}
+
+.container {
+    width: 90%;            /* fill most of the screen */
+    max-width: 1000px;     /* wider on large screens */
+    margin: 40px auto;
+    padding: 0 25px;
+    box-sizing: border-box;
+}
+
+/* Cards */
+.card {
+    width: 100%;                  /* fill container width */
+    max-width: 900px;             /* make card wider on desktop */
+    margin: 0 auto 25px auto;     /* center and add bottom spacing */
+    background-color: #fff;
+    border-radius: 15px;
+    padding: 30px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+    box-sizing: border-box;
+}
+
+/* Intro Card */
+.card.intro h2 {
+    margin-bottom: 10px;
+    color: #0a2c59;
+}
+
+.card.intro p {
+    margin-bottom: 10px;
+    line-height: 1.5;
+}
+
+/* Form Inputs as line only */
+input[type="text"] {
+    width: 100%;
+    padding: 8px 0;
+    margin-top: 5px;
+    border: none;
+    border-bottom: 2px solid #0a2c59;
+    font-size: 1rem;
+    background: transparent;
+    outline: none;
+}
+
+input[type="text"]:focus {
+    border-bottom-color: #072147;
+}
+
+/* Submit Button */
+.submit-btn {
+    width: 100%;
+    padding: 10px;
+    background-color: #0a2c59;
+    color: white;
+    font-size: 1rem;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.submit-btn:hover {
+    background-color: #072147;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .card {
+        padding: 20px;   /* reduce padding for tablets */
+    }
+}
+
+@media (max-width: 480px) {
+    .card {
+        padding: 15px;           /* reduce padding for mobile */
+        margin-bottom: 20px;     /* less spacing below */
+    }
+
+    .container {
+        width: 95%;
+        padding: 0 10px;
+    }
+
+    input[type="text"] {
+        font-size: 0.95rem;      /* slightly smaller on mobile */
+    }
+}
+
+@media (max-width: 600px) {
+    .navbar-left .title {
+        font-size: 1.2rem;
+    }
+
+    .container {
+        padding: 0 10px;
+    }
+}

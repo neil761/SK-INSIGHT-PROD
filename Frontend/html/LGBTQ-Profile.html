@@ -76,12 +76,7 @@
             <h1>LGBTQ Profile</h1>
             <div class="filter-row">
               <label for="cycleNumber" class="cycle">Year:</label>
-              <select id="cycleNumber" class="cycle-select">
-                <option value="">All</option>
-                <option value="1">2025</option>
-                <option value="2">2024</option>
-                <option value="3">2023</option>
-              </select>
+              <select id="cycleNumber" class="cycle-select"></select>
             </div>
           </div>
 
@@ -90,12 +85,7 @@
             <p>List of LGBTQ Residents...</p>
             <div class="filter-rows">
               <label for="year" class="year">Cycle Number:</label>
-              <select id="year" class="cycle-select">
-                <option value="">All</option>
-                <option value="2023">Cycle 1</option>
-                <option value="2024">Cycle 2</option>
-                <option value="2025">Cycle 3</option>
-              </select>
+              <select id="year" class="cycle-select"></select>
               <button id="yearFilterBtn" class="filt">Filter</button>
             </div>
           </div>
@@ -109,20 +99,8 @@
           </div>
 
           <div class="dropdown">
-              <button class="dropdown-button" type="button">Filter Classification</button>
+              <button class="dropdown-button" type="button">Select Classification</button>
               <div class="dropdown-content">
-                  <a href="#">Filter Classification</a>
-                  <a href="#">Select Group</a>
-                  <a href="#">Download List</a>
-              </div>
-          </div>
-
-          <div class="dropdowns">
-              <button class="dropdown-buttons" type="button">Select Group</button>
-              <div class="dropdown-content">
-                  <a href="#">Filter Classification</a>
-                  <a href="#">Select Group</a>
-                  <a href="#">Download List</a>
               </div>
           </div>
         </div>
@@ -135,7 +113,7 @@
                     <th>Resident's Name</th>
                     <th>Age</th>
                     <th>Purok</th>
-                    <th>Gender</th>
+                    <th>LGBTQ Classification</th>
                     <th>Action</th>
                   </tr>
                 </thead>
@@ -151,9 +129,17 @@
                 </tbody>
               </table>
         </div>
-
-
+        <!-- Profile Modal -->
+        <div id="profileModal" class="modal">
+          <div class="modal-content">
+            <span class="close-btn">&times;</span>
+            <div id="profileHeader"></div>
+            <div id="profileDetails"></div>
+          </div>
+        </div>
 
     </div>
+    
+<script src="../js/lgbtqprofile.js"></script>
 </body>
 </html>

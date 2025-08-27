@@ -7,7 +7,7 @@
 
 body{
     font-family: 'Poppins', sans-serif;
-    background-color: #D1E1F5;
+    background-color: #F5F7FA;
 }
 
 .sidebar {
@@ -306,7 +306,7 @@ h1, h2 {
   float: right;
   font-size: 24px;
   font-weight: bold;
-  color: #333;
+  color: #000000;
   cursor: pointer;
 }
 
@@ -319,3 +319,33 @@ h1, h2 {
   height: 40px;
   margin-right: 10px;
 }
+
+#profileModal {
+  display: none;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5);
+}
+
+.profile-info p {
+  padding: 10px 15px;
+  margin: 8px 0;
+  font-size: 17px;
+  color: #000000;
+}
+
+.profile-info .label {
+  font-weight: bold;
+}
+.profile-info .bott {
+  margin-bottom: 3px;
+}
+
+#profileDetails hr {
+  border: none;
+  border-top: 1px solid #ccc;
+  margin: 0 15px;
+}
+

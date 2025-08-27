@@ -5,6 +5,8 @@ if (!localStorage.getItem("token")) {
   window.location.href = "/html/admin-log.html";
 }
 
+let allProfiles = [];
+
 document.addEventListener("DOMContentLoaded", () => {
   console.log("kkprofile.js loaded ✅");
 
@@ -67,25 +69,31 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 🔹 Fetch profiles with filters
-  async function fetchProfiles(filters = {}) {
-    try {
-      const query = new URLSearchParams(filters).toString();
-      const res = await fetch(
-        `http://localhost:5000/api/kkprofiling${query ? "?" + query : ""}`,
-        {
-          headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-        }
-      );
+  async function fetchProfiles(params = {}) {
+  try {
+    // Build query string properly
+    const query = new URLSearchParams(params).toString();
+    const url = query
+      ? `http://localhost:5000/api/kkprofiling?${query}`
+      : `http://localhost:5000/api/kkprofiling`;
 
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+    console.log("🔎 Request URL:", url);
 
-      const profiles = await res.json();
-      renderProfiles(profiles);
-    } catch (err) {
-      console.error("Error fetching profiles:", err);
-      tableBody.innerHTML = `<tr><td colspan="6">Error loading profiles</td></tr>`;
-    }
+    const res = await fetch(url, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`, // keep your auth
+      },
+    });
+
+    if (!res.ok) throw new Error(`Error ${res.status}`);
+    const data = await res.json();
+    allProfiles = data;
+    console.log("✅ Profiles fetched:", data);
+    renderProfiles(data); // render table
+  } catch (err) {
+    console.error("❌ Error fetching profiles:", err);
   }
+}
 
   // 🔹 Render profiles into table
   function renderProfiles(profiles) {
@@ -132,22 +140,64 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Show modal with profile details
   function showProfileModal(p) {
-    const modal = document.getElementById("profileModal");
-    const details = document.getElementById("profileDetails");
-    const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-    const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+  const modal = document.getElementById("profileModal");
+  const header = document.getElementById("profileHeader");
+  const details = document.getElementById("profileDetails");
 
-    details.innerHTML = `
-      <p><strong>Name:</strong> ${p.firstname} ${mi} ${p.lastname} ${suffix}</p>
-      <p><strong>Age:</strong> ${p.age}</p>
-      <p><strong>Gender:</strong> ${p.gender}</p>
-      <p><strong>Purok:</strong> ${p.purok || "-"}</p>
-      <p><strong>Status:</strong> ${p.civilStatus || "-"}</p>
-    `;
-    modal.style.display = "flex";
-    document.querySelector(".close-btn").onclick = () =>
-      (modal.style.display = "none");
-  }
+  const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+  const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+  const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+
+  // 🔹 Put image + name in header
+  header.innerHTML = `
+    <img src="${p.profileImage || 'default.jpg'}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
+    <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+  `;
+
+  // 🔹 Fill the rest of the details in body
+  details.innerHTML = `
+    <div class="profile-info">
+      <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
+      <hr>
+      <p><b class="label">Age:</b> ${p.age}</p>
+      <hr>
+      <p><b class="label">Gender:</b> ${p.gender}</p>
+      <hr>
+      <p><b class="label">Birthday:</b> ${p.birthday ? new Date(p.birthday).toISOString().split("T")[0] : "-"}</p>
+      <hr>
+      <p><b class="label">Email:</b> ${p.email || "-"}</p>
+      <hr>
+      <p><b class="label">Contact Number:</b> ${p.contactNumber || "-"}</p>
+      <hr>
+      <p><b class="label">Civil Status:</b> ${p.civilStatus || "-"}</p>
+      <hr>
+      <p><b class="label">Youth Age Group:</b> ${p.youthAgeGroup || "-"}</p>
+      <hr>
+      <p><b class="label">Youth Classification:</b> ${p.youthClassification || "-"}</p>
+      <hr>
+      <p><b class="label">Educational Background:</b> ${p.educationalBackground || "-"}</p>
+      <hr>
+      <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
+      <hr>
+      <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
+      <hr>
+      <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
+      <hr>
+      <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
+      <hr>
+      <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
+      <hr>
+      ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
+      <hr>
+      <p class="bott"></p>
+    </div>
+  `;
+
+  modal.style.display = "flex";
+  document.querySelector(".close-btn").onclick = () =>
+    (modal.style.display = "none");
+}
+
 
   // 🔹 Cycle filter (year + cycle)
   filterBtn.addEventListener("click", () => {
@@ -158,22 +208,36 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Search filter
   searchInput.addEventListener("keyup", () => {
-    currentFilters.search = searchInput.value.trim();
-    fetchProfiles(currentFilters);
+  const searchTerm = searchInput.value.trim().toLowerCase();
+
+  const filteredProfiles = allProfiles.filter(p => {
+    return (
+      (p.firstname && p.firstname.toLowerCase().includes(searchTerm)) ||
+      (p.middlename && p.middlename.toLowerCase().includes(searchTerm)) ||
+      (p.lastname && p.lastname.toLowerCase().includes(searchTerm)) ||
+      (p.barangay && p.barangay.toLowerCase().includes(searchTerm)) ||
+      (p.purok && p.purok.toLowerCase().includes(searchTerm))
+    );
   });
+
+  renderProfiles(filteredProfiles);
+});
+
+
 
   // 🔹 Available filter options
   const filterOptions = {
-    "Work Status": ["Employed", "Unemployed", "Self-Employed"],
+    "Work Status": ["Employed", "Unemployed", "Self-Employed", "Currently looking for a Job", "Not interested in looking for a Job"],
     "Youth Age Group": ["Child Youth", "Core Youth", "Young Youth"],
-    "Educational Background": ["Elementary", "High School", "College"],
-    "Civil Status": ["Single", "Married", "Widowed"],
+    "Educational Background": ["Elementary Undergraduate", "Elementary Graduate", "High School Undergraduate", "High School Graduate", "Vocational Graduate", "College Undergraduate", "College Graduate", "Masters Graduate", "Doctorate Level", "Doctorate Graduate"],
+    "Civil Status": ["Single", "Live-in", "Married", "Unknown", "Separated", "Annulled", "Divorced", "Widowed"],
     "Youth Classification": [
       "In School Youth",
       "Out of School Youth",
       "Working Youth",
+      "Youth with Specific Needs"
     ],
-    Purok: ["1", "2", "3", "4", "5"],
+    Purok: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
     "Registered SK Voter": ["true", "false"],
     "Registered National Voter": ["true", "false"],
     "Voted Last SK Election": ["true", "false"],
