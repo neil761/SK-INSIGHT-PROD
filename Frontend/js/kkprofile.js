@@ -104,8 +104,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     profiles.forEach((p, i) => {
-      const suffix =
-        p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+      const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
       const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
       const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
 
@@ -150,7 +149,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Put image + name in header
   header.innerHTML = `
-    <img src="${p.profileImage || 'default.jpg'}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
+    <img src="http://localhost:5000/api/kkprofiling/image/user/${p.user}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
     <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
   `;
 
