@@ -110,6 +110,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
+  function capitalize(str) {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
 
   // 🔹 Render profiles
   function renderProfiles(profiles) {
@@ -120,10 +124,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     profiles.forEach((p, i) => {
-      const row = document.createElement("tr");
-      // Use kkInfo for name fields
-      const lastname = p.kkInfo?.lastname ? p.kkInfo.lastname.trim() : "";
-      const firstname = p.kkInfo?.firstname ? p.kkInfo.firstname.trim() : "";
+      const row = document.createElement("tr"); // <-- Add this line
+      // Use kkInfo for name fields and capitalize first letter
+      const lastname = p.kkInfo?.lastname ? capitalize(p.kkInfo.lastname.trim()) : "";
+      const firstname = p.kkInfo?.firstname ? capitalize(p.kkInfo.firstname.trim()) : "";
       const middlename = p.kkInfo?.middlename && p.kkInfo.middlename.trim() !== ""
         ? p.kkInfo.middlename.trim()[0].toUpperCase() + "."
         : "";
@@ -167,22 +171,35 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
 
-    const fullName = p.kkInfo
-      ? `${p.kkInfo.lastname}, ${p.kkInfo.firstname} ${
-          p.kkInfo.middlename ? p.kkInfo.middlename[0].toUpperCase() + "." : ""
-        }`
+    // Use capitalize for each name part
+    const lastname = p.kkInfo?.lastname ? capitalize(p.kkInfo.lastname.trim()) : "";
+    const firstname = p.kkInfo?.firstname ? capitalize(p.kkInfo.firstname.trim()) : "";
+    const middlename = p.kkInfo?.middlename && p.kkInfo.middlename.trim() !== ""
+      ? p.kkInfo.middlename.trim()[0].toUpperCase() + "."
+      : "";
+    const fullName = (lastname || firstname)
+      ? `${lastname}, ${firstname} ${middlename}`.replace(/\s+/g, " ").trim()
       : "N/A";
 
+    // Only show image if kkInfo.profileImage exists
+    let imageHtml = "";
+    if (p.kkInfo?.profileImage) {
+      imageHtml = `
+        <img src="http://localhost:5000/uploads/profile_images/${p.kkInfo.profileImage}"
+             alt="Profile Image"
+             width="60" height="60"
+             style="border-radius:50%; object-fit:cover; margin-right:10px; margin-bottom: 10px; margin-top: -8px" />
+      `;
+    }
+
     header.innerHTML = `
-      <img src="http://localhost:5000/api/kkprofiling/image/${p.kkInfo?._id}" 
-       alt="Profile Image" 
-       width="60" height="60" 
-       style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-  <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+      ${imageHtml}
+      <p style="display:inline-block; vertical-align:middle; margin-top:-70px;">${fullName}</p>
     `;
 
     details.innerHTML = `
       <div class="profile-info">
+        <hr>
         <p><b class="label">Address:</b> ${p.kkInfo ? p.kkInfo.purok : ""}, ${p.kkInfo?.barangay || ""}, ${p.kkInfo?.municipality || ""}, ${p.kkInfo?.province || ""}</p>
         <hr>
         <p><b class="label">Age:</b> ${p.kkInfo?.age || "-"}</p>

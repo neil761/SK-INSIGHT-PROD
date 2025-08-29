@@ -3,7 +3,7 @@ const FormCycle = require("../models/FormCycle");
 const FormStatus = require("../models/FormStatus");
 const ExcelJS = require("exceljs");
 const mongoose = require("mongoose");
-const User = require("../models/User"); // Assuming the User model is in the same directory
+const User = require("../models/User");
 const path = require("path");
 const fs = require("fs");
 
@@ -126,6 +126,12 @@ exports.submitKKProfile = async (req, res) => {
     });
 
     await newProfile.save();
+
+    // Update User document with profile image
+    if (newProfile.profileImage) {
+      await User.findByIdAndUpdate(newProfile.user, { profileImage: newProfile.profileImage });
+    }
+
     res.status(201).json({ message: "Profile submitted successfully" });
   } catch (error) {
     console.error("Submit error:", error);
@@ -173,12 +179,21 @@ exports.updateProfileById = async (req, res) => {
       return res.status(403).json({ error: "Not authorized" });
     }
 
-    Object.assign(profile, req.body);
-    await profile.save();
+    const updatedProfile = await KKProfile.findByIdAndUpdate(
+      req.params.id,
+      { ...req.body, profileImage: req.file ? req.file.filename : req.body.profileImage },
+      { new: true }
+    );
 
-    res.json({ message: "Profile updated", profile });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    // Sync image to User model
+    if (updatedProfile.profileImage) {
+      await User.findByIdAndUpdate(updatedProfile.user, { profileImage: updatedProfile.profileImage });
+    }
+
+    res.status(200).json(updatedProfile);
+  } catch (error) {
+    console.error("Update error:", error);
+    res.status(500).json({ error: "Server error while updating profile" });
   }
 };
 

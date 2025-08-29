@@ -36,12 +36,17 @@ exports.getUsers = async (req, res) => {
 // READ ONE
 exports.getUserById = async (req, res) => {
   try {
-    const user = await User.findById(req.params.id).select("-password");
+    const user = await User.findById(req.params.id).lean();
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    res.json(user);
+    // Attach profileImage URL or "Not Available"
+    user.profileImageUrl = user.profileImage
+      ? `${req.protocol}://${req.get("host")}/uploads/profile_images/${user.profileImage}`
+      : "Not Available";
+
+    res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({ error: "Error fetching user" });
   }
 };
 
