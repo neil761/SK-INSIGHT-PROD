@@ -1,0 +1,151 @@
+/* Reset */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* Body */
+body {
+    font-family: 'Poppins', Arial, sans-serif;
+    background-color: #D1E1F5;
+    color: #0a1a3a;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+/* Navbar */
+.navbar {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    background: #0A2C59;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+.navbar img {
+    height: 40px;
+    border-radius: 50%;
+}
+
+.navbar .title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-left: 10px;
+}
+
+.navbar-left {
+    display: flex;
+    align-items: center;
+}
+
+.navbar-right {
+    display: flex;
+    gap: 15px;
+    font-size: 20px;
+}
+
+@media (max-width: 600px) {
+    .navbar-left .title {
+        font-size: 1rem;
+    }
+}
+
+/* Announcement Heading Container */
+.announcement-heading-container {
+    max-width: 1100px;
+    width: 45%;
+    margin: 120px auto 20px auto; 
+    padding: 20px 25px;
+    background: #fff; 
+    color: #000;
+    border-radius: 10px;
+    text-align: center;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.1);
+}
+
+.announcement-heading-container h2 {
+    font-size: 1.8rem;
+    font-weight: 700;
+}
+
+/* Announcement Table Container */
+.announcement-container {
+    max-width: 1100px;
+    width: 90%;
+    margin: 20px auto 50px auto;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 6px 12px rgba(0,0,0,0.10);
+    padding: 20px;
+    overflow-x: auto;
+}
+
+/* Table Styling */
+.announcement-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-family: 'Poppins', Arial, sans-serif;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    table-layout: fixed;
+    text-align: center;
+}
+
+.announcement-table th, 
+.announcement-table td {
+    width: 33.33%;
+    padding: 12px 8px;
+    border-bottom: 1px solid #e0e6ed;
+    text-align: center;
+    vertical-align: middle;
+    word-wrap: break-word;
+}
+
+.announcement-table th {
+    background: #f5f7fa;
+    font-weight: 600;
+}
+
+.announcement-table a {
+    color: #0a2c59;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+    .announcement-heading-container {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .announcement-heading-container h2 {
+        font-size: 1.4rem;
+    }
+
+    .announcement-container {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .announcement-table th, 
+    .announcement-table td {
+        font-size: 14px;
+        padding: 10px 5px;
+    }
+
+    .announcement-table a {
+        font-size: 13px;
+    }
+}
