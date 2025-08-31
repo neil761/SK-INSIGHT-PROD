@@ -79,10 +79,52 @@
         </div>
 
         <div class="dropdown">
-            <a href="#" class="add">+ Add Announcement</a>
+            <button id="myBtn" class="add">+ Add Announcement</button>
         </div>
 
+        <div class="tables">
+          <table>
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Date</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+
+
+        <!-- Modal content -->
+        <div id="myModal" class="modal">
+          <div class="modal-content">
+            <span class="close">&times;</span>
+              <div class="row header-row">
+                <img src="/Frontend/assets/logo.png" alt="..." class="logo1">
+                <h2>Add New Announcement</h2>
+              </div>
+            <form id="announcementForm">
+              
+              <p class="ti">Title:</p>
+              <input type="text" id="title" placeholder="Announcement Title" required><br>
+              <p>When:</p>
+              <input type="date" id="date" placeholder="Select Date" required>
+              <p>Time:</p>
+              <input input type="time" id="time" placeholder="What Time" required>
+              <p>Description:</p>
+              <textarea id="content" placeholder="Announcement Description" required></textarea><br><br>
+              <button type="submit">Save</button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+
+      </div>
+
     </div>
+<script src="/Frontend/js/announcement-admin.js"></script>
 
 </body>
 </html>

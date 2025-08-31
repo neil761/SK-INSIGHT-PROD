@@ -64,6 +64,7 @@ const attachKKInfo = async (profile) => {
         municipality: kk.municipality,
         barangay: kk.barangay,
         purok: kk.purok,
+        profileImage: kk.profileImage
       }
     : null;
 

@@ -12,6 +12,7 @@ router.delete(
   authorizeRoles("admin"),
   ctrl.deleteAnnouncement
 );
+router.get("/:id", protect, ctrl.getAnnouncementById);
 
 // Public/Protected view
 router.get("/", protect, ctrl.getAnnouncements);

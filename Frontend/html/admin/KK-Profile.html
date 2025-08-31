@@ -67,58 +67,70 @@
     </div>
 
     <div class="content">
+
       <div class="title">
-        <div class="row">
-          <h1>KK Profile</h1>
-          <div class="filter-row">
-            <label for="yearSelect">Year:</label>
-            <select id="yearSelect">
-              <option value="">All</option>
-              <option value="2025">2025</option>
-              <option value="2024">2024</option>
-              <option value="2023">2023</option>
-            </select>
-          </div>
+        <header class="page-header">
+          <h1 class="tit">KK Profile</h1>
+          <p class="subtitle">List of KK Residents...</p>
+        </header>
+      
+      <section class="filters-bar">
+        <div class="title">
+          <div class="row">
+            <div class="filter-row">
+              <div class="filter-group">
+                  <label for="yearSelect" class="year">Year:</label>
+                  <select id="yearSelect" class="cycle-select">
+                  </select>
+                  <label for="cycleSelect" class="cycle">Cycle:</label>
+                  <select id="cycleSelect" class="cycle-select">
+                  </select>
+              </div>
+              <div class="filts">
+                <button id="filterBtn" class="filt">Filter</button>
+              </div>
+            </div>
         </div>
 
-        <div class="row">
-          <p>List of KK Residents...</p>
-          <div class="filter-rows">
-            <label for="cycleSelect">Cycle:</label>
-            <select id="cycleSelect">
-              <option value="">All</option>
-              <option value="1">Cycle 1</option>
-              <option value="2">Cycle 2</option>
-              <option value="3">Cycle 3</option>
-            </select>
-            <button id="filterBtn" class="filt">Filter</button>
-          </div>
-        </div>
+        
       </div>
 
-      <div class="buts">
-        <div class="search-container">
-          <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="🔍 Search Resident"
-          />
-        </div>
+      
+      </section>
+      
 
-        <div class="dropdown" id="classificationDropdown">
-          <button class="dropdown-button" type="button">
-            Filter Classification
-          </button>
-          <div class="dropdown-content"></div>
-        </div>
+      <div class="tables">
+        <div class="rows">
+            <div class="buts">
+              <!-- Left side: search -->
+              <div class="fil">
+                <div class="search-container">
+                  <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="🔍 Search Resident"
+                  />
+                </div>
+              </div>
 
-        <div class="dropdowns" id="groupDropdown">
-          <button class="dropdown-buttons" type="button">Select Group</button>
-          <div class="dropdown-content"></div>
-        </div>
-      </div>
+              <!-- Right side: classification + group -->
+              <div class="right-filters">
+                <div class="dropdown" id="classificationDropdown">
+                  <button class="dropdown-button" type="button">
+                    Filter Classification
+                  </button>
+                  <div class="dropdown-content"></div>
+                </div>
 
+                <div class="dropdowns" id="groupDropdown">
+                  <button class="dropdown-buttons" type="button">Select Group</button>
+                  <div class="dropdown-content"></div>
+                </div>
+              </div>
+            </div>
+        
+        </div>
       <div class="tables">
         <table>
           <thead>

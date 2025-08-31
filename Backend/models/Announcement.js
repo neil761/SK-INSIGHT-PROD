@@ -43,4 +43,6 @@ const announcementSchema = new mongoose.Schema({
   },
 });
 
+// what time, when is the announcement, 
+
 module.exports = mongoose.model("Announcement", announcementSchema);

@@ -42,6 +42,20 @@ exports.getAnnouncements = async (req, res) => {
   }
 };
 
+// Get announcement by ID
+exports.getAnnouncementById = async (req, res) => {
+  try {
+    const announcement = await Announcement.findById(req.params.id);
+    if (!announcement) {
+      return res.status(404).json({ error: "Announcement not found" });
+    }
+    res.json(announcement);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 // Update (also allows pin/unpin)
 exports.updateAnnouncement = async (req, res) => {
   try {

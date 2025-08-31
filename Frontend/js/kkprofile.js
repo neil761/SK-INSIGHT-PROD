@@ -95,6 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 }
 
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
   // 🔹 Render profiles into table
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
@@ -104,9 +109,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     profiles.forEach((p, i) => {
+      const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
+      const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
+      const middlename = p.middlename && p.middlename.trim() !== ""
+        ? p.middlename.trim()[0].toUpperCase() + "."
+        : "";
       const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-      const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-      const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+      const fullName = (lastname || firstname)
+        ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
+        : "N/A";
 
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -139,18 +150,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Show modal with profile details
   function showProfileModal(p) {
-  const modal = document.getElementById("profileModal");
   const header = document.getElementById("profileHeader");
   const details = document.getElementById("profileDetails");
+  const modal = document.getElementById("profileModal");
+  let imageHtml = "";
 
-  const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+  // Capitalize name parts
+  const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
+  const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
+  const middlename = p.middlename && p.middlename.trim() !== ""
+    ? p.middlename.trim()[0].toUpperCase() + "."
+    : "";
   const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-  const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+  const fullName = (lastname || firstname)
+    ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
+    : "N/A";
 
-  // 🔹 Put image + name in header
+  // Only show image if profileImage exists
+  if (p.profileImage) {
+    imageHtml = `
+      <img src="http://localhost:5000/uploads/profile_images/${p.profileImage}"
+           alt="Profile Image"
+           width="60" height="60"
+           style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top: -15px" />
+    `;
+  }
+
   header.innerHTML = `
-    <img src="http://localhost:5000/api/kkprofiling/image/user/${p.user}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-    <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+    ${imageHtml}
+    <p style="display:inline-block; vertical-align:middle; margin-top:-40px;">${fullName}</p>
   `;
 
   // 🔹 Fill the rest of the details in body
@@ -196,6 +224,7 @@ document.addEventListener("DOMContentLoaded", () => {
   document.querySelector(".close-btn").onclick = () =>
     (modal.style.display = "none");
 }
+
 
 
   // 🔹 Cycle filter (year + cycle)

@@ -37,6 +37,7 @@ app.use("/api/announcements", AnnouncementRoutes);
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use(express.static("public"));
 app.use("/api/formcycle", require("./routes/formCycleRoutes"));
+app.use('/uploads/profile_images', express.static(path.join(__dirname, 'uploads/profile_images')));
 
 
 const PORT = process.env.PORT || 5000;
