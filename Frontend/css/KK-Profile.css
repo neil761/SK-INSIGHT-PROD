@@ -93,6 +93,10 @@ body{
     margin-top: 90%;
 }
 
+.dates{
+    margin-left: 250px;
+    padding: 0.6% 0.6%;
+}
 
 .content{
     margin-left: 250px;
@@ -101,12 +105,15 @@ body{
 
 .tit{
   color: #0A2C59;
+  margin-top: -2%;
+  margin-left: 1.5%;
 }
 
 .subtitle{
   font-size: 15px;
   color: #666;
   margin-bottom: 25px;
+  margin-left: 1.5%;
 }
 
 .parent {

@@ -111,14 +111,16 @@ body {
     }
 
 /* ----- Content ----- */
+.dates{
+    margin-left: 250px;
+    padding: 0.6% 0.6%;
+}
 .content {
   margin-left: 250px;
-  padding: 30px 40px;
+  padding: 0 3%;
 }
 
 .page-header h1 {
-  font-size: 28px;
-  font-weight: 700;
   color: #0A2C59;
   margin-bottom: 8px;
 }

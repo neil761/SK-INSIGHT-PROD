@@ -33,6 +33,18 @@ exports.getUsers = async (req, res) => {
   }
 };
 
+// controllers/userController.js
+exports.getUsers = async (req, res) => {
+  try {
+    // only fetch users where role is "user"
+    const users = await User.find({ role: "user" }).select("-password");
+    res.json(users);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+
 // READ ONE
 exports.getUserById = async (req, res) => {
   try {

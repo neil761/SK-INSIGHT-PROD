@@ -69,46 +69,41 @@
               <p>Good Morning</p>
               <p>;wurojkldnvsx</p>
             </div>
-          </div>
+        </div>
         <hr>
 
         <div class="title">
           <!-- First row -->
-          <div class="row">
+          <div class="column">
             <h1>KK Accounts</h1>
-            <div class="filter-row">
-              <label for="cycleNumber" class="cycle">Year:</label>
-              <select id="cycleNumber" class="cycle-select">
-                <option value="">All</option>
-                <option value="1">2025</option>
-                <option value="2">2024</option>
-                <option value="3">2023</option>
-              </select>
-            </div>
-          </div>
-
-          <!-- Second row -->
-          <div class="row">
             <p>List of KK Accounts...</p>
-            <div class="filter-rows">
-              <label for="year" class="year">Cycle Number:</label>
-              <select id="year" class="cycle-select">
-                <option value="">All</option>
-                <option value="2023">Cycle 1</option>
-                <option value="2024">Cycle 2</option>
-                <option value="2025">Cycle 3</option>
-              </select>
-              <button id="yearFilterBtn" class="filt">Filter</button>
+            <div class="account-cards">
+              <div class="account-card blue">
+                <i class="fas fa-users"></i>
+                <div>
+                  <div class="account-count" id="userAccCount">0</div>
+                  <div class="account-label">User Accounts</div>
+                </div>
+              </div>
             </div>
+            
           </div>
         </div>
 
         <div class="buts">
-          <div class="search-container">
-              <input type="text" class="search-input" placeholder="🔍 Search Resident" />
-          </div>
+          
 
         <div class="tables">
+          <div class="fil">
+                <div class="search-container">
+                  <input
+                    type="text"
+                    id="userSearch"
+                    class="search-input"
+                    placeholder="🔍 Search Resident"
+                  />
+                </div>
+              </div>
             <table>
                 <thead>
                   <tr>
@@ -131,11 +126,11 @@
               </table>
         </div>
 
-
+        
 
     </div>
 
-    <!-- <script src="../js/user-profile.js" defer></script> -->
+    <script src="/Frontend/js/user-acc.js" defer></script>
 
 </body>
 </html>
