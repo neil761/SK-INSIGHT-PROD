@@ -3,46 +3,62 @@ const Announcement = require("../models/Announcement");
 // Create
 exports.createAnnouncement = async (req, res) => {
   try {
-    const { title, content, category, expiresAt, isPinned } = req.body;
+    const { title, content, category, eventDate, expiresAt, isPinned } = req.body;
     const announcement = await Announcement.create({
       title,
       content,
       category,
+      eventDate,
       expiresAt,
       isPinned: !!isPinned,
       createdBy: req.user.id,
     });
-    res.status(201).json(announcement);
+    res.status(201).json({ success: true, announcement });
   } catch (err) {
-    res.status(500).json({ message: "Error creating announcement" });
+    res.status(500).json({ success: false, message: "Error creating announcement", error: err.message });
   }
 };
 
-// Get all (active first, pinned on top)
-exports.getAnnouncements = async (req, res) => {
+// Get all (active only, pinned first)
+exports.getAllAnnouncements = async (req, res) => {
   try {
-    const { includeExpired } = req.query;
     const now = new Date();
-    let filter = includeExpired ? {} : { isActive: true };
+    // Auto-inactive logic for expired announcements
+    await Announcement.updateMany(
+      {
+        isActive: true,
+        $and: [
+          { eventDate: { $lt: now } },
+          { expiresAt: { $lt: now } }
+        ]
+      },
+      { $set: { isActive: false } }
+    );
 
-    // Remove expired ones if not including expired
-    if (!includeExpired) {
-      filter = {
-        ...filter,
-        $or: [{ expiresAt: { $gte: now } }, { expiresAt: null }],
-      };
-    }
-
-    const announcements = await Announcement.find(filter)
-      .populate("createdBy", "username email")
-      .sort({ isPinned: -1, createdAt: -1 }); // Pinned first, then newest
-    res.json(announcements);
+    const announcements = await Announcement.find({ isActive: true })
+      .sort({ isPinned: -1, createdAt: -1 })
+      .populate("createdBy", "username email");
+    res.json({ success: true, announcements });
   } catch (err) {
-    res.status(500).json({ message: "Error fetching announcements" });
+    res.status(500).json({ success: false, message: "Error fetching announcements", error: err.message });
   }
 };
 
-// Update (also allows pin/unpin)
+// Get single announcement by ID
+exports.getAnnouncementById = async (req, res) => {
+  try {
+    const announcement = await Announcement.findById(req.params.id)
+      .populate("createdBy", "username email");
+    if (!announcement || !announcement.isActive) {
+      return res.status(404).json({ success: false, message: "Announcement not found or inactive" });
+    }
+    res.json({ success: true, announcement });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching announcement", error: err.message });
+  }
+};
+
+// Update
 exports.updateAnnouncement = async (req, res) => {
   try {
     const updated = await Announcement.findByIdAndUpdate(
@@ -50,10 +66,10 @@ exports.updateAnnouncement = async (req, res) => {
       req.body,
       { new: true }
     );
-    if (!updated) return res.status(404).json({ message: "Not found" });
-    res.json(updated);
+    if (!updated) return res.status(404).json({ success: false, message: "Announcement not found" });
+    res.json({ success: true, announcement: updated });
   } catch (err) {
-    res.status(500).json({ message: "Error updating announcement" });
+    res.status(500).json({ success: false, message: "Error updating announcement", error: err.message });
   }
 };
 
@@ -62,10 +78,44 @@ exports.deleteAnnouncement = async (req, res) => {
   try {
     const deleted = await Announcement.findByIdAndDelete(req.params.id);
     if (!deleted) {
-      return res.status(404).json({ message: "Announcement not found" });
+      return res.status(404).json({ success: false, message: "Announcement not found" });
     }
-    res.json({ message: "Announcement deleted successfully" });
+    res.json({ success: true, message: "Announcement deleted successfully" });
   } catch (err) {
-    res.status(500).json({ message: "Error deleting announcement" });
+    res.status(500).json({ success: false, message: "Error deleting announcement", error: err.message });
+  }
+};
+
+// Pin/Unpin
+exports.pinAnnouncement = async (req, res) => {
+  try {
+    const { isPinned } = req.body;
+    const updated = await Announcement.findByIdAndUpdate(
+      req.params.id,
+      { isPinned: !!isPinned },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ success: false, message: "Announcement not found" });
+    res.json({ success: true, announcement: updated });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error pinning/unpinning announcement", error: err.message });
+  }
+};
+
+// Mark as viewed
+exports.viewAnnouncement = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const announcement = await Announcement.findById(req.params.id);
+    if (!announcement || !announcement.isActive) {
+      return res.status(404).json({ success: false, message: "Announcement not found or inactive" });
+    }
+    if (!announcement.viewedBy.map(id => id.toString()).includes(userId)) {
+      announcement.viewedBy.push(userId);
+      await announcement.save();
+    }
+    res.json({ success: true, message: "Announcement marked as viewed" });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error marking as viewed", error: err.message });
   }
 };
