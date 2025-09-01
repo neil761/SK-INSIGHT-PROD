@@ -95,6 +95,11 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 }
 
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
   // 🔹 Render profiles into table
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
@@ -104,9 +109,15 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     profiles.forEach((p, i) => {
+      const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
+      const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
+      const middlename = p.middlename && p.middlename.trim() !== ""
+        ? p.middlename.trim()[0].toUpperCase() + "."
+        : "";
       const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-      const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-      const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+      const fullName = (lastname || firstname)
+        ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
+        : "N/A";
 
       const row = document.createElement("tr");
       row.innerHTML = `

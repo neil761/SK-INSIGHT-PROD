@@ -120,10 +120,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     profiles.forEach((p, i) => {
-      const row = document.createElement("tr");
-      // Use kkInfo for name fields
-      const lastname = p.kkInfo?.lastname ? p.kkInfo.lastname.trim() : "";
-      const firstname = p.kkInfo?.firstname ? p.kkInfo.firstname.trim() : "";
+      const row = document.createElement("tr"); // <-- Add this line
+      // Use kkInfo for name fields and capitalize first letter
+      const lastname = p.kkInfo?.lastname ? capitalize(p.kkInfo.lastname.trim()) : "";
+      const firstname = p.kkInfo?.firstname ? capitalize(p.kkInfo.firstname.trim()) : "";
       const middlename = p.kkInfo?.middlename && p.kkInfo.middlename.trim() !== ""
         ? p.kkInfo.middlename.trim()[0].toUpperCase() + "."
         : "";
@@ -139,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${p.displayData?.age || "N/A"}</td>
         <td>${p.displayData?.purok || "N/A"}</td>
         <td>${p.displayData?.lgbtqClassification || "N/A"}</td>
-        <td><button class="view-btn" data-id="${p._id}">View</button></td>
+        <td><button class="view-btn" data-id="${p._id}" style="color: red;">View</button></td>
       `;
       tableBody.appendChild(row);
     });
@@ -277,3 +277,9 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchCycles();
   fetchProfiles();
 });
+
+// Helper: Capitalize first letter
+function capitalize(str) {
+  if (!str) return "";
+  return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+}
