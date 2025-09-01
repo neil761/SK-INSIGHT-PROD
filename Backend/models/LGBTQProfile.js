@@ -12,6 +12,19 @@ const lgbtqProfileSchema = new mongoose.Schema(
       ref: "FormCycle",
       required: true,
     },
+    kkProfileId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "KKProfile",
+      required: false,
+    },
+    // Fallback demographic fields
+    firstname: String,
+    lastname: String,
+    middlename: String,
+    birthday: Date,
+    age: Number,
+    purok: String, // <-- Add this line
+    // LGBTQ-specific fields
     sexAssignedAtBirth: {
       type: String,
       enum: ["Male", "Female"],

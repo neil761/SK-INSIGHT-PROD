@@ -4,6 +4,44 @@ const KKProfile = require("../models/KKProfile");
 const LGBTQProfile = require("../models/LGBTQProfile");
 const ExcelJS = require("exceljs");
 
+// Helper to get demographics from KKProfile or fallback
+async function getDemographics(profile) {
+  if (profile.kkProfileId) {
+    const kk = await KKProfile.findById(profile.kkProfileId).lean();
+    if (kk) {
+      return {
+        lastname: kk.lastname,
+        firstname: kk.firstname,
+        middlename: kk.middlename,
+        birthday: kk.birthday,
+        age: kk.age,
+        address: kk.address,
+        gender: kk.gender,
+        region: kk.region,
+        province: kk.province,
+        municipality: kk.municipality,
+        barangay: kk.barangay,
+        purok: kk.purok,
+      };
+    }
+  }
+  // Fallback to fields in LGBTQProfile
+  return {
+    lastname: profile.lastname,
+    firstname: profile.firstname,
+    middlename: profile.middlename,
+    birthday: profile.birthday,
+    age: profile.age,
+    address: profile.address,
+    gender: profile.gender,
+    region: profile.region,
+    province: profile.province,
+    municipality: profile.municipality,
+    barangay: profile.barangay,
+    purok: profile.purok,
+  };
+}
+
 // Submit new profile
 exports.submitLGBTQProfile = async (req, res) => {
   try {
@@ -17,7 +55,7 @@ exports.submitLGBTQProfile = async (req, res) => {
 
     const existing = await LGBTQProfile.findOne({
       user: userId,
-      formCycle: formStatus.cycleId, // FIXED
+      formCycle: formStatus.cycleId,
     });
     if (existing) {
       return res
@@ -25,21 +63,119 @@ exports.submitLGBTQProfile = async (req, res) => {
         .json({ error: "You already submitted during this form cycle" });
     }
 
-    const { sexAssignedAtBirth, lgbtqClassification } = req.body;
+    // Get all possible fields
+    const {
+      kkProfileId,
+      lastname,
+      firstname,
+      middlename,
+      birthday,
+      age,
+      address,
+      gender,
+      region,
+      province,
+      municipality,
+      barangay,
+      purok,
+      sexAssignedAtBirth,
+      lgbtqClassification,
+    } = req.body;
     const idImage = req.file ? req.file.path : undefined;
+
+    // --- NEW VALIDATION LOGIC ---
+    let kkProfileDoc = null;
+    if (kkProfileId) {
+      kkProfileDoc = await KKProfile.findById(kkProfileId).lean();
+      // Ensure KKProfile belongs to the submitting user
+      if (kkProfileDoc && kkProfileDoc.user.toString() !== userId) {
+        return res.status(400).json({
+          error: "The provided KK Profile does not belong to your account.",
+        });
+      }
+    }
+    const kkProfileExists = !!kkProfileDoc;
+
+    // Require fallback fields if no valid KKProfile
+    if (!kkProfileExists) {
+      if (
+        !lastname ||
+        !firstname ||
+        !middlename ||
+        !birthday ||
+        !age ||
+        !purok // <-- add this line
+      ) {
+        return res.status(400).json({
+          error:
+            "Demographic fields (lastname, firstname, middlename, birthday, age, purok) are required if KK Profile does not exist.",
+        });
+      }
+    }
 
     const newProfile = new LGBTQProfile({
       user: userId,
-      formCycle: formStatus.cycleId, // FIXED
+      formCycle: formStatus.cycleId,
+      kkProfileId: kkProfileExists ? kkProfileId : undefined,
+      lastname,
+      firstname,
+      middlename,
+      birthday,
+      age,
+      address,
+      gender,
+      region,
+      province,
+      municipality,
+      barangay,
+      purok,
       sexAssignedAtBirth,
       lgbtqClassification,
       idImage,
     });
 
     await newProfile.save();
-    res
-      .status(201)
-      .json({ message: "LGBTQIA+ Profile submitted successfully" });
+
+    // Fetch the saved profile and attach demographics and full KKProfile
+    const savedProfile = await LGBTQProfile.findById(newProfile._id).lean();
+    const demographics = kkProfileExists
+      ? {
+          lastname: kkProfileDoc.lastname,
+          firstname: kkProfileDoc.firstname,
+          middlename: kkProfileDoc.middlename,
+          birthday: kkProfileDoc.birthday,
+          age: kkProfileDoc.age,
+          address: kkProfileDoc.address,
+          gender: kkProfileDoc.gender,
+          region: kkProfileDoc.region,
+          province: kkProfileDoc.province,
+          municipality: kkProfileDoc.municipality,
+          barangay: kkProfileDoc.barangay,
+          purok: kkProfileDoc.purok,
+        }
+      : {
+          lastname: savedProfile.lastname,
+          firstname: savedProfile.firstname,
+          middlename: savedProfile.middlename,
+          birthday: savedProfile.birthday,
+          age: savedProfile.age,
+          address: savedProfile.address,
+          gender: savedProfile.gender,
+          region: savedProfile.region,
+          province: savedProfile.province,
+          municipality: savedProfile.municipality,
+          barangay: savedProfile.barangay,
+          purok: savedProfile.purok,
+        };
+
+    res.status(201).json({
+      message: "LGBTQIA+ Profile submitted successfully",
+      profile: {
+        ...savedProfile,
+        demographics,
+        kkProfile: kkProfileDoc || null,
+      },
+    });
   } catch (error) {
     console.error("LGBTQ submit error:", error);
     res.status(500).json({ error: "Server error while submitting form" });
@@ -47,7 +183,6 @@ exports.submitLGBTQProfile = async (req, res) => {
 };
 
 // Helper to enrich profile with KK info
-// ✅ Helper stays as is
 const attachKKInfo = async (profile) => {
   const kk = await KKProfile.findOne({ user: profile.user });
   const profileObj = profile.toObject();
@@ -67,15 +202,20 @@ const attachKKInfo = async (profile) => {
       }
     : null;
 
-  // 🔹 Add shortcut fields for your table
-  profileObj.displayData = {
-    residentName: kk
-      ? `${kk.firstname} ${kk.middlename ? kk.middlename + " " : ""}${kk.lastname}`
-      : "N/A",
-    age: kk ? kk.age : "N/A",
-    purok: kk ? kk.purok : "N/A",
-    lgbtqClassification: profile.lgbtqClassification || "N/A",
-  };
+  // Use fallback fields if kkInfo is null
+  profileObj.displayData = kk
+    ? {
+        residentName: `${kk.firstname} ${kk.middlename ? kk.middlename + " " : ""}${kk.lastname}`.trim(),
+        age: kk.age,
+        purok: kk.purok,
+        lgbtqClassification: profile.lgbtqClassification || "N/A",
+      }
+    : {
+        residentName: `${profile.firstname || ""} ${profile.middlename ? profile.middlename + " " : ""}${profile.lastname || ""}`.trim() || "N/A",
+        age: profile.age || "N/A",
+        purok: profile.purok || "N/A",
+        lgbtqClassification: profile.lgbtqClassification || "N/A",
+      };
 
   return profileObj;
 };
@@ -152,7 +292,6 @@ exports.getAllProfiles = async (req, res) => {
   }
 };
 
-
 // Get single profile by ID
 exports.getProfileById = async (req, res) => {
   try {
@@ -161,7 +300,22 @@ exports.getProfileById = async (req, res) => {
       "username email"
     );
     if (!profile) return res.status(404).json({ error: "Profile not found" });
-    const enriched = await attachKKInfo(profile);
+
+    const demographics = await getDemographics(profile);
+
+    // Merge demographics for response
+    const enriched = {
+      ...profile.toObject(),
+      demographics,
+      // Keep your displayData logic if needed
+      displayData: {
+        residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim(),
+        age: demographics.age || "N/A",
+        purok: demographics.purok || "N/A",
+        lgbtqClassification: profile.lgbtqClassification || "N/A",
+      },
+    };
+
     res.status(200).json(enriched);
   } catch (err) {
     res.status(500).json({ error: "Server error" });
