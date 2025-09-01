@@ -64,72 +64,78 @@
     </div>
 
     <div class="content">
-        <div class="parent">
-            <div class="date">
-              <p>Good Morning</p>
-              <p>;wurojkldnvsx</p>
-            </div>
-          </div>
-        <hr>
 
+      <div class="title">
+        <header class="page-header">
+          <h1 class="tit">LGBTQIA+ Profile</h1>
+          <p class="subtitle">List of LGBTQIA+ Residents...</p>
+        </header>
+      
+      <section class="filters-bar">
         <div class="title">
-          <!-- First row -->
           <div class="row">
-            <h1>LGBTQ Profile</h1>
             <div class="filter-row">
-              <label for="cycleNumber" class="cycle">Year:</label>
-              <select id="cycleNumber" class="cycle-select"></select>
-            </div>
-          </div>
-
-          <!-- Second row -->
-          <div class="row">
-            <p>List of LGBTQ Residents...</p>
-            <div class="filter-rows">
-              <label for="year" class="year">Cycle Number:</label>
-              <select id="year" class="cycle-select"></select>
-              <button id="yearFilterBtn" class="filt">Filter</button>
-            </div>
-          </div>
-
-            
-        </div>
-
-        <div class="buts">
-          <div class="search-container">
-              <input type="text" class="search-input" placeholder="🔍 Search Resident" />
-          </div>
-
-          <div class="dropdown">
-              <button class="dropdown-button" type="button">Select Classification</button>
-              <div class="dropdown-content">
+              <div class="filter-group">
+                  <label for="cycleNumber" class="year">Year:</label>
+                  <select id="cycleNumber" class="cycle-select">
+                  </select>
+                  <label for="year" class="cycle">Cycle:</label>
+                  <select id="year" class="cycle-select">
+                  </select>
               </div>
+              <div class="filts">
+                <button id="yearFilterBtn" class="filt">Filter</button>
+              </div>
+            </div>
           </div>
+
+        
         </div>
 
+      
+      </section>
+
+            <div class="tables">
+        <div class="rows">
+            <div class="buts">
+              <!-- Left side: search -->
+              <div class="fil">
+                <div class="search-container">
+                  <input
+                    type="text"
+                    id="searchInput"
+                    class="search-input"
+                    placeholder="🔍 Search Resident"
+                  />
+                </div>
+              </div>
+
+              <!-- Right side: classification + group -->
+              <div class="right-filters">
+                <div class="dropdown" id="classificationDropdown">
+                  <button class="dropdown-button" type="button">
+                    Filter Classification
+                  </button>
+                  <div class="dropdown-content"></div>
+                </div>
+              </div>
+            </div>
+        
+        </div>
         <div class="tables">
-            <table>
-                <thead>
-                  <tr>
-                    <th>No.</th>
-                    <th>Resident's Name</th>
-                    <th>Age</th>
-                    <th>Purok</th>
-                    <th>LGBTQ Classification</th>
-                    <th>Action</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                    <td></td>
-                  </tr>
-                </tbody>
-              </table>
+          <table>
+            <thead>
+              <tr>
+                <th>No.</th>
+                <th>Resident's Name</th>
+                <th>Age</th>
+                <th>Purok</th>
+                <th>LGBTQ Classification</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
         </div>
         <!-- Profile Modal -->
         <div id="profileModal" class="modal">
