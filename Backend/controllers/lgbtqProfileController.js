@@ -301,22 +301,55 @@ exports.getProfileById = async (req, res) => {
     );
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
+    // Get KK info (same as attachKKInfo)
+    let kkInfo = null;
+    if (profile.kkProfileId) {
+      const kk = await KKProfile.findById(profile.kkProfileId).lean();
+      if (kk) {
+        kkInfo = {
+          lastname: kk.lastname,
+          firstname: kk.firstname,
+          middlename: kk.middlename,
+          birthday: kk.birthday,
+          age: kk.age,
+          gender: kk.gender,
+          region: kk.region,
+          province: kk.province,
+          municipality: kk.municipality,
+          barangay: kk.barangay,
+          purok: kk.purok,
+        };
+      }
+    }
+
+    // Get demographics (already correct)
     const demographics = await getDemographics(profile);
 
-    // Merge demographics for response
-    const enriched = {
-      ...profile.toObject(),
-      demographics,
-      // Keep your displayData logic if needed
-      displayData: {
-        residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim(),
-        age: demographics.age || "N/A",
-        purok: demographics.purok || "N/A",
-        lgbtqClassification: profile.lgbtqClassification || "N/A",
-      },
-    };
+    // displayData logic (now includes gender and birthday)
+    const displayData = kkInfo
+      ? {
+          residentName: `${kkInfo.firstname} ${kkInfo.middlename ? kkInfo.middlename + " " : ""}${kkInfo.lastname}`.trim(),
+          age: kkInfo.age,
+          purok: kkInfo.purok,
+          lgbtqClassification: profile.lgbtqClassification || "N/A",
+          gender: kkInfo.gender || "N/A",
+          birthday: kkInfo.birthday ? kkInfo.birthday.toISOString().split("T")[0] : "N/A"
+        }
+      : {
+          residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
+          age: demographics.age || "N/A",
+          purok: demographics.purok || "N/A",
+          lgbtqClassification: profile.lgbtqClassification || "N/A",
+          gender: profile.sexAssignedAtBirth || "N/A",
+          birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A"
+        };
 
-    res.status(200).json(enriched);
+    res.status(200).json({
+      ...profile.toObject(),
+      kkInfo,
+      demographics,
+      displayData,
+    });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }

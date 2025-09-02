@@ -120,25 +120,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     profiles.forEach((p, i) => {
-      const row = document.createElement("tr"); // <-- Add this line
-      // Use kkInfo for name fields and capitalize first letter
-      const lastname = p.kkInfo?.lastname ? capitalize(p.kkInfo.lastname.trim()) : "";
-      const firstname = p.kkInfo?.firstname ? capitalize(p.kkInfo.firstname.trim()) : "";
-      const middlename = p.kkInfo?.middlename && p.kkInfo.middlename.trim() !== ""
-        ? p.kkInfo.middlename.trim()[0].toUpperCase() + "."
-        : "";
-      let fullName = "";
-      if (lastname || firstname) {
-        fullName = `${lastname}, ${firstname} ${middlename}`.replace(/\s+/g, " ").trim();
-      } else {
-        fullName = "N/A";
-      }
+      const row = document.createElement("tr");
       row.innerHTML = `
         <td>${i + 1}</td>
-        <td>${fullName}</td>
-        <td>${p.displayData?.age || "N/A"}</td>
-        <td>${p.displayData?.purok || "N/A"}</td>
-        <td>${p.displayData?.lgbtqClassification || "N/A"}</td>
+        <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${p.displayData?.age ?? "N/A"}</td>
+        <td>${p.displayData?.purok ?? "N/A"}</td>
+        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
         <td><button class="view-btn" data-id="${p._id}" style="color: red;">View</button></td>
       `;
       tableBody.appendChild(row);
@@ -167,35 +155,33 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
 
-    const fullName = p.kkInfo
-      ? `${p.kkInfo.lastname}, ${p.kkInfo.firstname} ${
-          p.kkInfo.middlename ? p.kkInfo.middlename[0].toUpperCase() + "." : ""
-        }`
-      : "N/A";
+    const info = p.kkInfo || p;
+    const fullName = p.displayData?.residentName ||
+      (info.lastname && info.firstname
+        ? `${info.firstname} ${info.middlename ? info.middlename + " " : ""}${info.lastname}`
+        : "N/A");
 
     header.innerHTML = `
-      <img src="http://localhost:5000/api/kkprofiling/image/${p.kkInfo?._id}" 
+      <img src="${p.idImage ? 'http://localhost:5000/' + p.idImage.replace(/\\/g, "/") : '/Frontend/assets/id.jpg'}" 
        alt="Profile Image" 
        width="60" height="60" 
        style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-  <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+      <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
     `;
 
     details.innerHTML = `
       <div class="profile-info">
-        <p><b class="label">Address:</b> ${p.kkInfo ? p.kkInfo.purok : ""}, ${p.kkInfo?.barangay || ""}, ${p.kkInfo?.municipality || ""}, ${p.kkInfo?.province || ""}</p>
+        <p><b class="label">Address:</b> ${info.purok || p.displayData?.purok || ""}, ${info.barangay || ""}, ${info.municipality || ""}, ${info.province || ""}</p>
         <hr>
-        <p><b class="label">Age:</b> ${p.kkInfo?.age || "-"}</p>
-        <hr>
-        <p><b class="label">Gender:</b> ${p.kkInfo?.gender || "-"}</p>
+        <p><b class="label">Age:</b> ${info.age ?? p.displayData?.age ?? "-"}</p>
         <hr>
         <p><b class="label">Sex Assigned at Birth:</b> ${p.sexAssignedAtBirth || "-"}</p>
         <hr>
-        <p><b class="label">LGBTQ Classification:</b> ${p.lgbtqClassification || "-"}</p>
+        <p><b class="label">LGBTQ Classification:</b> ${p.lgbtqClassification || p.displayData?.lgbtqClassification || "-"}</p>
         <hr>
         <p><b class="label">Birthday:</b> ${
-          p.kkInfo?.birthday
-            ? new Date(p.kkInfo.birthday).toISOString().split("T")[0]
+          info.birthday
+            ? new Date(info.birthday).toISOString().split("T")[0]
             : "-"
         }</p>
         <hr>
