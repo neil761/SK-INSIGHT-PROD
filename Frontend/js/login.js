@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     showConfirmButton: false
                 }).then(() => {
                     localStorage.setItem('token', data.token);
-                    window.location.href = '/html/index.html';
+                    window.location.href = '/Frontend/html/user/index.html';
                 });
             } else {
                 Swal.fire({

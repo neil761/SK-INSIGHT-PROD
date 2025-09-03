@@ -88,7 +88,9 @@
               <tr>
                 <th>Title</th>
                 <th>Date</th>
-                <th>Action</th>
+                <th>When</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -126,7 +128,24 @@
         </div>
       </div>
 
-
+      <!-- Announcement Details Modal -->
+      <div id="announcementModal" class="modal" style="display:none;">
+        <div class="modal-content announcement-modal-content">
+          <span class="close" id="closeAnnouncementModal">&times;</span>
+          <h2 id="modalTitle" class="modal-title"></h2>
+          <hr style="margin: 12px 0 18px 0; border: none; border-top: 1px solid #e5e8ef;">
+          <div class="modal-meta">
+            <span>
+              <i class="fas fa-calendar-alt"></i>
+              <span id="modalEventDate"></span>
+            </span>
+            <span style="margin-left:24px;">
+              <i class="fas fa-clock"></i>
+              Posted: <span id="modalPostedDate"></span>
+            </span>
+          </div>
+          <div class="modal-body" id="modalContent"></div>
+        </div>
       </div>
 
     </div>
