@@ -7,14 +7,11 @@ const kkProfileSchema = new mongoose.Schema({
     ref: "FormCycle",
     required: true,
   },
-
   lastname: String,
   firstname: String,
   middlename: String,
   suffix: String,
   gender: String,
-  age: Number,
-  birthday: Date,
 
   region: String,
   province: String,

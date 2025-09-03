@@ -54,8 +54,6 @@ exports.submitKKProfile = async (req, res) => {
       middlename,
       suffix,
       gender,
-      age,
-      birthday,
       region,
       province,
       municipality,
@@ -93,29 +91,27 @@ exports.submitKKProfile = async (req, res) => {
     const newProfile = new KKProfile({
       user: userId,
       formCycle: formCycle._id,
-      lastname: req.body.lastname,
-      firstname: req.body.firstname,
-      middlename: req.body.middlename,
-      suffix: req.body.suffix,
-      gender: req.body.gender,
-      age: req.body.age,
-      birthday: req.body.birthday,
-      region: req.body.region,
-      province: req.body.province,
-      municipality: req.body.municipality,
-      barangay: req.body.barangay,
-      purok: req.body.purok,
-      email: req.body.email,
-      contactNumber: req.body.contactNumber,
-      civilStatus: req.body.civilStatus,
-      youthAgeGroup: req.body.youthAgeGroup,
-      youthClassification: req.body.youthClassification,
-      educationalBackground: req.body.educationalBackground,
-      workStatus: req.body.workStatus,
-      registeredSKVoter: req.body.registeredSKVoter,
-      registeredNationalVoter: req.body.registeredNationalVoter,
-      votedLastSKElection: req.body.votedLastSKElection,
-      attendedKKAssembly: req.body.attendedKKAssembly,
+      lastname,
+      firstname,
+      middlename,
+      suffix,
+      gender,
+      region,
+      province,
+      municipality,
+      barangay,
+      purok,
+      email,
+      contactNumber,
+      civilStatus,
+      youthAgeGroup,
+      youthClassification,
+      educationalBackground,
+      workStatus,
+      registeredSKVoter,
+      registeredNationalVoter,
+      votedLastSKElection,
+      attendedKKAssembly,
       attendanceCount: req.body.attendedKKAssembly
         ? req.body.attendanceCount
         : undefined,
@@ -154,7 +150,8 @@ exports.submitKKProfile = async (req, res) => {
 // GET /api/kkprofiling/:id
 exports.getProfileById = async (req, res) => {
   try {
-    const profile = await KKProfile.findById(req.params.id);
+    const profile = await KKProfile.findById(req.params.id)
+      .populate("user", "username email birthday age");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
     res.json(profile);
@@ -407,7 +404,7 @@ exports.getAllProfiles = async (req, res) => {
         filter.votedLastSKElection = votedLastSKElection === "true";
       const profiles = await KKProfile.find(filter)
         .populate("formCycle")
-        .populate("user", "username email");
+        .populate("user", "username email birthday age");
       return res.json(profiles);
     }
 
@@ -446,7 +443,7 @@ exports.getAllProfiles = async (req, res) => {
 
     const profiles = await KKProfile.find(filter)
       .populate("formCycle")
-      .populate("user", "username email");
+      .populate("user", "username email birthday age");
 
     res.json(profiles);
   } catch (err) {
@@ -475,17 +472,14 @@ exports.getCyclesAndPresent = async (req, res) => {
 };
 
 exports.getKKProfileImageById = async (req, res) => {
-  try {
-    const kkProfile = await KKProfile.findById(req.params.id);
-    if (!kkProfile || !kkProfile.profileImage) {
-      return res.status(404).json({ error: "KK Profile or profile image not found" });
-    }
-    const imagePath = path.join(__dirname, "../uploads/profile_images", kkProfile.profileImage);
-    fs.access(imagePath, fs.constants.F_OK, (err) => {
-      if (err) return res.status(404).json({ error: "Image file not found" });
-      res.sendFile(imagePath);
-    });
-  } catch (err) {
-    res.status(500).json({ error: "Server error" });
+  // expects :id to be the KKProfile _id, not the user _id
+  const kkProfile = await KKProfile.findById(req.params.id);
+  if (!kkProfile || !kkProfile.profileImage) {
+    return res.status(404).json({ error: "KK Profile or profile image not found" });
   }
+  const imagePath = path.join(__dirname, "../uploads/profile_images", kkProfile.profileImage);
+  fs.access(imagePath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).json({ error: "Image file not found" });
+    res.sendFile(imagePath);
+  });
 };
