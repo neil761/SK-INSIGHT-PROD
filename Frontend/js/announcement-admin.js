@@ -6,8 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const span = document.querySelector(".close");
   const form = document.getElementById("announcementForm");
 
-  // Save the default form submit handler so you can restore it after editing
-  const defaultFormSubmit = form.onsubmit;
+  let editingId = null; // Track whether we're editing
 
   // Modal open/close
   btn.onclick = () => {
@@ -39,20 +38,23 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderTable(data) {
     tableBody.innerHTML = "";
     if (!data.length) {
-      tableBody.innerHTML = `<tr><td colspan="4">No announcements found</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5">No announcements found</td></tr>`;
       return;
     }
     data.forEach(a => {
+      const status = getAnnouncementStatus(a.eventDate || a.scheduledDateTime);
       const tr = document.createElement("tr");
       tr.innerHTML = `
         <td>${a.title}</td>
         <td>${new Date(a.createdAt).toLocaleDateString()}</td>
+        <td>${a.eventDate ? new Date(a.eventDate).toLocaleString() : "-"}</td>
+        <td>${status}</td>
         <td>
-          <button class="btn-view" data-id="${a._id}"><i class="fa-solid fa-eye"></i></button>
-          <button class="btn-edit" data-id="${a._id}"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-delete" data-id="${a._id}"><i class="fa-solid fa-trash"></i></button>
-          <button class="btn-pin ${a.isPinned ? "pinned" : ""}" data-id="${a._id}" title="${a.isPinned ? "Unpin" : "Pin"}">
+          <button class="btn-view" style="margin: 0 5% " data-id="${a._id}"><i class="fa-solid fa-eye"></i></button>
+          <button class="btn-edit" style="margin: 0 5% "  data-id="${a._id}"><i class="fa-solid fa-pen-to-square"></i></button>
+          <button class="btn-pin style="margin: 0 5% "  ${a.isPinned ? "pinned" : ""}" data-id="${a._id}" title="${a.isPinned ? "Unpin" : "Pin"}">
             <span style="font-size:18px;color:${a.isPinned ? "#d4af37" : "#888"};">📌</span>
+          <button class="btn-delete" style="margin: 0 5% "  data-id="${a._id}"><i class="fa-solid fa-trash"></i></button>
           </button>
         </td>
       `;
@@ -92,8 +94,15 @@ document.addEventListener("DOMContentLoaded", () => {
         }
         if (!res.ok) throw new Error("Failed to fetch announcement");
         const announcement = await res.json();
-        const a = announcement.announcement || announcement; // support both structures
-        alert(`Title: ${a.title}\n\nContent: ${a.content}`);
+        const a = announcement.announcement || announcement;
+
+        // Populate modal fields
+        document.getElementById("modalTitle").textContent = a.title || "";
+        document.getElementById("modalEventDate").textContent = formatDateTime(a.eventDate || a.scheduledDateTime);
+        document.getElementById("modalPostedDate").textContent = formatDateTime(a.createdAt);
+        document.getElementById("modalContent").textContent = a.content || "";
+
+        document.getElementById("announcementModal").style.display = "block";
       } catch (err) {
         console.error("View error:", err);
       }
@@ -149,9 +158,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Keep track if editing or adding
-  let editingId = null;
-
   // Handle form submit (Add or Edit)
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -162,9 +168,8 @@ document.addEventListener("DOMContentLoaded", () => {
     const time = document.getElementById("time").value;
     const eventDate = new Date(`${date}T${time}:00`);
 
-    // Add these lines to get category and expiresAt
-    const category = "General"; // or get from a dropdown if you have one
-    const expiresAt = new Date(eventDate.getTime() + 2 * 24 * 60 * 60 * 1000); // expires 2 days after eventDate
+    const category = "General"; 
+    const expiresAt = new Date(eventDate.getTime() + 2 * 24 * 60 * 60 * 1000); // +2 days
 
     try {
       let url = "http://localhost:5000/api/announcements";
@@ -197,5 +202,38 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  // Helper to format date/time
+  function formatDateTime(dt) {
+    if (!dt) return "";
+    const date = new Date(dt);
+    return date.toLocaleString('en-US', {
+      year: 'numeric', month: 'long', day: 'numeric',
+      hour: '2-digit', minute: '2-digit', hour12: true
+    });
+  }
+
+  // Close view modal
+  document.getElementById("closeAnnouncementModal").onclick = function() {
+    document.getElementById("announcementModal").style.display = "none";
+  };
+  window.onclick = function(event) {
+    if (event.target == document.getElementById("announcementModal")) {
+      document.getElementById("announcementModal").style.display = "none";
+    }
+  };
+
+  // Check announcement status (Upcoming/Expired)
+  function getAnnouncementStatus(dateString) {
+    const today = new Date();
+    const announcementDate = new Date(dateString);
+
+    if (announcementDate >= today) {
+        return "Upcoming";
+    } else {
+        return "Expired";
+    }
+  }
+
+  // Initial fetch
   fetchAnnouncements();
 });
