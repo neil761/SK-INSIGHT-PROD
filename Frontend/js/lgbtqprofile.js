@@ -115,7 +115,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
     if (!profiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="6">No profiles found</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5">No profiles found</td></tr>`;
       return;
     }
 
@@ -124,9 +124,8 @@ document.addEventListener("DOMContentLoaded", () => {
       row.innerHTML = `
         <td>${i + 1}</td>
         <td>${p.displayData?.residentName || "N/A"}</td>
-        <td>${p.displayData?.age ?? "N/A"}</td>
-        <td>${p.displayData?.purok ?? "N/A"}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
+        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
         <td><button class="view-btn" data-id="${p._id}" style="color: red;">View</button></td>
       `;
       tableBody.appendChild(row);
@@ -155,14 +154,18 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
 
-    const info = p.kkInfo || p;
-    const fullName = p.displayData?.residentName ||
-      (info.lastname && info.firstname
-        ? `${info.firstname} ${info.middlename ? info.middlename + " " : ""}${info.lastname}`
-        : "N/A");
+    // Use displayData for consistent info
+    const fullName = p.displayData?.residentName || "N/A";
+    const age = p.displayData?.age ?? "N/A";
+    const birthday = p.displayData?.birthday ?? "N/A";
+    const sexAssignedAtBirth = p.displayData?.sexAssignedAtBirth ?? "N/A";
+    const lgbtqClassification = p.displayData?.lgbtqClassification ?? "N/A";
+    const idImage = p.displayData?.idImage
+      ? `http://localhost:5000/uploads/lgbtq_id_images/${p.displayData.idImage}`
+      : '/Frontend/assets/id.jpg';
 
     header.innerHTML = `
-      <img src="${p.idImage ? 'http://localhost:5000/' + p.idImage.replace(/\\/g, "/") : '/Frontend/assets/id.jpg'}" 
+      <img src="${idImage}" 
        alt="Profile Image" 
        width="60" height="60" 
        style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
@@ -171,19 +174,13 @@ document.addEventListener("DOMContentLoaded", () => {
 
     details.innerHTML = `
       <div class="profile-info">
-        <p><b class="label">Address:</b> ${info.purok || p.displayData?.purok || ""}, ${info.barangay || ""}, ${info.municipality || ""}, ${info.province || ""}</p>
+        <p><b class="label">Age:</b> ${age}</p>
         <hr>
-        <p><b class="label">Age:</b> ${info.age ?? p.displayData?.age ?? "-"}</p>
+        <p><b class="label">Sex Assigned at Birth:</b> ${sexAssignedAtBirth}</p>
         <hr>
-        <p><b class="label">Sex Assigned at Birth:</b> ${p.sexAssignedAtBirth || "-"}</p>
+        <p><b class="label">LGBTQ Classification:</b> ${lgbtqClassification}</p>
         <hr>
-        <p><b class="label">LGBTQ Classification:</b> ${p.lgbtqClassification || p.displayData?.lgbtqClassification || "-"}</p>
-        <hr>
-        <p><b class="label">Birthday:</b> ${
-          info.birthday
-            ? new Date(info.birthday).toISOString().split("T")[0]
-            : "-"
-        }</p>
+        <p><b class="label">Birthday:</b> ${birthday}</p>
         <hr>
         <p><b class="label">Email:</b> ${p.user?.email || "-"}</p>
         <hr>

@@ -7,6 +7,17 @@ const path = require("path");
 const asyncHandler = require("express-async-handler");
 const fs = require("fs");
 
+function calculateAge(birthday) {
+  const birthDate = new Date(birthday);
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const m = today.getMonth() - birthDate.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 exports.createUser = async (req, res) => {
   try {
     const user = new User(req.body);
@@ -321,6 +332,10 @@ exports.smartRegister = async (req, res) => {
       accessLevel,
       idImage: path.basename(idImagePath),
     });
+    await user.save();
+
+    // Calculate and set user age
+    user.age = calculateAge(ocrBirthday);
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {

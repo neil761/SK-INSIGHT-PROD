@@ -8,13 +8,15 @@ const path = require("path");
 
 // Helper to get demographics from LGBTQProfile only
 async function getDemographics(profile) {
+  // Make sure profile.user is populated with birthday and age
+  const user = profile.user;
   return {
     lastname: profile.lastname,
     firstname: profile.firstname,
     middlename: profile.middlename,
-    birthday: profile.birthday,
-    age: profile.age,
-    sexAssignedAtBirth: profile.sexAssignedAtBirth, // <-- ensure this is included
+    birthday: user?.birthday, // Reference from User
+    age: user?.age,           // Reference from User
+    sexAssignedAtBirth: profile.sexAssignedAtBirth,
   };
 }
 
@@ -44,8 +46,6 @@ exports.submitLGBTQProfile = async (req, res) => {
       lastname,
       firstname,
       middlename,
-      birthday,
-      age,
       sexAssignedAtBirth,
       lgbtqClassification,
     } = req.body;
@@ -58,13 +58,11 @@ exports.submitLGBTQProfile = async (req, res) => {
     if (
       !lastname ||
       !firstname ||
-      !middlename ||
-      !birthday ||
-      !age
+      !middlename
     ) {
       return res.status(400).json({
         error:
-          "Demographic fields (lastname, firstname, middlename, birthday, age) are required.",
+          "Demographic fields (lastname, firstname, middlename) are required.",
       });
     }
 
@@ -74,11 +72,9 @@ exports.submitLGBTQProfile = async (req, res) => {
       lastname,
       firstname,
       middlename,
-      birthday,
-      age,
       sexAssignedAtBirth,
       lgbtqClassification,
-      idImage, // <-- this will be saved in DB
+      idImage,
     });
 
     await newProfile.save();
@@ -180,7 +176,7 @@ exports.getAllProfiles = async (req, res) => {
 
     const profiles = await LGBTQProfile.find(filter)
       .populate("formCycle")
-      .populate("user", "username email");
+      .populate("user", "username email birthday age");
 
     // Enrich each profile with displayData
     const enriched = profiles.map(profile => {
@@ -188,8 +184,8 @@ exports.getAllProfiles = async (req, res) => {
         lastname: profile.lastname,
         firstname: profile.firstname,
         middlename: profile.middlename,
-        birthday: profile.birthday,
-        age: profile.age,
+        birthday: profile.user?.birthday, // <-- reference user
+        age: profile.user?.age,           // <-- reference user
         sexAssignedAtBirth: profile.sexAssignedAtBirth,
       };
       return {
@@ -197,11 +193,11 @@ exports.getAllProfiles = async (req, res) => {
         demographics,
         displayData: {
           residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
-          age: demographics.age || "N/A",
+          age: demographics.age || "N/A", // <-- from user
           lgbtqClassification: profile.lgbtqClassification || "N/A",
           sexAssignedAtBirth: profile.sexAssignedAtBirth || "N/A",
           birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A",
-          idImage: profile.idImage || null // <-- add this line
+          idImage: profile.idImage || null
         }
       };
     });
@@ -215,21 +211,19 @@ exports.getAllProfiles = async (req, res) => {
 // Get single profile by ID
 exports.getProfileById = async (req, res) => {
   try {
-    const profile = await LGBTQProfile.findById(req.params.id).populate(
-      "user",
-      "username email"
-    );
+    const profile = await LGBTQProfile.findById(req.params.id)
+      .populate("user", "username email birthday age");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
     const demographics = await getDemographics(profile);
 
     const displayData = {
       residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
-      age: demographics.age || "N/A",
+      age: demographics.age || "N/A", // from User
       lgbtqClassification: profile.lgbtqClassification || "N/A",
       sexAssignedAtBirth: profile.sexAssignedAtBirth || "N/A",
-      birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A",
-      idImage: profile.idImage || null // <-- add this line
+      birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A", // from User
+      idImage: profile.idImage || null
     };
 
     res.status(200).json({
@@ -348,7 +342,7 @@ exports.exportProfilesToExcel = async (req, res) => {
         lgbtqClassification: profile.lgbtqClassification,
         lastname: profile.lastname,
         firstname: profile.firstname,
-        age: profile.age,
+        age: profile.user?.age, // <-- from user
         // REMOVED address, region, province, municipality, barangay, purok
       });
     }

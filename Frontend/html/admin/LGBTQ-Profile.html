@@ -1,178 +1,172 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SK-INSIGHT</title>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="/Frontend/css/LGBTQ-Profile.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>SK-INSIGHT</title>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+  <!-- Match EA look & feel -->
+  <link rel="stylesheet" href="/Frontend/css/LGBTQ-Profile.css">
 </head>
 <body>
-    <div class="sidebar">
-        <h3 class="text-2xl font-normal">Sangguniang Kabataan</h3>
-        <div class="logos">
-            <img src="/Frontend/assets/logo.png" alt="logo" class="logo">
-            <div class="title-container">
-                <p class="text-lg font-semibold">SK Officials</p>
-                <p class="admin">Admin</p>
-            </div>
-        </div>
-        
-        
-        <div class="menu">
-          <a
-            href="/Frontend/html/admin/admin-dashboard.html"
-            class="flex items-center space-x-2"
-          >
-            <i class="dashs fas fa-columns"></i>
-            <span class="dashb">Dashboard</span>
-          </a>
-        <a href="/Frontend/html/admin/KK-Profile.html" class="flex items-center space-x-2">
-          <i class="Kk fas fa-id-badge"></i>
-          <span class="kk">KK Profile</span>
+  <!-- Sidebar (unchanged structure; highlight current) -->
+  <div class="sidebar">
+    <h3 class="text-2xl font-normal">Sangguniang Kabataan</h3>
+    <div class="logos">
+      <img src="/Frontend/assets/logo.png" alt="logo" class="logo">
+      <div class="title-container">
+        <p class="text-lg font-semibold">SK Officials</p>
+        <p class="admin">Admin</p>
+      </div>
+    </div>
+
+    <div class="menu">
+      <a href="/Frontend/html/admin/admin-dashboard.html" class="flex items-center space-x-2">
+        <i class="dashs fas fa-columns"></i>
+        <span class="dashb">Dashboard</span>
+      </a>
+      <a href="/Frontend/html/admin/KK-Profile.html" class="flex items-center space-x-2">
+        <i class="Kk fas fa-id-badge"></i>
+        <span class="kk">KK Profile</span>
+      </a>
+      <div class="dashh">
+        <a href="/Frontend/html/admin/LGBTQ-Profile.html" class="flex items-center space-x-2">
+          <i class="fas fa-rainbow"></i>
+          <span class="dash">LGBTQ Profile</span>
         </a>
-        <div class="dashh">
-          <a href="/Frontend/html/admin/LGBTQ-Profile.html" class="flex items-center space-x-2">
-            <i class="fas fa-rainbow"></i>
-            <span class="dash">LGBTQ Profile</span>
-          </a>
-        </div>
-        <a href="/Frontend/html/admin/Educational-Assistance-admin.html" class="flex items-center space-x-2">
-          <i class="fas fa-graduation-cap"></i>
-          <span class="educ">Educational Assistance</span>
+      </div>
+      <a href="/Frontend/html/admin/Educational-Assistance-admin.html" class="flex items-center space-x-2">
+        <i class="fas fa-graduation-cap"></i>
+        <span class="educ">Educational Assistance</span>
+      </a>
+      <a href="/Frontend/html/admin/Announcement-admin.html" class="flex items-center space-x-2">
+        <i class="fas fa-bell"></i>
+        <span class="dash">Announcement</span>
+      </a>
+      <a href="/Frontend/html/admin/user-account.html" class="flex items-center space-x-2">
+        <i class="fas fa-user"></i>
+        <span class="dash">User Accounts</span>
+      </a>
+      <a href="/Frontend/html/admin/exports.html" class="flex items-center space-x-2">
+        <i class="fas fa-file-export"></i>
+        <span class="dash">Exports</span>
+      </a>
+      <div class="log">
+        <a href="/Frontend/html/admin/admin-log.html" class="flex items-center space-x-2">
+          <i class="fas fa-right-from-bracket"></i>
+          <span class="dash">Log out</span>
         </a>
-        <a href="/Frontend/html/admin/Announcement-admin.html" class="flex items-center space-x-2">
-          <i class="fas fa-bell"></i>
-          <span class="dash">Announcement</span>
-        </a>
-        <a href="/Frontend/html/admin/user-account.html" class="flex items-center space-x-2">
-          <i class="fas fa-user"></i>
-          <span class="dash">User Accounts</span>
-        </a>
-        <a href="/Frontend/html/admin/exports.html" class="flex items-center space-x-2">
-          <i class="fas fa-file-export"></i>
-          <span class="dash">Exports</span>
-        </a>
-        <div class="log">
-          <a href="/Frontend/html/admin/admin-log.html" class="flex items-center space-x-2">
-            <i class="fas fa-right-from-bracket"></i>
-            <span class="dash">Log out</span>
-          </a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Top header (same pattern as EA) -->
+  <div class="dates">
+    <div class="top-header">
+      <div class="header-left">
+        <span class="header-title"></span>
+      </div>
+      <div class="header-right">
+        <div class="greeting-block">
+          <span>
+            <i id="greeting-icon" class="fa-solid fa-sun" style="color:#f7c948; margin-right:6px;"></i>
+            <span id="greeting" class="greeting-text">Good Morning</span>
+          </span>
+          <div class="header-datetime">
+            <span id="header-date">January 25, 2025</span>
+            -
+            <span id="datetime">08:48</span>
+          </div>
         </div>
       </div>
-        
+    </div>
+    <hr>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+    <!-- Notification Bell (visual only; mirrors EA DOM) -->
+    <div class="notification-bell" id="notifBell" style="position:absolute; right:40px; top:65px; cursor:pointer; z-index:200;">
+      <i class="fas fa-bell" style="font-size:1.7em; color:#0A2C59;"></i>
+    </div>
+    <div class="notification-dropdown" id="notifDropdown" style="display:none;">
+      <div class="notif-tabs">
+        <button class="notif-tab active" data-tab="new">New Applications</button>
+        <button class="notif-tab" data-tab="overdue">Overdue Applications</button>
+      </div>
+      <div class="notif-list" id="notifListNew"></div>
+      <div class="notif-list" id="notifListOverdue" style="display:none;"></div>
     </div>
 
-    <div class="dates">
-      <div class="top-header">
-          <div class="header-left">
-            <span class="header-title"></span>
-          </div>
-          <div class="header-right">
-            <div class="greeting-block">
-              <span>
-                <i id="greeting-icon" class="fa-solid fa-sun" style="color: #f7c948; margin-right: 6px;"></i>
-                <span id="greeting" class="greeting-text">Good Morning</span>
-              </span>
-              <div class="header-datetime">
-                <span id="header-date">January 25, 2025</span>
-                -
-                <span id="datetime">08:48</span>
-              </div>
-            </div>
-          </div>
+    <header class="page-header">
+      <h1>LGBTQIA+ Profile</h1>
+      <p class="subtitle">List of LGBTQIA+ residents and classifications</p>
+    </header>
+
+    <!-- Filters Bar (match EA layout, keep IDs for existing logic) -->
+    <section class="filters-bar">
+      <div class="filter-group">
+        <label for="cycleNumber">Year:</label>
+        <select id="cycleNumber" class="cycle-select"></select>
+      </div>
+
+      <div class="filter-group">
+        <label for="year">Cycle:</label>
+        <select id="year" class="cycle-select"></select>
+      </div>
+
+      <!-- Search (same styling as EA; keep #searchInput) -->
+      <div class="filter-group search-wrapper">
+        <input type="text" id="searchInput" class="search-input" placeholder="🔍 Search Resident..." />
+      </div>
+
+      <!-- Classification filter button (kept for your JS) -->
+      <div class="filter-group right-filters">
+        <div class="dropdown" id="classificationDropdown">
+          <button class="dropdown-button" type="button">Filter Classification</button>
+          <div class="dropdown-content"></div>
         </div>
-      <hr>
+      </div>
+
+      <!-- Optional explicit filter trigger if your JS uses it -->
+      <div class="filter-group">
+        <button id="yearFilterBtn" class="action-btn ghost">Apply Filters</button>
+      </div>
+    </section>
+
+    <!-- Single table (no tabs; mirrors EA table styling) -->
+    <section class="tables">
+      <table>
+        <thead>
+          <tr>
+            <th>No.</th>
+            <th>Resident's Name</th>
+            <th>LGBTQ Classification</th>
+            <th>Sex Assigned at Birth</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </div>
+
+  <!-- Profile Modal (IDs kept for your JS) -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content">
+      <img id="profileImage" src="" alt="Resident Image" style="display:none; max-width:100%;" />
+      <span class="close-btn" title="Close">&times;</span>
+
+      <div id="profileHeader" class="modal-header">
+        <h2 class="modal-title">Resident Profile</h2>
+        <button id="printBtn" class="action-btn"><i class="fas fa-print"></i> Print</button>
+      </div>
+
+      <div id="profileDetails" class="modal-body"></div>
     </div>
+  </div>
 
-    <div class="content">
-
-      <div class="title">
-        <header class="page-header">
-          <h1 class="tit">LGBTQIA+ Profile</h1>
-          <p class="subtitle">List of LGBTQIA+ Residents...</p>
-        </header>
-      
-      <section class="filters-bar">
-        <div class="title">
-          <div class="row">
-            <div class="filter-row">
-              <div class="filter-group">
-                  <label for="cycleNumber" class="year">Year:</label>
-                  <select id="cycleNumber" class="cycle-select">
-                  </select>
-                  <label for="year" class="cycle">Cycle:</label>
-                  <select id="year" class="cycle-select">
-                  </select>
-              </div>
-              <div class="filts">
-                <button id="yearFilterBtn" class="filt">Filter</button>
-              </div>
-            </div>
-          </div>
-
-        
-        </div>
-
-      
-      </section>
-
-            <div class="tables">
-        <div class="rows">
-            <div class="buts">
-              <!-- Left side: search -->
-              <div class="fil">
-                <div class="search-container">
-                  <input
-                    type="text"
-                    id="searchInput"
-                    class="search-input"
-                    placeholder="🔍 Search Resident"
-                  />
-                </div>
-              </div>
-
-              <!-- Right side: classification + group -->
-              <div class="right-filters">
-                <div class="dropdown" id="classificationDropdown">
-                  <button class="dropdown-button" type="button">
-                    Filter Classification
-                  </button>
-                  <div class="dropdown-content"></div>
-                </div>
-              </div>
-            </div>
-        
-        </div>
-        <div class="tables">
-          <table>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Resident's Name</th>
-                <th>Age</th>
-                <th>Purok</th>
-                <th>LGBTQ Classification</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <!-- Profile Modal -->
-        <div id="profileModal" class="modal">
-          <div class="modal-content">
-            <img id="profileImage" src="" alt="Resident Image" style="display:none; max-width:100%;"/>
-            <span class="close-btn">&times;</span>
-            <div id="profileHeader">
-            <button id="printBtn">🖨️ Print</button>
-            </div>
-            <div id="profileDetails"></div>
-          </div>
-        </div>
-
-    </div>
-    
-<script src="/Frontend/js/lgbtqprofile.js"></script>
+  <!-- Keep your existing JS (logic unchanged) -->
+  <script src="/Frontend/js/lgbtqprofile.js"></script>
 </body>
 </html>
