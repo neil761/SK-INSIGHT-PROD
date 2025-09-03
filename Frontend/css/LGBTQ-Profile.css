@@ -399,3 +399,65 @@ body{
   border-top: 1px solid #ccc;
   margin: 0 15px;
 }
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #F5F7FA;
+  border-bottom: 1px solid #F5F7FA;
+}
+
+.header-left .header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #183153;
+  margin-left: 24px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-right .greeting-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.greeting-text {
+  font-weight: 500;
+  color: #183153;
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.header-datetime {
+  font-size: 1px;
+  color: #222;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+#header-date {
+  font-size: 0.98rem;
+  color: #222;
+}
+
+#datetime {
+  font-size: 0.98rem;
+  color: #222;
+  letter-spacing: 0.04em;
+}
+
+
+
+
+
+
+
+
+
