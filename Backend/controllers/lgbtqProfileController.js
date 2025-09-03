@@ -3,42 +3,18 @@ const FormStatus = require("../models/FormStatus");
 const KKProfile = require("../models/KKProfile");
 const LGBTQProfile = require("../models/LGBTQProfile");
 const ExcelJS = require("exceljs");
+const fs = require("fs");
+const path = require("path");
 
-// Helper to get demographics from KKProfile or fallback
+// Helper to get demographics from LGBTQProfile only
 async function getDemographics(profile) {
-  if (profile.kkProfileId) {
-    const kk = await KKProfile.findById(profile.kkProfileId).lean();
-    if (kk) {
-      return {
-        lastname: kk.lastname,
-        firstname: kk.firstname,
-        middlename: kk.middlename,
-        birthday: kk.birthday,
-        age: kk.age,
-        address: kk.address,
-        gender: kk.gender,
-        region: kk.region,
-        province: kk.province,
-        municipality: kk.municipality,
-        barangay: kk.barangay,
-        purok: kk.purok,
-      };
-    }
-  }
-  // Fallback to fields in LGBTQProfile
   return {
     lastname: profile.lastname,
     firstname: profile.firstname,
     middlename: profile.middlename,
     birthday: profile.birthday,
     age: profile.age,
-    address: profile.address,
-    gender: profile.gender,
-    region: profile.region,
-    province: profile.province,
-    municipality: profile.municipality,
-    barangay: profile.barangay,
-    purok: profile.purok,
+    sexAssignedAtBirth: profile.sexAssignedAtBirth, // <-- ensure this is included
   };
 }
 
@@ -65,115 +41,57 @@ exports.submitLGBTQProfile = async (req, res) => {
 
     // Get all possible fields
     const {
-      kkProfileId,
       lastname,
       firstname,
       middlename,
       birthday,
       age,
-      address,
-      gender,
-      region,
-      province,
-      municipality,
-      barangay,
-      purok,
       sexAssignedAtBirth,
       lgbtqClassification,
     } = req.body;
-    const idImage = req.file ? req.file.path : undefined;
-
-    // --- NEW VALIDATION LOGIC ---
-    let kkProfileDoc = null;
-    if (kkProfileId) {
-      kkProfileDoc = await KKProfile.findById(kkProfileId).lean();
-      // Ensure KKProfile belongs to the submitting user
-      if (kkProfileDoc && kkProfileDoc.user.toString() !== userId) {
-        return res.status(400).json({
-          error: "The provided KK Profile does not belong to your account.",
-        });
-      }
+    const idImage = req.file ? req.file.filename : undefined;
+    if (!idImage) {
+      return res.status(400).json({ error: "ID image is required." });
     }
-    const kkProfileExists = !!kkProfileDoc;
 
-    // Require fallback fields if no valid KKProfile
-    if (!kkProfileExists) {
-      if (
-        !lastname ||
-        !firstname ||
-        !middlename ||
-        !birthday ||
-        !age ||
-        !purok // <-- add this line
-      ) {
-        return res.status(400).json({
-          error:
-            "Demographic fields (lastname, firstname, middlename, birthday, age, purok) are required if KK Profile does not exist.",
-        });
-      }
+    // Require all demographic fields
+    if (
+      !lastname ||
+      !firstname ||
+      !middlename ||
+      !birthday ||
+      !age
+    ) {
+      return res.status(400).json({
+        error:
+          "Demographic fields (lastname, firstname, middlename, birthday, age) are required.",
+      });
     }
 
     const newProfile = new LGBTQProfile({
       user: userId,
       formCycle: formStatus.cycleId,
-      kkProfileId: kkProfileExists ? kkProfileId : undefined,
       lastname,
       firstname,
       middlename,
       birthday,
       age,
-      address,
-      gender,
-      region,
-      province,
-      municipality,
-      barangay,
-      purok,
       sexAssignedAtBirth,
       lgbtqClassification,
-      idImage,
+      idImage, // <-- this will be saved in DB
     });
 
     await newProfile.save();
 
-    // Fetch the saved profile and attach demographics and full KKProfile
+    // Fetch the saved profile and attach demographics
     const savedProfile = await LGBTQProfile.findById(newProfile._id).lean();
-    const demographics = kkProfileExists
-      ? {
-          lastname: kkProfileDoc.lastname,
-          firstname: kkProfileDoc.firstname,
-          middlename: kkProfileDoc.middlename,
-          birthday: kkProfileDoc.birthday,
-          age: kkProfileDoc.age,
-          address: kkProfileDoc.address,
-          gender: kkProfileDoc.gender,
-          region: kkProfileDoc.region,
-          province: kkProfileDoc.province,
-          municipality: kkProfileDoc.municipality,
-          barangay: kkProfileDoc.barangay,
-          purok: kkProfileDoc.purok,
-        }
-      : {
-          lastname: savedProfile.lastname,
-          firstname: savedProfile.firstname,
-          middlename: savedProfile.middlename,
-          birthday: savedProfile.birthday,
-          age: savedProfile.age,
-          address: savedProfile.address,
-          gender: savedProfile.gender,
-          region: savedProfile.region,
-          province: savedProfile.province,
-          municipality: savedProfile.municipality,
-          barangay: savedProfile.barangay,
-          purok: savedProfile.purok,
-        };
+    const demographics = await getDemographics(savedProfile);
 
     res.status(201).json({
       message: "LGBTQIA+ Profile submitted successfully",
       profile: {
         ...savedProfile,
         demographics,
-        kkProfile: kkProfileDoc || null,
       },
     });
   } catch (error) {
@@ -238,56 +156,58 @@ exports.getAllProfiles = async (req, res) => {
     if (all === "true") {
       if (sexAssignedAtBirth) filter.sexAssignedAtBirth = sexAssignedAtBirth;
       if (lgbtqClassification) filter.lgbtqClassification = lgbtqClassification;
-
-      const profiles = await LGBTQProfile.find(filter)
-        .populate("formCycle")
-        .populate("user", "username email");
-
-      const enriched = await Promise.all(profiles.map(attachKKInfo));
-
-      // If purok filter is passed
-      const final = purok
-        ? enriched.filter((p) => p.kkInfo && p.kkInfo.purok === purok)
-        : enriched;
-
-      return res.json(final);
-    }
-
-    // Year & cycle specified
-    if (year && cycle) {
-      cycleDoc = await FormCycle.findOne({
-        formName: "LGBTQIA+ Profiling",
-        year: Number(year),
-        cycleNumber: Number(cycle),
-      });
-      if (!cycleDoc) {
-        return res.status(404).json({ error: "Specified cycle not found" });
-      }
     } else {
-      try {
-        cycleDoc = await getPresentCycle("LGBTQIA+ Profiling");
-      } catch (err) {
-        return res.status(404).json({ error: err.message });
+      if (year && cycle) {
+        cycleDoc = await FormCycle.findOne({
+          formName: "LGBTQIA+ Profiling",
+          year: Number(year),
+          cycleNumber: Number(cycle),
+        });
+        if (!cycleDoc) {
+          return res.status(404).json({ error: "Specified cycle not found" });
+        }
+      } else {
+        try {
+          cycleDoc = await getPresentCycle("LGBTQIA+ Profiling");
+        } catch (err) {
+          return res.status(404).json({ error: err.message });
+        }
       }
+      filter.formCycle = cycleDoc._id;
+      if (sexAssignedAtBirth) filter.sexAssignedAtBirth = sexAssignedAtBirth;
+      if (lgbtqClassification) filter.lgbtqClassification = lgbtqClassification;
     }
-
-    filter.formCycle = cycleDoc._id;
-    if (sexAssignedAtBirth) filter.sexAssignedAtBirth = sexAssignedAtBirth;
-    if (lgbtqClassification) filter.lgbtqClassification = lgbtqClassification;
 
     const profiles = await LGBTQProfile.find(filter)
       .populate("formCycle")
       .populate("user", "username email");
 
-    const enriched = await Promise.all(profiles.map(attachKKInfo));
+    // Enrich each profile with displayData
+    const enriched = profiles.map(profile => {
+      const demographics = {
+        lastname: profile.lastname,
+        firstname: profile.firstname,
+        middlename: profile.middlename,
+        birthday: profile.birthday,
+        age: profile.age,
+        sexAssignedAtBirth: profile.sexAssignedAtBirth,
+      };
+      return {
+        ...profile.toObject(),
+        demographics,
+        displayData: {
+          residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
+          age: demographics.age || "N/A",
+          lgbtqClassification: profile.lgbtqClassification || "N/A",
+          sexAssignedAtBirth: profile.sexAssignedAtBirth || "N/A",
+          birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A",
+          idImage: profile.idImage || null // <-- add this line
+        }
+      };
+    });
 
-    const final = purok
-      ? enriched.filter((p) => p.kkInfo && p.kkInfo.purok === purok)
-      : enriched;
-
-    res.json(final);
+    res.json(enriched);
   } catch (err) {
-    console.error("getAllProfiles error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -301,52 +221,19 @@ exports.getProfileById = async (req, res) => {
     );
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
-    // Get KK info (same as attachKKInfo)
-    let kkInfo = null;
-    if (profile.kkProfileId) {
-      const kk = await KKProfile.findById(profile.kkProfileId).lean();
-      if (kk) {
-        kkInfo = {
-          lastname: kk.lastname,
-          firstname: kk.firstname,
-          middlename: kk.middlename,
-          birthday: kk.birthday,
-          age: kk.age,
-          gender: kk.gender,
-          region: kk.region,
-          province: kk.province,
-          municipality: kk.municipality,
-          barangay: kk.barangay,
-          purok: kk.purok,
-        };
-      }
-    }
-
-    // Get demographics (already correct)
     const demographics = await getDemographics(profile);
 
-    // displayData logic (now includes gender and birthday)
-    const displayData = kkInfo
-      ? {
-          residentName: `${kkInfo.firstname} ${kkInfo.middlename ? kkInfo.middlename + " " : ""}${kkInfo.lastname}`.trim(),
-          age: kkInfo.age,
-          purok: kkInfo.purok,
-          lgbtqClassification: profile.lgbtqClassification || "N/A",
-          gender: kkInfo.gender || "N/A",
-          birthday: kkInfo.birthday ? kkInfo.birthday.toISOString().split("T")[0] : "N/A"
-        }
-      : {
-          residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
-          age: demographics.age || "N/A",
-          purok: demographics.purok || "N/A",
-          lgbtqClassification: profile.lgbtqClassification || "N/A",
-          gender: profile.sexAssignedAtBirth || "N/A",
-          birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A"
-        };
+    const displayData = {
+      residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
+      age: demographics.age || "N/A",
+      lgbtqClassification: profile.lgbtqClassification || "N/A",
+      sexAssignedAtBirth: profile.sexAssignedAtBirth || "N/A",
+      birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A",
+      idImage: profile.idImage || null // <-- add this line
+    };
 
     res.status(200).json({
       ...profile.toObject(),
-      kkInfo,
       demographics,
       displayData,
     });
@@ -391,7 +278,7 @@ exports.updateProfileById = async (req, res) => {
       profile.sexAssignedAtBirth = req.body.sexAssignedAtBirth;
     if (req.body.lgbtqClassification)
       profile.lgbtqClassification = req.body.lgbtqClassification;
-    if (req.file) profile.idImage = req.file.path;
+    if (req.file) profile.idImage = req.file.filename; // <-- use filename
 
     await profile.save();
     res.json({ message: "Profile updated", profile });
@@ -405,6 +292,21 @@ exports.deleteProfileById = async (req, res) => {
   try {
     const profile = await LGBTQProfile.findById(req.params.id);
     if (!profile) return res.status(404).json({ error: "Profile not found" });
+
+    // Delete the ID image file if it exists
+    if (profile.idImage) {
+      const imagePath = path.join(__dirname, "../uploads/lgbtq_id_images", profile.idImage);
+      fs.access(imagePath, fs.constants.F_OK, (err) => {
+        if (!err) {
+          fs.unlink(imagePath, (unlinkErr) => {
+            if (unlinkErr) {
+              console.error("Error deleting ID image:", unlinkErr);
+            }
+          });
+        }
+      });
+    }
+
     await profile.deleteOne();
     res.json({ message: "Profile deleted" });
   } catch (err) {
@@ -434,21 +336,20 @@ exports.exportProfilesToExcel = async (req, res) => {
       { header: "Lastname", key: "lastname" },
       { header: "Firstname", key: "firstname" },
       { header: "Age", key: "age" },
-      { header: "Gender", key: "gender" },
+      // REMOVED address, region, province, municipality, barangay, purok
     ];
 
     for (const profile of profiles) {
-      const kk = await KKProfile.findOne({ user: profile.user._id });
       sheet.addRow({
         username: profile.user.username,
         email: profile.user.email,
-        cycleId: profile.formCycle, // FIXED
+        cycleId: profile.formCycle,
         sexAssignedAtBirth: profile.sexAssignedAtBirth,
         lgbtqClassification: profile.lgbtqClassification,
-        lastname: kk?.lastname,
-        firstname: kk?.firstname,
-        age: kk?.age,
-        gender: kk?.gender,
+        lastname: profile.lastname,
+        firstname: profile.firstname,
+        age: profile.age,
+        // REMOVED address, region, province, municipality, barangay, purok
       });
     }
 

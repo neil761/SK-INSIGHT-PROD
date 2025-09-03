@@ -69,3 +69,5 @@ io.on("connection", (socket) => {
   console.log("Admin connected:", socket.id);
   // You can add authentication here if needed
 });
+
+app.use("/uploads/lgbtq_id_images", express.static(path.join(__dirname, "uploads/lgbtq_id_images")));

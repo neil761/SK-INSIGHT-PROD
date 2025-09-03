@@ -12,18 +12,13 @@ const lgbtqProfileSchema = new mongoose.Schema(
       ref: "FormCycle",
       required: true,
     },
-    kkProfileId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "KKProfile",
-      required: false,
-    },
-    // Fallback demographic fields
-    firstname: String,
+    // Demographic fields
     lastname: String,
+    firstname: String,
     middlename: String,
     birthday: Date,
     age: Number,
-    purok: String, // <-- Add this line
+    // REMOVE address, region, province, municipality, barangay, purok
     // LGBTQ-specific fields
     sexAssignedAtBirth: {
       type: String,
@@ -35,7 +30,10 @@ const lgbtqProfileSchema = new mongoose.Schema(
       enum: ["Lesbian", "Gay", "Bisexual", "Queer", "Intersex", "Asexual"],
       required: true,
     },
-    idImage: String,
+    idImage: {
+      type: String, // URL or path to the uploaded ID image
+      required: true,
+    }
   },
   { timestamps: true }
 );
