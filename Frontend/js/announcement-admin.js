@@ -7,6 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const form = document.getElementById("announcementForm");
 
   let editingId = null; // Track whether we're editing
+  let announcementsData = []; // Store all announcements globally
 
   // Modal open/close
   btn.onclick = () => {
@@ -28,7 +29,8 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (!res.ok) throw new Error("Failed to fetch announcements");
       const data = await res.json();
-      renderTable(data.announcements || []);
+      announcementsData = data.announcements || [];
+      renderTable(announcementsData);
     } catch (err) {
       console.error("Error:", err);
     }
@@ -37,30 +39,70 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render table rows (with pin/unpin button)
   function renderTable(data) {
     tableBody.innerHTML = "";
+    // Remove any previous no-data div
+    const prevNoData = document.querySelector(".no-announcements-div");
+    if (prevNoData) prevNoData.remove();
+
     if (!data.length) {
-      tableBody.innerHTML = `<tr><td colspan="5">No announcements found</td></tr>`;
+      // Create a div below the table for "No announcements found"
+      const noDataDiv = document.createElement("div");
+      noDataDiv.className = "no-announcements-div";
+      noDataDiv.textContent = "No announcements found.";
+      noDataDiv.style.background = "#f4f6f8";
+      noDataDiv.style.color = "#222";
+      noDataDiv.style.fontSize = "1.08rem";
+      noDataDiv.style.fontWeight = "400";
+      noDataDiv.style.textAlign = "center"; // Center the text
+      noDataDiv.style.padding = "18px 24px";
+      noDataDiv.style.borderRadius = "8px";
+      noDataDiv.style.boxShadow = "0 1px 3px rgb(0 0 0 / 0.08)";
+      noDataDiv.style.marginTop = "8px";
+      // Insert after the table
+      document.querySelector(".tables").appendChild(noDataDiv);
       return;
     }
     data.forEach(a => {
       const status = getAnnouncementStatus(a.eventDate || a.scheduledDateTime);
       const tr = document.createElement("tr");
+      // Add a class if pinned
+      if (a.isPinned) tr.classList.add("pinned-row");
       tr.innerHTML = `
         <td>${a.title}</td>
         <td>${new Date(a.createdAt).toLocaleDateString()}</td>
         <td>${a.eventDate ? new Date(a.eventDate).toLocaleString() : "-"}</td>
         <td>${status}</td>
         <td>
-          <button class="btn-view" style="margin: 0 5% " data-id="${a._id}"><i class="fa-solid fa-eye"></i></button>
-          <button class="btn-edit" style="margin: 0 5% "  data-id="${a._id}"><i class="fa-solid fa-pen-to-square"></i></button>
-          <button class="btn-pin style="margin: 0 5% "  ${a.isPinned ? "pinned" : ""}" data-id="${a._id}" title="${a.isPinned ? "Unpin" : "Pin"}">
-            <span style="font-size:18px;color:${a.isPinned ? "#d4af37" : "#888"};">📌</span>
+          <button class="btn-view" style="margin: 0 5% " data-id="${a._id}"><i class="fa-solid fa-eye" style = "color: #225aa3ff"></i></button>
+          <button class="btn-edit" style="margin: 0 5% "  data-id="${a._id}"><i class="fa-solid fa-pen-to-square" style = "color: #225aa3ff"></i></button>
           <button class="btn-delete" style="margin: 0 5% "  data-id="${a._id}"><i class="fa-solid fa-trash"></i></button>
+          <button class="btn-pin ${a.isPinned ? "pinned" : ""}" style="margin: 0 5%" data-id="${a._id}" xtitle="${a.isPinned ? "Unpin" : "Pin"}">
+          <i class="fa-solid fa-location-pin" style="font-size:18px; color:${a.isPinned ? "#d4af37" : "#888"};"></i>
           </button>
         </td>
       `;
       tableBody.appendChild(tr);
     });
   }
+
+  // Tab logic
+const tabButtons = document.querySelectorAll(".tab-btn");
+
+tabButtons.forEach(button => {
+  button.addEventListener("click", () => {
+    tabButtons.forEach(btn => btn.classList.remove("active"));
+    button.classList.add("active");
+
+    if (button.dataset.tab === "pending") {
+      // Show all announcements
+      renderTable(announcementsData);
+    } else if (button.dataset.tab === "approved") {
+      // ✅ Only show pinned announcements
+      const pinned = announcementsData.filter(a => a.isPinned === true);
+      renderTable(pinned);
+    }
+  });
+});
+
 
   // Handle delete, view, edit, pin/unpin
   document.addEventListener("click", async (e) => {
@@ -233,6 +275,52 @@ document.addEventListener("DOMContentLoaded", () => {
         return "Expired";
     }
   }
+  
+  function updateDateTime() {
+    const options = { timeZone: "Asia/Manila" };
+    const now = new Date(new Date().toLocaleString("en-US", options));
+    const hours = now.getHours();
+
+    let greeting = "Good evening";
+    let iconClass = "fa-solid fa-moon";
+    let iconColor = "#183153";
+    if (hours < 12) {
+      iconClass = "fa-solid fa-sun";
+      iconColor = "#f7c948";
+      greeting = "Good morning";
+    } else if (hours < 18) {
+      iconClass = "fa-solid fa-cloud-sun";
+      iconColor = "#f7c948";
+      greeting = "Good afternoon";
+    }
+
+    // Format date as "January 25, 2025"
+    const dateStr = now.toLocaleDateString("en-US", {
+      month: "long",
+      day: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Manila"
+    });
+
+    // Format time as hh:mm (24-hour)
+    const hh = String(now.getHours()).padStart(2, "0");
+    const mm = String(now.getMinutes()).padStart(2, "0");
+    const timeStr = `${hh}:${mm}`;
+
+    document.getElementById("greeting").textContent = greeting;
+    document.getElementById("header-date").textContent = dateStr + " -";
+    document.getElementById("datetime").textContent = timeStr;
+
+    // Update icon
+    const icon = document.getElementById("greeting-icon");
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+  }
+
+  // Initial call
+  updateDateTime();
+  // Update every second
+  setInterval(updateDateTime, 1000);
 
   // Initial fetch
   fetchAnnouncements();
