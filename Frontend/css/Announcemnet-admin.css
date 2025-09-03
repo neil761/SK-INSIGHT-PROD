@@ -111,6 +111,14 @@ body{
 
 .title{
     padding: 20px;
+    margin: 0 10px 0 17px;
+    color: #0A2C59;
+}
+
+.subtitle{
+  font-size: 15px;
+  color: #666;
+  margin: 0 10px 0 1px;
 }
 
 .dropdown {
@@ -132,11 +140,55 @@ body{
     border: rgba(0, 0, 0, 0.605) 0.2px solid;
 }
 
+.tabs {
+  display: flex;
+  gap: 30px;
+  border-bottom: 2px solid #eee;
+  margin-bottom: 20px;
+  margin: 28px 40px 24px 37px;
+  width: calc(100% - 77px);
+}
+
+.tab-btn {
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 500;
+  color: #777;
+  padding: 12px 0;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tab-btn:hover {
+  color: #0A2C59;
+}
+
+.tab-btn.active {
+  color: #0A2C59;
+  font-weight: 600;
+}
+
+.tab-btn.active::after {
+  content: "";
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 100%;
+  height: 3px;
+  background: #0A2C59;
+  border-radius: 3px;
+}
+
 .tables {
-  margin: 28px 11px 24px 11px;
-  width: calc(100% - 22px);
+  margin: 28px 40px 24px 37px;
+  width: calc(100% - 77px);
     background: white;
-    border-radius: 8px;
+    border-radius: 16px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
     padding: 20px;
   }
@@ -156,30 +208,34 @@ body{
   }
 
   thead th {
+  padding: 12px 15px;
+  font-weight: 600;
+  text-align: center; 
+  vertical-align: middle; 
+}
+
+tbody td {
     padding: 12px 15px;
-    font-weight: 600;
-    justify-content: space-evenly;
+    text-align: center;
+    vertical-align: middle;
   }
 
-  thead td {
-    padding: 12px 15px;
-    font-weight: 600;
-  }
+
+.tables table th,
+.tables table td {
+  width: 20%; 
+}
 
   tbody tr {
     background-color: #f4f6f8;
     box-shadow: 0 1px 3px rgb(0 0 0 / 0.1);
     transition: background-color 0.3s ease;
     border-radius: 8px;
+    width: 40vw;
   }
 
   tbody tr:hover {
     background-color: #e1e8ff;
-  }
-
-  tbody td {
-    padding: 12px 15px;
-    vertical-align: middle;
   }
 
   button {
@@ -187,25 +243,25 @@ body{
   background: none;
   cursor: pointer;
   font-size: 18px;
-  margin: 0 4px;
 }
 
-.btn-view { color: #3b82f6; }   /* blue */
-.btn-edit { color: #facc15; }   /* yellow */
-.btn-delete { color: #ef4444; } 
+.btn-view {
+   margin: 0 1%;
+   }   /* blue */
+.btn-edit {
+  margin-right: 100px;
+   }   /* yellow */
+.btn-delete {
+   color: #ef4444;
+   } 
 
 /* The Modal (background) */
 .modal {
-  display: none; /* Hidden by default */
-  position: fixed; /* Stay in place */
-  z-index: 1; /* Sit on top */
-  left: 0;
-  top: 0;
-  width: 100%; /* Full width */
-  height: 100%; /* Full height */
-  overflow: auto; /* Enable scroll if needed */
-  background-color: rgb(0,0,0); /* Fallback color */
-  background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  display: none; 
+  position: fixed; 
+  z-index: 999; 
+  left: 0; top: 0; width: 100%; height: 100%;
+  overflow: auto; background: rgba(0,0,0,0.18);
 }
 
 /* Modal Overlay */
@@ -347,3 +403,139 @@ body{
   align-items: center;   /* vertically align image and text */
   gap: 10px;             /* space between image and text */
 }
+
+/* Announcement Modal Specific Styles */
+.announcement-modal-content {
+  background: #fff;
+  padding: 24px;
+  border-radius: 16px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+  max-width: 700px;
+  margin: auto;
+  font-family: "Segoe UI", sans-serif;
+}
+.announcement-modal-content h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 16px;
+  color: #2c3e50;
+  
+}
+.announcement-modal-content .close {
+  position: absolute;
+  right: 22px;
+  top: 18px;
+  font-size: 1.3rem;
+  color: #4a5874;
+  cursor: pointer;
+}
+
+.modal-title {
+  margin-top: 0;
+  color: #183153;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+
+.modal-meta {
+  color: #4a5874;
+  font-size: 1rem;
+  margin-bottom: 5%;
+  margin-bottom: 5%;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  
+}
+.modal-meta i {
+  margin-right: 6px;
+}
+.modal-body {
+  background: #fdfdfd;
+  border: 1px solid #dcdcdc;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 0.95rem;
+  line-height: 1.5;
+  min-height: 80px;
+  color: #333;
+  max-height: 260px;    
+  overflow-y: auto;  
+}
+
+/* Ensure equal gap between action icons in the Actions column */
+.tables table td:last-child {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 30px; /* Set your desired gap size */
+  margin-left: 40%;
+}
+
+/* Darker background for pinned announcements */
+.pinned-row {
+  background-color: #e2e8f0 !important; /* A darker shade than normal rows */
+}
+
+.top-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #F5F7FA;
+  border-bottom: 1px solid #F5F7FA;
+}
+
+.header-left .header-title {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #183153;
+  margin-left: 24px;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-right .greeting-block {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+}
+
+.greeting-text {
+  font-weight: 500;
+  color: #183153;
+  font-size: 18px;
+  margin-bottom: 2px;
+}
+
+.header-datetime {
+  font-size: 1px;
+  color: #222;
+  letter-spacing: 0.04em;
+  margin-bottom: 5px;
+}
+
+#header-date {
+  font-size: 0.98rem;
+  color: #222;
+}
+
+#datetime {
+  font-size: 0.98rem;
+  color: #222;
+  letter-spacing: 0.04em;
+}
+
+
+
+
+
+
+
+
+

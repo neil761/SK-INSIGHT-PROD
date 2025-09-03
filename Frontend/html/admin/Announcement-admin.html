@@ -64,23 +64,40 @@
     </div>
 
     <div class="content">
-        <div class="parent">
-            <div class="date">
-              <p>Good Morning</p>
-              <p>;wurojkldnvsx</p>
+        <div class="top-header">
+          <div class="header-left">
+            <span class="header-title"></span>
+          </div>
+          <div class="header-right">
+            <div class="greeting-block">
+              <span>
+                <i id="greeting-icon" class="fa-solid fa-sun" style="color: #f7c948; margin-right: 6px;"></i>
+                <span id="greeting" class="greeting-text">Good Morning</span>
+              </span>
+              <div class="header-datetime">
+                <span id="header-date">January 25, 2025</span>
+                -
+                <span id="datetime">08:48</span>
+              </div>
             </div>
           </div>
+        </div>
 
         <hr>
 
         <div class="title">
             <h1>Announcements</h1>
-            <p>Lists of Announcements</p>
+            <p class="subtitle">Lists of Announcements</p>
         </div>
 
         <div class="dropdown">
             <button id="myBtn" class="add">+ Add Announcement</button>
         </div>
+
+        <nav class="tabs">
+          <button class="tab-btn active" data-tab="pending"><i class="fas fa-clock"></i> All</button>
+          <button class="tab-btn" data-tab="approved"><i class="fa-solid fa-location-pin" ></i> Pinned</button>
+        </nav>
 
         <div class="tables">
           <table>
@@ -88,7 +105,9 @@
               <tr>
                 <th>Title</th>
                 <th>Date</th>
-                <th>Action</th>
+                <th>When</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody></tbody>
@@ -126,7 +145,24 @@
         </div>
       </div>
 
-
+      <!-- Announcement Details Modal -->
+      <div id="announcementModal" class="modal" style="display:none;">
+        <div class="modal-content announcement-modal-content">
+          <span class="close" id="closeAnnouncementModal">&times;</span>
+          <h2 id="modalTitle" class="modal-title"></h2>
+          <hr style="margin: 12px 0 18px 0; border: none; border-top: 1px solid #e5e8ef;">
+          <div class="modal-meta">
+            <span>
+              <i class="fas fa-calendar-alt"></i>
+              Event Date: <span id="modalEventDate"></span>
+            </span>
+            <span style="margin-left:24px;">
+              <i class="fas fa-clock"></i>
+              Posted: <span id="modalPostedDate"></span>
+            </span>
+          </div>
+          <div class="modal-body" id="modalContent"></div>
+        </div>
       </div>
 
     </div>
