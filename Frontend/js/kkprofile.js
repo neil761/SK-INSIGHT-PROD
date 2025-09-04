@@ -2,7 +2,7 @@
 
 // 🔹 Redirect to login if no token
 if (!localStorage.getItem("token")) {
-  window.location.href = "/html/admin-log.html";
+  window.location.href = "/Frontend/html/admin/admin-log.html";
 }
 
 let allProfiles = [];
@@ -22,51 +22,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentFilters = {};
 
-  // 🔹 Fetch and populate available years & cycles
-  async function fetchCycles() {
-    try {
-      const res = await fetch("http://localhost:5000/api/formcycle/kk", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch cycles");
+  let latestYear = null;
+let latestCycle = null;
 
-      const cycles = await res.json();
+async function fetchCycles() {
+  try {
+    const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch cycles");
 
-      // Group cycles by year
-      const yearMap = {};
-      cycles.forEach((c) => {
-        if (!yearMap[c.year]) yearMap[c.year] = [];
-        yearMap[c.year].push(c.cycleNumber);
-      });
+    const cycles = await res.json();
 
-      // Populate yearSelect
-      yearSelect.innerHTML = `<option value="">Select Year</option>`;
-      Object.keys(yearMap)
-        .sort((a, b) => b - a) // descending
-        .forEach((year) => {
+    // Group cycles by year
+    const yearMap = {};
+    cycles.forEach((c) => {
+      if (!yearMap[c.year]) yearMap[c.year] = [];
+      yearMap[c.year].push(c.cycleNumber);
+    });
+
+    // Get latest year + cycle
+    const sortedYears = Object.keys(yearMap).sort((a, b) => b - a); // descending
+    latestYear = sortedYears[0];
+    latestCycle = Math.max(...yearMap[latestYear]);
+
+    // Populate yearSelect
+    yearSelect.innerHTML = `<option value="">Select Year</option>`;
+    sortedYears.forEach((year) => {
+      const opt = document.createElement("option");
+      opt.value = year;
+      opt.textContent = year;
+      yearSelect.appendChild(opt);
+    });
+
+    // When year changes, update cycleSelect
+    yearSelect.addEventListener("change", () => {
+      const selectedYear = yearSelect.value;
+      cycleSelect.innerHTML = `<option value="">Select Cycle</option>`;
+      if (selectedYear && yearMap[selectedYear]) {
+        yearMap[selectedYear].forEach((cy) => {
           const opt = document.createElement("option");
-          opt.value = year;
-          opt.textContent = year;
-          yearSelect.appendChild(opt);
+          opt.value = cy;
+          opt.textContent = `Cycle ${cy}`;
+          cycleSelect.appendChild(opt);
         });
-
-      // When year changes, update cycleSelect
-      yearSelect.addEventListener("change", () => {
-        const selectedYear = yearSelect.value;
-        cycleSelect.innerHTML = `<option value="">Select Cycle</option>`;
-        if (selectedYear && yearMap[selectedYear]) {
-          yearMap[selectedYear].forEach((cy) => {
-            const opt = document.createElement("option");
-            opt.value = cy;
-            opt.textContent = `Cycle ${cy}`;
-            cycleSelect.appendChild(opt);
-          });
-        }
-      });
-    } catch (err) {
-      console.error("Error fetching cycles:", err);
-    }
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching cycles:", err);
   }
+}
+
 
   // 🔹 Fetch profiles with filters
   async function fetchProfiles(params = {}) {
@@ -230,10 +236,13 @@ function capitalize(str) {
 
   // 🔹 Cycle filter (year + cycle)
   filterBtn.addEventListener("click", () => {
-    currentFilters.year = yearSelect.value || "";
-    currentFilters.cycle = cycleSelect.value || "";
-    fetchProfiles(currentFilters);
-  });
+  // If year/cycle not selected, use latest
+  currentFilters.year = yearSelect.value || latestYear;
+  currentFilters.cycle = cycleSelect.value || latestCycle;
+
+  fetchProfiles(currentFilters);
+});
+
 
   // 🔹 Search filter
   searchInput.addEventListener("keyup", () => {
@@ -265,115 +274,101 @@ function capitalize(str) {
 
 
   // 🔹 Available filter options
-  const filterOptions = {
-    "Work Status": ["Employed", "Unemployed", "Self-Employed", "Currently looking for a Job", "Not interested in looking for a Job"],
-    "Youth Age Group": ["Child Youth", "Core Youth", "Young Youth"],
-    "Educational Background": ["Elementary Undergraduate", "Elementary Graduate", "High School Undergraduate", "High School Graduate", "Vocational Graduate", "College Undergraduate", "College Graduate", "Masters Graduate", "Doctorate Level", "Doctorate Graduate"],
-    "Civil Status": ["Single", "Live-in", "Married", "Unknown", "Separated", "Annulled", "Divorced", "Widowed"],
-    "Youth Classification": [
-      "In School Youth",
-      "Out of School Youth",
-      "Working Youth",
-      "Youth with Specific Needs"
-    ],
-    Purok: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
-    "Registered SK Voter": ["true", "false"],
-    "Registered National Voter": ["true", "false"],
-    "Voted Last SK Election": ["true", "false"],
-  };
+  // 🔹 Available filter options
+const filterOptions = {
+  "Work Status": ["Employed", "Unemployed", "Self-Employed", "Currently looking for a Job", "Not interested in looking for a Job"],
+  "Youth Age Group": ["Child Youth", "Core Youth", "Young Youth"],
+  "Educational Background": ["Elementary Undergraduate", "Elementary Graduate", "High School Undergraduate", "High School Graduate", "Vocational Graduate", "College Undergraduate", "College Graduate", "Masters Graduate", "Doctorate Level", "Doctorate Graduate"],
+  "Civil Status": ["Single", "Live-in", "Married", "Unknown", "Separated", "Annulled", "Divorced", "Widowed"],
+  "Youth Classification": ["In School Youth","Out of School Youth","Working Youth","Youth with Specific Needs"],
+  "Purok": ["1","2","3","4","5","6","7","8","9","10"],
+  "Registered SK Voter": ["true", "false"],
+  "Registered National Voter": ["true", "false"],
+  "Voted Last SK Election": ["true", "false"],
+};
 
-  // 🔹 Classification dropdown setup
-  const classificationBtn =
-    classificationDropdown.querySelector(".dropdown-button");
-  const classificationContent =
-    classificationDropdown.querySelector(".dropdown-content");
+const classificationBtn = document.getElementById("classificationDropdown");
+const classificationContent = classificationDropdown.querySelector(".dropdown-content");
 
-  Object.keys(filterOptions).forEach((cat) => {
-    const a = document.createElement("a");
-    a.textContent = cat;
-    a.href = "#";
-    a.onclick = (e) => {
-      e.preventDefault();
-      classificationBtn.textContent = cat;
-      buildGroupDropdown(cat);
-      classificationContent.style.display = "none";
-    };
-    classificationContent.appendChild(a);
-  });
+// Build multi-level hover dropdown
+Object.keys(filterOptions).forEach((cat) => {
+  // Parent container
+  const parent = document.createElement("div");
+  parent.classList.add("submenu");
 
-  // 🔹 Build group dropdown options
-  function buildGroupDropdown(category) {
-    const groupContent = groupDropdown.querySelector(".dropdown-content");
-    const groupBtn = groupDropdown.querySelector(".dropdown-buttons");
-    groupContent.innerHTML = "";
-    groupBtn.textContent = "Select Option";
+  // Top-level item (category)
+  const catItem = document.createElement("a");
+  catItem.textContent = cat;
+  catItem.href = "#";
+  parent.appendChild(catItem);
 
-    filterOptions[category].forEach((opt) => {
-      const g = document.createElement("a");
-      g.textContent = opt;
-      g.href = "#";
-      g.onclick = (e) => {
-        e.preventDefault();
-        groupBtn.textContent = opt;
+  // Submenu container
+  const subMenu = document.createElement("div");
+  subMenu.classList.add("submenu-content");
 
-        // 🧹 Clear old filters
-        delete currentFilters.workStatus;
-        delete currentFilters.youthAgeGroup;
-        delete currentFilters.educationalBackground;
-        delete currentFilters.civilStatus;
-        delete currentFilters.youthClassification;
-        delete currentFilters.purok;
-        delete currentFilters.registeredSKVoter;
-        delete currentFilters.registeredNationalVoter;
-        delete currentFilters.votedLastSKElection;
+  // Build groups inside submenu
+  filterOptions[cat].forEach((opt) => {
+    const g = document.createElement("a");
+    g.textContent = opt;
+    g.href = "#";
+    g.onclick = async (e) => {
+  e.preventDefault();
 
-        // ✅ Apply new filter
-        currentFilters.all = "true";
-        if (category === "Work Status") currentFilters.workStatus = opt;
-        if (category === "Youth Age Group") currentFilters.youthAgeGroup = opt;
-        if (category === "Educational Background")
-          currentFilters.educationalBackground = opt;
-        if (category === "Civil Status") currentFilters.civilStatus = opt;
-        if (category === "Youth Classification")
-          currentFilters.youthClassification = opt;
-        if (category === "Purok") currentFilters.purok = opt;
-        if (category === "Registered SK Voter")
-          currentFilters.registeredSKVoter = opt;
-        if (category === "Registered National Voter")
-          currentFilters.registeredNationalVoter = opt;
-        if (category === "Voted Last SK Election")
-          currentFilters.votedLastSKElection = opt;
+  // ✅ Store classification filter
+  if (cat === "Work Status") currentFilters.workStatus = opt;
+  if (cat === "Youth Age Group") currentFilters.youthAgeGroup = opt;
+  if (cat === "Educational Background") currentFilters.educationalBackground = opt;
+  if (cat === "Civil Status") currentFilters.civilStatus = opt;
+  if (cat === "Youth Classification") currentFilters.youthClassification = opt;
+  if (cat === "Purok") currentFilters.purok = opt;
+  if (cat === "Registered SK Voter") currentFilters.registeredSKVoter = opt;
+  if (cat === "Registered National Voter") currentFilters.registeredNationalVoter = opt;
+  if (cat === "Voted Last SK Election") currentFilters.votedLastSKElection = opt;
 
-        fetchProfiles(currentFilters);
-        groupContent.style.display = "none";
-      };
-      groupContent.appendChild(g);
-    });
+  // ✅ If no year/cycle selected, fetch the current one
+  if (!currentFilters.year || !currentFilters.cycle) {
+    try {
+      const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const cycles = await res.json();
+
+      // Find latest open cycle
+      const openCycle = cycles.find(c => c.isOpen);
+      if (openCycle) {
+        currentFilters.year = openCycle.year;
+        currentFilters.cycle = openCycle.cycleNumber;
+      }
+    } catch (err) {
+      console.error("❌ Error fetching current cycle:", err);
+    }
   }
 
-  // 🔹 Dropdown toggles
-  classificationBtn.addEventListener("click", () => {
-    classificationContent.style.display =
-      classificationContent.style.display === "block" ? "none" : "block";
+
+  // ✅ Close dropdown after selection
+  classificationContent.style.display = "none";
+};
+
+
+    subMenu.appendChild(g);
   });
 
-  groupDropdown
-    .querySelector(".dropdown-buttons")
-    .addEventListener("click", () => {
-      const groupContent = groupDropdown.querySelector(".dropdown-content");
-      groupContent.style.display =
-        groupContent.style.display === "block" ? "none" : "block";
-    });
+  parent.appendChild(subMenu);
+  classificationContent.appendChild(parent);
+});
 
-  // 🔹 Close dropdowns on outside click
-  window.addEventListener("click", (e) => {
-    if (!classificationDropdown.contains(e.target)) {
-      classificationContent.style.display = "none";
-    }
-    if (!groupDropdown.contains(e.target)) {
-      groupDropdown.querySelector(".dropdown-content").style.display = "none";
-    }
-  });
+// Toggle dropdown on click
+classificationBtn.querySelector(".dropdown-button").addEventListener("click", () => {
+  classificationContent.style.display =
+    classificationContent.style.display === "block" ? "none" : "block";
+});
+
+// Close dropdown on outside click
+window.addEventListener("click", (e) => {
+  if (!classificationBtn.contains(e.target)) {
+    classificationContent.style.display = "none";
+  }
+});
 
   function updateDateTime() {
     const options = { timeZone: "Asia/Manila" };
