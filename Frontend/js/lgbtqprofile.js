@@ -162,16 +162,14 @@ document.addEventListener("DOMContentLoaded", () => {
     const lgbtqClassification = p.displayData?.lgbtqClassification ?? "N/A";
     const idImage = p.displayData?.idImage
       ? `http://localhost:5000/uploads/lgbtq_id_images/${p.displayData.idImage}`
-      : '/Frontend/assets/id.jpg';
+      : "/Frontend/assets/default-profile.png";
 
+    // Header: just the name
     header.innerHTML = `
-      <img src="${idImage}" 
-       alt="Profile Image" 
-       width="60" height="60" 
-       style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-      <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+      <p style="font-size:1.2em; font-weight:bold; margin:0;">${fullName}</p>
     `;
 
+    // Details: ID image in its own container, larger size
     details.innerHTML = `
       <div class="profile-info">
         <p><b class="label">Age:</b> ${age}</p>
@@ -183,6 +181,30 @@ document.addEventListener("DOMContentLoaded", () => {
         <p><b class="label">Birthday:</b> ${birthday}</p>
         <hr>
         <p><b class="label">Email:</b> ${p.user?.email || "-"}</p>
+        <hr>
+        <div class="id-image-container" style="
+          background: #f3f3f3;
+          padding: 18px;
+          border-radius: 12px;
+          margin: 18px 0;
+          text-align: left;
+          box-shadow: 0 2px 8px rgba(0,0,0,0.10);
+        ">
+          <p style="color:#222; font-weight:bold; margin-bottom:12px;">Identification Card:</p>
+          <div style="width:100%; display:flex; justify-content:center;">
+            <img src="${idImage}" alt="ID Image"
+              style="
+                width:96%;
+                max-width:480px;
+                height:220px;
+                object-fit:contain;
+                background:#fff;
+                border-radius:6px;
+                box-shadow:0 1px 6px rgba(0,0,0,0.08);
+                display:block;
+              " />
+          </div>
+        </div>
         <hr>
       </div>
     `;
