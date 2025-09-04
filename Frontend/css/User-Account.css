@@ -98,6 +98,23 @@ body{
     padding: 10px;
 }
 
+.page-header{
+  margin-top: 1.5%;
+}
+
+.tit{
+  color: #0A2C59;
+  margin-top: -2%;
+  margin-left: 1.5%;
+}
+
+.subtitle{
+  font-size: 15px;
+  color: #666;
+  margin-bottom: 25px;
+  margin-left: 1.5%;
+}
+
 .parent {
     display: flex;
     justify-content: flex-end;
@@ -180,9 +197,8 @@ h1, h2 {
 }
 
   .tables {
-    margin-top: 1%;
-    max-width: 90%;
-    margin-left: 5%;
+    margin: 28px 31px 24px 31px;  /* top right bottom left */
+    width: calc(100% - 62px);
     background: white;
     border-radius: 8px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
@@ -232,7 +248,7 @@ h1, h2 {
 .account-cards {
   display: flex;
   gap: 20px;
-  margin: 20px 0 0 0;
+  margin: 20px 0 0 1%;
 }
 .account-card {
   display: flex;

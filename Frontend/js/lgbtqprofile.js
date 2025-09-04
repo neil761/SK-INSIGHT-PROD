@@ -193,12 +193,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 🔹 Cycle filter
-  filterBtn.addEventListener("click", () => {
-    // Only allow cycle if year is selected
-    currentFilters.year = cycleSelect.value || "";
-    currentFilters.cycle = currentFilters.year ? yearSelect.value || "" : "";
-    fetchProfiles(currentFilters);
-  });
+filterBtn.addEventListener("click", () => {
+  // Year & cycle
+  currentFilters.year = cycleSelect.value || "";
+  currentFilters.cycle = currentFilters.year ? yearSelect.value || "" : "";
+
+  // Classification already set from dropdown
+  // Search is handled separately in searchInput
+
+  fetchProfiles(currentFilters);
+});
+
 
   // 🔹 Classification dropdown
   const dropdownButton = document.querySelector(".dropdown-button");
@@ -215,30 +220,42 @@ document.addEventListener("DOMContentLoaded", () => {
   ];
 
   // Populate dropdown
-  classifications.forEach((c) => {
-    const option = document.createElement("a");
-    option.href = "#";
-    option.textContent = c;
-    option.addEventListener("click", () => {
-      dropdownButton.textContent = c;
-      currentFilters.lgbtqClassification = c;
-      // Reset year/cycle if not selected
-      if (!currentFilters.year) currentFilters.cycle = "";
-      fetchProfiles(currentFilters);
-    });
-    dropdownContent.appendChild(option);
+classifications.forEach((c) => {
+  const option = document.createElement("a");
+  option.href = "#";
+  option.textContent = c;
+  option.addEventListener("click", (e) => {
+    e.preventDefault();
+    dropdownButton.textContent = c;
+    currentFilters.lgbtqClassification = c;
+  });
+  dropdownContent.appendChild(option);
+});
+
+// Add "All" option
+const allOption = document.createElement("a");
+allOption.href = "#";
+allOption.textContent = "All Classifications";
+allOption.addEventListener("click", (e) => {
+  e.preventDefault();
+  dropdownButton.textContent = "Select Classification";
+  currentFilters.lgbtqClassification = "";
+});
+dropdownContent.insertBefore(allOption, dropdownContent.firstChild);
+
+
+  // Show/hide dropdown on button click
+  dropdownButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    dropdownContent.style.display =
+      dropdownContent.style.display === "block" ? "none" : "block";
   });
 
-  // Add "All" option
-  const allOption = document.createElement("a");
-  allOption.href = "#";
-  allOption.textContent = "All Classifications";
-  allOption.addEventListener("click", () => {
-    dropdownButton.textContent = "Select Classification";
-    currentFilters.lgbtqClassification = "";
-    fetchProfiles(currentFilters);
+  // Hide dropdown when clicking outside
+  document.addEventListener("click", () => {
+    dropdownContent.style.display = "none";
   });
-  dropdownContent.insertBefore(allOption, dropdownContent.firstChild);
+
 
   // 🔹 Search filter
   searchInput.addEventListener("keyup", () => {

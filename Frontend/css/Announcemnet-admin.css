@@ -185,8 +185,8 @@ body{
 }
 
 .tables {
-  margin: 28px 40px 24px 37px;
-  width: calc(100% - 77px);
+    margin: 28px 31px 24px 31px;  /* top right bottom left */
+    width: calc(100% - 62px);
     background: white;
     border-radius: 16px;
     box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);

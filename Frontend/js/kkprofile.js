@@ -22,51 +22,57 @@ document.addEventListener("DOMContentLoaded", () => {
 
   let currentFilters = {};
 
-  // 🔹 Fetch and populate available years & cycles
-  async function fetchCycles() {
-    try {
-      const res = await fetch("http://localhost:5000/api/formcycle/kk", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-      });
-      if (!res.ok) throw new Error("Failed to fetch cycles");
+  let latestYear = null;
+let latestCycle = null;
 
-      const cycles = await res.json();
+async function fetchCycles() {
+  try {
+    const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+      headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch cycles");
 
-      // Group cycles by year
-      const yearMap = {};
-      cycles.forEach((c) => {
-        if (!yearMap[c.year]) yearMap[c.year] = [];
-        yearMap[c.year].push(c.cycleNumber);
-      });
+    const cycles = await res.json();
 
-      // Populate yearSelect
-      yearSelect.innerHTML = `<option value="">Select Year</option>`;
-      Object.keys(yearMap)
-        .sort((a, b) => b - a) // descending
-        .forEach((year) => {
+    // Group cycles by year
+    const yearMap = {};
+    cycles.forEach((c) => {
+      if (!yearMap[c.year]) yearMap[c.year] = [];
+      yearMap[c.year].push(c.cycleNumber);
+    });
+
+    // Get latest year + cycle
+    const sortedYears = Object.keys(yearMap).sort((a, b) => b - a); // descending
+    latestYear = sortedYears[0];
+    latestCycle = Math.max(...yearMap[latestYear]);
+
+    // Populate yearSelect
+    yearSelect.innerHTML = `<option value="">Select Year</option>`;
+    sortedYears.forEach((year) => {
+      const opt = document.createElement("option");
+      opt.value = year;
+      opt.textContent = year;
+      yearSelect.appendChild(opt);
+    });
+
+    // When year changes, update cycleSelect
+    yearSelect.addEventListener("change", () => {
+      const selectedYear = yearSelect.value;
+      cycleSelect.innerHTML = `<option value="">Select Cycle</option>`;
+      if (selectedYear && yearMap[selectedYear]) {
+        yearMap[selectedYear].forEach((cy) => {
           const opt = document.createElement("option");
-          opt.value = year;
-          opt.textContent = year;
-          yearSelect.appendChild(opt);
+          opt.value = cy;
+          opt.textContent = `Cycle ${cy}`;
+          cycleSelect.appendChild(opt);
         });
-
-      // When year changes, update cycleSelect
-      yearSelect.addEventListener("change", () => {
-        const selectedYear = yearSelect.value;
-        cycleSelect.innerHTML = `<option value="">Select Cycle</option>`;
-        if (selectedYear && yearMap[selectedYear]) {
-          yearMap[selectedYear].forEach((cy) => {
-            const opt = document.createElement("option");
-            opt.value = cy;
-            opt.textContent = `Cycle ${cy}`;
-            cycleSelect.appendChild(opt);
-          });
-        }
-      });
-    } catch (err) {
-      console.error("Error fetching cycles:", err);
-    }
+      }
+    });
+  } catch (err) {
+    console.error("Error fetching cycles:", err);
   }
+}
+
 
   // 🔹 Fetch profiles with filters
   async function fetchProfiles(params = {}) {
@@ -230,10 +236,13 @@ function capitalize(str) {
 
   // 🔹 Cycle filter (year + cycle)
   filterBtn.addEventListener("click", () => {
-    currentFilters.year = yearSelect.value || "";
-    currentFilters.cycle = cycleSelect.value || "";
-    fetchProfiles(currentFilters);
-  });
+  // If year/cycle not selected, use latest
+  currentFilters.year = yearSelect.value || latestYear;
+  currentFilters.cycle = cycleSelect.value || latestCycle;
+
+  fetchProfiles(currentFilters);
+});
+
 
   // 🔹 Search filter
   searchInput.addEventListener("keyup", () => {
@@ -302,10 +311,10 @@ Object.keys(filterOptions).forEach((cat) => {
     const g = document.createElement("a");
     g.textContent = opt;
     g.href = "#";
-    g.onclick = (e) => {
+    g.onclick = async (e) => {
   e.preventDefault();
 
-  // ✅ Store classification filter only (don’t fetch yet)
+  // ✅ Store classification filter
   if (cat === "Work Status") currentFilters.workStatus = opt;
   if (cat === "Youth Age Group") currentFilters.youthAgeGroup = opt;
   if (cat === "Educational Background") currentFilters.educationalBackground = opt;
@@ -316,9 +325,30 @@ Object.keys(filterOptions).forEach((cat) => {
   if (cat === "Registered National Voter") currentFilters.registeredNationalVoter = opt;
   if (cat === "Voted Last SK Election") currentFilters.votedLastSKElection = opt;
 
-  // ✅ Just close dropdown after selection
+  // ✅ If no year/cycle selected, fetch the current one
+  if (!currentFilters.year || !currentFilters.cycle) {
+    try {
+      const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+      });
+      const cycles = await res.json();
+
+      // Find latest open cycle
+      const openCycle = cycles.find(c => c.isOpen);
+      if (openCycle) {
+        currentFilters.year = openCycle.year;
+        currentFilters.cycle = openCycle.cycleNumber;
+      }
+    } catch (err) {
+      console.error("❌ Error fetching current cycle:", err);
+    }
+  }
+
+
+  // ✅ Close dropdown after selection
   classificationContent.style.display = "none";
 };
+
 
     subMenu.appendChild(g);
   });
