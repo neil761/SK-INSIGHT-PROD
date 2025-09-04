@@ -158,48 +158,69 @@ function capitalize(str) {
   const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
   const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
 
-  header.innerHTML = `
-    <img src="http://localhost:5000/api/kkprofiling/image/${p._id}" alt="Profile Image" width="60" height="60" style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-    <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
-  `;
+  // Fetch image as blob with token
+  fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
+    headers: {
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Image not found");
+      return res.blob();
+    })
+    .then((blob) => {
+      const imgUrl = URL.createObjectURL(blob);
+      header.innerHTML = `
+        <img src="${imgUrl}" alt="Profile Image" width="60" height="60"
+          style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
+        <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+      `;
+    })
+    .catch(() => {
+      header.innerHTML = `
+        <img src="/Frontend/assets/default-profile.png" alt="Profile Image" width="60" height="60"
+          style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
+        <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+      `;
+    });
 
   details.innerHTML = `
-  <div class="profile-info">
-    <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
-    <hr>
-    <p><b class="label">Age:</b> ${p.user?.age ?? "N/A"}</p>
-    <hr>
-    <p><b class="label">Gender:</b> ${p.gender}</p>
-    <hr>
-    <p><b class="label">Birthday:</b> ${p.user?.birthday ? new Date(p.user.birthday).toISOString().split("T")[0] : "-"}</p>
-    <hr>
-    <p><b class="label">Email:</b> ${p.email || "-"}</p>
-    <hr>
-    <p><b class="label">Contact Number:</b> ${p.contactNumber || "-"}</p>
-    <hr>
-    <p><b class="label">Civil Status:</b> ${p.civilStatus || "-"}</p>
-    <hr>
-    <p><b class="label">Youth Age Group:</b> ${p.youthAgeGroup || "-"}</p>
-    <hr>
-    <p><b class="label">Youth Classification:</b> ${p.youthClassification || "-"}</p>
-    <hr>
-    <p><b class="label">Educational Background:</b> ${p.educationalBackground || "-"}</p>
-    <hr>
-    <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
-    <hr>
-    <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
-    <hr>
-    <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
-    <hr>
-    <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
-    <hr>
-    <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
-    <hr>
-    ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
-    <hr>
-    <p class="bott"></p>
-  </div>
-`;
+    <div class="profile-info">
+      <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
+      <hr>
+      <p><b class="label">Age:</b> ${p.user?.age ?? "N/A"}</p>
+      <hr>
+      <p><b class="label">Gender:</b> ${p.gender}</p>
+      <hr>
+      <p><b class="label">Birthday:</b> ${p.user?.birthday ? new Date(p.user.birthday).toISOString().split("T")[0] : "-"}</p>
+      <hr>
+      <p><b class="label">Email:</b> ${p.email || "-"}</p>
+      <hr>
+      <p><b class="label">Contact Number:</b> ${p.contactNumber || "-"}</p>
+      <hr>
+      <p><b class="label">Civil Status:</b> ${p.civilStatus || "-"}</p>
+      <hr>
+      <p><b class="label">Youth Age Group:</b> ${p.youthAgeGroup || "-"}</p>
+      <hr>
+      <p><b class="label">Youth Classification:</b> ${p.youthClassification || "-"}</p>
+      <hr>
+      <p><b class="label">Educational Background:</b> ${p.educationalBackground || "-"}</p>
+      <hr>
+      <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
+      <hr>
+      <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
+      <hr>
+      <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
+      <hr>
+      <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
+      <hr>
+      <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
+      <hr>
+      ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
+      <hr>
+      <p class="bott"></p>
+    </div>
+  `;
 
   modal.style.display = "flex";
   document.querySelector(".close-btn").onclick = () =>
