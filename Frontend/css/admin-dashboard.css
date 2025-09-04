@@ -1,110 +1,190 @@
-@media (min-width: 1024px) {
-    * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }
-    
-    body{
-        font-family: 'Poppins', sans-serif;
-        background-color: #F5F7FA;
-    }
-    
-    .sidebar {
-        height: 100vh;
-        width: 250px;
-        background-color: #0A2C59; 
-        color: white;
-        position: fixed;
-        left: 0;
-        top: 0;
-        padding: 20px;
-    }
-    
-    .logos{
-        display: flex;
-        align-items: center;   
-        gap: 10px;               
-    }
-    
-    .title-container {
-        margin-top: 10px;
-        display: flex;
-        flex-direction: column; 
-        line-height: 1.2; 
-    }
-    
-    .admin{
-        font-size: small;
-        color: #FED600;
-    }
-    
-    .logo{
-        width: 20vw;
-        max-width: 100px;
-        height: auto;
-        margin-top: 20px;
-    }
-    
-    .sidebar a {
-        display: block;
-        color: white;
-        padding: 12px;
-        text-decoration: none;
-        border-radius: 5px;
-        margin: 5px 0;
-        transition: background 0.3s;
-    }
-    
-    .menu{
-        margin-top: 20px;
-    }
-    
-    .dashh{
-        background-color: #07B0F2;
-        border-radius: 5px;
-    }
-    
-    .dash{
-        margin-left: 10px;
-    }
-    
-    .educ{
-        margin-left: 5px;
-        font-size: 15.2px;
-    }
-    
-    .dashs{
-        margin-left: 3px;
-    }
-    
-    .dashb{
-        margin-left: 10px;
-    }
-    
-    .Kk{
-        margin-left: 5px;
-    }
-    
-    .kk{
-        margin-left: 13px;
-    }
-
-    .log{
-        margin-top: 90%;
-    }
-    
-    .content{
-        margin-left: 250px;
-        padding: 10px;
-    }
-    
-    .parent {
-        display: flex;
-        justify-content: flex-end;
-        padding-bottom: 10px;
-    }
-    
+/* Reset */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: #F5F7FA;
+}
 
+/* Sidebar */
+.sidebar {
+  height: 100vh;
+  width: 250px;
+  background-color: #0A2C59;
+  color: white;
+  position: fixed;
+  left: 0;
+  top: 0;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar .title {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 10px;
+}
+
+.logos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.logo {
+  width: 90px;
+  height: auto;
+  margin-bottom: 10px;
+}
+
+.title-container {
+  text-align: center;
+  line-height: 1.2;
+}
+
+.chairman {
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.admin {
+  font-size: small;
+  color: #FED600;
+}
+
+.menu a,
+.log a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: white;
+  padding: 10px;
+  margin: 5px 0;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background 0.3s;
+}
+
+.menu a:hover,
+.log a:hover {
+  background-color: #07305f;
+}
+
+.dashh {
+  background-color: #07B0F2;
+  border-radius: 5px;
+}
+
+.log {
+  margin-top: auto;
+}
+
+/* Content */
+.content {
+  margin-left: 250px;
+  padding: 20px;
+  background-color: #EAF1FB;
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.topbar-text {
+  text-align: right;
+}
+
+.greet {
+  font-weight: 600;
+  color: #222;
+  font-size: 14px;
+}
+
+.dot {
+  height: 10px;
+  width: 10px;
+  background-color: #FED600;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 6px;
+}
+
+.date {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Dashboard */
+.dashboard h2 {
+  font-size: 22px;
+  margin-bottom: 5px;
+  color: #0A2C59;
+}
+
+.dashboard .subtext {
+  margin-bottom: 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  border-radius: 12px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+}
+
+.card h3 {
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #0A2C59;
+}
+
+.large {
+  width: 100%;
+  margin-bottom: 20px;
+}
+
+.cards-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit,minmax(250px,1fr));
+  gap: 15px;
+}
+
+.chart-placeholder {
+  height: 180px;
+  background: #F0F2F5;
+  border: 2px dashed #ccc;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #888;
+  font-size: 14px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .content {
+    margin-left: 0;
+  }
+
+  .sidebar {
+    position: relative;
+    width: 100%;
+    height: auto;
+  }
+
+  .log {
+    margin-top: 20px;
+  }
+}
