@@ -39,53 +39,53 @@
     </div>
 
     <!-- Individual Cards for Each Field -->
-    <!-- Individual Cards for Each Field -->
-<form>
+<form id="lgbtqForm" enctype="multipart/form-data">
   <div class="card">
     <label for="lastName">Last Name:</label>
-    <input type="text" id="lastName" name="lastName" placeholder="Your Answer">
+    <input type="text" id="lastName" name="lastname" placeholder="Your Answer" required>
   </div>
-
   <div class="card">
     <label for="firstName">First Name:</label>
-    <input type="text" id="firstName" name="firstName" placeholder="Your Answer">
+    <input type="text" id="firstName" name="firstname" placeholder="Your Answer" required>
   </div>
-
   <div class="card">
     <label for="middleName">Middle Name:</label>
-    <input type="text" id="middleName" name="middleName" placeholder="Your Answer">
+    <input type="text" id="middleName" name="middlename" placeholder="Your Answer" required>
   </div>
-
   <div class="card">
     <label for="birthday">Birthday:</label>
-    <input type="date" id="birthday" name="birthday">
+    <input type="date" id="birthday" name="birthday" required>
   </div>
-
   <div class="card">
     <label for="sex">Sex Assigned at Birth:</label>
-    <input type="text" id="sex" name="sex" placeholder="Your Answer">
+    <input type="text" id="sex" name="sexAssignedAtBirth" placeholder="Your Answer" required>
   </div>
-
   <div class="card">
     <label for="identity">LGBTQIA+ Classification:</label>
-    <select id="identity" name="identity">
+    <select id="identity" name="lgbtqClassification" required>
       <option value="">Select your Gender Identity</option>
-      <option value="lesbian">Lesbian</option>
-      <option value="gay">Gay</option>
-      <option value="bisexual">Bisexual</option>
-      <option value="transgender">Transgender</option>
-      <option value="queer">Queer</option>
-      <option value="intersex">Intersex</option>
-      <option value="asexual">Asexual</option>
+      <option value="Lesbian">Lesbian</option>
+      <option value="Gay">Gay</option>
+      <option value="Bisexual">Bisexual</option>
+      <option value="Transgender">Transgender</option>
+      <option value="Queer">Queer</option>
+      <option value="Intersex">Intersex</option>
+      <option value="Asexual">Asexual</option>
     </select>
   </div>
-
-
-      <!-- Submit -->
-      <div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
-        <button type="submit" class="submit-btn" style="width: auto; padding: 8px 20px;">Submit</button>
-      </div>
-    </form>
+  <div class="card">
+    <label for="idImage">Upload Valid ID Image:</label>
+    <input type="file" id="idImage" name="idImage" accept="image/*" required>
   </div>
+  <div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
+    <button type="submit" class="submit-btn" style="width: auto; padding: 8px 20px;">Submit</button>
+  </div>
+</form>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <script src="../../js/User/LGBTQ-user.js"></script>
+
+
 </body>
 </html>

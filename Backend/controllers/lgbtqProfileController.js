@@ -28,7 +28,10 @@ exports.submitLGBTQProfile = async (req, res) => {
       formName: "LGBTQIA+ Profiling",
     });
     if (!formStatus || !formStatus.isOpen) {
-      return res.status(403).json({ error: "Form is currently closed" });
+      return res.status(403).json({
+        success: false,
+        error: "Form is currently closed"
+      });
     }
 
     const existing = await LGBTQProfile.findOne({
@@ -36,12 +39,12 @@ exports.submitLGBTQProfile = async (req, res) => {
       formCycle: formStatus.cycleId,
     });
     if (existing) {
-      return res
-        .status(409)
-        .json({ error: "You already submitted during this form cycle" });
+      return res.status(409).json({
+        success: false,
+        error: "You already submitted during this form cycle"
+      });
     }
 
-    // Get all possible fields
     const {
       lastname,
       firstname,
@@ -51,18 +54,16 @@ exports.submitLGBTQProfile = async (req, res) => {
     } = req.body;
     const idImage = req.file ? req.file.filename : undefined;
     if (!idImage) {
-      return res.status(400).json({ error: "ID image is required." });
+      return res.status(400).json({
+        success: false,
+        error: "ID image is required."
+      });
     }
 
-    // Require all demographic fields
-    if (
-      !lastname ||
-      !firstname ||
-      !middlename
-    ) {
+    if (!lastname || !firstname || !middlename) {
       return res.status(400).json({
-        error:
-          "Demographic fields (lastname, firstname, middlename) are required.",
+        success: false,
+        error: "Demographic fields (lastname, firstname, middlename) are required."
       });
     }
 
@@ -83,7 +84,8 @@ exports.submitLGBTQProfile = async (req, res) => {
     const savedProfile = await LGBTQProfile.findById(newProfile._id).lean();
     const demographics = await getDemographics(savedProfile);
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "LGBTQIA+ Profile submitted successfully",
       profile: {
         ...savedProfile,
@@ -92,7 +94,10 @@ exports.submitLGBTQProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("LGBTQ submit error:", error);
-    res.status(500).json({ error: "Server error while submitting form" });
+    return res.status(500).json({
+      success: false,
+      error: "Server error while submitting form"
+    });
   }
 };
 
