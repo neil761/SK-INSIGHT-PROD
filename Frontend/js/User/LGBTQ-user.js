@@ -1,8 +1,8 @@
-// File: /Frontend/js/User/LGBTQ-user.js
-
 document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('lgbtqForm');
   const birthdayInput = document.getElementById('birthday');
+
+  console.log('LGBTQ-user.js loaded');
 
   // Get token from sessionStorage or localStorage
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -25,51 +25,46 @@ document.addEventListener('DOMContentLoaded', function () {
       .catch((err) => console.error('Error fetching user:', err));
   }
 
-  form.addEventListener('submit', async function (e) {
-    e.preventDefault();
+  if (!form) return;
 
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    const formData = new FormData(form);
+form.addEventListener("submit", async function (e) {
+  e.preventDefault();   // stop browser reload
+  e.stopPropagation();  // prevent bubbling
 
-    try {
-      const response = await fetch('http://localhost:5000/api/lgbtqprofiling', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: formData,
-      });
+  try {
+    const res = await fetch("http://localhost:5000/api/lgbtqprofiling", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: new FormData(form),
+    });
 
-      const data = await response.json();
+    const data = await res.json().catch(() => ({})); // safely parse JSON
 
-      if (data.success) {
-        console.log('Showing SweetAlert...');
-        Swal.fire({
-          icon: 'success',
-          title: 'Success!',
-          text: data.message || 'LGBTQIA+ Profile submitted successfully!',
-          confirmButtonColor: '#0A2C59',
-          timer: 4000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          didClose: () => {
-            console.log('SweetAlert closed, redirecting...');
-            window.location.href = '../confirmation/html/lgbtqconfirmation.html';
-          }
-        });
-      } else {
-        Swal.fire({
-          icon: 'error',
-          title: 'Submission Failed',
-          text: data.error || 'Submission failed. Please check your inputs.',
-          confirmButtonColor: '#0A2C59'
-        });
-      }
-    } catch (err) {
+    if (res.ok) {
       Swal.fire({
-        icon: 'error',
-        title: 'Network Error',
-        text: 'Network error. Please try again later.',
-        confirmButtonColor: '#0A2C59'
+        icon: "success",
+        title: "Profile submitted!",
+        text: "Redirecting...",
+        confirmButtonText: "OK",
+      }).then(() => {
+        window.location.href = "/Frontend/User/dashboard.html";
+      });
+    } else {
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: data.message || "Something went wrong.",
       });
     }
-  });
+  } catch (err) {
+    console.error(err);
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "Server error.",
+    });
+  }
+});
+
+
 });

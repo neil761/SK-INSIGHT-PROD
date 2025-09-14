@@ -22,36 +22,45 @@ async function getDemographics(profile) {
 
 // Submit new profile
 exports.submitLGBTQProfile = async (req, res) => {
+  console.log('submitLGBTQProfile controller reached');
   try {
     const userId = req.user.id;
     const formStatus = await FormStatus.findOne({
       formName: "LGBTQIA+ Profiling",
     });
+
+    // --- FORM CLOSED ---
     if (!formStatus || !formStatus.isOpen) {
-      return res.status(403).json({
-        success: false,
-        error: "Form is currently closed"
-      });
+      if (req.file) {
+        console.log('[LGBTQ] Deleting uploaded file due to closed form:', req.file.path);
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("[LGBTQ] Failed to delete file:", err);
+          else console.log("[LGBTQ] File deleted:", req.file.path);
+        });
+      }
+      return res.status(403).json({ success: false, error: "Form is currently closed" });
     }
 
+    // --- ALREADY SUBMITTED ---
     const existing = await LGBTQProfile.findOne({
       user: userId,
       formCycle: formStatus.cycleId,
     });
     if (existing) {
+      if (req.file) {
+        console.log('[LGBTQ] Deleting uploaded file due to duplicate submission:', req.file.path);
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("[LGBTQ] Failed to delete file:", err);
+          else console.log("[LGBTQ] File deleted:", req.file.path);
+        });
+      }
       return res.status(409).json({
         success: false,
         error: "You already submitted during this form cycle"
       });
     }
 
-    const {
-      lastname,
-      firstname,
-      middlename,
-      sexAssignedAtBirth,
-      lgbtqClassification,
-    } = req.body;
+    // --- MISSING IMAGE ---
     const idImage = req.file ? req.file.filename : undefined;
     if (!idImage) {
       return res.status(400).json({
@@ -60,7 +69,16 @@ exports.submitLGBTQProfile = async (req, res) => {
       });
     }
 
+    // --- MISSING DEMOGRAPHICS ---
+    const { lastname, firstname, middlename, sexAssignedAtBirth, lgbtqClassification } = req.body;
     if (!lastname || !firstname || !middlename) {
+      if (req.file) {
+        console.log('[LGBTQ] Deleting uploaded file due to missing demographics:', req.file.path);
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("[LGBTQ] Failed to delete file:", err);
+          else console.log("[LGBTQ] File deleted:", req.file.path);
+        });
+      }
       return res.status(400).json({
         success: false,
         error: "Demographic fields (lastname, firstname, middlename) are required."
