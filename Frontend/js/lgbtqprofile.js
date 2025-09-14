@@ -126,7 +126,7 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${p.displayData?.residentName || "N/A"}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
         <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td><button class="view-btn" data-id="${p._id}" style="color: red;">View</button></td>
+        <td><button class="view-btn" data-id="${p._id}" style="color: white;"><i class="fa-solid fa-eye" style = "color: #ffffffff"></i> Review</button></td>
       `;
       tableBody.appendChild(row);
     });
@@ -165,13 +165,16 @@ document.addEventListener("DOMContentLoaded", () => {
       : "/Frontend/assets/default-profile.png";
 
     // Header: just the name
-    header.innerHTML = `
-      <p style="font-size:1.2em; font-weight:bold; margin:0;">${fullName}</p>
-    `;
+    // header.innerHTML = `
+    //   <p style="font-size:1.2em; font-weight:bold; margin:0;">${fullName}</p>
+    // `;
 
     // Details: ID image in its own container, larger size
     details.innerHTML = `
-      <div class="profile-info">
+      <div class="profile-info" style = "margin-top: 5%">
+      <hr>
+        <p style="font-size:1.2em; font-weight:bold; margin:0;">${fullName}</p>
+        <hr>
         <p><b class="label">Age:</b> ${age}</p>
         <hr>
         <p><b class="label">Sex Assigned at Birth:</b> ${sexAssignedAtBirth}</p>
