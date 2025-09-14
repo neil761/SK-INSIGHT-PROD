@@ -22,47 +22,66 @@ async function getDemographics(profile) {
 
 // Submit new profile
 exports.submitLGBTQProfile = async (req, res) => {
+  console.log('submitLGBTQProfile controller reached');
   try {
     const userId = req.user.id;
     const formStatus = await FormStatus.findOne({
       formName: "LGBTQIA+ Profiling",
     });
+
+    // --- FORM CLOSED ---
     if (!formStatus || !formStatus.isOpen) {
-      return res.status(403).json({ error: "Form is currently closed" });
+      if (req.file) {
+        console.log('[LGBTQ] Deleting uploaded file due to closed form:', req.file.path);
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("[LGBTQ] Failed to delete file:", err);
+          else console.log("[LGBTQ] File deleted:", req.file.path);
+        });
+      }
+      return res.status(403).json({ success: false, error: "Form is currently closed" });
     }
 
+    // --- ALREADY SUBMITTED ---
     const existing = await LGBTQProfile.findOne({
       user: userId,
       formCycle: formStatus.cycleId,
     });
     if (existing) {
-      return res
-        .status(409)
-        .json({ error: "You already submitted during this form cycle" });
+      if (req.file) {
+        console.log('[LGBTQ] Deleting uploaded file due to duplicate submission:', req.file.path);
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("[LGBTQ] Failed to delete file:", err);
+          else console.log("[LGBTQ] File deleted:", req.file.path);
+        });
+      }
+      return res.status(409).json({
+        success: false,
+        error: "You already submitted during this form cycle"
+      });
     }
 
-    // Get all possible fields
-    const {
-      lastname,
-      firstname,
-      middlename,
-      sexAssignedAtBirth,
-      lgbtqClassification,
-    } = req.body;
+    // --- MISSING IMAGE ---
     const idImage = req.file ? req.file.filename : undefined;
     if (!idImage) {
-      return res.status(400).json({ error: "ID image is required." });
+      return res.status(400).json({
+        success: false,
+        error: "ID image is required."
+      });
     }
 
-    // Require all demographic fields
-    if (
-      !lastname ||
-      !firstname ||
-      !middlename
-    ) {
+    // --- MISSING DEMOGRAPHICS ---
+    const { lastname, firstname, middlename, sexAssignedAtBirth, lgbtqClassification } = req.body;
+    if (!lastname || !firstname || !middlename) {
+      if (req.file) {
+        console.log('[LGBTQ] Deleting uploaded file due to missing demographics:', req.file.path);
+        fs.unlink(req.file.path, (err) => {
+          if (err) console.error("[LGBTQ] Failed to delete file:", err);
+          else console.log("[LGBTQ] File deleted:", req.file.path);
+        });
+      }
       return res.status(400).json({
-        error:
-          "Demographic fields (lastname, firstname, middlename) are required.",
+        success: false,
+        error: "Demographic fields (lastname, firstname, middlename) are required."
       });
     }
 
@@ -83,7 +102,8 @@ exports.submitLGBTQProfile = async (req, res) => {
     const savedProfile = await LGBTQProfile.findById(newProfile._id).lean();
     const demographics = await getDemographics(savedProfile);
 
-    res.status(201).json({
+    return res.status(201).json({
+      success: true,
       message: "LGBTQIA+ Profile submitted successfully",
       profile: {
         ...savedProfile,
@@ -92,7 +112,10 @@ exports.submitLGBTQProfile = async (req, res) => {
     });
   } catch (error) {
     console.error("LGBTQ submit error:", error);
-    res.status(500).json({ error: "Server error while submitting form" });
+    return res.status(500).json({
+      success: false,
+      error: "Server error while submitting form"
+    });
   }
 };
 

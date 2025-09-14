@@ -105,11 +105,6 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
-
-  /* ✅ Fix for Safari & old Edge */
-  -webkit-user-select: none; /* Safari */
-  -ms-user-select: none;     /* IE/Edge */
-  user-select: none;         /* Standard */
 }
 
 .btn:hover {
@@ -117,7 +112,6 @@ body {
   color: #fff;
   border-color: #0A2C59;
 }
-
 .card-header {
   display: flex;
   align-items: center;

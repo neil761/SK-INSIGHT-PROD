@@ -11,6 +11,7 @@ const path = require("path");
 const Announcement = require("./models/Announcement");
 const http = require("http");
 const socketio = require("socket.io");
+const multer = require("multer");
 
 require("dotenv").config();
 
@@ -70,4 +71,21 @@ io.on("connection", (socket) => {
   // You can add authentication here if needed
 });
 
+// Serve uploaded images
 app.use("/uploads/lgbtq_id_images", express.static(path.join(__dirname, "uploads/lgbtq_id_images")));
+
+// After all routes, before the global error handler:
+app.use((err, req, res, next) => {
+  if (err instanceof multer.MulterError || err.message === 'Only image files are allowed!') {
+    return res.status(400).json({ success: false, error: err.message });
+  }
+  next(err);
+});
+
+// Global error handler (add this LAST)
+app.use((err, req, res, next) => {
+  console.error('Global error:', err);
+  res.status(500).json({ success: false, error: 'Server error' });
+});
+
+console.log('Server started');

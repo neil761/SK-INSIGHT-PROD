@@ -25,7 +25,7 @@ const lgbtqProfileSchema = new mongoose.Schema(
     },
     lgbtqClassification: {
       type: String,
-      enum: ["Lesbian", "Gay", "Bisexual", "Queer", "Intersex", "Asexual"],
+      enum: ["Lesbian", "Gay", "Bisexual", "Queer", "Intersex", "Asexual", "Transgender"],
       required: true,
     },
     idImage: String,

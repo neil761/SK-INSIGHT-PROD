@@ -25,6 +25,14 @@
       </div>
     </div>
 
+    <!-- Login Required Strip (now under navbar) -->
+    <div id="login-strip" class="login-strip" style="display:none;">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>
+        You need to <a href="/Frontend/html/user/login.html">login</a> to access full features.
+      </span>
+    </div>
+
     <!-- Card -->
     <div class="card">
       <span class="tag">SK-INSIGHT</span>
@@ -74,5 +82,14 @@
         <p>© 2025 SK-INSIGHT. All rights reserved.</p>
       </div>
     </footer>
+
+    <script>
+      // Show login strip if not logged in
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      if (!token) {
+        document.getElementById('login-strip').style.display = 'flex';
+        document.body.classList.add('has-login-strip');
+      }
+    </script>
 </body>
 </html>
