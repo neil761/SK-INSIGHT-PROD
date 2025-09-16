@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+  
   // Attendance logic
   const attendedKKAssembly = document.getElementById('attendedKKAssembly');
   const attendanceCountGroup = document.getElementById('attendanceCountGroup');
@@ -48,7 +49,11 @@ document.addEventListener('DOMContentLoaded', function() {
     formData.append('registeredNationalVoter', this.registeredNationalVoter.checked);
     formData.append('votedLastSKElection', this.votedLastSKElection.checked);
     formData.append('attendedKKAssembly', this.attendedKKAssembly.checked);
-    formData.append('attendanceCount', this.attendanceCount.value);
+    if (this.attendedKKAssembly.checked) {
+      formData.append('attendanceCount', this.attendanceCount.value); // must be a valid enum value
+    } else {
+      // Do not append attendanceCount or set it to undefined/null
+    }
     formData.append('reasonDidNotAttend', this.reasonDidNotAttend.value);
     if (this.profileImage.files[0]) {
       formData.append('profileImage', this.profileImage.files[0]);
@@ -66,7 +71,7 @@ document.addEventListener('DOMContentLoaded', function() {
         alert('Form submitted successfully!');
         localStorage.removeItem('kkProfileStep1');
         localStorage.removeItem('kkProfileStep2');
-        window.location.href = '/Frontend/html/user/userProfile.html';
+        window.location.href = '../../html/user/confirmation/html/kkconfirmation.html';
       } else {
         let error;
         try {
@@ -79,5 +84,6 @@ document.addEventListener('DOMContentLoaded', function() {
     } catch (error) {
       alert('Failed to submit form');
     }
+    
   });
 });

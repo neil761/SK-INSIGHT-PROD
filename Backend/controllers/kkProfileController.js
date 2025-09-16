@@ -88,8 +88,8 @@ exports.submitKKProfile = async (req, res) => {
       return res.status(400).json({ error: "Profile image is required to submit KK Profile." });
     }
 
-    console.log('req.body:', req.body);
-    console.log('req.file:', req.file);
+    const user = await User.findById(req.user.id);
+    const birthday = user.birthday; // use this value for the profile
 
     const newProfile = new KKProfile({
       user: userId,
@@ -122,6 +122,7 @@ exports.submitKKProfile = async (req, res) => {
         ? req.body.reasonDidNotAttend
         : undefined,
       profileImage: req.file.filename, // <-- use uploaded file
+      birthday,
     });
 
     await newProfile.save();
@@ -486,3 +487,4 @@ exports.getKKProfileImageById = async (req, res) => {
     res.sendFile(imagePath);
   });
 };
+
