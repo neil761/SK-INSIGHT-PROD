@@ -22,67 +22,36 @@ async function getDemographics(profile) {
 
 // Submit new profile
 exports.submitLGBTQProfile = async (req, res) => {
-  console.log('submitLGBTQProfile controller reached');
   try {
     const userId = req.user.id;
     const formStatus = await FormStatus.findOne({
       formName: "LGBTQIA+ Profiling",
     });
 
-    // --- FORM CLOSED ---
     if (!formStatus || !formStatus.isOpen) {
-      if (req.file) {
-        console.log('[LGBTQ] Deleting uploaded file due to closed form:', req.file.path);
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("[LGBTQ] Failed to delete file:", err);
-          else console.log("[LGBTQ] File deleted:", req.file.path);
-        });
-      }
       return res.status(403).json({ success: false, error: "Form is currently closed" });
     }
 
-    // --- ALREADY SUBMITTED ---
+    // Check for duplicate submission
     const existing = await LGBTQProfile.findOne({
       user: userId,
       formCycle: formStatus.cycleId,
     });
     if (existing) {
-      if (req.file) {
-        console.log('[LGBTQ] Deleting uploaded file due to duplicate submission:', req.file.path);
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("[LGBTQ] Failed to delete file:", err);
-          else console.log("[LGBTQ] File deleted:", req.file.path);
-        });
-      }
-      return res.status(409).json({
-        success: false,
-        error: "You already submitted during this form cycle"
-      });
+      return res.status(409).json({ success: false, error: "You already submitted during this form cycle" });
     }
 
-    // --- MISSING IMAGE ---
-    const idImage = req.file ? req.file.filename : undefined;
-    if (!idImage) {
-      return res.status(400).json({
-        success: false,
-        error: "ID image is required."
-      });
-    }
-
-    // --- MISSING DEMOGRAPHICS ---
+    // Check for required demographics and image
     const { lastname, firstname, middlename, sexAssignedAtBirth, lgbtqClassification } = req.body;
-    if (!lastname || !firstname || !middlename) {
+    if (!lastname || !firstname || !middlename || !sexAssignedAtBirth || !lgbtqClassification) {
+      // Delete uploaded file if present
       if (req.file) {
-        console.log('[LGBTQ] Deleting uploaded file due to missing demographics:', req.file.path);
-        fs.unlink(req.file.path, (err) => {
-          if (err) console.error("[LGBTQ] Failed to delete file:", err);
-          else console.log("[LGBTQ] File deleted:", req.file.path);
-        });
+        fs.unlink(req.file.path, () => {});
       }
-      return res.status(400).json({
-        success: false,
-        error: "Demographic fields (lastname, firstname, middlename) are required."
-      });
+      return res.status(400).json({ success: false, error: "All demographic fields are required." });
+    }
+    if (!req.file) {
+      return res.status(400).json({ success: false, error: "ID image is required." });
     }
 
     const newProfile = new LGBTQProfile({
@@ -93,29 +62,28 @@ exports.submitLGBTQProfile = async (req, res) => {
       middlename,
       sexAssignedAtBirth,
       lgbtqClassification,
-      idImage,
+      idImage: req.file.filename, // Save filename
     });
 
     await newProfile.save();
 
-    // Fetch the saved profile and attach demographics
-    const savedProfile = await LGBTQProfile.findById(newProfile._id).lean();
-    const demographics = await getDemographics(savedProfile);
+    // Populate user for birthday/age display (not saved in LGBTQProfile)
+    const populatedProfile = await LGBTQProfile.findById(newProfile._id)
+      .populate("user", "username email birthday age")
+      .lean();
 
     return res.status(201).json({
       success: true,
       message: "LGBTQIA+ Profile submitted successfully",
       profile: {
-        ...savedProfile,
-        demographics,
+        ...populatedProfile,
+        birthday: populatedProfile.user?.birthday,
+        age: populatedProfile.user?.age,
       },
     });
   } catch (error) {
     console.error("LGBTQ submit error:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Server error while submitting form"
-    });
+    return res.status(500).json({ success: false, error: "Server error while submitting form" });
   }
 };
 

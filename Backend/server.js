@@ -23,7 +23,8 @@ const io = socketio(server, {
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json()); // for JSON bodies
+app.use(express.urlencoded({ extended: true })); // for form-data and urlencoded
 
 app.use(express.static(path.join(__dirname, "../Frontend")));
 
