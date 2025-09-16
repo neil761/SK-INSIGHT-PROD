@@ -16,8 +16,6 @@ const lgbtqProfileSchema = new mongoose.Schema(
     lastname: String,
     firstname: String,
     middlename: String,
-    // REMOVE birthday: Date,
-    // REMOVE age: Number,
     sexAssignedAtBirth: {
       type: String,
       enum: ["Male", "Female"],
@@ -25,10 +23,18 @@ const lgbtqProfileSchema = new mongoose.Schema(
     },
     lgbtqClassification: {
       type: String,
-      enum: ["Lesbian", "Gay", "Bisexual", "Queer", "Intersex", "Asexual", "Transgender"],
+      enum: [
+        "Lesbian",
+        "Gay",
+        "Bisexual",
+        "Queer",
+        "Intersex",
+        "Asexual",
+        "Transgender",
+      ],
       required: true,
     },
-    idImage: String,
+    idImage: String, // <-- Add this line
   },
   { timestamps: true }
 );
