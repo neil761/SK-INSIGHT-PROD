@@ -88,6 +88,9 @@ exports.submitKKProfile = async (req, res) => {
       return res.status(400).json({ error: "Profile image is required to submit KK Profile." });
     }
 
+    console.log('req.body:', req.body);
+    console.log('req.file:', req.file);
+
     const newProfile = new KKProfile({
       user: userId,
       formCycle: formCycle._id,

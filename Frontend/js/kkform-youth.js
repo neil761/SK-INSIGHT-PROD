@@ -55,9 +55,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
+      // Get token from sessionStorage or localStorage
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/kkprofiling', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       if (response.ok) {
@@ -66,7 +68,12 @@ document.addEventListener('DOMContentLoaded', function() {
         localStorage.removeItem('kkProfileStep2');
         window.location.href = '/Frontend/html/user/userProfile.html';
       } else {
-        const error = await response.json();
+        let error;
+        try {
+          error = await response.json();
+        } catch {
+          error = { message: await response.text() };
+        }
         alert(error.message || 'Something went wrong');
       }
     } catch (error) {
