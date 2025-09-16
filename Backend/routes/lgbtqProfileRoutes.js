@@ -2,14 +2,31 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/lgbtqProfileController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
+const multer = require("multer");
+const upload = multer();
 const uploadLGBTQIdImage = require("../middleware/uploadLGBTQIdImage");
 
 // === USER ROUTES ===
 // Submit new LGBTQ profile
-router.post("/", protect, uploadLGBTQIdImage.single("idImage"), (req, res, next) => {
-  console.log("Route POST /api/lgbtqprofiling hit");
-  next();
-}, ctrl.submitLGBTQProfile);
+router.post(
+  "/",
+  protect,
+  (req, res, next) => {
+    uploadLGBTQIdImage.single("idImage")(req, res, function (err) {
+      if (err) {
+        // Always return JSON for Multer errors
+        const msg = err.message === "Only image files are allowed!" ? err.message : "File upload error";
+        return res.status(400).json({ success: false, error: msg });
+      }
+      next();
+    });
+  },
+  (req, res, next) => {
+    console.log("Route POST /api/lgbtqprofiling hit");
+    next();
+  },
+  ctrl.submitLGBTQProfile
+);
 
 // Get logged-in user's own profile
 router.get("/me/profile", protect, ctrl.getMyProfile);

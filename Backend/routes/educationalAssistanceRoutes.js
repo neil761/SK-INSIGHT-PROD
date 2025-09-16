@@ -34,6 +34,12 @@ router.get(
   authorizeRoles("admin"),
   ctrl.getCyclesAndPresent
 );
+router.get(
+  "/export/excel",
+  protect,
+  authorizeRoles("admin"),
+  ctrl.exportApplicationsToExcel
+);
 
 // ID-specific admin routes — keep these LAST to avoid conflicts
 router.put(

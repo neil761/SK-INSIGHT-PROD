@@ -12,14 +12,12 @@ const storage = multer.diskStorage({
 });
 
 const fileFilter = (req, file, cb) => {
-  console.log("Checking file:", file.originalname, file.mimetype);
-  if (!file.mimetype.startsWith('image/')) {
-    cb(new Error('Only image files are allowed!'), false);
+  if (!file.mimetype.startsWith("image/")) {
+    cb(new multer.MulterError("LIMIT_UNEXPECTED_FILE", "Only image files are allowed!"));
   } else {
     cb(null, true);
   }
 };
 
-const upload = multer({ storage: storage, fileFilter });
-console.log("uploadLGBTQIdImage middleware hit");
+const upload = multer({ storage, fileFilter });
 module.exports = upload;
