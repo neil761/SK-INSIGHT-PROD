@@ -41,7 +41,8 @@
     </div>
 
     <!-- Form -->
-    <form id="lgbtqForm" method="post" enctype="multipart/form-data">
+    <!-- ✅ Added novalidate -->
+    <form id="lgbtqForm" enctype="multipart/form-data" novalidate>
       <div class="card">
         <label for="lastName">Last Name:</label>
         <input type="text" id="lastName" name="lastname" placeholder="Your Answer" required>
@@ -80,13 +81,15 @@
         <input type="file" id="idImage" name="idImage" accept="image/*" required>
       </div>
       <div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
-        <button type="submit" class="submit-btn" style="width: auto; padding: 8px 20px;">Submit</button>
+        <button type="submit" id="submitBtn" class="submit-btn" style="width: auto; padding: 8px 20px;">
+          Submit
+        </button>
       </div>
     </form>
   </div>
 
   <!-- ✅ Scripts -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-  <script src="../../js/User/LGBTQ-user.js?ver=2"></script>
+  <script src="../../js/User/LGBTQ-user.js"></script>
 </body>
 </html>

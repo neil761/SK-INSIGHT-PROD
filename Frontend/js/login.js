@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // On page load, check for token in sessionStorage or localStorage
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (token) {
-        window.location.href = '/Frontend/html/user/index.html'; // Redirect to dashboard/home if already logged in
+        window.location.href = 'index.html'; // Redirect to dashboard/home if already logged in
         return;
     }
 
@@ -45,7 +45,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('token', data.token);
                     localStorage.removeItem('token');
                 }
-                window.location.href = '/Frontend/html/user/index.html'; // Redirect to dashboard/home
+                window.location.href = 'index.html'; // Redirect to dashboard/home
             } else {
                 alert(data.error || 'Login failed. Please check your credentials.');
             }

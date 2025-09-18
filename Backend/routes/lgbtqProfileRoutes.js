@@ -15,15 +15,10 @@ router.post(
     uploadLGBTQIdImage.single("idImage")(req, res, function (err) {
       if (err) {
         // Always return JSON for Multer errors
-        const msg = err.message === "Only image files are allowed!" ? err.message : "File upload error";
-        return res.status(400).json({ success: false, error: msg });
+        return res.status(400).json({ success: false, error: err.message });
       }
       next();
     });
-  },
-  (req, res, next) => {
-    console.log("Route POST /api/lgbtqprofiling hit");
-    next();
   },
   ctrl.submitLGBTQProfile
 );

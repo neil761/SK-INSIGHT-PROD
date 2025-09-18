@@ -2,47 +2,89 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("✅ LGBTQ-user.js loaded");
 
   const form = document.getElementById("lgbtqForm");
+  const birthdayInput = document.getElementById("birthday");
+  const submitBtn = document.getElementById("submitBtn");
+
   if (!form) {
-    console.error("❌ Form not found!");
+    console.error("❌ No form found!");
     return;
   }
 
-  console.log("✅ Form found, attaching listener...");
+  // Get token
+  const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
+  // Autofill birthday
+  if (token && birthdayInput) {
+    fetch("http://localhost:5000/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((user) => {
+        if (user && user.birthday) {
+          const d = new Date(user.birthday);
+          birthdayInput.value = `${d.getFullYear()}-${String(
+            d.getMonth() + 1
+          ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        }
+      })
+      .catch((err) => console.error("❌ Fetch me error:", err));
+  }
+
+  // ✅ Handle submit
   form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    console.log("📌 Submit event triggered");
+    e.preventDefault(); // stop auto refresh
+    e.stopPropagation(); // extra safety
+    console.log("👉 Custom submit handler triggered");
 
-    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
     if (!token) {
-      console.warn("⚠️ No token found");
-      Swal.fire("Error", "You must be logged in to submit.", "error");
+      Swal.fire({
+        icon: "error",
+        title: "Unauthorized",
+        text: "No token found",
+      });
       return;
     }
 
-    const formData = new FormData(form);
+    // disable button
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Submitting...";
 
     try {
+      const formData = new FormData(form);
+      console.log("📦 FormData entries:", [...formData.entries()]);
+
       const res = await fetch("http://localhost:5000/api/lgbtqprofiling", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }, // let browser set multipart headers
         body: formData,
       });
 
-      console.log("📡 Response status:", res.status);
+      const data = await res.json().catch(() => ({}));
 
-      const data = await res.json();
-      console.log("📡 Response data:", data);
-
-      if (res.ok) {
-        Swal.fire("✅ Success", "Form submitted successfully!", "success");
-        form.reset();
+      if (res.ok && data.success) {
+        console.log("✅ Submission success:", data);
+        Swal.fire({
+          icon: "success",
+          title: "Profile submitted!",
+          text: "Redirecting...",
+          confirmButtonText: "OK",
+        }).then(() => {
+          window.location.href = "confirmation/html/lgbtqconfirmation.html";
+        });
       } else {
-        Swal.fire("❌ Error", data.message || "Submission failed.", "error");
+        console.error("❌ Submission failed:", data);
+        Swal.fire({
+          icon: "error",
+          title: "Error",
+          text: data.error || "Something went wrong.",
+        });
       }
     } catch (err) {
-      console.error("🚨 Fetch error:", err);
-      Swal.fire("Error", "Something went wrong. Try again later.", "error");
+      console.error("❌ Exception:", err);
+      Swal.fire({ icon: "error", title: "Error", text: "Server error." });
+    } finally {
+      submitBtn.disabled = false;
+      submitBtn.textContent = "Submit";
     }
   });
 });
