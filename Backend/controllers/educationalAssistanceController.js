@@ -67,8 +67,15 @@ exports.submitApplication = async (req, res) => {
       return res.status(400).json({ error: "User not found in request." });
     }
 
-    if (req.file) {
-      data.signature = req.file.path;
+    // Save file paths if files are uploaded
+    if (req.files?.signature?.[0]) {
+      data.signature = req.files.signature[0].path;
+    }
+    if (req.files?.sedulaImage?.[0]) {
+      data.sedulaImage = req.files.sedulaImage[0].path;
+    }
+    if (req.files?.coeImage?.[0]) {
+      data.coeImage = req.files.coeImage[0].path;
     }
 
     const presentCycle = await getPresentCycle("Educational Assistance");
