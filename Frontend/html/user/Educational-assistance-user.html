@@ -9,6 +9,7 @@
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
   />
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <!-- ✅ Navbar -->
@@ -241,6 +242,10 @@
     <button type="submit" class="submit-btn" style="width: auto; padding: 8px 20px;">Submit</button>
   </div>
 </form>
+</div>
+
+<div id="imagePreviewModal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.7); justify-content:center; align-items:center; z-index:9999;">
+  <img id="previewImg" src="" alt="Preview" style="max-width:80vw; max-height:80vh; border:8px solid #fff; border-radius:8px;">
 </div>
 
   <script src="../../js/educ-user.js"></script>
