@@ -1,7 +1,14 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const passwordField = document.getElementById('passwordField');
-    const togglePassword = document.getElementById('togglePassword');
+    const rememberMeCheckbox = document.getElementById('rememberMe'); // Make sure your checkbox has this id
+
+    // On page load, check for token in sessionStorage or localStorage
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (token) {
+        window.location.href = 'index.html'; // Redirect to dashboard/home if already logged in
+        return;
+    }
 
     // Show/Hide password toggle
     togglePassword.addEventListener('click', () => {
@@ -18,6 +25,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const email = loginForm.email.value;
         const password = passwordField.value;
+        const rememberMe = rememberMeCheckbox.checked;
 
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -28,31 +36,21 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
 
-            if (response.ok) {
-                Swal.fire({
-                    icon: 'success',
-                    title: 'Login Successful!',
-                    text: `Welcome back, ${data.user.username || 'User'}!`,
-                    timer: 1000,
-                    showConfirmButton: false
-                }).then(() => {
+            if (response.ok && data.token) {
+                // Store token based on Remember Me
+                if (rememberMe) {
                     localStorage.setItem('token', data.token);
-                    window.location.href = '/html/index.html';
-                });
+                    sessionStorage.removeItem('token');
+                } else {
+                    sessionStorage.setItem('token', data.token);
+                    localStorage.removeItem('token');
+                }
+                window.location.href = 'index.html'; // Redirect to dashboard/home
             } else {
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Login Failed',
-                    text: data.error || 'Please check your credentials.',
-                });
+                alert(data.error || 'Login failed. Please check your credentials.');
             }
         } catch (error) {
-            console.error('Error:', error);
-            Swal.fire({
-                icon: 'error',
-                title: 'Network Error',
-                text: 'An error occurred. Please try again.',
-            });
+            alert('Network error. Please try again.');
         }
     });
 });

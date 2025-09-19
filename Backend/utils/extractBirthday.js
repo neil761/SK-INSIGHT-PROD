@@ -10,16 +10,35 @@ function extractBirthdayAndAddress(ocrText) {
 
   // Birthday extraction (support text month formats)
   const birthdayRegexes = [
-    /(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4})/, // 31/03/2004
-    /(\d{4}[\/\-\.]\d{2}[\/\-\.]\d{2})/, // 2004-03-31
-    /([A-Z]{3,9} \d{1,2}, \d{4})/i, // MARCH 31, 2004
+    /\b\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}\b/, // 31/03/2004
+    /\b\d{4}[\/\-\.]\d{2}[\/\-\.]\d{2}\b/, // 2004-03-31 or 2004/03/31
+    /\b[A-Z]{3,9} \d{1,2}, \d{4}\b/i,      // MARCH 31, 2004
   ];
   let birthday = null;
-  for (const regex of birthdayRegexes) {
-    const match = ocrText.match(regex);
-    if (match) {
-      birthday = normalizeDate(match[0]);
-      break;
+
+  // Try to find a line with "Birth" and extract date from it
+  const lines = ocrText.split('\n');
+  for (const line of lines) {
+    if (/birth/i.test(line)) {
+      for (const regex of birthdayRegexes) {
+        const match = line.match(regex);
+        if (match) {
+          birthday = normalizeDate(match[0]);
+          break;
+        }
+      }
+      if (birthday) break;
+    }
+  }
+
+  // If not found by context, fall back to first date match in whole text
+  if (!birthday) {
+    for (const regex of birthdayRegexes) {
+      const match = ocrText.match(regex);
+      if (match) {
+        birthday = normalizeDate(match[0]);
+        break;
+      }
     }
   }
 

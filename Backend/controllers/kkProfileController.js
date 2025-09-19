@@ -3,6 +3,9 @@ const FormCycle = require("../models/FormCycle");
 const FormStatus = require("../models/FormStatus");
 const ExcelJS = require("exceljs");
 const mongoose = require("mongoose");
+const User = require("../models/User"); // Assuming the User model is in the same directory
+const path = require("path");
+const fs = require("fs");
 
 // Helper to get the present (open) cycle
 async function getPresentCycle(formName) {
@@ -51,8 +54,6 @@ exports.submitKKProfile = async (req, res) => {
       middlename,
       suffix,
       gender,
-      age,
-      birthday,
       region,
       province,
       municipality,
@@ -82,39 +83,46 @@ exports.submitKKProfile = async (req, res) => {
         .json({ error: "Reason for not attending is required" });
     }
 
+    // Check for uploaded profile image
+    if (!req.file || !req.file.filename) {
+      return res.status(400).json({ error: "Profile image is required to submit KK Profile." });
+    }
+
+    const user = await User.findById(req.user.id);
+    const birthday = user.birthday; // use this value for the profile
+
     const newProfile = new KKProfile({
       user: userId,
       formCycle: formCycle._id,
-      lastname: req.body.lastname,
-      firstname: req.body.firstname,
-      middlename: req.body.middlename,
-      suffix: req.body.suffix,
-      gender: req.body.gender,
-      age: req.body.age,
-      birthday: req.body.birthday,
-      region: req.body.region,
-      province: req.body.province,
-      municipality: req.body.municipality,
-      barangay: req.body.barangay,
-      purok: req.body.purok,
-      email: req.body.email,
-      contactNumber: req.body.contactNumber,
-      civilStatus: req.body.civilStatus,
-      youthAgeGroup: req.body.youthAgeGroup,
-      youthClassification: req.body.youthClassification,
-      educationalBackground: req.body.educationalBackground,
-      workStatus: req.body.workStatus,
-      registeredSKVoter: req.body.registeredSKVoter,
-      registeredNationalVoter: req.body.registeredNationalVoter,
-      votedLastSKElection: req.body.votedLastSKElection,
-      attendedKKAssembly: req.body.attendedKKAssembly,
+      lastname,
+      firstname,
+      middlename,
+      suffix,
+      gender,
+      region,
+      province,
+      municipality,
+      barangay,
+      purok,
+      email,
+      contactNumber,
+      civilStatus,
+      youthAgeGroup,
+      youthClassification,
+      educationalBackground,
+      workStatus,
+      registeredSKVoter,
+      registeredNationalVoter,
+      votedLastSKElection,
+      attendedKKAssembly,
       attendanceCount: req.body.attendedKKAssembly
         ? req.body.attendanceCount
         : undefined,
       reasonDidNotAttend: !req.body.attendedKKAssembly
         ? req.body.reasonDidNotAttend
         : undefined,
-      profileImage: req.file ? req.file.path : undefined,
+      profileImage: req.file.filename, // <-- use uploaded file
+      birthday,
     });
 
     await newProfile.save();
@@ -146,7 +154,8 @@ exports.submitKKProfile = async (req, res) => {
 // GET /api/kkprofiling/:id
 exports.getProfileById = async (req, res) => {
   try {
-    const profile = await KKProfile.findById(req.params.id);
+    const profile = await KKProfile.findById(req.params.id)
+      .populate("user", "username email birthday age");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
     res.json(profile);
@@ -190,25 +199,38 @@ exports.deleteProfileById = async (req, res) => {
 // GET /api/kkprofiling/export?cycleId=<formCycleId>
 exports.exportProfilesToExcel = async (req, res) => {
   try {
-    const { cycleId } = req.query;
-    const filter = cycleId ? { formCycle: cycleId } : {};
-    const profiles = await KKProfile.find(filter).populate(
-      "user",
-      "username email"
-    );
+    const { year, cycle } = req.query;
 
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("KK Profiling");
+    // Find the cycle
+    const cycleDoc = await FormCycle.findOne({
+      formName: "KK Profiling",
+      year: Number(year),
+      cycleNumber: Number(cycle),
+    });
 
-    sheet.columns = [
-      { header: "User ID", key: "userId", width: 24 },
-      { header: "Lastname", key: "lastname", width: 15 },
-      { header: "Firstname", key: "firstname", width: 15 },
-      { header: "Middlename", key: "middlename", width: 15 },
+    if (!cycleDoc) {
+      return res.status(404).json({ error: "Specified cycle not found" });
+    }
+
+    const profiles = await KKProfile.find({
+      formCycle: cycleDoc._id,
+    }).populate("user", "username email birthday age");
+
+    if (!profiles.length) {
+      return res.status(404).json({ error: "No profiling found for this cycle" });
+    }
+
+    // Define columns
+    const columns = [
+      { header: "Username", key: "username", width: 20 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Lastname", key: "lastname", width: 18 },
+      { header: "Firstname", key: "firstname", width: 18 },
+      { header: "Middlename", key: "middlename", width: 18 },
       { header: "Suffix", key: "suffix", width: 10 },
+      { header: "Birthday", key: "birthday", width: 15 },
+      { header: "Age", key: "age", width: 8 },
       { header: "Gender", key: "gender", width: 10 },
-      { header: "Age", key: "age", width: 6 },
-      { header: "Birthday", key: "birthday", width: 12 },
       { header: "Region", key: "region", width: 15 },
       { header: "Province", key: "province", width: 15 },
       { header: "Municipality", key: "municipality", width: 15 },
@@ -219,34 +241,60 @@ exports.exportProfilesToExcel = async (req, res) => {
       { header: "Civil Status", key: "civilStatus", width: 15 },
       { header: "Youth Age Group", key: "youthAgeGroup", width: 15 },
       { header: "Youth Classification", key: "youthClassification", width: 18 },
-      {
-        header: "Educational Background",
-        key: "educationalBackground",
-        width: 20,
-      },
+      { header: "Educational Background", key: "educationalBackground", width: 20 },
       { header: "Work Status", key: "workStatus", width: 15 },
       { header: "Registered SK Voter", key: "registeredSKVoter", width: 15 },
-      {
-        header: "Registered National Voter",
-        key: "registeredNationalVoter",
-        width: 20,
-      },
-      {
-        header: "Voted Last SK Election",
-        key: "votedLastSKElection",
-        width: 20,
-      },
+      { header: "Registered National Voter", key: "registeredNationalVoter", width: 20 },
+      { header: "Voted Last SK Election", key: "votedLastSKElection", width: 20 },
       { header: "Attended KK Assembly", key: "attendedKKAssembly", width: 20 },
       { header: "Attendance Count", key: "attendanceCount", width: 18 },
       { header: "Reason Did Not Attend", key: "reasonDidNotAttend", width: 25 },
+      { header: "Profile Image", key: "profileImage", width: 30 },
       { header: "Submitted At", key: "createdAt", width: 22 },
     ];
 
-    profiles.forEach((profile) => {
-      sheet.addRow({
-        userId: profile.user?._id?.toString() || "",
-        ...profile.toObject(),
-      });
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("KK Profiling");
+    worksheet.columns = columns;
+
+    // Add header row
+    worksheet.addRow(columns.map(col => col.header));
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+
+    // Add data rows
+    profiles.forEach(profile => {
+      worksheet.addRow([
+        profile.user?.username || "",
+        profile.user?.email || "",
+        profile.lastname || "",
+        profile.firstname || "",
+        profile.middlename || "",
+        profile.suffix || "",
+        profile.user?.birthday ? new Date(profile.user.birthday).toLocaleDateString() : "",
+        profile.user?.age || "",
+        profile.gender || "",
+        profile.region || "",
+        profile.province || "",
+        profile.municipality || "",
+        profile.barangay || "",
+        profile.purok || "",
+        profile.email || "",
+        profile.contactNumber || "",
+        profile.civilStatus || "",
+        profile.youthAgeGroup || "",
+        profile.youthClassification || "",
+        profile.educationalBackground || "",
+        profile.workStatus || "",
+        profile.registeredSKVoter || "",
+        profile.registeredNationalVoter || "",
+        profile.votedLastSKElection || "",
+        profile.attendedKKAssembly || "",
+        profile.attendanceCount || "",
+        profile.reasonDidNotAttend || "",
+        profile.profileImage || "",
+        profile.createdAt ? profile.createdAt.toISOString() : "",
+      ]);
     });
 
     res.setHeader(
@@ -255,14 +303,14 @@ exports.exportProfilesToExcel = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=kk_profiles.xlsx"
+      `attachment; filename=kk_profiles_${year}_cycle${cycle}.xlsx`
     );
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (err) {
-    console.error("Export error:", err);
-    res.status(500).json({ error: "Failed to export to Excel" });
+  } catch (error) {
+    console.error("Export error:", error);
+    res.status(500).json({ message: "Failed to export profiles" });
   }
 };
 
@@ -399,7 +447,7 @@ exports.getAllProfiles = async (req, res) => {
         filter.votedLastSKElection = votedLastSKElection === "true";
       const profiles = await KKProfile.find(filter)
         .populate("formCycle")
-        .populate("user", "username email");
+        .populate("user", "username email birthday age");
       return res.json(profiles);
     }
 
@@ -438,7 +486,7 @@ exports.getAllProfiles = async (req, res) => {
 
     const profiles = await KKProfile.find(filter)
       .populate("formCycle")
-      .populate("user", "username email");
+      .populate("user", "username email birthday age");
 
     res.json(profiles);
   } catch (err) {
@@ -465,3 +513,17 @@ exports.getCyclesAndPresent = async (req, res) => {
     res.status(500).json({ error: "Failed to load cycles" });
   }
 };
+
+exports.getKKProfileImageById = async (req, res) => {
+  // expects :id to be the KKProfile _id, not the user _id
+  const kkProfile = await KKProfile.findById(req.params.id);
+  if (!kkProfile || !kkProfile.profileImage) {
+    return res.status(404).json({ error: "KK Profile or profile image not found" });
+  }
+  const imagePath = path.join(__dirname, "../uploads/profile_images", kkProfile.profileImage);
+  fs.access(imagePath, fs.constants.F_OK, (err) => {
+    if (err) return res.status(404).json({ error: "Image file not found" });
+    res.sendFile(imagePath);
+  });
+};
+

@@ -21,6 +21,10 @@ const announcementSchema = new mongoose.Schema({
     ],
     default: "General",
   },
+  eventDate: {
+    type: Date,
+    required: true,
+  },
   createdBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -32,15 +36,34 @@ const announcementSchema = new mongoose.Schema({
   },
   expiresAt: {
     type: Date,
+    required: true,
+  },
+  isPinned: {
+    type: Boolean,
+    default: false,
   },
   isActive: {
     type: Boolean,
     default: true,
   },
-  isPinned: {
-    type: Boolean,
-    default: false, // New field for pinning
-  },
+  viewedBy: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+  ],
+});
+
+// Auto-inactive logic before save
+announcementSchema.pre("save", function (next) {
+  const now = new Date();
+  if (
+    (this.eventDate && now > this.eventDate) &&
+    (this.expiresAt && now > this.expiresAt)
+  ) {
+    this.isActive = false;
+  }
+  next();
 });
 
 module.exports = mongoose.model("Announcement", announcementSchema);

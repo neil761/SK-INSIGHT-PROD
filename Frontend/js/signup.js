@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     timer: 1000,
                     showConfirmButton: false
                 }).then(() => {
-                    window.location.href = '/html/login.html';
+                    window.location.href = '/Frontend/html/user/login.html';
                 });
             } else {
                 Swal.fire({

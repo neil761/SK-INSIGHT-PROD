@@ -1,0 +1,131 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body */
+body {
+  font-family: 'Poppins', Arial, sans-serif;
+  background-color: #D1E1F5;
+  color: #0a1a3a;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding-top: 6rem;   /* space for fixed navbar */
+}
+
+/* Navbar */
+.navbar {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  background: #0A2C59;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 30px;
+  border-radius: 15px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+  z-index: 1000;
+}
+
+.navbar img {
+  height: 40px;
+  border-radius: 50%;
+}
+
+.navbar .title {
+  font-size: 18px;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.navbar-right {
+  display: flex;
+  gap: 15px;
+  font-size: 20px;
+}
+
+.navbar-right a {
+  text-decoration: none;
+}
+
+/* ✅ Thank You Card */
+.container {
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 30px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  text-align: left;
+}
+
+.card h2 {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 15px;
+}
+
+.card h4 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  text-decoration: underline; /* underline THANK YOU */
+}
+
+.card p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: 1px solid #000;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  /* ✅ Fix for Safari & old Edge */
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none;     /* IE/Edge */
+  user-select: none;         /* Standard */
+}
+
+.btn:hover {
+  background: #0A2C59;
+  color: #fff;
+  border-color: #0A2C59;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px; /* space between logo and text */
+  margin-bottom: 15px;
+}
+
+.card-logo {
+  width: 70px;   /* adjust as needed */
+  height: 70px;
+}

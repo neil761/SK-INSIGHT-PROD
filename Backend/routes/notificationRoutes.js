@@ -18,5 +18,6 @@ router.get(
 );
 router.patch("/:id/read", protect, authorizeRoles("admin"), ctrl.markAsRead);
 router.patch("/read-all", protect, authorizeRoles("admin"), ctrl.markAllAsRead);
+router.get('/overdue', ctrl.getOverdueNotifications);
 
 module.exports = router;

@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SK-INSIGHT</title>
+    <link rel="stylesheet" href="../../css/home.css" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <!-- Navbar -->
+    <div class="navbar">
+      <div class="navbar-left">
+        <img src="../../assets/logo.png" alt="Logo" />
+        <span class="title">SK-INSIGHT</span>
+      </div>
+      <div class="navbar-right">
+        <span><i class="fa-solid fa-bars" style="color: #ffffff"></i></span>
+        <a href="/Frontend/html/user/announcement.html"><i class="fa-solid fa-bell" style="color: #ffffff"></i></a>
+        <a href="/Frontend/html/user/userProfile.html"><i class="fa-solid fa-user" style="color: #ffffff"></i></a>
+      </div>
+    </div>
+
+    <!-- Login Required Strip (now under navbar) -->
+    <div id="login-strip" class="login-strip" style="display:none;">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>
+        You need to <a href="/Frontend/html/user/login.html">login</a> to access full features.
+      </span>
+    </div>
+
+    <!-- Card -->
+    <div class="card">
+      <span class="tag">SK-INSIGHT</span>
+      <img src="/Frontend/assets/logo.png" alt="SK Logo" />
+      <h2>Advanced analytics to grow your barangay programs</h2>
+      <p>
+        Empowering the youth through community involvement, transparency, and
+        smart tracking of educational assistance and profiling.
+      </p>
+      <a href="#" class="btn">Get Started</a>
+      <a href="/Frontend/html/user/about.html" class="link">How it Works</a>
+    </div>
+
+    <!-- ✅ Footer should be OUTSIDE the about card -->
+    <footer class="footer">
+      <div class="footer-container">
+        <!-- Left Section -->
+        <div class="footer-left">
+          <h3>SK-INSIGHT</h3>
+          <p>Empowering the youth through data-driven governance.</p>
+        </div>
+    
+        <!-- Middle Section -->
+        <div class="footer-middle">
+          <h4>About</h4>
+          <ul>
+            <li><a href="#">Things About US</a></li>
+            <li><a href="#">Things About SK</a></li>
+            <li><a href="#">Things About SK-INSIGHT</a></li>
+          </ul>
+        </div>
+    
+        <!-- Right Section -->
+        <div class="footer-right">
+          <h4>Follow Us</h4>
+          <ul>
+            <li><i class="fa-brands fa-facebook"></i> <a href="#">Facebook</a></li>
+            <li><i class="fa-brands fa-twitter"></i> <a href="#">Twitter</a></li>
+            <li><i class="fa-brands fa-instagram"></i> <a href="#">Instagram</a></li>
+          </ul>
+        </div>
+      </div>
+    
+      <hr />
+    
+      <div class="footer-bottom">
+        <p>© 2025 SK-INSIGHT. All rights reserved.</p>
+      </div>
+    </footer>
+
+    <script>
+      // Show login strip if not logged in
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      if (!token) {
+        document.getElementById('login-strip').style.display = 'flex';
+        document.body.classList.add('has-login-strip');
+      }
+    </script>
+</body>
+</html>

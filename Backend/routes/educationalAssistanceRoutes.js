@@ -2,10 +2,20 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/educationalAssistanceController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
-const upload = require("../middleware/signatureUploadMiddleware"); // for signature file
+const multer = require("multer");
+const upload = require("../middleware/signatureUploadMiddleware"); // or your custom middleware
 
 // ===== User Routes =====
-router.post("/", protect, upload.single("signature"), ctrl.submitApplication);
+router.post(
+  "/",
+  protect,
+  upload.fields([
+    { name: "signature", maxCount: 1 },
+    { name: "sedulaImage", maxCount: 1 },
+    { name: "coeImage", maxCount: 1 },
+  ]),
+  ctrl.submitApplication
+);
 router.get("/me", protect, ctrl.getMyApplication);
 
 // ===== Admin Routes =====
@@ -33,6 +43,12 @@ router.get(
   protect,
   authorizeRoles("admin"),
   ctrl.getCyclesAndPresent
+);
+router.get(
+  "/export/excel",
+  protect,
+  authorizeRoles("admin"),
+  ctrl.exportApplicationsToExcel
 );
 
 // ID-specific admin routes — keep these LAST to avoid conflicts

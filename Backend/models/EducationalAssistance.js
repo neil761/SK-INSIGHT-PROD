@@ -25,16 +25,21 @@ const educationalAssistanceSchema = new mongoose.Schema({
   surname: { type: String, required: true },
   firstname: { type: String, required: true },
   middlename: { type: String, required: true },
-  birthday: { type: Date, required: true },
+  // birthday: { type: Date, required: true },
   placeOfBirth: { type: String, required: true },
   age: { type: Number, required: true },
   sex: { type: String, required: true },
   civilStatus: { type: String, required: true },
   religion: { type: String, required: true },
+  email: { type: String, required: true },
+  contactNumber: { type: Number, required: true },
   school: { type: String, required: true },
   schoolAddress: { type: String, required: true },
-  course: { type: String, required: true },
-  yearLevel: { type: String, required: true },
+  year: { 
+    type: String, 
+    required: true,
+    enum: ["Grade 7", "Grade 8", "Grade 9", "Grade 10", "Grade 11", "Grade 12"],
+  },
   typeOfBenefit: {
     type: String,
     default: "Educational Assistance",
@@ -45,7 +50,9 @@ const educationalAssistanceSchema = new mongoose.Schema({
   motherPhone: { type: String },
   siblings: [siblingSchema],
   expenses: [expenseSchema],
-  signature: { type: String }, // base64 or file path
+  signature: { type: String },
+  sedulaImage: { type: String }, // path or filename
+  coeImage: { type: String },    // path or filename
 
   status: {
     type: String,

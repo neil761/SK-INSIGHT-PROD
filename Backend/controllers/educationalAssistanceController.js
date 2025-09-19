@@ -3,6 +3,9 @@ const FormCycle = require("../models/FormCycle");
 const sendRejectionEmail = require("../utils/sendRejectionEmail");
 const Notification = require("../models/Notification");
 const FormStatus = require("../models/FormStatus");
+const ExcelJS = require('exceljs'); // Make sure to install: npm install exceljs
+const path = require("path");
+const fs = require("fs");
 
 async function getPresentCycle(formName) {
   const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
@@ -64,8 +67,15 @@ exports.submitApplication = async (req, res) => {
       return res.status(400).json({ error: "User not found in request." });
     }
 
-    if (req.file) {
-      data.signature = req.file.path;
+    // Save file paths if files are uploaded
+    if (req.files?.signature?.[0]) {
+      data.signature = req.files.signature[0].path;
+    }
+    if (req.files?.sedulaImage?.[0]) {
+      data.sedulaImage = req.files.sedulaImage[0].path;
+    }
+    if (req.files?.coeImage?.[0]) {
+      data.coeImage = req.files.coeImage[0].path;
     }
 
     const presentCycle = await getPresentCycle("Educational Assistance");
@@ -475,4 +485,170 @@ exports.getNotifications = async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(50);
   res.json(notifs);
+};
+
+
+exports.exportApplicationsToExcel = async (req, res) => {
+  try {
+    const { year, cycle } = req.query;
+
+    const cycleDoc = await FormCycle.findOne({
+      formName: "Educational Assistance",
+      year: Number(year),
+      cycleNumber: Number(cycle),
+    });
+
+    if (!cycleDoc) {
+      return res.status(404).json({ error: "Specified cycle not found" });
+    }
+
+    const applications = await EducationalAssistance.find({
+      formCycle: cycleDoc._id,
+    }).populate("user", "username email birthday sex address");
+
+    if (!applications.length) {
+      return res.status(404).json({ error: "No profiling found for this cycle" });
+    }
+
+    // Find max siblings count
+    const maxSiblings = Math.max(...applications.map(app => app.siblings?.length || 0));
+
+    // Define columns
+    const columns = [
+      { header: 'Surname', key: 'surname', width: 18 },
+      { header: 'First Name', key: 'firstname', width: 18 },
+      { header: 'Middle Name', key: 'middlename', width: 18 },
+      { header: 'Birthday', key: 'birthday', width: 15 },
+      { header: 'Place of Birth', key: 'placeOfBirth', width: 20 },
+      { header: 'Age', key: 'age', width: 8 },
+      { header: 'Sex', key: 'sex', width: 10 },
+      { header: 'Civil Status', key: 'civilStatus', width: 12 },
+      { header: 'Religion', key: 'religion', width: 15 },
+      { header: 'School', key: 'school', width: 20 },
+      { header: 'School Address', key: 'schoolAddress', width: 20 },
+      { header: 'Course', key: 'course', width: 18 },
+      { header: 'Year Level', key: 'yearLevel', width: 12 },
+      { header: 'Type of Benefit', key: 'typeOfBenefit', width: 18 },
+      { header: 'Father Name', key: 'fatherName', width: 18 },
+      { header: 'Father Phone', key: 'fatherPhone', width: 15 },
+      { header: 'Mother Name', key: 'motherName', width: 18 },
+      { header: 'Mother Phone', key: 'motherPhone', width: 15 },
+      // Sibling columns
+      ...Array.from({ length: maxSiblings }, (_, i) => [
+        { header: `Sibling ${i + 1} Name`, key: `sibling${i + 1}_name`, width: 18 },
+        { header: `Sibling ${i + 1} Gender`, key: `sibling${i + 1}_gender`, width: 10 },
+        { header: `Sibling ${i + 1} Age`, key: `sibling${i + 1}_age`, width: 8 },
+      ]).flat(),
+      { header: 'Expenses', key: 'expenses', width: 30 },
+      { header: 'Signature', key: 'signature', width: 30 },
+      { header: 'Status', key: 'status', width: 12 },
+      { header: 'Rejection Reason', key: 'rejectionReason', width: 20 },
+      { header: 'Resubmission Count', key: 'resubmissionCount', width: 10 },
+      { header: 'Submitted At', key: 'createdAt', width: 22 },
+      { header: 'User Email', key: 'userEmail', width: 30 },
+      { header: 'User Name', key: 'userName', width: 20 },
+      { header: 'User Birthday', key: 'userBirthday', width: 15 },
+      { header: 'User Sex', key: 'userSex', width: 10 },
+      { header: 'User Address', key: 'userAddress', width: 30 },
+    ];
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Educational Assistance");
+
+    worksheet.columns = columns;
+
+    // Row 1: Only merged header for siblings, rest blank
+    const siblingStartCol = columns.findIndex(col => col.header.startsWith('Sibling 1 Name')) + 1;
+    const siblingEndCol = siblingStartCol + maxSiblings * 3 - 1;
+    const headerRow1 = Array(columns.length).fill('');
+    if (maxSiblings > 0) {
+      worksheet.mergeCells(1, siblingStartCol, 1, siblingEndCol);
+      headerRow1[siblingStartCol - 1] = `Sibling Information (up to ${maxSiblings})`;
+    }
+    worksheet.addRow(headerRow1);
+
+    // Row 2: Actual column headers
+    worksheet.addRow(columns.map(col => col.header));
+
+    // Freeze top two rows
+    worksheet.views = [{ state: "frozen", ySplit: 2 }];
+
+    // Add data rows
+    applications.forEach(app => {
+      const siblingData = {};
+      for (let i = 0; i < maxSiblings; i++) {
+        siblingData[`sibling${i + 1}_name`] = app.siblings?.[i]?.name || "";
+        siblingData[`sibling${i + 1}_gender`] = app.siblings?.[i]?.gender || "";
+        siblingData[`sibling${i + 1}_age`] = app.siblings?.[i]?.age || "";
+      }
+
+      const rowData = [
+        app.surname || "",
+        app.firstname || "",
+        app.middlename || "",
+        app.birthday ? new Date(app.birthday).toLocaleDateString() : "",
+        app.placeOfBirth || "",
+        app.age || "",
+        app.sex || "",
+        app.civilStatus || "",
+        app.religion || "",
+        app.school || "",
+        app.schoolAddress || "",
+        app.course || "",
+        app.yearLevel || "",
+        app.typeOfBenefit || "",
+        app.fatherName || "",
+        app.fatherPhone || "",
+        app.motherName || "",
+        app.motherPhone || "",
+        // Sibling columns
+        ...Array.from({ length: maxSiblings }, (_, i) => [
+          siblingData[`sibling${i + 1}_name`],
+          siblingData[`sibling${i + 1}_gender`],
+          siblingData[`sibling${i + 1}_age`],
+        ]).flat(),
+        Array.isArray(app.expenses)
+          ? app.expenses.map(e => `${e.item}: ${e.expectedCost}`).join(', ')
+          : "",
+        app.signature || "",
+        app.status || "",
+        app.rejectionReason || "",
+        app.resubmissionCount || 0,
+        app.createdAt ? app.createdAt.toISOString() : "",
+        app.user?.email || "",
+        app.user?.username || "",
+        app.user?.birthday ? new Date(app.user.birthday).toLocaleDateString() : "",
+        app.user?.sex || "",
+        app.user?.address || "",
+      ];
+
+      const row = worksheet.addRow(rowData);
+
+      // Auto-wrap for long text
+      const expensesCol = columns.findIndex(col => col.key === "expenses") + 1;
+      const signatureCol = columns.findIndex(col => col.key === "signature") + 1;
+      const userAddressCol = columns.findIndex(col => col.key === "userAddress") + 1;
+      row.getCell(expensesCol).alignment = { wrapText: true };
+      row.getCell(signatureCol).alignment = { wrapText: true };
+      row.getCell(userAddressCol).alignment = { wrapText: true };
+    });
+
+    worksheet.getRow(2).font = { bold: true };
+    worksheet.getRow(2).alignment = { vertical: "middle", horizontal: "center" };
+
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=educational_assistance_${year}_cycle${cycle}.xlsx`
+    );
+
+    await workbook.xlsx.write(res);
+    res.end();
+  } catch (error) {
+    console.error("Export error:", error);
+    res.status(500).json({ message: "Failed to export applications" });
+  }
 };

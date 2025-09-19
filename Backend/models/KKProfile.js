@@ -1,20 +1,17 @@
 const mongoose = require("mongoose");
 
 const kkProfileSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   formCycle: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "FormCycle",
     required: true,
   },
-
   lastname: String,
   firstname: String,
   middlename: String,
   suffix: String,
   gender: String,
-  age: Number,
-  birthday: Date,
 
   region: String,
   province: String,
@@ -25,11 +22,26 @@ const kkProfileSchema = new mongoose.Schema({
   email: String,
   contactNumber: String,
 
-  civilStatus: String,
-  youthAgeGroup: String,
-  youthClassification: String,
-  educationalBackground: String,
-  workStatus: String,
+  civilStatus: {
+    type: String,
+    enum: ["Single", "Live-in", "Married", "Unknown", "Separated", "Annulled", "Divorced", "Widowed"],
+  },
+  youthAgeGroup: {
+    type: String,
+    enum: ["Child Youth", "Core Youth", "Young Youth"],
+  },
+  youthClassification: {
+    type: String,
+    enum: ["In School Youth","Out of School Youth","Working Youth","Youth with Specific Needs"],
+  },
+  educationalBackground: {
+    type: String,
+    enum: ["Elementary Undergraduate", "Elementary Graduate", "High School Undergraduate", "High School Graduate", "Vocational Graduate", "College Undergraduate", "College Graduate", "Masters Graduate", "Doctorate Level", "Doctorate Graduate"],
+  },
+  workStatus: {
+    type: String,
+    enum: ["Employed", "Unemployed", "Self-Employed", "Currently looking for a Job", "Not interested in looking for a Job"],
+  },
 
   registeredSKVoter: Boolean,
   registeredNationalVoter: Boolean,
@@ -44,7 +56,7 @@ const kkProfileSchema = new mongoose.Schema({
     type: String,
     enum: ["there was no kk assembly", "not interested"],
   },
-  profileImage: { type: String, required: false },
+  profileImage: { type: String, required: true },
 
   submittedAt: {
     type: Date,
