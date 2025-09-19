@@ -34,9 +34,10 @@
   </div>
 
   <!-- Individual Cards for Each Field -->
+  <form id="educationalAssistanceForm">
   <div class="card">
-    <label for="lastName">Last Name:</label>
-    <input type="text" id="lastName" name="lastName" placeholder="Your Answer">
+    <label for="surname">Last Name:</label>
+    <input type="text" id="surname" name="surname" placeholder="Your Answer">
   </div>
 
   <div class="card">
@@ -56,7 +57,17 @@
 
   <div class="card">
     <label for="birthday">Birthday:</label>
-    <input type="text" id="birthday" name="birthday" placeholder="Your Answer">
+    <input class="kk-input" type="date" id="birthday" name="birthday" required>
+  </div>
+
+  <div class="card">
+    <label for="placeOfBirth">Place of Birth:</label>
+    <input type="text" id="placeOfBirth" name="placeOfBirth" placeholder="Your Answer">
+  </div>
+  
+  <div class="card">
+    <label for="age">Age:</label>
+    <input type="number" id="age" name="age" placeholder="Your Answer">
   </div>
 
   <div class="card">
@@ -65,13 +76,13 @@
   </div>
 
   <div class="card">
-    <label for="religion">Religion:</label>
-    <input type="text" id="religion" name="religion" placeholder="Your Answer">
+    <label for="civilstatus">Civil Status:</label>
+    <input type="text" id="civilstatus" name="civilstatus" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="civilstatus">Civil Status:</label>
-    <input type="text" id="civilstatus" name="civilstatus" placeholder="Your Answer">
+    <label for="religion">Religion:</label>
+    <input type="text" id="religion" name="religion" placeholder="Your Answer">
   </div>
 
   <div class="card">
@@ -95,8 +106,16 @@
   </div>
 
   <div class="card">
-    <label for="yearcollege">Year in College:</label>
-    <input type="text" id="yearcollege" name="yearcollege" placeholder="Your Answer">
+    <label for="year">Year:</label>
+    <select class="year" id="year" name="year" required>
+      <option value="">Select Classification</option>
+      <option value="Grade 7">Grade 7</option>
+      <option value="Grade 8">Grade 8</option>
+      <option value="Grade 9">Grade 9</option>
+      <option value="Grade 10">Grade 10</option>
+      <option value="Grade 11">Grade 11</option>
+      <option value="Grade 12">Grade 12</option>
+    </select>
   </div>
 
   <div class="card">
@@ -123,109 +142,107 @@
     <label for="mothercontact">Mother's Contact Number:</label>
     <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer">
   </div>
-<!-- Siblings Section -->
-<div class="card">
-  <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
-    <h3>Names of Brother/s and Sister/s</h3>
-    <button type="button" id="addSiblingBtn" style="padding: 5px 10px; border: 1px solid black; background: white; cursor: pointer; font-weight: bold;">+ Add Sibling</button>
+
+  <!-- Siblings Section -->
+  <div class="card">
+    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+      <h3>Names of Brother/s and Sister/s</h3>
+      <button type="button" id="addSiblingBtn" style="padding: 5px 10px; border: 1px solid black; background: white; cursor: pointer; font-weight: bold;">+ Add Sibling</button>
+    </div>
+
+    <table id="siblingsTable" style="width: 100%; margin-top: 15px; border-collapse: collapse; border: 1px solid black;">
+      <thead>
+        <tr>
+          <th style="border: 1px solid black; padding: 8px;">Name</th>
+          <th style="border: 1px solid black; padding: 8px;">Gender</th>
+          <th style="border: 1px solid black; padding: 8px;">Age</th>
+          <th style="border: 1px solid black; padding: 8px;">Action</th>
+        </tr>
+      </thead>
+      <tbody id="siblingsTableBody">
+
+      </tbody>
+    </table>
   </div>
 
-  <table style="width: 100%; margin-top: 15px; border-collapse: collapse; border: 1px solid black;">
-    <thead>
-      <tr>
-        <th style="border: 1px solid black; padding: 8px;">Name</th>
-        <th style="border: 1px solid black; padding: 8px;">Gender</th>
-        <th style="border: 1px solid black; padding: 8px;">Age</th>
-      </tr>
-    </thead>
-    <tbody id="siblingsTableBody">
+  <div class="card">
+    <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
+      <button type="button" id="addExpenseBtn" style="padding: 5px 10px; border: 1px solid black; background: white; cursor: pointer; font-weight: bold;">+ Add Expense</button>
+    </div>
 
-    </tbody>
-  </table>
-</div>
+    <table id="expensesTable" style="width: 100%; border-collapse: collapse; border: 1px solid black;">
+      <thead>
+        <tr>
+          <th style="border: 1px solid black; padding: 8px;">Fees and Other Expenses to be Incurred</th>
+          <th style="border: 1px solid black; padding: 8px;">Expected Cost</th>
+          <th style="border: 1px solid black; padding: 8px;">Action</th>
+        </tr>
+      </thead>
+      <tbody id="expensesTableBody">
 
-<div class="card">
-  <div style="display: flex; justify-content: flex-end; margin-bottom: 10px;">
-    <button type="button" id="addExpenseBtn" style="padding: 5px 10px; border: 1px solid black; background: white; cursor: pointer; font-weight: bold;">+ Add</button>
+      </tbody>
+    </table>
   </div>
 
-  <table style="width: 100%; border-collapse: collapse; border: 1px solid black;">
-    <thead>
-      <tr>
-        <th style="border: 1px solid black; padding: 8px;">Fees and Other Expenses to be Incurred</th>
-        <th style="border: 1px solid black; padding: 8px;">Expected Cost</th>
-      </tr>
-    </thead>
-    <tbody id="expensesTableBody">
-
-    </tbody>
-  </table>
-</div>
-
-<div class="card">
-  <h3>III. Requirements</h3>
-  
-  <table style="width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 15px;">
-    <thead>
-      <tr>
-        <th style="border: 1px solid black; padding: 8px;">Documents</th>
-        <th style="border: 1px solid black; padding: 8px;">Files</th>
-        <th style="border: 1px solid black; padding: 8px;">View</th>
-        <th style="border: 1px solid black; padding: 8px;">Delete</th>
-        <th style="border: 1px solid black; padding: 8px;">Upload</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td style="border: 1px solid black; padding: 8px;">Sedula</td>
-        <td style="border: 1px solid black; padding: 8px;"></td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-eye" style="cursor:pointer; color: skyblue;"></i>
-        </td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-trash" style="cursor:pointer; color: red;"></i>
-        </td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-file" style="cursor:pointer; color: gold;"></i>
-        </td>
-      </tr>
-      <tr>
-        <td style="border: 1px solid black; padding: 8px;">Certificate of Enrollment</td>
-        <td style="border: 1px solid black; padding: 8px;"></td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-eye" style="cursor:pointer; color: skyblue;"></i>
-        </td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-trash" style="cursor:pointer; color: red;"></i>
-        </td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-file" style="cursor:pointer; color: gold;"></i>
-        </td>
-      </tr>
-      <tr>
-        <td style="border: 1px solid black; padding: 8px;">School ID</td>
-        <td style="border: 1px solid black; padding: 8px;"></td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-eye" style="cursor:pointer; color: skyblue;"></i>
-        </td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-trash" style="cursor:pointer; color: red;"></i>
-        </td>
-        <td style="border: 1px solid black; padding: 8px; text-align: center;">
-          <i class="fa-solid fa-file" style="cursor:pointer; color: gold;"></i>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-</div>
-
-<div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
-  <button type="submit" class="submit-btn" style="width: auto; padding: 8px 20px;">Submit</button>
-</div>
-
-
-</div>
-    </form>
+  <div class="card">
+    <h3>III. Requirements</h3>
+    
+    <table style="width: 100%; border-collapse: collapse; border: 1px solid black; margin-top: 15px;">
+      <thead>
+        <tr>
+          <th style="border: 1px solid black; padding: 8px;">Documents</th>
+          <th style="border: 1px solid black; padding: 8px;">View</th>
+          <th style="border: 1px solid black; padding: 8px;">Delete</th>
+          <th style="border: 1px solid black; padding: 8px;">Upload</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td style="border: 1px solid black; padding: 8px;">Sedula</td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <i class="fa-solid fa-eye" id="viewSedula" style="cursor:pointer; color: skyblue;"></i>
+          </td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <i class="fa-solid fa-trash" id="deleteSedula" style="cursor:pointer; color: red;"></i>
+          </td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <input type="file" id="sedulaImage" name="sedulaImage" accept="image/*" required>
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid black; padding: 8px;">Certificate of Enrollment</td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <i class="fa-solid fa-eye" id="viewCOE" style="cursor:pointer; color: skyblue;"></i>
+          </td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <i class="fa-solid fa-trash" id="deleteCOE" style="cursor:pointer; color: red;"></i>
+          </td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <input type="file" id="coeImage" name="coeImage" accept="image/*" required>
+          </td>
+        </tr>
+        <tr>
+          <td style="border: 1px solid black; padding: 8px;">Signature:</td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <i class="fa-solid fa-eye" id="viewSchoolId" style="cursor:pointer; color: skyblue;"></i>
+          </td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <i class="fa-solid fa-trash" id="deleteSchoolId" style="cursor:pointer; color: red;"></i>
+          </td>
+          <td style="border: 1px solid black; padding: 8px; text-align: center;">
+            <input type="file" id="signature" name="signature" accept="image/*" required>
+          </td>
+        </tr>
+      </tbody>
+    </table>
   </div>
+
+  <div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
+    <button type="submit" class="submit-btn" style="width: auto; padding: 8px 20px;">Submit</button>
+  </div>
+</form>
+</div>
+
+  <script src="../../js/educ-user.js"></script>
 </body>
 </html>

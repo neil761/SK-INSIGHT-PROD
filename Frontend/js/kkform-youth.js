@@ -1,4 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
+  
   // Attendance logic
   const attendedKKAssembly = document.getElementById('attendedKKAssembly');
   const attendanceCountGroup = document.getElementById('attendanceCountGroup');
@@ -48,29 +49,41 @@ document.addEventListener('DOMContentLoaded', function() {
     formData.append('registeredNationalVoter', this.registeredNationalVoter.checked);
     formData.append('votedLastSKElection', this.votedLastSKElection.checked);
     formData.append('attendedKKAssembly', this.attendedKKAssembly.checked);
-    formData.append('attendanceCount', this.attendanceCount.value);
+    if (this.attendedKKAssembly.checked) {
+      formData.append('attendanceCount', this.attendanceCount.value); // must be a valid enum value
+    } else {
+      // Do not append attendanceCount or set it to undefined/null
+    }
     formData.append('reasonDidNotAttend', this.reasonDidNotAttend.value);
     if (this.profileImage.files[0]) {
       formData.append('profileImage', this.profileImage.files[0]);
     }
 
     try {
+      // Get token from sessionStorage or localStorage
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/kkprofiling', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` },
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       if (response.ok) {
         alert('Form submitted successfully!');
         localStorage.removeItem('kkProfileStep1');
         localStorage.removeItem('kkProfileStep2');
-        window.location.href = '/Frontend/html/user/userProfile.html';
+        window.location.href = '../../html/user/confirmation/html/kkconfirmation.html';
       } else {
-        const error = await response.json();
+        let error;
+        try {
+          error = await response.json();
+        } catch {
+          error = { message: await response.text() };
+        }
         alert(error.message || 'Something went wrong');
       }
     } catch (error) {
       alert('Failed to submit form');
     }
+    
   });
 });

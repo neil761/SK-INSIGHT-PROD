@@ -132,7 +132,7 @@ function capitalize(str) {
         <td>${p.user?.age ?? "N/A"}</td>
         <td>${p.purok || "-"}</td>
         <td>${p.gender}</td>
-        <td><button class="view-btn" data-id="${p._id}">View</button></td>
+        <td><button class="view-btn" data-id="${p._id}"><i class="fa-solid fa-eye" style = "color: #ffffffff"></i> Review</button></td>
       `;
       tableBody.appendChild(row);
     });
@@ -156,82 +156,91 @@ function capitalize(str) {
 
   // 🔹 Show modal with profile details
   function showProfileModal(p) {
-  const modal = document.getElementById("profileModal");
-  const header = document.getElementById("profileHeader");
-  const details = document.getElementById("profileDetails");
+    const modal = document.getElementById("profileModal");
+    const header = document.getElementById("profileHeader");
+    const details = document.getElementById("profileDetails");
 
-  const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-  const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-  const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+    const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+    const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+    const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
 
-  // Fetch image as blob with token
-  fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("token")}`,
-    },
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Image not found");
-      return res.blob();
+    // Fetch image as blob with token
+    fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
     })
-    .then((blob) => {
-      const imgUrl = URL.createObjectURL(blob);
-      header.innerHTML = `
-        <img src="${imgUrl}" alt="Profile Image" width="60" height="60"
-          style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-        <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
-      `;
-    })
-    .catch(() => {
-      header.innerHTML = `
-        <img src="/Frontend/assets/default-profile.png" alt="Profile Image" width="60" height="60"
-          style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-        <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
-      `;
-    });
+      .then((res) => {
+        if (!res.ok) throw new Error("Image not found");
+        return res.blob();
+      })
+      .then((blob) => {
+        const imgUrl = URL.createObjectURL(blob);
+        header.innerHTML = `
+          <img src="${imgUrl}" alt="Profile Image" width="60" height="60"
+            style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top: -5%" />
+          <p style="display:inline-block; vertical-align:middle; margin-top: -50px;">${fullName}</p>
+        `;
+      })
+      .catch(() => {
+        header.innerHTML = `
+          <img src="/Frontend/assets/default-profile.png" alt="Profile Image" width="60" height="60"
+            style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
+          <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+        `;
+      });
 
-  details.innerHTML = `
-    <div class="profile-info">
-      <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
-      <hr>
-      <p><b class="label">Age:</b> ${p.user?.age ?? "N/A"}</p>
-      <hr>
-      <p><b class="label">Gender:</b> ${p.gender}</p>
-      <hr>
-      <p><b class="label">Birthday:</b> ${p.user?.birthday ? new Date(p.user.birthday).toISOString().split("T")[0] : "-"}</p>
-      <hr>
-      <p><b class="label">Email:</b> ${p.email || "-"}</p>
-      <hr>
-      <p><b class="label">Contact Number:</b> ${p.contactNumber || "-"}</p>
-      <hr>
-      <p><b class="label">Civil Status:</b> ${p.civilStatus || "-"}</p>
-      <hr>
-      <p><b class="label">Youth Age Group:</b> ${p.youthAgeGroup || "-"}</p>
-      <hr>
-      <p><b class="label">Youth Classification:</b> ${p.youthClassification || "-"}</p>
-      <hr>
-      <p><b class="label">Educational Background:</b> ${p.educationalBackground || "-"}</p>
-      <hr>
-      <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
-      <hr>
-      <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
-      <hr>
-      <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
-      <hr>
-      <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
-      <hr>
-      <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
-      <hr>
-      ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
-      <hr>
-      <p class="bott"></p>
-    </div>
-  `;
+    // Age, Gender, Birthday in one row
+    details.innerHTML = `
+      <div class="profile-info">
+        <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
+        <hr>
+        <div style="display: flex; gap: 24px;">
+          <p><b class="label">Age:</b> ${p.user?.age ?? "N/A"}</p>
+          <p><b class="label">Gender:</b> ${p.gender}</p>
+          <p><b class="label">Birthday:</b> ${p.user?.birthday ? new Date(p.user.birthday).toISOString().split("T")[0] : "-"}</p>
+        </div>
+        <hr>
+        <p><b class="label">Email:</b> ${p.email || "-"}</p>
+        <hr>
+        <p><b class="label">Contact Number:</b> ${p.contactNumber || "-"}</p>
+        <hr>
+        <p><b class="label">Civil Status:</b> ${p.civilStatus || "-"}</p>
+        <hr>
+        <p><b class="label">Youth Age Group:</b> ${p.youthAgeGroup || "-"}</p>
+        <hr>
+        <p><b class="label">Youth Classification:</b> ${p.youthClassification || "-"}</p>
+        <hr>
+        <p><b class="label">Educational Background:</b> ${p.educationalBackground || "-"}</p>
+        <hr>
+        <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
+        <hr>
+        <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
+        <hr>
+        <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
+        <hr>
+        <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
+        <hr>
+        <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
+        <hr>
+        ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
+        <hr>
+        <p class="bott"></p>
+      </div>
+    `;
 
-  modal.style.display = "flex";
-  document.querySelector(".close-btn").onclick = () =>
-    (modal.style.display = "none");
+    modal.style.display = "flex";
+    document.body.classList.add("modal-open");
+    document.querySelector(".close-btn").onclick = () => {
+      modal.style.display = "none";
+      document.body.classList.remove("modal-open");
+    };
 }
+// modal.querySelector("#printProfileBtn").onclick = function () { 
+//   const printContents = modal.querySelector(".modal-content").innerHTML; 
+//   const originalContents = document.body.innerHTML; document.body.innerHTML = printContents; window.print(); 
+//   document.body.innerHTML = originalContents; window.location.reload(); 
+// };
 
 
   // 🔹 Cycle filter (year + cycle)
@@ -263,14 +272,23 @@ function capitalize(str) {
 
 
 // Helper to format date/time
-  function formatDateTime(dt) {
-    if (!dt) return "";
-    const date = new Date(dt);
-    return date.toLocaleString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit', hour12: true
-    });
-  }
+function formatDateTime(dt) {
+  if (!dt) return "";
+  const date = new Date(dt);
+
+  const year = date.getFullYear();
+  const month = date.toLocaleString('en-US', { month: 'long' });
+  const day = date.getDate();
+
+  let hours = date.getHours();
+  const minutes = date.getMinutes().toString().padStart(2, "0");
+
+  const ampm = hours >= 12 ? "PM" : "AM"; // 👈 decide AM or PM
+  hours = hours % 12 || 12; // convert to 12-hour format
+
+  return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+}
+
 
 
   // 🔹 Available filter options
@@ -388,7 +406,8 @@ window.addEventListener("click", (e) => {
       greeting = "Good afternoon";
     }
 
-    // Format date as "January 25, 2025"
+    // Format date as "Monday, January 25, 2025"
+    const weekday = now.toLocaleString("en-US", { weekday: "long", timeZone: "Asia/Manila" });
     const dateStr = now.toLocaleDateString("en-US", {
       month: "long",
       day: "2-digit",
@@ -396,13 +415,15 @@ window.addEventListener("click", (e) => {
       timeZone: "Asia/Manila"
     });
 
-    // Format time as hh:mm (24-hour)
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    const timeStr = `${hh}:${mm}`;
+    // Format time as hh:mm AM/PM (12-hour)
+    let hour = now.getHours();
+    const minute = String(now.getMinutes()).padStart(2, "0");
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12; // convert to 12-hour format
+    const timeStr = `${hour}:${minute} ${ampm}`;
 
     document.getElementById("greeting").textContent = greeting;
-    document.getElementById("header-date").textContent = dateStr + " -";
+    document.getElementById("header-date").textContent = `${weekday}, ${dateStr} -`;
     document.getElementById("datetime").textContent = timeStr;
 
     // Update icon
