@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
     if (!token) {
         console.warn('No token found. Redirecting to login...');
