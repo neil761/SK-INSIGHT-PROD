@@ -302,41 +302,67 @@ exports.deleteProfileById = async (req, res) => {
 // Export profiles (optionally filter by cycleId)
 exports.exportProfilesToExcel = async (req, res) => {
   try {
-    const { cycleId } = req.query;
-    const query = cycleId ? { formCycle: cycleId } : {}; // FIXED
-    const profiles = await LGBTQProfile.find(query).populate(
-      "user",
-      "username email"
-    );
+    const { year, cycle } = req.query;
 
-    const workbook = new ExcelJS.Workbook();
-    const sheet = workbook.addWorksheet("LGBTQIA+ Profiling");
+    // Find the cycle
+    const cycleDoc = await FormCycle.findOne({
+      formName: "LGBTQIA+ Profiling",
+      year: Number(year),
+      cycleNumber: Number(cycle),
+    });
 
-    sheet.columns = [
-      { header: "User", key: "username" },
-      { header: "Email", key: "email" },
-      { header: "Cycle ID", key: "cycleId" },
-      { header: "Sex Assigned at Birth", key: "sexAssignedAtBirth" },
-      { header: "LGBTQ Classification", key: "lgbtqClassification" },
-      { header: "Lastname", key: "lastname" },
-      { header: "Firstname", key: "firstname" },
-      { header: "Age", key: "age" },
-      // REMOVED address, region, province, municipality, barangay, purok
+    if (!cycleDoc) {
+      return res.status(404).json({ error: "Specified cycle not found" });
+    }
+
+    const profiles = await LGBTQProfile.find({
+      formCycle: cycleDoc._id,
+    }).populate("user", "username email birthday age");
+
+    if (!profiles.length) {
+      return res.status(404).json({ error: "No profiling found for this cycle" });
+    }
+
+    // Define columns
+    const columns = [
+      { header: "Username", key: "username", width: 20 },
+      { header: "Email", key: "email", width: 30 },
+      { header: "Lastname", key: "lastname", width: 18 },
+      { header: "Firstname", key: "firstname", width: 18 },
+      { header: "Middlename", key: "middlename", width: 18 },
+      { header: "Birthday", key: "birthday", width: 15 },
+      { header: "Age", key: "age", width: 8 },
+      { header: "Sex Assigned at Birth", key: "sexAssignedAtBirth", width: 18 },
+      { header: "LGBTQ Classification", key: "lgbtqClassification", width: 20 },
+      { header: "ID Image", key: "idImage", width: 30 },
+      { header: "Submitted At", key: "createdAt", width: 22 },
     ];
 
-    for (const profile of profiles) {
-      sheet.addRow({
-        username: profile.user.username,
-        email: profile.user.email,
-        cycleId: profile.formCycle,
-        sexAssignedAtBirth: profile.sexAssignedAtBirth,
-        lgbtqClassification: profile.lgbtqClassification,
-        lastname: profile.lastname,
-        firstname: profile.firstname,
-        age: profile.user?.age, // <-- from user
-        // REMOVED address, region, province, municipality, barangay, purok
-      });
-    }
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("LGBTQIA+ Profiling");
+    worksheet.columns = columns;
+
+    // Add header row
+    worksheet.addRow(columns.map(col => col.header));
+    worksheet.getRow(1).font = { bold: true };
+    worksheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
+
+    // Add data rows
+    profiles.forEach(profile => {
+      worksheet.addRow([
+        profile.user?.username || "",
+        profile.user?.email || "",
+        profile.lastname || "",
+        profile.firstname || "",
+        profile.middlename || "",
+        profile.user?.birthday ? new Date(profile.user.birthday).toLocaleDateString() : "",
+        profile.user?.age || "",
+        profile.sexAssignedAtBirth || "",
+        profile.lgbtqClassification || "",
+        profile.idImage || "",
+        profile.createdAt ? profile.createdAt.toISOString() : "",
+      ]);
+    });
 
     res.setHeader(
       "Content-Type",
@@ -344,13 +370,14 @@ exports.exportProfilesToExcel = async (req, res) => {
     );
     res.setHeader(
       "Content-Disposition",
-      "attachment; filename=lgbtq_profiles.xlsx"
+      `attachment; filename=lgbtq_profiles_${year}_cycle${cycle}.xlsx`
     );
 
     await workbook.xlsx.write(res);
     res.end();
-  } catch (err) {
-    res.status(500).json({ error: "Failed to export to Excel" });
+  } catch (error) {
+    console.error("Export error:", error);
+    res.status(500).json({ message: "Failed to export profiles" });
   }
 };
 
