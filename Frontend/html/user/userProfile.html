@@ -9,6 +9,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
     />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
   <body>
     <!-- Navbar -->
@@ -25,7 +26,7 @@
     </div>
 
     <div class="profile-container">
-      <img src="../../assets/id.jpg" alt="User" />
+      <img id="profile-img" alt="User" />
       <h3>Test T. Tests</h3>
       <p>test@example.com</p>
       <p class="verified">
@@ -35,34 +36,33 @@
 
       <div class="field">
         <label>Full Name</label>
-        <input type="text" value="Test T. Test" readonly />
+        <input type="text" id="fullName" readonly />
       </div>
 
       <div class="field">
         <label>Age</label>
-        <input type="text" value="22" readonly />
+        <input type="text" id="age" readonly />
       </div>
 
       <div class="field">
         <label>Gender</label>
-        <input type="text" value="Male" readonly />
+        <input id="gender" readonly>
       </div>
 
       <div class="field">
         <label>Youth Classification</label>
-        <input type="text" value="In School Youth" readonly />
+        <input type="text" id="youthClassification" readonly />
       </div>
 
       <div class="field">
         <label>Civil Status</label>
-        <input type="text" value="Single" readonly />
+        <input id="civilStatus" readonly>
       </div>
 
       <div class="field">
         <label>Purok</label>
-        <input type="text" value="Purok 69" readonly />
+        <input type="text" id="purok" readonly />
       </div>
-
       <div class="buttons">
         <button class="verify-btn">Verify Account</button>
         <button class="logout-btn">Log out</button>
