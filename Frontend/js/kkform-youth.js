@@ -31,6 +31,19 @@ document.addEventListener('DOMContentLoaded', function() {
   // Final submit
   document.getElementById('youthForm').addEventListener('submit', async function(e) {
     e.preventDefault();
+
+    // SweetAlert confirmation
+    const result = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to submit your KKProfile?",
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "Yes",
+      cancelButtonText: "Cancel"
+    });
+
+    if (!result.isConfirmed) return;
+
     // Collect all data from localStorage and this page
     const step1 = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
     const step2 = JSON.parse(localStorage.getItem('kkProfileStep2') || '{}');
@@ -50,9 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
     formData.append('votedLastSKElection', this.votedLastSKElection.checked);
     formData.append('attendedKKAssembly', this.attendedKKAssembly.checked);
     if (this.attendedKKAssembly.checked) {
-      formData.append('attendanceCount', this.attendanceCount.value); // must be a valid enum value
-    } else {
-      // Do not append attendanceCount or set it to undefined/null
+      formData.append('attendanceCount', this.attendanceCount.value);
     }
     formData.append('reasonDidNotAttend', this.reasonDidNotAttend.value);
     if (this.profileImage.files[0]) {
@@ -60,7 +71,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     try {
-      // Get token from sessionStorage or localStorage
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/kkprofiling', {
         method: 'POST',
@@ -68,10 +78,13 @@ document.addEventListener('DOMContentLoaded', function() {
         body: formData
       });
       if (response.ok) {
-        alert('Form submitted successfully!');
+        await Swal.fire("Submitted!", "Form submitted successfully!", "success");
         localStorage.removeItem('kkProfileStep1');
         localStorage.removeItem('kkProfileStep2');
-        window.location.href = '../../html/user/confirmation/html/kkconfirmation.html';
+        window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
+      } else if (response.status === 409) {
+        Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
+        return;
       } else {
         let error;
         try {
@@ -79,10 +92,10 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch {
           error = { message: await response.text() };
         }
-        alert(error.message || 'Something went wrong');
+        Swal.fire("Error", error.message || 'Something went wrong', "error");
       }
     } catch (error) {
-      alert('Failed to submit form');
+      Swal.fire("Error", "Failed to submit form", "error");
     }
     
   });
