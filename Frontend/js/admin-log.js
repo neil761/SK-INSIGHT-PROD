@@ -40,7 +40,7 @@ document.addEventListener("DOMContentLoaded", () => {
           timer: 1000,
           showConfirmButton: false,
         }).then(() => {
-          window.location.href = "/Frontend/html/admin/admin-dashboard.html";
+          window.location.href = "./admin-dashboard.html";
         });
       } else {
         Swal.fire({
