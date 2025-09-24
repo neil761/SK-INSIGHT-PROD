@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const ctrl = require("../controllers/kkProfileController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
+const KKProfile = require("../models/KKProfile");
 
 const upload = require("../middleware/uploadProfileImage");
 
@@ -32,6 +33,13 @@ router.get(
   authorizeRoles("admin"),
   ctrl.filterProfilesByCycle
 );
+
+// Get current user's KKProfile
+router.get("/me", protect, async (req, res) => {
+  const kkProfile = await KKProfile.findOne({ user: req.user.id });
+  if (!kkProfile) return res.status(404).json({ error: "KKProfile not found" });
+  res.json(kkProfile);
+});
 
 // Admin or Owner can manage a specific profile
 router.get("/:id", protect, authorizeRoles("admin"), ctrl.getProfileById);
