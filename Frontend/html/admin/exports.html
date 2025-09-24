@@ -5,13 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SK-INSIGHT</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <link rel="stylesheet" href="/Frontend/css/admin-dashboard.css">
+    <link rel="stylesheet" href="../../css/exports.css">
 </head>
 <body>
+
+
     <div class="sidebar">
         <h3 class="text-2xl font-normal">Sangguniang Kabataan</h3>
         <div class="logos">
-            <img src="/Frontend/assets/logo.png" alt="logo" class="logo">
+            <img src="../../assets/logo.png" alt="logo" class="logo">
             <div class="title-container">
                 <p class="text-lg font-semibold">SK Officials</p>
                 <p class="admin">Admin</p>
@@ -64,16 +66,80 @@
     </div>
 
     <div class="content">
-        <div class="parent">
-            <div class="date">
-              <p>Good Morning</p>
-              <p>;wurojkldnvsx</p>
-            </div>
-          </div>
-          
+  <div class="export-container">
+    <h1>Export Data</h1>
+    <p class="subtitle">Select a category to export data to Excel</p>
+    
+    <div class="export-grid">
+      <div class="export-card" data-type="kk">
+        <div class="card-icon">
+          <i class="fas fa-id-badge"></i>
+        </div>
+        <h3>KK Profiling</h3>
+        <p>Export KK profiling data to Excel</p>
+        <button class="export-btn" data-type="kk">
+          <i class="fas fa-file-export"></i>
+          Export
+        </button>
+      </div>
 
-        <hr>
+      <div class="export-card" data-type="educational">
+        <div class="card-icon">
+          <i class="fas fa-graduation-cap"></i>
+        </div>
+        <h3>Educational Assistance</h3>
+        <p>Export educational assistance applications</p>
+        <button class="export-btn" data-type="educational">
+          <i class="fas fa-file-export"></i>
+          Export
+        </button>
+      </div>
+
+      <div class="export-card" data-type="lgbtq">
+        <div class="card-icon">
+          <i class="fas fa-rainbow"></i>
+        </div>
+        <h3>LGBTQ Profiling</h3>
+        <p>Export LGBTQ profiling data to Excel</p>
+        <button class="export-btn" data-type="lgbtq">
+          <i class="fas fa-file-export"></i>
+          Export
+        </button>
+      </div>
     </div>
+  </div>
+</div>
 
+<!-- Modern Modal -->
+<div id="exportModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 id="modalTitle">Export Data</h3>
+      <span id="closeModal">&times;</span>
+    </div>
+    <div class="modal-body">
+      <form id="exportForm">
+        <div class="form-group">
+          <label for="year">Select Year</label>
+          <select id="year" name="year" required>
+            <option value="">Choose a year</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="cycle">Select Cycle</label>
+          <select id="cycle" name="cycle" required>
+            <option value="">Choose a cycle</option>
+          </select>
+        </div>
+        <button type="submit" id="confirmExportBtn">
+          <i class="fas fa-file-excel"></i>
+          Generate Excel File
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+
+    <script src="../../js/exports.js"></script>
 </body>
 </html>
