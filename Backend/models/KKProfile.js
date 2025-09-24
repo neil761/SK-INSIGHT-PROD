@@ -57,6 +57,7 @@ const kkProfileSchema = new mongoose.Schema({
     enum: ["there was no kk assembly", "not interested"],
   },
   profileImage: { type: String, required: true },
+  birthday: { type: Date, required: true },
 
   submittedAt: {
     type: Date,

@@ -100,9 +100,15 @@ document.addEventListener('DOMContentLoaded', async function() {
       });
       const data = await res.json();
       if (res.ok) {
-        Swal.fire("✅ Success", "Form submitted successfully!", "success");
+        Swal.fire("✅ Success", "Form submitted successfully!", "success").then(() => {
+          window.location.href = "confirmation/html/educConfirmation.html";
+        });
         form.reset();
       } else {
+        if (res.status === 409) {
+          Swal.fire("❌ Error", data.error || "You already submitted for this cycle.", "error");
+          return;
+        }
         Swal.fire("❌ Error", data.message || "Submission failed.", "error");
       }
     } catch (err) {
@@ -154,5 +160,37 @@ document.addEventListener('DOMContentLoaded', async function() {
     if (e.target.classList.contains('removeExpenseBtn')) {
       e.target.closest('tr').remove();
     }
+  });
+
+  // Image preview modal logic
+  function showImagePreview(fileInputId) {
+    const input = document.getElementById(fileInputId);
+    if (input && input.files.length > 0) {
+      const file = input.files[0];
+      const url = URL.createObjectURL(file);
+      const modal = document.getElementById('imagePreviewModal');
+      const img = document.getElementById('previewImg');
+      img.src = url;
+      modal.style.display = 'flex';
+      // Remove object URL after modal closes to avoid memory leak
+      modal.onclick = function() {
+        modal.style.display = 'none';
+        img.src = '';
+        URL.revokeObjectURL(url);
+      };
+    } else {
+      Swal.fire("No file selected", "Please upload an image first.", "info");
+    }
+  }
+
+  // Eye icon click listeners
+  document.getElementById('viewSedula').addEventListener('click', function() {
+    showImagePreview('sedulaImage');
+  });
+  document.getElementById('viewCOE').addEventListener('click', function() {
+    showImagePreview('coeImage');
+  });
+  document.getElementById('viewSchoolId').addEventListener('click', function() {
+    showImagePreview('schoolIdImage');
   });
 });

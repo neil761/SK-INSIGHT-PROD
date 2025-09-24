@@ -28,6 +28,10 @@ app.use(express.urlencoded({ extended: true })); // for form-data and urlencoded
 
 app.use(express.static(path.join(__dirname, "../Frontend")));
 
+// Serve everything inside uploads/
+
+app.use('/', express.static(path.join(__dirname, 'uploads')));
+
 // Routes
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
@@ -39,6 +43,7 @@ app.use("/api/announcements", AnnouncementRoutes);
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use(express.static("public"));
 app.use("/api/formcycle", require("./routes/formCycleRoutes"));
+app.use("/api/kkprofile", require("./routes/kkProfileRoutes"));
 
 
 const PORT = process.env.PORT || 5000;
@@ -74,6 +79,9 @@ io.on("connection", (socket) => {
 
 // Serve uploaded images
 app.use("/uploads/lgbtq_id_images", express.static(path.join(__dirname, "uploads/lgbtq_id_images")));
+
+// Serve profile_images at /profile_images
+app.use('/profile_images', express.static(path.join(__dirname, 'uploads/profile_images')));
 
 // After all routes, before the global error handler:
 app.use((err, req, res, next) => {
