@@ -67,99 +67,69 @@
     </div>
 
 
-
     <div class="content">
-          <div class="dates">
-      <div class="top-header">
-          <div class="header-left">
-            <span class="header-title"></span>
-          </div>
-          <div class="header-right">
-            <div class="greeting-block">
-              <span>
-                <i id="greeting-icon" class="fa-solid fa-sun" style="color: #f7c948; margin-right: 6px;"></i>
-                <span id="greeting" class="greeting-text">Good Morning</span>
-              </span>
-              <div class="header-datetime">
-                <span id="header-date">January 25, 2025</span>
-                -
-                <span id="datetime">08:48</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      <hr>
-    </div>
+      <div id="header-container"></div>
+
 
       <div class="title">
         <header class="page-header">
           <h1 class="tit">KK Profile</h1>
-          <p class="subtitle">List of KK Residents...</p>
+          <p class="subtitle">List of KK Residents</p>
         </header>
       
       <section class="filters-bar">
-        <div class="title">
-          <div class="row">
-            <div class="filter-row">
-              <div class="filter-group">
-
-                <div class="dropdown" id="classificationDropdown">
-                  <button class="dropdown-button" type="button">
-                     Classification
-                  </button>
-                  <div class="dropdown-content"></div>
-                </div>
-                  <label for="yearSelect" class="year">Year:</label>
-                  <select id="yearSelect" class="cycle-select">
-                  </select>
-                  <label for="cycleSelect" class="cycle">Cycle:</label>
-                  <select id="cycleSelect" class="cycle-select">
-                  </select>
-              </div>
-              <div class="filts">
-                <button id="filterBtn" class="filt">Filter</button>
-              </div>
+        <div class="filter-row">
+          <div class="filter-group">
+            <div class="dropdown" id="yearDropdown">
+              <button class="dropdown-button filter-select" type="button">
+                Year
+              </button>
+              <div class="dropdown-content" id="yearContent"></div>
             </div>
+            <div class="dropdown" id="cycleDropdown">
+              <button class="dropdown-button filter-select" type="button">
+                Cycle
+              </button>
+              <div class="dropdown-content" id="cycleContent"></div>
+            </div>
+            <div class="dropdown" id="classificationDropdown">
+              <button class="dropdown-button filter-select" type="button">
+                Classification
+              </button>
+              <div class="dropdown-content"></div>
+            </div>
+            <button id="filterBtn" class="filt-btn">Filter</button>
+            <button id="clearFilterBtn" class="filt-btn clear-btn">Clear</button>
           </div>
-
-        
         </div>
-
-      
       </section>
       
 
       <div class="tables">
-        <div class="rows">
-            <div class="buts">
-              <!-- Left side: search -->
-              <div class="fil">
-                <div class="search-container">
-                  <input
-                    type="text"
-                    id="searchInput"
-                    class="search-input"
-                    placeholder="🔍 Search Resident"
-                  />
-                </div>
-              </div>
-        
+        <div class="search-container">
+          <span class="search-icon"><i class="fas fa-search"></i></span>
+          <input
+            type="text"
+            id="searchInput"
+            class="search-input"
+            placeholder="Search Resident"
+          />
         </div>
-        <div class="tables">
-          <table>
-            <thead>
-              <tr>
-                <th>No.</th>
-                <th>Resident's Name</th>
-                <th>Age</th>
-                <th>Purok</th>
-                <th>Gender</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>No.</th>
+              <th>Resident's Name</th>
+              <th>Age</th>
+              <th>Purok</th>
+              <th>Gender</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
 
         <div id="profileModal" class="modal" style="display: none">
           <div class="modal-content">
@@ -169,12 +139,67 @@
               <button id="downloadDocx">🖨️ Download</button>
             </div>
             <div class="modal-body" id="profileDetails"></div>
+
+      <div id="profileModal" class="modal" style="display: none">
+        <div class="modal-content">
+          <span class="close-btn">&times;</span>
+          <div class="modal-header">
+            <div id="profileHeader" class="profile-header"></div>
+            <button id="printBtn">🖨️ Print</button>
+
           </div>
+          <div class="modal-body" id="profileDetails"></div>
         </div>
+      </div>
 
 
     </div>
-
+    <script>
+      fetch('/Frontend/html/admin/header.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('header-container').innerHTML = html;
+          // After injecting, run the header JS
+          const script = document.createElement('script');
+          script.src = '/Frontend/js/admin/header.js';
+          document.body.appendChild(script);
+        });
+  </script>
+  <link rel="stylesheet" href="/Frontend/css/header.css">
     <script src="/Frontend/js/kkprofile.js"></script>
+    <script>
+      // Fade in on load
+      const content = document.querySelector('.content');
+      content.classList.add('page-fade');
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          content.classList.remove('page-fade');
+          content.classList.add('page-fade-in');
+        }, 10);
+      });
+
+      // Fade out on navigation for all internal links
+      document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (
+          href &&
+          !href.startsWith('http') &&
+          !href.startsWith('mailto:') &&
+          !href.startsWith('#') &&
+          !link.hasAttribute('target')
+        ) {
+          link.addEventListener('click', function(e) {
+            // Only fade if not a sidebar link
+            // (Sidebar links are outside .content, so always fade .content)
+            e.preventDefault();
+            content.classList.remove('page-fade-in');
+            content.classList.add('page-fade');
+            setTimeout(() => {
+              window.location.href = href;
+            }, 180); // match the CSS transition duration
+          });
+        }
+      });
+    </script>
   </body>
 </html>

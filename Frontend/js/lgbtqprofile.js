@@ -11,18 +11,28 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("lgbtqprofile.js loaded ✅");
 
   const tableBody = document.querySelector(".tables tbody");
-  const yearSelect = document.getElementById("year"); // Cycle
-  const cycleSelect = document.getElementById("cycleNumber"); // Year
-  const filterBtn = document.getElementById("yearFilterBtn");
-  const searchInput = document.querySelector(".search-input");
 
+  // Custom dropdown elements
+  const yearDropdown = document.getElementById("yearDropdown");
+  const yearButton = yearDropdown.querySelector(".dropdown-button");
+  const yearContent = yearDropdown.querySelector(".dropdown-content");
+  const cycleDropdown = document.getElementById("cycleDropdown");
+  const cycleButton = cycleDropdown.querySelector(".dropdown-button");
+  const cycleContent = cycleDropdown.querySelector(".dropdown-content");
+  const classificationDropdown = document.getElementById("classificationDropdown");
+  const classificationButton = classificationDropdown.querySelector(".dropdown-button");
+  const classificationContent = classificationDropdown.querySelector(".dropdown-content");
+  const filterBtn = document.getElementById("filterBtn");
+  const clearFilterBtn = document.getElementById("clearFilterBtn");
+
+  let yearMap = {};
+  let sortedYears = [];
   let currentFilters = {
-  year: "",
-  cycle: "",
-  classification: "",
-  search: ""
-};
-
+    year: "",
+    cycle: "",
+    lgbtqClassification: "",
+    search: ""
+  };
 
   // 🔹 Fetch cycles for LGBTQ
   async function fetchCycles() {
@@ -35,47 +45,119 @@ document.addEventListener("DOMContentLoaded", () => {
       const cycles = await res.json();
 
       // Group cycles by year
-      const yearMap = {};
+      yearMap = {};
       cycles.forEach((c) => {
         if (!yearMap[c.year]) yearMap[c.year] = [];
         yearMap[c.year].push(c.cycleNumber);
       });
 
-      // Populate year/cycle dropdowns
-      cycleSelect.innerHTML = `<option value="">Select Year</option>`;
-      yearSelect.innerHTML = `<option value="">Select Cycle</option>`;
-      Object.keys(yearMap)
-        .sort((a, b) => b - a)
-        .forEach((year) => {
-          const opt = document.createElement("option");
-          opt.value = year;
-          opt.textContent = year;
-          cycleSelect.appendChild(opt);
+      sortedYears = Object.keys(yearMap).sort((a, b) => b - a);
+
+      // Populate year dropdown
+      yearContent.innerHTML = "";
+      sortedYears.forEach(year => {
+        const yearOption = document.createElement("a");
+        yearOption.href = "#";
+        yearOption.className = "dropdown-option";
+        yearOption.textContent = year;
+        yearOption.addEventListener("click", (e) => {
+          e.preventDefault();
+          yearButton.textContent = year;
+          currentFilters.year = year;
+
+          // Reset cycle/classification
+          cycleButton.textContent = "Cycle";
+          currentFilters.cycle = "";
+          cycleButton.disabled = false;
+          classificationButton.textContent = "Classification";
+          classificationButton.disabled = true;
+
+          // Populate cycle dropdown for selected year
+          populateCycleDropdown(yearMap[year]);
+          yearContent.style.display = "none";
         });
-
-      // Disable cycle dropdown initially
-      yearSelect.disabled = true;
-
-      // When year changes, update cycle dropdown
-      cycleSelect.addEventListener("change", () => {
-        const selectedYear = cycleSelect.value;
-        yearSelect.innerHTML = `<option value="">Select Cycle</option>`;
-        if (selectedYear && yearMap[selectedYear]) {
-          yearMap[selectedYear].forEach((cy) => {
-            const opt = document.createElement("option");
-            opt.value = cy;
-            opt.textContent = `Cycle ${cy}`;
-            yearSelect.appendChild(opt);
-          });
-          yearSelect.disabled = false;
-        } else {
-          yearSelect.disabled = true;
-        }
+        yearContent.appendChild(yearOption);
       });
+
+      // Reset buttons on load
+      yearButton.textContent = "Year";
+      cycleButton.textContent = "Cycle";
+      cycleButton.disabled = true;
+      classificationButton.textContent = "Classification";
+      classificationButton.disabled = true;
     } catch (err) {
       console.error("Error fetching cycles:", err);
     }
   }
+
+  // Populate cycle dropdown for selected year
+  function populateCycleDropdown(cycles) {
+    cycleContent.innerHTML = "";
+    cycles.forEach(cycle => {
+      const cycleOption = document.createElement("a");
+      cycleOption.href = "#";
+      cycleOption.className = "dropdown-option";
+      cycleOption.textContent = `Cycle ${cycle}`;
+      cycleOption.addEventListener("click", (e) => {
+        e.preventDefault();
+        cycleButton.textContent = `Cycle ${cycle}`;
+        currentFilters.cycle = cycle;
+
+        // Enable classification dropdown
+        classificationButton.disabled = false;
+        cycleContent.style.display = "none";
+      });
+      cycleContent.appendChild(cycleOption);
+    });
+  }
+
+  // Dropdown open/close logic (same as KK)
+  yearButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    yearContent.style.display = yearContent.style.display === "block" ? "none" : "block";
+    cycleContent.style.display = "none";
+    classificationContent.style.display = "none";
+  });
+  cycleButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!cycleButton.disabled) {
+      cycleContent.style.display = cycleContent.style.display === "block" ? "none" : "block";
+      yearContent.style.display = "none";
+      classificationContent.style.display = "none";
+    }
+  });
+  classificationButton.addEventListener("click", (e) => {
+    e.stopPropagation();
+    if (!classificationButton.disabled) {
+      classificationContent.style.display = classificationContent.style.display === "block" ? "none" : "block";
+      yearContent.style.display = "none";
+      cycleContent.style.display = "none";
+    }
+  });
+  window.addEventListener("click", () => {
+    yearContent.style.display = "none";
+    cycleContent.style.display = "none";
+    classificationContent.style.display = "none";
+  });
+
+  // Classification dropdown options
+  const classifications = [
+    "Lesbian", "Gay", "Bisexual", "Transgender", "Queer", "Intersex", "Asexual", "Other"
+  ];
+  classificationContent.innerHTML = "";
+  classifications.forEach(c => {
+    const option = document.createElement("a");
+    option.href = "#";
+    option.className = "dropdown-option";
+    option.textContent = c;
+    option.addEventListener("click", (e) => {
+      e.preventDefault();
+      classificationButton.textContent = c;
+      currentFilters.lgbtqClassification = c;
+      classificationContent.style.display = "none";
+    });
+    classificationContent.appendChild(option);
+  });
 
   // 🔹 Fetch profiles
   async function fetchProfiles(params = {}) {
@@ -109,7 +191,6 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("❌ Error fetching profiles:", err);
     }
   }
-
 
   // 🔹 Render profiles
   function renderProfiles(profiles) {
@@ -164,12 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
       ? `http://localhost:5000/uploads/lgbtq_id_images/${p.displayData.idImage}`
       : "/Frontend/assets/default-profile.png";
 
-    // Header: just the name
-    // header.innerHTML = `
-    //   <p style="font-size:1.2em; font-weight:bold; margin:0;">${fullName}</p>
-    // `;
-
-    // Details: ID image in its own container, larger size
     details.innerHTML = `
       <div class="profile-info" style = "margin-top: 5%">
       <hr>
@@ -217,146 +292,43 @@ document.addEventListener("DOMContentLoaded", () => {
       (modal.style.display = "none");
   }
 
-  // 🔹 Cycle filter
-filterBtn.addEventListener("click", () => {
-  // Year & cycle
-  currentFilters.year = cycleSelect.value || "";
-  currentFilters.cycle = currentFilters.year ? yearSelect.value || "" : "";
+  // 🔹 Filter button logic
+  filterBtn.addEventListener("click", () => {
+    // Use the values from the custom dropdown buttons
+    const selectedYear = yearButton.textContent !== "Year" ? yearButton.textContent : "";
+    const selectedCycle = cycleButton.textContent !== "Cycle" ? cycleButton.textContent.replace("Cycle ", "") : "";
+    const selectedClassification = classificationButton.textContent !== "Classification" ? classificationButton.textContent : "";
 
-  // Classification already set from dropdown
-  // Search is handled separately in searchInput
-
-  fetchProfiles(currentFilters);
-});
-
-
-  // 🔹 Classification dropdown
-  const dropdownButton = document.querySelector(".dropdown-button");
-  const dropdownContent = document.querySelector(".dropdown-content");
-  const classifications = [
-    "Lesbian",
-    "Gay",
-    "Bisexual",
-    "Transgender",
-    "Queer",
-    "Intersex",
-    "Asexual",
-    "Other",
-  ];
-
-  // Populate dropdown
-classifications.forEach((c) => {
-  const option = document.createElement("a");
-  option.href = "#";
-  option.textContent = c;
-  option.addEventListener("click", (e) => {
-    e.preventDefault();
-    dropdownButton.textContent = c;
-    currentFilters.lgbtqClassification = c;
-  });
-  dropdownContent.appendChild(option);
-});
-
-// Add "All" option
-const allOption = document.createElement("a");
-allOption.href = "#";
-allOption.textContent = "All Classifications";
-allOption.addEventListener("click", (e) => {
-  e.preventDefault();
-  dropdownButton.textContent = "Select Classification";
-  currentFilters.lgbtqClassification = "";
-});
-dropdownContent.insertBefore(allOption, dropdownContent.firstChild);
-
-
-  // Show/hide dropdown on button click
-  dropdownButton.addEventListener("click", (e) => {
-    e.stopPropagation();
-    dropdownContent.style.display =
-      dropdownContent.style.display === "block" ? "none" : "block";
-  });
-
-  // Hide dropdown when clicking outside
-  document.addEventListener("click", () => {
-    dropdownContent.style.display = "none";
-  });
-
-
-  // 🔹 Search filter
-  searchInput.addEventListener("keyup", () => {
-    const searchTerm = searchInput.value.trim().toLowerCase();
-    const filteredProfiles = allProfiles.filter((p) => {
-      return (
-        (p.displayData?.residentName &&
-          p.displayData.residentName.toLowerCase().includes(searchTerm)) ||
-        (p.displayData?.purok &&
-          p.displayData.purok.toLowerCase().includes(searchTerm)) ||
-        (p.displayData?.lgbtqClassification &&
-          p.displayData.lgbtqClassification.toLowerCase().includes(searchTerm))
-      );
-    });
-    renderProfiles(filteredProfiles);
-  });
-
-  // Helper to format date/time
-  function formatDateTime(dt) {
-    if (!dt) return "";
-    const date = new Date(dt);
-    return date.toLocaleString('en-US', {
-      year: 'numeric', month: 'long', day: 'numeric',
-      hour: '2-digit', minute: '2-digit', hour12: true
-    });
-  }
-
-  function updateDateTime() {
-    const options = { timeZone: "Asia/Manila" };
-    const now = new Date(new Date().toLocaleString("en-US", options));
-    const hours = now.getHours();
-
-    let greeting = "Good evening";
-    let iconClass = "fa-solid fa-moon";
-    let iconColor = "#183153";
-    if (hours < 12) {
-      iconClass = "fa-solid fa-sun";
-      iconColor = "#f7c948";
-      greeting = "Good morning";
-    } else if (hours < 18) {
-      iconClass = "fa-solid fa-cloud-sun";
-      iconColor = "#f7c948";
-      greeting = "Good afternoon";
+    // Only allow filtering if year and cycle are selected
+    if (!selectedYear || !selectedCycle) {
+      alert("Please select both year and cycle before filtering.");
+      return;
     }
 
-    // Format date as "January 25, 2025"
-    const dateStr = now.toLocaleDateString("en-US", {
-      month: "long",
-      day: "2-digit",
-      year: "numeric",
-      timeZone: "Asia/Manila"
-    });
+    currentFilters.year = selectedYear;
+    currentFilters.cycle = selectedCycle;
+    currentFilters.lgbtqClassification = selectedClassification;
 
-    // Format time as hh:mm (24-hour)
-    const hh = String(now.getHours()).padStart(2, "0");
-    const mm = String(now.getMinutes()).padStart(2, "0");
-    const timeStr = `${hh}:${mm}`;
+    fetchProfiles(currentFilters);
+  });
 
-    document.getElementById("greeting").textContent = greeting;
-    document.getElementById("header-date").textContent = dateStr + " -";
-    document.getElementById("datetime").textContent = timeStr;
-
-    // Update icon
-    const icon = document.getElementById("greeting-icon");
-    icon.className = iconClass;
-    icon.style.color = iconColor;
-  }
-
-  // Initial call
-  updateDateTime();
-  // Update every second
-  setInterval(updateDateTime, 1000);
+  // 🔹 Clear button logic
+  clearFilterBtn.addEventListener("click", () => {
+    yearButton.textContent = "Year";
+    cycleButton.textContent = "Cycle";
+    cycleButton.disabled = true;
+    classificationButton.disabled = true;
+    classificationButton.textContent = "Classification";
+    yearContent.style.display = "none";
+    cycleContent.style.display = "none";
+    classificationContent.style.display = "none";
+    currentFilters = {};
+    fetchProfiles({});
+  });
 
   // 🔹 Initial load
   fetchCycles();
-  fetchProfiles();
+  fetchProfiles({});
 });
 
 // Helper: Capitalize first letter

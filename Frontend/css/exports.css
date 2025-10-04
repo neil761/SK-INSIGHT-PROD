@@ -105,6 +105,206 @@
         padding-bottom: 10px;
     }
     
+    .export-container {
+      padding: 2rem;
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    
+    .export-container h1 {
+      color: #0A2C59;
+      font-size: 2rem;
+      margin-bottom: 0.5rem;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 2rem;
+    }
+    
+    .export-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 2rem;
+      padding: 1rem;
+    }
+    
+    .export-card {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      text-align: center;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    .export-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-icon {
+      width: 60px;
+      height: 60px;
+      background: linear-gradient(135deg, #07B0F2, #0A2C59);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 1.5rem;
+    }
+    
+    .card-icon i {
+      font-size: 24px;
+      color: white;
+    }
+    
+    .export-card h3 {
+      color: #0A2C59;
+      margin-bottom: 0.5rem;
+      font-size: 1.25rem;
+    }
+    
+    .export-card p {
+      color: #666;
+      margin-bottom: 1.5rem;
+      font-size: 0.9rem;
+    }
+    
+    .export-btn {
+      background: #07B0F2;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: background 0.3s ease;
+    }
+    
+    .export-btn:hover {
+      background: #0A2C59;
+    }
+    
+    /* Modal Styles */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%; /* Full screen height for blur */
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(5px);
+      z-index: 1000;
+      /* Center content vertically and horizontally */
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-content {
+      position: relative;
+      background: white;
+      width: 90%;
+      max-width: 500px;
+      height: 37vh; /* 55% of viewport height */
+      border-radius: 12px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      /* Ensure content doesn't overflow */
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .modal-header {
+      padding: 1rem;
+      border-bottom: 1px solid #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      /* Prevent header from growing */
+      flex-shrink: 0;
+    }
+    
+    .modal-body {
+      padding: 1.5rem;
+      /* Allow body to scroll if content is too long */
+      overflow-y: auto;
+      /* Take remaining space */
+      flex-grow: 1;
+    }
+    
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    
+    .form-group label {
+      display: block;
+      margin-bottom: 0.5rem;
+      color: #0A2C59;
+      font-weight: 500;
+    }
+    
+    .form-group select {
+      padding: 0.6rem;
+      width: 100%;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 1rem;
+      color: #333;
+      background: #f8f8f8;
+      transition: border-color 0.3s ease;
+    }
+    
+    .form-group select:focus {
+      outline: none;
+      border-color: #07B0F2;
+    }
+    
+    #confirmExportBtn {
+      width: 100%;
+      padding: 0.8rem;
+      margin-top: auto; /* Push button to bottom of modal body */
+      background: linear-gradient(135deg, #07B0F2, #0A2C59);
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      transition: transform 0.3s ease;
+    }
+    
+    #confirmExportBtn:hover {
+      transform: translateY(-2px);
+    }
+    
+    #confirmExportBtn i {
+      font-size: 1.2rem;
+    }
+    
+    /* Loading State */
+    #confirmExportBtn.loading {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .export-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .modal-content {
+        width: 95%;
+        margin: 20px auto;
+      }
+    }
 }
 
 
