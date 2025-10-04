@@ -223,4 +223,76 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
   }
+
+  function setupImageUpload(inputId, labelId, fileNameId, viewId, deleteId, previewId = "imagePreview") {
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    const fileNameSpan = document.getElementById(fileNameId);
+    const viewIcon = document.getElementById(viewId);
+    const deleteIcon = document.getElementById(deleteId);
+    const imagePreview = document.getElementById(previewId);
+
+    function updateIcons() {
+      const hasFile = input && input.files && input.files.length > 0;
+      if (viewIcon) {
+        viewIcon.classList.toggle('enabled', hasFile);
+        viewIcon.style.pointerEvents = hasFile ? 'auto' : 'none';
+        viewIcon.style.opacity = hasFile ? '1' : '0.5';
+      }
+      if (deleteIcon) {
+        deleteIcon.classList.toggle('enabled', hasFile);
+        deleteIcon.style.pointerEvents = hasFile ? 'auto' : 'none';
+        deleteIcon.style.opacity = hasFile ? '1' : '0.5';
+      }
+    }
+
+    if (input && label && fileNameSpan) {
+      input.addEventListener('change', function() {
+        if (input.files && input.files.length > 0) {
+          label.style.display = 'none';
+          fileNameSpan.textContent = input.files[0].name;
+          fileNameSpan.style.display = 'inline-block';
+        } else {
+          label.style.display = 'inline-flex';
+          fileNameSpan.textContent = '';
+          fileNameSpan.style.display = 'none';
+        }
+        updateIcons();
+      });
+      updateIcons(); // Initial state
+    }
+
+    // View image
+    if (viewIcon) {
+      viewIcon.addEventListener('click', function() {
+        if (input.files && input.files.length > 0) {
+          const file = input.files[0];
+          const url = URL.createObjectURL(file);
+          imagePreview.innerHTML = `<img src="${url}" alt="Preview" style="width:100%;max-width:220px;border-radius:10px;">`;
+          imagePreview.style.display = 'block';
+          imagePreview.onclick = function() {
+            imagePreview.innerHTML = '';
+            imagePreview.style.display = '';
+            URL.revokeObjectURL(url);
+          };
+        }
+      });
+    }
+
+    // Delete image
+    if (deleteIcon) {
+      deleteIcon.addEventListener('click', function() {
+        input.value = '';
+        label.style.display = 'inline-flex';
+        fileNameSpan.textContent = '';
+        fileNameSpan.style.display = 'none';
+        imagePreview.innerHTML = '';
+        updateIcons();
+      });
+    }
+  }
+
+  setupImageUpload('profileImage', 'profileImageLabel', 'profileImageFileName', 'viewProfileImage', 'deleteProfileImage');
+  setupImageUpload('idImage', 'idImageLabel', 'idImageFileName', 'viewIdImage', 'deleteIdImage');
+  setupImageUpload('signatureImage', 'signatureImageLabel', 'signatureImageFileName', 'viewSignatureImage', 'deleteSignatureImage');
 });
