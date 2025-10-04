@@ -14,14 +14,29 @@
     <!-- Navbar -->
     <div class="navbar">
       <div class="navbar-left">
-        <img src="../../assets/logo.png" alt="Logo" />
-        <span class="title">SK-INSIGHT</span>
+        <a href="./index.html">
+          <img src="../../assets/logo.png" alt="Logo" class="logo"/>
+        </a>
+        <a href="./index.html" class="title">SK-PBW</a>
+      </div>
+      <div class="navbar-center">
+        <a href="./kkform-personal.html" class="prof">KK Profile</a>
+        <a href="./lgbtqform.html" class="prof">LGBTQ+ Profile</a>
+        <a href="./Educational-assistance-user.html" class="prof">Educational Assistance</a>
       </div>
       <div class="navbar-right">
-        <span><i class="fa-solid fa-bars" style="color: #ffffff"></i></span>
-        <span><i class="fa-solid fa-bell" style="color: #ffffff"></i></span>
-        <a href="../user/userProfile.html"><i class="fa-solid fa-user" style="color: #ffffff"></i></a>
+        <span class="navbar-hamburger" id="navbarHamburger">
+          <i class="fa-solid fa-bars"></i>
+        </span>
+        <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+        <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
       </div>
+    </div>
+
+    <div class="navbar-mobile-menu" id="navbarMobileMenu">
+      <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
+      <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
+      <a href="./Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
     </div>
 
     <!-- About Section -->
@@ -84,4 +99,5 @@
       </div>
     </footer>
   </body>
+  <script src="../../js/about.js"></script>
 </html>
