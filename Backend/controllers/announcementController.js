@@ -12,6 +12,7 @@ exports.createAnnouncement = async (req, res) => {
       expiresAt,
       isPinned: !!isPinned,
       createdBy: req.user.id,
+      isActive: true 
     });
     res.status(201).json({ success: true, announcement });
   } catch (err) {

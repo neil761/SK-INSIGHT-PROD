@@ -27,13 +27,59 @@ document.addEventListener("DOMContentLoaded", () => {
   let sortedYears = [];
   let currentFilters = {};
 
+  let latestYear = null;
+  let latestCycle = null;
+
+  // 🔹 Fetch cycles
+
+
   // Fetch cycles and populate year dropdown
+
   async function fetchCycles() {
     try {
       const res = await fetch("http://localhost:5000/api/formcycle/kk", {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
       });
       if (!res.ok) throw new Error("Failed to fetch cycles");
+
+
+      const cycles = await res.json();
+
+      const yearMap = {};
+      cycles.forEach((c) => {
+        if (!yearMap[c.year]) yearMap[c.year] = [];
+        yearMap[c.year].push(c.cycleNumber);
+      });
+
+      const sortedYears = Object.keys(yearMap).sort((a, b) => b - a);
+      latestYear = sortedYears[0];
+      latestCycle = Math.max(...yearMap[latestYear]);
+
+      yearSelect.innerHTML = `<option value="">Select Year</option>`;
+      sortedYears.forEach((year) => {
+        const opt = document.createElement("option");
+        opt.value = year;
+        opt.textContent = year;
+        yearSelect.appendChild(opt);
+      });
+
+      yearSelect.addEventListener("change", () => {
+        const selectedYear = yearSelect.value;
+        cycleSelect.innerHTML = `<option value="">Select Cycle</option>`;
+        if (selectedYear && yearMap[selectedYear]) {
+          yearMap[selectedYear].forEach((cy) => {
+            const opt = document.createElement("option");
+            opt.value = cy;
+            opt.textContent = `Cycle ${cy}`;
+            cycleSelect.appendChild(opt);
+          });
+        }
+      });
+    } catch (err) {
+      console.error("Error fetching cycles:", err);
+    }
+  }
+
       const cycles = await res.json();
 
       // Group cycles by year
@@ -132,28 +178,40 @@ document.addEventListener("DOMContentLoaded", () => {
     classificationContent.style.display = "none";
   });
 
-  // 🔹 Fetch profiles with filters
+  // 🔹 Fetch profiles
   async function fetchProfiles(params = {}) {
     try {
+
       // Build query string properly
+
       const query = new URLSearchParams(params).toString();
       const url = query
         ? `http://localhost:5000/api/kkprofiling?${query}`
         : `http://localhost:5000/api/kkprofiling`;
+
+
+      const res = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
 
       console.log("🔎 Request URL:", url);
 
       const res = await fetch(url, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`, // keep your auth
+
         },
       });
 
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
       allProfiles = data;
+
+      renderProfiles(data);
+
       console.log("✅ Profiles fetched:", data);
       renderProfiles(data); // render table
+
     } catch (err) {
       console.error("❌ Error fetching profiles:", err);
     }
@@ -164,7 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
-  // 🔹 Render profiles into table
+  // 🔹 Render profiles
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
     if (!profiles.length) {
@@ -175,13 +233,18 @@ document.addEventListener("DOMContentLoaded", () => {
     profiles.forEach((p, i) => {
       const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
       const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
-      const middlename = p.middlename && p.middlename.trim() !== ""
-        ? p.middlename.trim()[0].toUpperCase() + "."
-        : "";
-      const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-      const fullName = (lastname || firstname)
-        ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
-        : "N/A";
+      const middlename =
+        p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+      const suffix =
+        p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+      const fullName =
+        lastname || firstname
+          ? `${lastname}, ${firstname} ${middlename} ${suffix}`
+              .replace(/\s+/g, " ")
+              .trim()
+          : "N/A";
 
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -195,7 +258,6 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.appendChild(row);
     });
 
-    // Attach modal openers
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(
@@ -212,7 +274,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 🔹 Show modal with profile details
+  // 🔹 Show profile modal
   function showProfileModal(p) {
     const modal = document.getElementById("profileModal");
     const header = document.getElementById("profileHeader");
@@ -222,7 +284,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
     const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
 
-    // Fetch image as blob with token
     fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -248,7 +309,6 @@ document.addEventListener("DOMContentLoaded", () => {
         `;
       });
 
-    // Age, Gender, Birthday in one row
     details.innerHTML = `
       <div class="profile-info">
         <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
@@ -256,7 +316,11 @@ document.addEventListener("DOMContentLoaded", () => {
         <div style="display: flex; gap: 24px;">
           <p><b class="label">Age:</b> ${p.user?.age ?? "N/A"}</p>
           <p><b class="label">Gender:</b> ${p.gender}</p>
-          <p><b class="label">Birthday:</b> ${p.user?.birthday ? new Date(p.user.birthday).toISOString().split("T")[0] : "-"}</p>
+          <p><b class="label">Birthday:</b> ${
+            p.user?.birthday
+              ? new Date(p.user.birthday).toISOString().split("T")[0]
+              : "-"
+          }</p>
         </div>
         <hr>
         <p><b class="label">Email:</b> ${p.email || "-"}</p>
@@ -273,19 +337,97 @@ document.addEventListener("DOMContentLoaded", () => {
         <hr>
         <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
         <hr>
-        <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
+        <p><b class="label">Registered SK Voter:</b> ${
+          p.registeredSKVoter ? "Yes" : "No"
+        }</p>
         <hr>
-        <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
+        <p><b class="label">Registered National Voter:</b> ${
+          p.registeredNationalVoter ? "Yes" : "No"
+        }</p>
         <hr>
-        <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
+        <p><b class="label">Voted Last SK Election:</b> ${
+          p.votedLastSKElection ? "Yes" : "No"
+        }</p>
         <hr>
-        <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
+        <p><b class="label">Already Attended KK Assembly:</b> ${
+          p.attendedKKAssembly ? "Yes" : "No"
+        }</p>
         <hr>
-        ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
+        ${
+          p.attendedKKAssembly
+            ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>`
+            : `<p><b>If No, Why:</b> ${p.nowhy || "-"} </p>`
+        }
         <hr>
         <p class="bott"></p>
       </div>
     `;
+
+    // 🔹 Add Export to Word button
+    // const exportBtn = document.createElement("button");
+    // exportBtn.textContent = "Download Word File";
+    // exportBtn.classList.add("export-btn");
+
+    // document.querySelector(".bott").appendChild(exportBtn);
+
+    // exportBtn.onclick = async () => {
+    //   try {
+    //     const res = await fetch(
+    //       `http://localhost:5000/api/kkprofiling/export/${p._id}`,
+    //       {
+    //         headers: {
+    //           Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //         },
+    //       }
+    //     );
+
+    //     if (!res.ok) throw new Error("Failed to generate DOCX");
+
+    //     const blob = await res.blob();
+    //     const url = window.URL.createObjectURL(blob);
+    //     const a = document.createElement("a");
+    //     a.href = url;
+    //     a.download = `${p.lastname}_${p.firstname}_KKProfile.docx`;
+    //     document.body.appendChild(a);
+    //     a.click();
+    //     a.remove();
+    //     window.URL.revokeObjectURL(url);
+    //   } catch (err) {
+    //     console.error("❌ Error exporting Word:", err);
+    //     alert("Failed to export Word document");
+    //   }
+    // };
+
+    const printBtn = document.getElementById("downloadDocx");
+    if (printBtn) {
+      printBtn.onclick = async () => {
+        try {
+          const res = await fetch(
+            `http://localhost:5000/api/kkprofiling/export/${p._id}`,
+            {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            }
+          );
+
+          if (!res.ok) throw new Error("Failed to generate DOCX");
+
+          const blob = await res.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `${p.lastname}_${p.firstname}_KKProfile.docx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          window.URL.revokeObjectURL(url);
+        } catch (err) {
+          console.error("❌ Error exporting Word:", err);
+          alert("Failed to export Word document");
+        }
+      };
+    }
 
     modal.style.display = "flex";
     document.body.classList.add("modal-open");
@@ -295,8 +437,11 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // 🔹 Cycle filter (year + cycle)
+  // 🔹 Filters
   filterBtn.addEventListener("click", () => {
+    currentFilters.year = yearSelect.value || latestYear;
+    currentFilters.cycle = cycleSelect.value || latestCycle;
+
     // If year/cycle not selected, use latest
     currentFilters.year = yearDropdown.value || latestYear;
     currentFilters.cycle = cycleDropdown.value || latestCycle;
@@ -304,9 +449,10 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchProfiles(currentFilters);
   });
 
-  // 🔹 Search filter
   searchInput.addEventListener("keyup", () => {
     const searchTerm = searchInput.value.trim().toLowerCase();
+
+    const filteredProfiles = allProfiles.filter((p) => {
 
     const filteredProfiles = allProfiles.filter(p => {
       return (
@@ -317,6 +463,194 @@ document.addEventListener("DOMContentLoaded", () => {
         (p.purok && p.purok.toLowerCase().includes(searchTerm))
       );
     });
+
+    renderProfiles(filteredProfiles);
+  });
+
+  function formatDateTime(dt) {
+    if (!dt) return "";
+    const date = new Date(dt);
+    const year = date.getFullYear();
+    const month = date.toLocaleString("en-US", { month: "long" });
+    const day = date.getDate();
+    let hours = date.getHours();
+    const minutes = date.getMinutes().toString().padStart(2, "0");
+    const ampm = hours >= 12 ? "PM" : "AM";
+    hours = hours % 12 || 12;
+    return `${month} ${day}, ${year} ${hours}:${minutes} ${ampm}`;
+  }
+
+  // 🔹 Dropdown filters setup
+  const filterOptions = {
+    "Work Status": [
+      "Employed",
+      "Unemployed",
+      "Self-Employed",
+      "Currently looking for a Job",
+      "Not interested in looking for a Job",
+    ],
+    "Youth Age Group": ["Child Youth", "Core Youth", "Young Youth"],
+    "Educational Background": [
+      "Elementary Undergraduate",
+      "Elementary Graduate",
+      "High School Undergraduate",
+      "High School Graduate",
+      "Vocational Graduate",
+      "College Undergraduate",
+      "College Graduate",
+      "Masters Graduate",
+      "Doctorate Level",
+      "Doctorate Graduate",
+    ],
+    "Civil Status": [
+      "Single",
+      "Live-in",
+      "Married",
+      "Unknown",
+      "Separated",
+      "Annulled",
+      "Divorced",
+      "Widowed",
+    ],
+    "Youth Classification": [
+      "In School Youth",
+      "Out of School Youth",
+      "Working Youth",
+      "Youth with Specific Needs",
+    ],
+    Purok: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+    "Registered SK Voter": ["true", "false"],
+    "Registered National Voter": ["true", "false"],
+    "Voted Last SK Election": ["true", "false"],
+  };
+
+  const classificationBtn = document.getElementById("classificationDropdown");
+  const classificationContent =
+    classificationDropdown.querySelector(".dropdown-content");
+
+  Object.keys(filterOptions).forEach((cat) => {
+    const parent = document.createElement("div");
+    parent.classList.add("submenu");
+
+    const catItem = document.createElement("a");
+    catItem.textContent = cat;
+    catItem.href = "#";
+    parent.appendChild(catItem);
+
+    const subMenu = document.createElement("div");
+    subMenu.classList.add("submenu-content");
+
+    filterOptions[cat].forEach((opt) => {
+      const g = document.createElement("a");
+      g.textContent = opt;
+      g.href = "#";
+      g.onclick = async (e) => {
+        e.preventDefault();
+        if (cat === "Work Status") currentFilters.workStatus = opt;
+        if (cat === "Youth Age Group") currentFilters.youthAgeGroup = opt;
+        if (cat === "Educational Background")
+          currentFilters.educationalBackground = opt;
+        if (cat === "Civil Status") currentFilters.civilStatus = opt;
+        if (cat === "Youth Classification")
+          currentFilters.youthClassification = opt;
+        if (cat === "Purok") currentFilters.purok = opt;
+        if (cat === "Registered SK Voter")
+          currentFilters.registeredSKVoter = opt;
+        if (cat === "Registered National Voter")
+          currentFilters.registeredNationalVoter = opt;
+        if (cat === "Voted Last SK Election")
+          currentFilters.votedLastSKElection = opt;
+
+        if (!currentFilters.year || !currentFilters.cycle) {
+          try {
+            const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            });
+            const cycles = await res.json();
+            const openCycle = cycles.find((c) => c.isOpen);
+            if (openCycle) {
+              currentFilters.year = openCycle.year;
+              currentFilters.cycle = openCycle.cycleNumber;
+            }
+          } catch (err) {
+            console.error("❌ Error fetching current cycle:", err);
+          }
+        }
+
+        classificationContent.style.display = "none";
+      };
+      subMenu.appendChild(g);
+    });
+
+    parent.appendChild(subMenu);
+    classificationContent.appendChild(parent);
+  });
+
+  classificationBtn
+    .querySelector(".dropdown-button")
+    .addEventListener("click", () => {
+      classificationContent.style.display =
+        classificationContent.style.display === "block" ? "none" : "block";
+    });
+
+  window.addEventListener("click", (e) => {
+    if (!classificationBtn.contains(e.target)) {
+      classificationContent.style.display = "none";
+    }
+  });
+
+  function updateDateTime() {
+    const options = { timeZone: "Asia/Manila" };
+    const now = new Date(new Date().toLocaleString("en-US", options));
+    const hours = now.getHours();
+    let greeting = "Good evening";
+    let iconClass = "fa-solid fa-moon";
+    let iconColor = "#183153";
+    if (hours < 12) {
+      iconClass = "fa-solid fa-sun";
+      iconColor = "#f7c948";
+      greeting = "Good morning";
+    } else if (hours < 18) {
+      iconClass = "fa-solid fa-cloud-sun";
+      iconColor = "#f7c948";
+      greeting = "Good afternoon";
+    }
+
+    const weekday = now.toLocaleString("en-US", {
+      weekday: "long",
+      timeZone: "Asia/Manila",
+    });
+    const dateStr = now.toLocaleDateString("en-US", {
+      month: "long",
+      day: "2-digit",
+      year: "numeric",
+      timeZone: "Asia/Manila",
+    });
+
+    let hour = now.getHours();
+    const minute = String(now.getMinutes()).padStart(2, "0");
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+    const timeStr = `${hour}:${minute} ${ampm}`;
+
+    document.getElementById("greeting").textContent = greeting;
+    document.getElementById(
+      "header-date"
+    ).textContent = `${weekday}, ${dateStr} -`;
+    document.getElementById("datetime").textContent = timeStr;
+
+    const icon = document.getElementById("greeting-icon");
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+  }
+
+  updateDateTime();
+  setInterval(updateDateTime, 1000);
+
+  fetchCycles();
+  fetchProfiles();
 
     renderProfiles(filteredProfiles);
   });
@@ -501,4 +835,5 @@ document.addEventListener("DOMContentLoaded", () => {
       classificationDropdown.querySelector('.dropdown-button').disabled = true;
     }
   });
+
 });
