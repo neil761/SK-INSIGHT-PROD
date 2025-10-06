@@ -121,30 +121,17 @@ exports.submitKKProfile = async (req, res) => {
       reasonDidNotAttend: !req.body.attendedKKAssembly
         ? req.body.reasonDidNotAttend
         : undefined,
-
-      // ✅ Save uploaded images if present
-      profileImagePath: req.files?.profileImage
-        ? req.files.profileImage[0].path
-        : null,
-      idImagePath: req.files?.idImage
-        ? req.files.idImage[0].path
-        : null,
-      signatureImagePath: req.files?.signatureImage
-        ? req.files.signatureImage[0].path
-        : null,
-
+      profileImage: req.file.filename, // <-- use uploaded file
       birthday,
     });
 
     await newProfile.save();
     res.status(201).json({ message: "Profile submitted successfully" });
-
   } catch (error) {
-    console.error("Error submitting KK Profile:", error);
-    res.status(500).json({ error: "Server error" });
+    console.error("Submit error:", error);
+    res.status(500).json({ error: "Server error while submitting form" });
   }
 };
-
 
 // // GET /api/kkprofiling/all?cycleId=<formCycleId>
 // exports.getAllKKProfiles = async (req, res) => {
