@@ -4,10 +4,12 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>SK-INSIGHT</title>
+    
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="/Frontend/css/KK-Profile.css" />
   </head>
   <body>
@@ -24,40 +26,40 @@
         
         <div class="menu">
           <a
-            href="/Frontend/html/admin/admin-dashboard.html"
+            href="./admin-dashboard.html"
             class="flex items-center space-x-2"
           >
             <i class="dashs fas fa-columns"></i>
             <span class="dashb">Dashboard</span>
           </a>
         <div class="dashh">
-          <a href="/Frontend/html/admin/KK-Profile.html" class="flex items-center space-x-2">
+          <a href="./KK-Profile.html" class="flex items-center space-x-2">
             <i class="Kk fas fa-id-badge"></i>
             <span class="kk">KK Profile</span>
           </a>
         </div>
-        <a href="/Frontend/html/admin/LGBTQ-Profile.html" class="flex items-center space-x-2">
+        <a href="./LGBTQ-Profile.html" class="flex items-center space-x-2">
           <i class="fas fa-rainbow"></i>
           <span class="dash">LGBTQ Profile</span>
         </a>
-        <a href="/Frontend/html/admin/Educational-Assistance-admin.html" class="flex items-center space-x-2">
+        <a href="./Educational-Assistance-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-graduation-cap"></i>
           <span class="educ">Educational Assistance</span>
         </a>
-        <a href="/Frontend/html/admin/Announcement-admin.html" class="flex items-center space-x-2">
+        <a href="./Announcement-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-bell"></i>
           <span class="dash">Announcement</span>
         </a>
-        <a href="/Frontend/html/admin/user-account.html" class="flex items-center space-x-2">
+        <a href="./user-account.html" class="flex items-center space-x-2">
           <i class="fas fa-user"></i>
           <span class="dash">User Accounts</span>
         </a>
-        <a href="/Frontend/html/admin/exports.html" class="flex items-center space-x-2">
-          <i class="fas fa-file-export"></i>
-          <span class="dash">Exports</span>
+        <a href="./exports.html" class="flex items-center space-x-2">
+          <i class="fa-solid fa-gear" style="color: #ffffff;"></i>
+          <span class="dash">Settings</span>
         </a>
         <div class="log">
-          <a href="/Frontend/html/admin/admin-log.html" class="flex items-center space-x-2">
+          <a href="./admin-log.html" class="flex items-center space-x-2">
             <i class="fas fa-right-from-bracket"></i>
             <span class="dash">Log out</span>
           </a>
@@ -119,32 +121,41 @@
           <thead>
             <tr>
               <th>No.</th>
-              <th>Resident's Name</th>
-              <th>Age</th>
-              <th>Purok</th>
-              <th>Gender</th>
-              <th>Action</th>
+              <th style="width: 25%;">Resident's Name</th>
+              <th style="width: 15%;">Gender</th>
+              <th style="width: 10%;">Age</th>
+              <th style="width: 15%;">Purok</th>
+              <th style="width: 15%;">Civil Status</th>
+              <th style="width: 15%;">Work Status</th>
+              <th style="width: 15%;">Action</th>
             </tr>
           </thead>
           <tbody></tbody>
         </table>
       </div>
 
+      <!-- Modern User Profile Modal -->
       <div id="profileModal" class="modal" style="display: none">
-        <div class="modal-content">
-          <span class="close-btn">&times;</span>
-          <div class="modal-header">
-            <div id="profileHeader" class="profile-header"></div>
-            <button id="printBtn">🖨️ Print</button>
+        <div class="modal-content modern-modal">
+          <div class="modern-modal-header">
+            <div class="profile-header" id="profileHeader">
+              <!-- Profile image and name will be injected here -->
+            </div>
+            <button id="printBtn" class="modern-modal-print" title="Print Profile">
+              <i class="fa-solid fa-print"></i>
+            </button>
+            <button class="modern-modal-close close-btn" title="Close">&times;</button>
           </div>
-          <div class="modal-body" id="profileDetails"></div>
+          <div class="modern-modal-body" id="profileDetails">
+            <!-- Profile details will be injected here -->
+          </div>
         </div>
       </div>
 
 
     </div>
     <script>
-      fetch('/Frontend/html/admin/header.html')
+      fetch('./header.html')
         .then(res => res.text())
         .then(html => {
           document.getElementById('header-container').innerHTML = html;
@@ -154,8 +165,8 @@
           document.body.appendChild(script);
         });
   </script>
-  <link rel="stylesheet" href="/Frontend/css/header.css">
-    <script src="/Frontend/js/kkprofile.js"></script>
+  <link rel="stylesheet" href="../../css/header.css">
+    <script src="../../js/kkprofile.js"></script>
     <script>
       // Fade in on load
       const content = document.querySelector('.content');

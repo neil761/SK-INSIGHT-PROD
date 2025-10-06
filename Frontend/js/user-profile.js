@@ -1,7 +1,37 @@
 document.addEventListener("DOMContentLoaded", async () => {
-  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-  if (!token) return;
+  const token = sessionStorage.getItem("token") || localStorage.getItem("token"); // <-- Updated line
 
+  (function() {
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token"); // <-- Updated line
+    function sessionExpired() {
+      Swal.fire({
+        icon: 'warning',
+        title: 'Session Expired',
+        text: 'Please login again.',
+        confirmButtonColor: '#0A2C59',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      }).then(() => {
+        window.location.href = "./admin-log.html";
+      });
+    }
+    if (!token) {
+      sessionExpired();
+      return;
+    }
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      if (payload.exp && Date.now() >= payload.exp * 1000) {
+        sessionStorage.removeItem("token");
+        localStorage.removeItem("token");
+        sessionExpired();
+      }
+    } catch (e) {
+      sessionStorage.removeItem("token");
+      localStorage.removeItem("token");
+      sessionExpired();
+    }
+  })();
   let user = null; // keep user data so we can use birthday later
 
   // Fetch User Info

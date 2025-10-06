@@ -6,6 +6,7 @@
     <title>SK-INSIGHT</title>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="../../css/exports.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
 
@@ -23,40 +24,40 @@
         
         <div class="menu">
           <a
-            href="/Frontend/html/admin/admin-dashboard.html"
+            href="./admin-dashboard.html"
             class="flex items-center space-x-2"
           >
             <i class="dashs fas fa-columns"></i>
             <span class="dashb">Dashboard</span>
           </a>
-        <a href="/Frontend/html/admin/KK-Profile.html" class="flex items-center space-x-2">
+        <a href="./KK-Profile.html" class="flex items-center space-x-2">
           <i class="Kk fas fa-id-badge"></i>
           <span class="kk">KK Profile</span>
         </a>
-        <a href="/Frontend/html/admin/LGBTQ-Profile.html" class="flex items-center space-x-2">
+        <a href="./LGBTQ-Profile.html" class="flex items-center space-x-2">
           <i class="fas fa-rainbow"></i>
           <span class="dash">LGBTQ Profile</span>
         </a>
-        <a href="/Frontend/html/admin/Educational-Assistance-admin.html" class="flex items-center space-x-2">
+        <a href="./Educational-Assistance-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-graduation-cap"></i>
           <span class="educ">Educational Assistance</span>
         </a>
-        <a href="/Frontend/html/admin/Announcement-admin.html" class="flex items-center space-x-2">
+        <a href="./Announcement-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-bell"></i>
           <span class="dash">Announcement</span>
         </a>
-        <a href="/Frontend/html/admin/user-account.html" class="flex items-center space-x-2">
+        <a href="./user-account.html" class="flex items-center space-x-2">
           <i class="fas fa-user"></i>
           <span class="dash">User Accounts</span>
         </a>
         <div class="dashh">
-            <a href="/Frontend/html/admin/exports.html" class="flex items-center space-x-2">
-            <i class="fas fa-file-export"></i>
-            <span class="dash">Exports</span>
+            <a href="./exports.html" class="flex items-center space-x-2">
+            <i class="fa-solid fa-gear" style="color: #ffffff;"></i>
+            <span class="dash">Settings</span>
             </a>
         </div>
         <div class="log">
-          <a href="/Frontend/html/admin/admin-log.html" class="flex items-center space-x-2">
+          <a href="./admin-log.html" class="flex items-center space-x-2">
             <i class="fas fa-right-from-bracket"></i>
             <span class="dash">Log out</span>
           </a>
@@ -66,49 +67,103 @@
     </div>
 
     <div class="content">
-  <div class="export-container">
-    <h1>Export Data</h1>
-    <p class="subtitle">Select a category to export data to Excel</p>
-    
-    <div class="export-grid">
-      <div class="export-card" data-type="kk">
-        <div class="card-icon">
-          <i class="fas fa-id-badge"></i>
-        </div>
-        <h3>KK Profiling</h3>
-        <p>Export KK profiling data to Excel</p>
-        <button class="export-btn" data-type="kk">
-          <i class="fas fa-file-export"></i>
-          Export
-        </button>
+      <div id="header-container"></div>
+
+      <!-- Tabs -->
+      <div class="settings-tabs">
+        <button class="settings-tab active" data-tab="export">Export File</button>
+        <button class="settings-tab" data-tab="form">Form Configuration</button>
       </div>
 
-      <div class="export-card" data-type="educational">
-        <div class="card-icon">
-          <i class="fas fa-graduation-cap"></i>
+      <!-- Export Container -->
+      <div class="export-container settings-tab-content" id="exportTab">
+        <h1>Export Data</h1>
+        <p class="subtitle">Select a category to export data to Excel</p>
+        
+        <div class="export-grid">
+          <div class="export-card" data-type="kk">
+            <div class="card-icon">
+              <i class="fas fa-id-badge"></i>
+            </div>
+            <h3>KK Profiling</h3>
+            <p>Export KK profiling data to Excel</p>
+            <button class="export-btn" data-type="kk">
+              <i class="fas fa-file-export"></i>
+              Export
+            </button>
+          </div>
+
+          <div class="export-card" data-type="educational">
+            <div class="card-icon">
+              <i class="fas fa-graduation-cap"></i>
+            </div>
+            <h3>Educational Assistance</h3>
+            <p>Export educational assistance applications</p>
+            <button class="export-btn" data-type="educational">
+              <i class="fas fa-file-export"></i>
+              Export
+            </button>
+          </div>
+
+          <div class="export-card" data-type="lgbtq">
+            <div class="card-icon">
+              <i class="fas fa-rainbow"></i>
+            </div>
+            <h3>LGBTQ Profiling</h3>
+            <p>Export LGBTQ profiling data to Excel</p>
+            <button class="export-btn" data-type="lgbtq">
+              <i class="fas fa-file-export"></i>
+              Export
+            </button>
+          </div>
         </div>
-        <h3>Educational Assistance</h3>
-        <p>Export educational assistance applications</p>
-        <button class="export-btn" data-type="educational">
-          <i class="fas fa-file-export"></i>
-          Export
-        </button>
       </div>
 
-      <div class="export-card" data-type="lgbtq">
-        <div class="card-icon">
-          <i class="fas fa-rainbow"></i>
-        </div>
-        <h3>LGBTQ Profiling</h3>
-        <p>Export LGBTQ profiling data to Excel</p>
-        <button class="export-btn" data-type="lgbtq">
-          <i class="fas fa-file-export"></i>
-          Export
-        </button>
+      <!-- Form Configuration Container -->
+      <div class="form-config-container settings-tab-content" id="formTab" style="display:none;">
+        <h1>Form Configuration</h1>
+        <p class="subtitle">Open or close forms for KK Profiling, LGBTQ Profiling, and Educational Assistance.</p>
+        <form id="formConfigForm">
+          <div class="form-config-row">
+            <label>KK Profiling Form</label>
+            <div class="form-config-status-group">
+              <span id="kkCycleStatus" class="cycle-status">Loading...</span>
+              <!-- KK Profiling -->
+<button type="button" class="form-action-btn" data-form="KK Profiling">
+  <i class="fas fa-lock-open"></i>
+  Open
+</button>
+            </div>
+          </div>
+          <div class="form-config-row">
+            <label>LGBTQ Profiling Form</label>
+            <div class="form-config-status-group">
+              <span id="lgbtqCycleStatus" class="cycle-status">Loading...</span>
+              <!-- LGBTQ Profiling -->
+<button type="button" class="form-action-btn" data-form="LGBTQIA+ Profiling">
+  <i class="fas fa-lock-open"></i>
+  Open
+</button>
+            </div>
+          </div>
+          <div class="form-config-row">
+            <label>Educational Assistance Form</label>
+            <div class="form-config-status-group">
+              <span id="educCycleStatus" class="cycle-status">Loading...</span>
+              <!-- Educational Assistance -->
+<button type="button" class="form-action-btn" data-form="Educational Assistance">
+  <i class="fas fa-lock-open"></i>
+  Open
+</button>
+            </div>
+          </div>
+          <button type="submit" class="export-btn" style="margin-top:18px;">
+            <i class="fas fa-save"></i>
+            Save Configuration
+          </button>
+        </form>
       </div>
     </div>
-  </div>
-</div>
 
 <!-- Modern Modal -->
 <div id="exportModal" class="modal">
@@ -140,6 +195,55 @@
   </div>
 </div>
 
-    <script src="../../js/exports.js"></script>
+    
+
+    <script>
+      fetch('./header.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('header-container').innerHTML = html;
+          // After injecting, run the header JS
+          const script = document.createElement('script');
+          script.src = '/Frontend/js/admin/header.js';
+          document.body.appendChild(script);
+        });
+  </script>
+ 
+  <script src="/Frontend/js/exports.js"></script>
+    <link rel="stylesheet" href="/Frontend/css/header.css">
+    <script>
+      // Fade in on load
+      const content = document.querySelector('.content');
+      content.classList.add('page-fade');
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          content.classList.remove('page-fade');
+          content.classList.add('page-fade-in');
+        }, 10);
+      });
+
+      // Fade out on navigation for all internal links
+      document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (
+          href &&
+          !href.startsWith('http') &&
+          !href.startsWith('mailto:') &&
+          !href.startsWith('#') &&
+          !link.hasAttribute('target')
+        ) {
+          link.addEventListener('click', function(e) {
+            // Only fade if not a sidebar link
+            // (Sidebar links are outside .content, so always fade .content)
+            e.preventDefault();
+            content.classList.remove('page-fade-in');
+            content.classList.add('page-fade');
+            setTimeout(() => {
+              window.location.href = href;
+            }, 180); // match the CSS transition duration
+          });
+        }
+      });
+    </script>
 </body>
 </html>

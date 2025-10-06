@@ -10,6 +10,7 @@ body{
     margin: 0;
     font-family: 'Poppins', sans-serif;
     background-color: #F5F7FA;
+    overflow: hidden;
 }
 
 .sidebar {
@@ -619,6 +620,161 @@ tbody tr:hover {
 .content.page-fade-in {
   opacity: 1;
   transition: opacity 180ms cubic-bezier(.4,1.4,.6,1);
+}
+
+/* --- Modern Modal from KK Profiling --- */
+.modal {
+  position: fixed;
+  z-index: 9999;
+  left: 0; top: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(10, 44, 89, 0.18);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: 60px;
+}
+
+.modern-modal {
+  width: 800px;
+  max-width: 96vw;
+  min-width: 340px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: #fff;
+  box-shadow: 0 12px 40px rgba(10,44,89,0.18);
+}
+
+.modern-modal-header {
+  background: #0A2C59;
+  padding: 28px 40px;
+  position: relative;
+}
+
+.profile-name {
+  color: #fff;
+  font-size: 1.4rem;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.modern-modal-body {
+  padding: 32px 40px;
+  background: #f8fafc;
+}
+
+.profile-details-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+}
+
+.profile-details-section {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.profile-details-row {
+  display: flex;
+  gap: 24px;
+}
+
+.profile-details-row.three-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+
+.profile-detail {
+  flex: 1;
+  background: #fff;
+  border-radius: 12px;
+  padding: 16px 20px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.04);
+  border: 1px solid #f0f4fa;
+}
+
+.profile-detail.emphasis {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  padding: 20px 24px;
+}
+
+.profile-detail .label {
+  color: #64748b;
+  font-size: 0.95rem;
+  font-weight: 500;
+  margin-bottom: 6px;
+  display: block;
+}
+
+.profile-detail .value {
+  color: #0A2C59;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.id-section {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.id-image-container {
+  margin-top: 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.id-image {
+  max-width: 100%;
+  max-height: 300px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* Print and close buttons */
+.modern-modal-print {
+  position: absolute;
+  top: 24px;
+  right: 72px;
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.modern-modal-close {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: rgba(255,255,255,0.8);
+  font-size: 1.5rem;
+}
+
+@media (max-width: 768px) {
+  .profile-details-row.three-columns {
+    grid-template-columns: 1fr;
+  }
+  
+  .modern-modal-header {
+    padding: 24px;
+  }
+  
+  .modern-modal-body {
+    padding: 24px;
+  }
 }
 
 

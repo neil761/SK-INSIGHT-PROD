@@ -1,9 +1,35 @@
 // kkprofile.js
 
-// 🔹 Redirect to login if no token
-if (!localStorage.getItem("token")) {
-  window.location.href = "/Frontend/html/admin/admin-log.html";
-}
+// 🔹 Redirect to login if no token or token expired
+(function() {
+  const token = sessionStorage.getItem("token"); // Only sessionStorage!
+  function sessionExpired() {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Session Expired',
+      text: 'Please login again.',
+      confirmButtonColor: '#0A2C59',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    }).then(() => {
+      window.location.href = "./admin-log.html";
+    });
+  }
+  if (!token) {
+    sessionExpired();
+    return;
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      sessionStorage.removeItem("token");
+      sessionExpired();
+    }
+  } catch (e) {
+    sessionStorage.removeItem("token");
+    sessionExpired();
+  }
+})();
 
 let allProfiles = [];
 
@@ -31,7 +57,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchCycles() {
     try {
       const res = await fetch("http://localhost:5000/api/formcycle/kk", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (!res.ok) throw new Error("Failed to fetch cycles");
       const cycles = await res.json();
@@ -145,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const res = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`, // keep your auth
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`, // use sessionStorage only
         },
       });
 
@@ -168,7 +194,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
     if (!profiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="6">No profiles found</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="8">No profiles found</td></tr>`;
       return;
     }
 
@@ -183,14 +209,26 @@ document.addEventListener("DOMContentLoaded", () => {
         ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
         : "N/A";
 
+      const gender = p.gender || "-";
+      const age = p.user?.age ?? "N/A";
+      const purok = p.purok ? `Purok ${p.purok}` : "-";
+      const civilStatus = p.civilStatus || "-";
+      const workStatus = p.workStatus || "-";
+
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${i + 1}</td>
         <td>${fullName}</td>
-        <td>${p.user?.age ?? "N/A"}</td>
-        <td>${p.purok || "-"}</td>
-        <td>${p.gender}</td>
-        <td><button class="view-btn" data-id="${p._id}"><i class="fa-solid fa-eye" style = "color: #ffffffff"></i> Review</button></td>
+        <td>${gender}</td>
+        <td>${age}</td>
+        <td>${purok}</td>
+        <td>${civilStatus}</td>
+        <td>${workStatus}</td>
+        <td>
+          <button class="view-btn" data-id="${p._id}">
+            <i class="fa-solid fa-eye" style="color: #fff"></i> Review
+          </button>
+        </td>
       `;
       tableBody.appendChild(row);
     });
@@ -202,7 +240,7 @@ document.addEventListener("DOMContentLoaded", () => {
           `http://localhost:5000/api/kkprofiling/${btn.dataset.id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -225,7 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // Fetch image as blob with token
     fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
       headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
       },
     })
       .then((res) => {
@@ -235,55 +273,95 @@ document.addEventListener("DOMContentLoaded", () => {
       .then((blob) => {
         const imgUrl = URL.createObjectURL(blob);
         header.innerHTML = `
-          <img src="${imgUrl}" alt="Profile Image" width="60" height="60"
-            style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top: -5%" />
-          <p style="display:inline-block; vertical-align:middle; margin-top: -50px;">${fullName}</p>
+          <img src="${imgUrl}" alt="Profile Image" />
+          <div class="profile-name">${fullName}</div>
         `;
       })
       .catch(() => {
         header.innerHTML = `
-          <img src="/Frontend/assets/default-profile.png" alt="Profile Image" width="60" height="60"
-            style="border-radius:50%; object-fit:cover; margin-right:10px; margin-top:10%" />
-          <p style="display:inline-block; vertical-align:middle;">${fullName}</p>
+          <img src="/Frontend/assets/default-profile.png" alt="Profile Image" />
+          <div class="profile-name">${fullName}</div>
         `;
       });
 
-    // Age, Gender, Birthday in one row
     details.innerHTML = `
-      <div class="profile-info">
-        <p><b class="label">Address:</b> ${p.purok ? `Purok ${p.purok}` : ""}, ${p.barangay || ""}, ${p.municipality || ""}, ${p.province || ""}</p>
-        <hr>
-        <div style="display: flex; gap: 24px;">
-          <p><b class="label">Age:</b> ${p.user?.age ?? "N/A"}</p>
-          <p><b class="label">Gender:</b> ${p.gender}</p>
-          <p><b class="label">Birthday:</b> ${p.user?.birthday ? new Date(p.user.birthday).toISOString().split("T")[0] : "-"}</p>
+      <div class="profile-details-modal">
+        <div class="profile-details-row full">
+          <div class="profile-detail">
+            <span class="label">Address</span>
+            <span class="value">${p.purok ? `Purok ${p.purok}` : ""}${p.barangay ? `, ${p.barangay}` : ""}${p.municipality ? `, ${p.municipality}` : ""}</span>
+          </div>
         </div>
-        <hr>
-        <p><b class="label">Email:</b> ${p.email || "-"}</p>
-        <hr>
-        <p><b class="label">Contact Number:</b> ${p.contactNumber || "-"}</p>
-        <hr>
-        <p><b class="label">Civil Status:</b> ${p.civilStatus || "-"}</p>
-        <hr>
-        <p><b class="label">Youth Age Group:</b> ${p.youthAgeGroup || "-"}</p>
-        <hr>
-        <p><b class="label">Youth Classification:</b> ${p.youthClassification || "-"}</p>
-        <hr>
-        <p><b class="label">Educational Background:</b> ${p.educationalBackground || "-"}</p>
-        <hr>
-        <p><b class="label">Work Status:</b> ${p.workStatus || "-"}</p>
-        <hr>
-        <p><b class="label">Registered SK Voter:</b> ${p.registeredSKVoter ? "Yes" : "No"}</p>
-        <hr>
-        <p><b class="label">Registered National Voter:</b> ${p.registeredNationalVoter ? "Yes" : "No"}</p>
-        <hr>
-        <p><b class="label">Voted Last SK Election:</b> ${p.votedLastSKElection ? "Yes" : "No"}</p>
-        <hr>
-        <p><b class="label">Already Attended KK Assembly:</b> ${p.attendedKKAssembly ? "Yes" : "No"}</p>
-        <hr>
-        ${p.attendedKKAssembly ? `<p><b>How many times:</b> ${p.attendanceCount || "-"}</p>` : `<p><b>If No, Why:</b> ${p.nowhy || "-"}</p>`}
-        <hr>
-        <p class="bott"></p>
+        <div class="profile-details-row">
+          <div class="profile-detail">
+            <span class="label">Age</span>
+            <span class="value">${p.user?.age ?? "N/A"}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">Gender</span>
+            <span class="value">${p.gender}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">Birthday</span>
+            <span class="value">${p.user?.birthday ? new Date(p.user.birthday).toLocaleDateString() : "-"}</span>
+          </div>
+        </div>
+        
+        <div class="profile-details-row">
+          <div class="profile-detail">
+            <span class="label">Email</span>
+            <span class="value">${p.email || "-"}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">Contact</span>
+            <span class="value">${p.contactNumber || "-"}</span>
+          </div>
+        </div>
+        <div class="profile-details-row">
+          <div class="profile-detail">
+            <span class="label">Civil Status</span>
+            <span class="value">${p.civilStatus || "-"}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">Youth Age Group</span>
+            <span class="value">${p.youthAgeGroup || "-"}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">Education</span>
+            <span class="value">${p.educationalBackground || "-"}</span>
+          </div>
+        </div>
+        <div class="profile-details-row">
+          <div class="profile-detail">
+            <span class="label">Work Status</span>
+            <span class="value">${p.workStatus || "-"}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">SK Voter</span>
+            <span class="value">${p.registeredSKVoter ? "Yes" : "No"}</span>
+          </div>
+          <div class="profile-detail">
+            <span class="label">National Voter</span>
+            <span class="value">${p.registeredNationalVoter ? "Yes" : "No"}</span>
+          </div>
+        </div>
+        <div class="profile-details-row">
+          <div class="profile-detail">
+            <span class="label">Attended KK Assembly</span>
+            <span class="value">${p.attendedKKAssembly ? "Yes" : "No"}</span>
+          </div>
+          ${
+            p.attendedKKAssembly
+              ? `<div class="profile-detail">
+                    <span class="label">Times Attended</span>
+                    <span class="value">${p.attendanceCount || "-"}</span>
+                 </div>`
+              : `<div class="profile-detail">
+                    <span class="label">Reason for Not Attending</span>
+                    <span class="value">${p.nowhy || "-"}</span>
+                 </div>`
+          }
+        </div>
       </div>
     `;
 
@@ -297,10 +375,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Cycle filter (year + cycle)
   filterBtn.addEventListener("click", () => {
-    // If year/cycle not selected, use latest
-    currentFilters.year = yearDropdown.value || latestYear;
-    currentFilters.cycle = cycleDropdown.value || latestCycle;
-
+    // Require year and cycle for any filter
+    if (!currentFilters.year || !currentFilters.cycle) {
+      alert("Please select both year and cycle before filtering.");
+      return;
+    }
     fetchProfiles(currentFilters);
   });
 
@@ -431,8 +510,6 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please select both year and cycle before filtering.");
       return;
     }
-
-    // If classification is set, year and cycle are already required above
     fetchProfiles(currentFilters);
   });
 

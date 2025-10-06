@@ -15,6 +15,8 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
     if (!formName)
       return res.status(400).json({ error: "formName is required" });
 
+    const currentYear = new Date().getFullYear();
+
     // Find the most recent cycle for the form
     const lastCycle = await FormCycle.findOne({ formName }).sort({
       cycleNumber: -1,
@@ -27,11 +29,23 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
       return res.json({ message: "Form closed", cycleId: lastCycle._id });
     }
 
+    // Count cycles for this form in the current year
+    const yearCycleCount = await FormCycle.countDocuments({
+      formName,
+      year: currentYear,
+    });
+
+    if (yearCycleCount >= 3) {
+      return res
+        .status(400)
+        .json({ error: "Maximum of 3 cycles per year allowed." });
+    }
+
     // Open new cycle
     const newCycle = new FormCycle({
       formName,
       cycleNumber: lastCycle ? lastCycle.cycleNumber + 1 : 1,
-      year: new Date().getFullYear(),
+      year: currentYear,
       isOpen: true,
     });
 
