@@ -146,11 +146,9 @@ document.addEventListener("DOMContentLoaded", () => {
     dropdowns.forEach(([_, content]) => (content.style.display = "none"));
   });
 
-  // 🔹 Fetch and render profiles~
-  // 🔹 Fetch profiles with filters
+  // 🔹 Fetch and render profiles
   async function fetchProfiles(params = {}) {
     try {
-      // Build query string properly
       const query = new URLSearchParams(params).toString();
       const url = query
         ? `http://localhost:5000/api/kkprofiling?${query}`
@@ -174,12 +172,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 🔹 Render profiles into table
-  function capitalize(str) {
-    if (!str) return "";
-    return str.charAt(0).toUpperCase() + str.slice(1);
-  }
-
-  // 🔹 Render profiles into table
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
 
@@ -194,15 +186,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const middlename = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
       const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
       const fullName = `${lastname}, ${firstname} ${middlename} ${suffix}`.trim();
-      const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
-      const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
-      const middlename = p.middlename && p.middlename.trim() !== ""
-        ? p.middlename.trim()[0].toUpperCase() + "."
-        : "";
-      const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-      const fullName = (lastname || firstname)
-        ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
-        : "N/A";
 
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -222,7 +205,6 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.appendChild(row);
     });
 
-    // Attach modal openers
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(`http://localhost:5000/api/kkprofiling/${btn.dataset.id}`, {
@@ -263,7 +245,6 @@ document.addEventListener("DOMContentLoaded", () => {
         header.innerHTML = `<img src="/Frontend/assets/default-profile.png" alt="Profile Image"/><div class="profile-name">${fullName}</div>`;
       });
 
-    // Age, Gender, Birthday in one row
     details.innerHTML = `
       <div class="profile-details-modal">
         <div class="profile-details-row full">
@@ -349,6 +330,44 @@ document.addEventListener("DOMContentLoaded", () => {
     );
     renderProfiles(filteredProfiles);
   });
+
+  // 🔹 Date/Time + Greeting
+  function updateDateTime() {
+    const options = { timeZone: "Asia/Manila" };
+    const now = new Date(new Date().toLocaleString("en-US", options));
+    const hours = now.getHours();
+
+    let greeting = "Good evening",
+      iconClass = "fa-solid fa-moon",
+      iconColor = "#183153";
+
+    if (hours < 12) {
+      greeting = "Good morning";
+      iconClass = "fa-solid fa-sun";
+      iconColor = "#f7c948";
+    } else if (hours < 18) {
+      greeting = "Good afternoon";
+      iconClass = "fa-solid fa-cloud-sun";
+      iconColor = "#f7c948";
+    }
+
+    const weekday = now.toLocaleString("en-US", { weekday: "long", timeZone: "Asia/Manila" });
+    const dateStr = now.toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" });
+    let hour = now.getHours();
+    const minute = String(now.getMinutes()).padStart(2, "0");
+    const ampm = hour >= 12 ? "PM" : "AM";
+    hour = hour % 12 || 12;
+
+    document.getElementById("greeting").textContent = greeting;
+    document.getElementById("header-date").textContent = `${weekday}, ${dateStr} -`;
+    document.getElementById("datetime").textContent = `${hour}:${minute} ${ampm}`;
+    const icon = document.getElementById("greeting-icon");
+    icon.className = iconClass;
+    icon.style.color = iconColor;
+  }
+
+  setInterval(updateDateTime, 1000);
+  updateDateTime();
 
   // 🔹 Initial load
   fetchCycles();
