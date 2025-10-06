@@ -8,7 +8,10 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../../css/admin-dashboard.css" />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="/Frontend/css/admin-dashboard.css" />
+    <link rel="stylesheet" href="/Frontend/css/header.css">
   </head>
   <body>
     <div class="sidebar">
@@ -20,13 +23,9 @@
           <p class="admin">Admin</p>
         </div>
       </div>
-
       <div class="menu">
         <div class="dashh">
-          <a
-            href="./admin-dashboard.html"
-            class="flex items-center space-x-2"
-          >
+          <a href="./admin-dashboard.html" class="flex items-center space-x-2">
             <i class="dashs fas fa-columns"></i>
             <span class="dashb">Dashboard</span>
           </a>
@@ -52,8 +51,8 @@
           <span class="dash">User Accounts</span>
         </a>
         <a href="./exports.html" class="flex items-center space-x-2">
-          <i class="fas fa-file-export"></i>
-          <span class="dash">Exports</span>
+          <i class="fa-solid fa-gear" style="color: #ffffff;"></i>
+          <span class="dash">Settings</span>
         </a>
         <div class="log">
           <a href="./admin-log.html" class="flex items-center space-x-2">
@@ -65,14 +64,68 @@
     </div>
 
     <div class="content">
+      <div id="header-container"></div>
+      <div class="title">
+        <header class="page-header">
+          <h1 class="tit">Dashboard</h1>
+          <p class="subtitle">Welcome to the SK-INSIGHT Admin Dashboard</p>
+        </header>
+      </div>
       <div class="parent">
         <div class="date">
           <p id="greeting"></p>
           <p id="datetime"></p>
         </div>
       </div>
-
-      <hr />
+      <!-- Dashboard content here -->
     </div>
+
+    <script>
+      fetch('./header.html')
+        .then(res => res.text())
+        .then(html => {
+          document.getElementById('header-container').innerHTML = html;
+          // After injecting, run the header JS
+          const script = document.createElement('script');
+          script.src = '../../js/admin/header.js';
+          document.body.appendChild(script);
+        });
+    </script>
+
+    <script>
+      // Fade in on load
+      const content = document.querySelector('.content');
+      content.classList.add('page-fade');
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(() => {
+          content.classList.remove('page-fade');
+          content.classList.add('page-fade-in');
+        }, 10);
+      });
+
+      // Fade out on navigation for all internal links
+      document.querySelectorAll('a[href]').forEach(link => {
+        const href = link.getAttribute('href');
+        if (
+          href &&
+          !href.startsWith('http') &&
+          !href.startsWith('mailto:') &&
+          !href.startsWith('#') &&
+          !link.hasAttribute('target')
+        ) {
+          link.addEventListener('click', function(e) {
+            // Only fade if not a sidebar link
+            // (Sidebar links are outside .content, so always fade .content)
+            e.preventDefault();
+            content.classList.remove('page-fade-in');
+            content.classList.add('page-fade');
+            setTimeout(() => {
+              window.location.href = href;
+            }, 180); // match the CSS transition duration
+          });
+        }
+      });
+    </script>
+    <script src="../../js/admin/admin-dashboard.js"></script>
   </body>
 </html>

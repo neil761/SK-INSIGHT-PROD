@@ -1,9 +1,37 @@
 // lgbtqprofile.js
 
 // 🔹 Redirect to login if no token
-if (!localStorage.getItem("token")) {
-  window.location.href = "/html/admin-log.html";
-}
+(function() {
+  const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+  function sessionExpired() {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Session Expired',
+      text: 'Please login again.',
+      confirmButtonColor: '#0A2C59',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    }).then(() => {
+      window.location.href = "./admin-log.html";
+    });
+  }
+  if (!token) {
+    sessionExpired();
+    return;
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      sessionStorage.removeItem("token");
+      localStorage.removeItem("token");
+      sessionExpired();
+    }
+  } catch (e) {
+    sessionStorage.removeItem("token");
+    localStorage.removeItem("token");
+    sessionExpired();
+  }
+})();
 
 let allProfiles = [];
 
@@ -38,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchCycles() {
     try {
       const res = await fetch("http://localhost:5000/api/formcycle/lgbtq", {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (!res.ok) throw new Error("Failed to fetch cycles");
 
@@ -178,7 +206,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const res = await fetch(url, {
         headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
         },
       });
 
@@ -219,7 +247,7 @@ document.addEventListener("DOMContentLoaded", () => {
           `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
           {
             headers: {
-              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
             },
           }
         );
@@ -235,61 +263,69 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
 
-    // Use displayData for consistent info
     const fullName = p.displayData?.residentName || "N/A";
     const age = p.displayData?.age ?? "N/A";
-    const birthday = p.displayData?.birthday ?? "N/A";
+    const birthday = p.displayData?.birthday ? new Date(p.displayData.birthday).toLocaleDateString() : "N/A";
     const sexAssignedAtBirth = p.displayData?.sexAssignedAtBirth ?? "N/A";
     const lgbtqClassification = p.displayData?.lgbtqClassification ?? "N/A";
     const idImage = p.displayData?.idImage
       ? `http://localhost:5000/uploads/lgbtq_id_images/${p.displayData.idImage}`
-      : "/Frontend/assets/default-profile.png";
+      : null;
 
+    // Clean, minimal header with just the name
+    header.innerHTML = `
+      <div class="profile-name">${fullName}</div>
+    `;
+
+    // Organized, modern layout for essential info
     details.innerHTML = `
-      <div class="profile-info" style = "margin-top: 5%">
-      <hr>
-        <p style="font-size:1.2em; font-weight:bold; margin:0;">${fullName}</p>
-        <hr>
-        <p><b class="label">Age:</b> ${age}</p>
-        <hr>
-        <p><b class="label">Sex Assigned at Birth:</b> ${sexAssignedAtBirth}</p>
-        <hr>
-        <p><b class="label">LGBTQ Classification:</b> ${lgbtqClassification}</p>
-        <hr>
-        <p><b class="label">Birthday:</b> ${birthday}</p>
-        <hr>
-        <p><b class="label">Email:</b> ${p.user?.email || "-"}</p>
-        <hr>
-        <div class="id-image-container" style="
-          background: #f3f3f3;
-          padding: 18px;
-          border-radius: 12px;
-          margin: 18px 0;
-          text-align: left;
-          box-shadow: 0 2px 8px rgba(0,0,0,0.10);
-        ">
-          <p style="color:#222; font-weight:bold; margin-bottom:12px;">Identification Card:</p>
-          <div style="width:100%; display:flex; justify-content:center;">
-            <img src="${idImage}" alt="ID Image"
-              style="
-                width:96%;
-                max-width:480px;
-                height:220px;
-                object-fit:contain;
-                background:#fff;
-                border-radius:6px;
-                box-shadow:0 1px 6px rgba(0,0,0,0.08);
-                display:block;
-              " />
+      <div class="profile-details-modal">
+        <div class="profile-details-section">
+          <div class="profile-details-row">
+            <div class="profile-detail">
+              <span class="label">Full Name</span>
+              <span class="value">${fullName}</span>
+            </div>
+          </div>
+          
+          <div class="profile-details-row three-columns">
+            <div class="profile-detail">
+              <span class="label">Age</span>
+              <span class="value">${age}</span>
+            </div>
+            <div class="profile-detail">
+              <span class="label">Birthday</span>
+              <span class="value">${birthday}</span>
+            </div>
+            <div class="profile-detail">
+              <span class="label">Sex Assigned at Birth</span>
+              <span class="value">${sexAssignedAtBirth}</span>
+            </div>
+          </div>
+
+          <div class="profile-details-row">
+            <div class="profile-detail emphasis">
+              <span class="label">LGBTQIA+ Classification</span>
+              <span class="value">${lgbtqClassification}</span>
+            </div>
           </div>
         </div>
-        <hr>
+
+        ${idImage ? `
+          <div class="profile-details-section id-section">
+            <div class="profile-detail">
+              <span class="label">Valid ID</span>
+              <div class="id-image-container">
+                <img src="${idImage}" alt="Valid ID" class="id-image"/>
+              </div>
+            </div>
+          </div>
+        ` : ''}
       </div>
     `;
 
     modal.style.display = "flex";
-    document.querySelector(".close-btn").onclick = () =>
-      (modal.style.display = "none");
+    document.body.classList.add("modal-open");
   }
 
   // 🔹 Filter button logic
