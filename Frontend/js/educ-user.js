@@ -1,16 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function() {
-  function calculateAge(birthday) {
-    if (!birthday) return '';
-    const birthDate = new Date(birthday);
-    const today = new Date();
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const m = today.getMonth() - birthDate.getMonth();
-    if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-      age--;
-    }
-    return age;
-  }
-
   const form = document.getElementById('educationalAssistanceForm');
   if (!form) return; // Prevents error if form is missing
 
@@ -27,15 +15,6 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (birthdayInput && user.birthday) {
           birthdayInput.value = user.birthday.split('T')[0]; // format as yyyy-mm-dd
           birthdayInput.readOnly = true; // make it non-editable
-        }
-
-        // After fetching user data
-        if (user.email) {
-          const emailInput = document.getElementById('email');
-          if (emailInput) {
-            emailInput.value = user.email;
-            emailInput.readOnly = true; // Optional: make email not editable
-          }
         }
       }
     } catch (err) {
@@ -214,114 +193,4 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('viewSchoolId').addEventListener('click', function() {
     showImagePreview('schoolIdImage');
   });
-
-  // Navbar: Mobile menu toggle
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function(e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
-
-  function handleFileInput(inputId, labelId, fileNameId, viewId, deleteId) {
-    const input = document.getElementById(inputId);
-    const label = document.getElementById(labelId);
-    const fileNameSpan = document.getElementById(fileNameId);
-    const viewIcon = document.getElementById(viewId);
-    const deleteIcon = document.getElementById(deleteId);
-
-    function updateIcons() {
-      const hasFile = input && input.files && input.files.length > 0;
-      if (viewIcon) viewIcon.classList.toggle('disabled', !hasFile);
-      if (deleteIcon) deleteIcon.classList.toggle('disabled', !hasFile);
-      if (viewIcon) viewIcon.style.pointerEvents = hasFile ? 'auto' : 'none';
-      if (deleteIcon) deleteIcon.style.pointerEvents = hasFile ? 'auto' : 'none';
-      if (viewIcon) viewIcon.style.opacity = hasFile ? '1' : '0.5';
-      if (deleteIcon) deleteIcon.style.opacity = hasFile ? '1' : '0.5';
-    }
-
-    if (input && label && fileNameSpan) {
-      input.addEventListener('change', function() {
-        if (input.files && input.files.length > 0) {
-          label.style.display = 'none';
-          fileNameSpan.textContent = input.files[0].name;
-          fileNameSpan.style.display = 'inline-block';
-        } else {
-          label.style.display = 'inline-flex';
-          fileNameSpan.textContent = '';
-          fileNameSpan.style.display = 'none';
-        }
-        updateIcons();
-      });
-      updateIcons(); // Initial state
-    }
-  }
-
-  function handleFileDelete(inputId, labelId, fileNameId) {
-    const input = document.getElementById(inputId);
-    const label = document.getElementById(labelId);
-    const fileNameSpan = document.getElementById(fileNameId);
-
-    if (input && label && fileNameSpan) {
-      // Clear the file input, show the label, hide the filename
-      input.value = '';
-      label.style.display = 'inline-flex';
-      fileNameSpan.textContent = '';
-      fileNameSpan.style.display = 'none';
-    }
-  }
-
-  // Sedula delete
-  document.getElementById('deleteSedula').addEventListener('click', function() {
-    handleFileDelete('sedulaImage', 'sedulaLabel', 'sedulaFileName');
-  });
-
-  // COE delete
-  document.getElementById('deleteCOE').addEventListener('click', function() {
-    handleFileDelete('coeImage', 'coeLabel', 'coeFileName');
-  });
-
-  // Signature delete
-  document.getElementById('deleteSchoolId').addEventListener('click', function() {
-    handleFileDelete('signature', 'signatureLabel', 'signatureFileName');
-  });
-
-  // Call for each file input
-  handleFileInput('sedulaImage', 'sedulaLabel', 'sedulaFileName', 'viewSedula', 'deleteSedula');
-  handleFileInput('coeImage', 'coeLabel', 'coeFileName', 'viewCOE', 'deleteCOE');
-  handleFileInput('signature', 'signatureLabel', 'signatureFileName', 'viewSchoolId', 'deleteSchoolId');
-
-  // Set age when birthday is loaded from backend
-  const birthdayInput = document.getElementById('birthday');
-  const ageInput = document.getElementById('age');
-  if (birthdayInput && ageInput) {
-    // When birthday is fetched from backend
-    if (birthdayInput.value) {
-      ageInput.value = calculateAge(birthdayInput.value);
-    }
-    // When user changes birthday manually
-    birthdayInput.addEventListener('change', function() {
-      ageInput.value = calculateAge(birthdayInput.value);
-    });
-  }
-
-  // Close preview button
-  document.getElementById('closePreviewBtn').addEventListener('click', function() {
-    document.getElementById('imagePreviewModal').style.display = 'none';
-  });
-
-  // Get user data from localStorage or sessionStorage
-  let userData = JSON.parse(localStorage.getItem('user')) || JSON.parse(sessionStorage.getItem('user')) || {};
-  const emailInput = document.getElementById('email');
-  if (emailInput && userData.email) {
-    emailInput.value = userData.email;
-    emailInput.readOnly = true; // Optional: make it not editable
-  }
 });

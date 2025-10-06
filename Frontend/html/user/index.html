@@ -15,28 +15,14 @@
     <!-- Navbar -->
     <div class="navbar">
       <div class="navbar-left">
-        <a href="./index.html">
-          <img src="../../assets/logo.png" alt="Logo" class="logo"/>
-        </a>
-        <a href="./index.html" class="title">SK-PBW</a>
-      </div>
-      <div class="navbar-center">
-        <a href="./kkform-personal.html" class="prof">KK Profile</a>
-        <a href="./lgbtqform.html" class="prof">LGBTQ+ Profile</a>
-        <a href="./Educational-assistance-user.html" class="prof">Educational Assistance</a>
+        <img src="../../assets/logo.png" alt="Logo" />
+        <span class="title">SK-INSIGHT</span>
       </div>
       <div class="navbar-right">
-        <span class="navbar-hamburger" id="navbarHamburger">
-          <i class="fa-solid fa-bars"></i>
-        </span>
-        <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
-        <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
+        <span><i class="fa-solid fa-bars" style="color: #ffffff"></i></span>
+        <a href="/Frontend/html/user/announcement.html"><i class="fa-solid fa-bell" style="color: #ffffff"></i></a>
+        <a href="/Frontend/html/user/userProfile.html"><i class="fa-solid fa-user" style="color: #ffffff"></i></a>
       </div>
-    </div>
-  <div class="navbar-mobile-menu" id="navbarMobileMenu">
-      <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
-      <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="nav-btn">educational Assistance</a>
     </div>
 
     <!-- Login Required Strip (now under navbar) -->
@@ -58,13 +44,6 @@
       </p>
       <a href="#" class="btn">Get Started</a>
       <a href="/Frontend/html/user/about.html" class="link">How it Works</a>
-    </div>
-
-    <!-- Mobile Navbar Menu -->
-    <div class="navbar-mobile-menu" id="navbarMobileMenu">
-      <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
-      <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="nav-btn">educational Assistance</a>
     </div>
 
     <!-- ✅ Footer should be OUTSIDE the about card -->
@@ -104,6 +83,13 @@
       </div>
     </footer>
 
-    <script src="../../js/index.js"></script>
+    <script>
+      // Show login strip if not logged in
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      if (!token) {
+        document.getElementById('login-strip').style.display = 'flex';
+        document.body.classList.add('has-login-strip');
+      }
+    </script>
 </body>
 </html>
