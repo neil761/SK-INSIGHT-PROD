@@ -8,25 +8,35 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeModalBtn = modal.querySelector(".close-modal");
 
   // Fetch announcements
-  async function fetchAnnouncements() {
+async function fetchAnnouncements() {
   try {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
     const res = await fetch("http://localhost:5000/api/announcements", {
-      headers: {
-        "Authorization": `Bearer ${token}`
-      }
+      headers: { Authorization: `Bearer ${token}` }
     });
 
-    if (!res.ok) throw new Error("Failed to fetch announcements");
+    if (!res.ok) {
+      console.error("Fetch failed:", res.status, await res.text());
+      throw new Error("Failed to fetch announcements");
+    }
+
     const data = await res.json();
+    if (!data.success) {
+      throw new Error(data.message || "Failed to fetch announcements");
+    }
 
     renderAnnouncements(data.announcements || []);
   } catch (err) {
     console.error("Error fetching announcements:", err);
-    tableBody.innerHTML = `<tr><td colspan="4" style="text-align:center">Error loading announcements</td></tr>`;
+    tableBody.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align:center">Error loading announcements</td>
+      </tr>
+    `;
   }
 }
+
 
 
   // Render announcements into table
@@ -68,12 +78,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Fill remaining rows with "No Announcement yet."
     for (let i = limitedAnnouncements.length; i < 5; i++) {
-      const tr = document.createElement("tr");
-      tr.innerHTML = `
-        <td colspan="5" style="text-align:center; color: #888;"></td>
-      `;
-      tableBody.appendChild(tr);
-    }
+  const tr = document.createElement("tr");
+  tr.innerHTML = `
+    <td colspan="4" style="text-align:center; color: #888;">No announcements yet</td>
+  `;
+  tableBody.appendChild(tr);
+}
   }
 
   // Handle view button clicks (modal)
@@ -132,4 +142,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial load
   fetchAnnouncements();
+});
+
+document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('navbarHamburger');
+  const mobileMenu = document.getElementById('navbarMobileMenu');
+  if (hamburger && mobileMenu) {
+    console.log('hamburger:', hamburger, 'mobileMenu:', mobileMenu);
+    hamburger.addEventListener('click', function(e) {
+      e.stopPropagation();
+      mobileMenu.classList.toggle('active');
+    });
+    document.addEventListener('click', function(e) {
+      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
+        mobileMenu.classList.remove('active');
+      }
+    });
+  }
 });
