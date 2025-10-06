@@ -163,10 +163,6 @@ try {
         input: 'email',
         inputLabel: 'Email Address',
         inputPlaceholder: 'Enter your email address',
-        inputValue: user && user.email ? user.email : '',
-        inputAttributes: {
-          readonly: true
-        },
         showCancelButton: true,
         confirmButtonText: 'Send OTP',
         cancelButtonText: 'Cancel',
@@ -180,32 +176,18 @@ try {
       // Step 2: Send OTP to backend
       let sendRes;
       try {
-        // Show loading modal
-        Swal.fire({
-          title: 'Sending OTP...',
-          allowOutsideClick: false,
-          didOpen: () => {
-            Swal.showLoading();
-          }
-        });
-
         sendRes = await fetch('http://localhost:5000/api/users/verify/send', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email })
         });
         const sendData = await sendRes.json();
-
-        // Close loading modal
-        Swal.close();
-
         if (!sendRes.ok) {
           Swal.fire('Error', sendData.message || 'Failed to send OTP', 'error');
           return;
         }
         Swal.fire('OTP Sent', 'Check your email for the OTP code.', 'success');
       } catch (err) {
-        Swal.close();
         Swal.fire('Error', 'Failed to send OTP', 'error');
         return;
       }
@@ -226,23 +208,6 @@ try {
         confirmButtonText: 'Verify',
         cancelButtonText: 'Cancel',
         focusConfirm: false,
-        didOpen: () => {
-          // Auto-focus next input on input
-          for (let i = 1; i <= 6; i++) {
-            const input = document.getElementById(`otp${i}`);
-            input.addEventListener('input', function() {
-              if (this.value.length === 1 && i < 6) {
-                document.getElementById(`otp${i + 1}`).focus();
-              }
-            });
-            input.addEventListener('keydown', function(e) {
-              if (e.key === 'Backspace' && this.value === '' && i > 1) {
-                document.getElementById(`otp${i - 1}`).focus();
-              }
-            });
-          }
-          document.getElementById('otp1').focus();
-        },
         preConfirm: () => {
           const otp = [
             document.getElementById('otp1').value,
@@ -278,30 +243,6 @@ try {
         }
       } catch (err) {
         Swal.fire('Error', 'Failed to verify OTP', 'error');
-      }
-    });
-  }
-
-  // Logout button functionality
-  const logoutBtn = document.querySelector('.logout-btn');
-  if (logoutBtn) {
-    logoutBtn.addEventListener('click', function() {
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
-      window.location.href = './index.html'; // Adjust path if needed
-    });
-  }
-
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function(e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
       }
     });
   }

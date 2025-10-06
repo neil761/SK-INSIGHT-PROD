@@ -147,8 +147,10 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // 🔹 Fetch and render profiles~
+  // 🔹 Fetch profiles with filters
   async function fetchProfiles(params = {}) {
     try {
+      // Build query string properly
       const query = new URLSearchParams(params).toString();
       const url = query
         ? `http://localhost:5000/api/kkprofiling?${query}`
@@ -172,6 +174,12 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // 🔹 Render profiles into table
+  function capitalize(str) {
+    if (!str) return "";
+    return str.charAt(0).toUpperCase() + str.slice(1);
+  }
+
+  // 🔹 Render profiles into table
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
 
@@ -186,6 +194,15 @@ document.addEventListener("DOMContentLoaded", () => {
       const middlename = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
       const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
       const fullName = `${lastname}, ${firstname} ${middlename} ${suffix}`.trim();
+      const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
+      const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
+      const middlename = p.middlename && p.middlename.trim() !== ""
+        ? p.middlename.trim()[0].toUpperCase() + "."
+        : "";
+      const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+      const fullName = (lastname || firstname)
+        ? `${lastname}, ${firstname} ${middlename} ${suffix}`.replace(/\s+/g, " ").trim()
+        : "N/A";
 
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -205,6 +222,7 @@ document.addEventListener("DOMContentLoaded", () => {
       tableBody.appendChild(row);
     });
 
+    // Attach modal openers
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(`http://localhost:5000/api/kkprofiling/${btn.dataset.id}`, {
@@ -245,6 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
         header.innerHTML = `<img src="/Frontend/assets/default-profile.png" alt="Profile Image"/><div class="profile-name">${fullName}</div>`;
       });
 
+    // Age, Gender, Birthday in one row
     details.innerHTML = `
       <div class="profile-details-modal">
         <div class="profile-details-row full">
