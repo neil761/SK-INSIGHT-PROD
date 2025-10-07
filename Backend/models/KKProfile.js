@@ -36,11 +36,20 @@ const kkProfileSchema = new mongoose.Schema({
   },
   educationalBackground: {
     type: String,
-    enum: ["Elementary Undergraduate", "Elementary Graduate", "High School Undergraduate", "High School Graduate", "Vocational Graduate", "College Undergraduate", "College Graduate", "Masters Graduate", "Doctorate Level", "Doctorate Graduate"],
+    enum: [
+      "Elementary Undergraduate", "Elementary Graduate",
+      "High School Undergraduate", "High School Graduate",
+      "Vocational Graduate", "College Undergraduate",
+      "College Graduate", "Masters Graduate",
+      "Doctorate Level", "Doctorate Graduate"
+    ],
   },
   workStatus: {
     type: String,
-    enum: ["Employed", "Unemployed", "Self-Employed", "Currently looking for a Job", "Not interested in looking for a Job"],
+    enum: [
+      "Employed", "Unemployed", "Self-Employed",
+      "Currently looking for a Job", "Not interested in looking for a Job"
+    ],
   },
 
   registeredSKVoter: Boolean,
@@ -57,6 +66,8 @@ const kkProfileSchema = new mongoose.Schema({
     enum: ["there was no kk assembly", "not interested"],
   },
   profileImage: { type: String, required: true },
+  idImagePath: { type: String },
+  signatureImagePath: { type: String },
   birthday: { type: Date, required: true },
 
   submittedAt: {
