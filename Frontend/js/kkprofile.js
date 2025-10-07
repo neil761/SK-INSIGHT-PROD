@@ -373,6 +373,60 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
+  // Download button logic
+  document.addEventListener("DOMContentLoaded", function () {
+    const downloadBtn = document.getElementById("downloadBtn");
+    let currentProfileId = null;
+
+    // Set currentProfileId when showing modal
+    window.showProfileModal = function(profileId) {
+      currentProfileId = profileId;
+      // ...existing code to show modal...
+    };
+
+    if (downloadBtn) {
+      downloadBtn.addEventListener("click", function () {
+        if (!currentProfileId) return;
+        downloadProfileDocx(currentProfileId);
+      });
+    }
+
+    async function downloadProfileDocx(profileId) {
+      try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+        const res = await fetch(`/api/kkprofiling/export/${profileId}`, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        });
+        if (!res.ok) {
+          alert("Failed to download profile.");
+          return;
+        }
+        const blob = await res.blob();
+        // Try to get filename from header
+        let filename = "KKProfile.docx";
+        const disposition = res.headers.get("Content-Disposition");
+        if (disposition && disposition.indexOf("filename=") !== -1) {
+          filename = disposition.split("filename=")[1].replace(/"/g, "");
+        }
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        }, 100);
+      } catch (err) {
+        alert("Error downloading profile.");
+      }
+    }
+  });
+
   // 🔹 Cycle filter (year + cycle)
   filterBtn.addEventListener("click", () => {
     // Require year and cycle for any filter
