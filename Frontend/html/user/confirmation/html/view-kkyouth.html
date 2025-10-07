@@ -3,41 +3,43 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>KK Profiling - Youth & Voting</title>
-  <link rel="stylesheet" href="../../css/kkform.css" />
+  <title>KK Profiling - Youth & Voting (View)</title>
+  <link rel="stylesheet" href="../../confirmation/css/view-youth.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="navbar">
     <div class="navbar-left">
-      <a href="./index.html">
-        <img src="../../assets/logo.png" alt="Logo" class="logo"/>
-      </a>
-      <a href="./index.html" class="title">SK-PBW</a>
+      <img src="/Frontend/assets/logo.png" alt="Logo" class="logo"/>
+      <span class="title">SK-PUTING BATO WEST</span>
     </div>
     <div class="navbar-center">
-      <a href="./kkform-personal.html" class="prof">KK Profile</a>
-      <a href="./lgbtqform.html" class="prof">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="prof">Educational Assistance</a>
+      <a href="view-kkpersonal.html" class="nav-btn">KK Profiling</a>
+      <a href="#" class="nav-btn">LGBTQ Profiling</a>
+      <a href="#" class="nav-btn">Educational Assistance</a>
     </div>
     <div class="navbar-right">
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
-      <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
+      <span><i class="fa-solid fa-bell"></i></span>
+      <a href="../user/userProfile.html"><i class="fa-solid fa-user" style="color: #fff;"></i></a>
     </div>
+  </div>
+  <div class="navbar-mobile-menu" id="navbarMobileMenu">
+    <a href="view-kkpersonal.html" class="nav-btn">KK Profiling</a>
+    <a href="#" class="nav-btn">LGBTQ Profiling</a>
+    <a href="#" class="nav-btn">Educational Assistance</a>
   </div>
   <div class="kk-container">
     <div class="kk-card kk-intro">
       <h2>KK Profiling</h2>
       <p><strong>Step 3 of 3: Youth & Voting Information</strong></p>
     </div>
-    <form id="youthForm" enctype="multipart/form-data">
+    <form>
       <div class="kk-card">
         <label class="kk-label" for="youthAgeGroup">Youth Age Group:</label>
-        <select class="kk-input" id="youthAgeGroup" name="youthAgeGroup" required>
+        <select class="kk-input" id="youthAgeGroup" disabled>
           <option value="">Select Age Group</option>
           <option value="Child Youth">Child Youth</option>
           <option value="Core Youth">Core Youth</option>
@@ -46,7 +48,7 @@
       </div>
       <div class="kk-card">
         <label class="kk-label" for="youthClassification">Youth Classification:</label>
-        <select class="kk-input" id="youthClassification" name="youthClassification" required>
+        <select class="kk-input" id="youthClassification" disabled>
           <option value="">Select Classification</option>
           <option value="In School Youth">In School Youth</option>
           <option value="Out of School Youth">Out of School Youth</option>
@@ -56,7 +58,7 @@
       </div>
       <div class="kk-card">
         <label class="kk-label" for="educationalBackground">Educational Background:</label>
-        <select class="kk-input" id="educationalBackground" name="educationalBackground" required>
+        <select class="kk-input" id="educationalBackground" disabled>
           <option value="">Select Educational Background</option>
           <option value="Elementary Undergraduate">Elementary Undergraduate</option>
           <option value="Elementary Graduate">Elementary Graduate</option>
@@ -72,7 +74,7 @@
       </div>
       <div class="kk-card">
         <label class="kk-label" for="workStatus">Work Status:</label>
-        <select class="kk-input" id="workStatus" name="workStatus" required>
+        <select class="kk-input" id="workStatus" disabled>
           <option value="">Select Work Status</option>
           <option value="Employed">Employed</option>
           <option value="Unemployed">Unemployed</option>
@@ -82,72 +84,46 @@
         </select>
       </div>
       <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="registeredSKVoter" name="registeredSKVoter"> Registered SK Voter</label>
+        <label><input type="checkbox" id="registeredSKVoter" disabled> Registered SK Voter</label>
       </div>
       <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="registeredNationalVoter" name="registeredNationalVoter"> Registered National Voter</label>
+        <label><input type="checkbox" id="registeredNationalVoter" disabled> Registered National Voter</label>
       </div>
       <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="votedLastSKElection" name="votedLastSKElection"> Voted in Last SK Election</label>
+        <label><input type="checkbox" id="votedLastSKElection" disabled> Voted in Last SK Election</label>
       </div>
       <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="attendedKKAssembly" name="attendedKKAssembly"> Attended KK Assembly</label>
+        <label><input type="checkbox" id="attendedKKAssembly" disabled> Attended KK Assembly</label>
       </div>
-      <div class="kk-card" id="attendanceCountGroup" style="display: none;">
+      <div class="kk-card" id="attendanceCountGroup">
         <label class="kk-label" for="attendanceCount">How many times?</label>
-        <select class="kk-input" id="attendanceCount" name="attendanceCount">
+        <select class="kk-input" id="attendanceCount" disabled>
           <option value="">Select</option>
           <option value="1-2 times">1-2 times</option>
           <option value="3-4 times">3-4 times</option>
           <option value="5 and above">5 and above</option>
         </select>
       </div>
-      <div class="kk-card" id="reasonGroup" style="display: none;">
+      <div class="kk-card" id="reasonGroup">
         <label class="kk-label" for="reasonDidNotAttend">Why didn't you attend?</label>
-        <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend">
+        <select class="kk-input" id="reasonDidNotAttend" disabled>
           <option value="">Select</option>
           <option value="there was no kk assembly">There was no KK assembly</option>
           <option value="not interested">Not interested</option>
         </select>
       </div>
       <div class="kk-card">
-        <label class="kk-label">Upload Profile Image:</label>
-        <span>
-          <label for="profileImage" class="upload-plus" id="profileImageLabel">
-            <i class="fa-solid fa-plus"></i>
-          </label>
-          <input type="file" id="profileImage" name="profileImage" accept="image/*" style="display:none;">
-          <span class="file-name" id="profileImageFileName"></span>
-          <i class="fa-solid fa-eye view-icon" id="viewProfileImage" style="margin-left:8px;"></i>
-          <i class="fa-solid fa-trash delete-icon" id="deleteProfileImage" style="margin-left:8px;"></i>
-        </span>
+        <label class="kk-label kk-file-upload" for="profileImage">
+          <i class="fas fa-upload"></i> Uploaded Profile Image
+          <div id="imagePreview" class="image-preview"></div>
+        </label>
       </div>
-
-      <div class="kk-card">
-        <label class="kk-label">Upload Signature:</label>
-        <span>
-          <label for="signatureImage" class="upload-plus" id="signatureImageLabel">
-            <i class="fa-solid fa-plus"></i>
-          </label>
-          <input type="file" id="signatureImage" name="signatureImage" accept="image/*" style="display:none;">
-          <span class="file-name" id="signatureImageFileName"></span>
-          <i class="fa-solid fa-eye view-icon" id="viewSignatureImage" style="margin-left:8px;"></i>
-          <i class="fa-solid fa-trash delete-icon" id="deleteSignatureImage" style="margin-left:8px;"></i>
-        </span>
-      </div>
-
-      <div id="imagePreview" class="image-preview"></div>
-      <div class="kk-btn-group">
-        <button type="button" class="kk-btn" onclick="window.location.href='kkform-address.html'">Previous</button>
-        <button type="submit" class="kk-btn kk-submit-btn">Finish</button>
+      <div class="butts">
+        <button type="button" class="kk-butn" onclick="window.location.href='view-kkaddress.html'">Previous</button>
+        <button type="button" class="kk-butns kk-next-btn" onclick="window.location.href='kkcofirmation.html'">Done</button>
       </div>
     </form>
   </div>
-  <div class="navbar-mobile-menu" id="navbarMobileMenu">
-    <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
-    <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
-    <a href="./Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
-  </div>
-  <script src="../../js/kkform-youth.js"></script>
+  <script src="/Frontend/js/view-kkyouth.js"></script>
 </body>
 </html>
