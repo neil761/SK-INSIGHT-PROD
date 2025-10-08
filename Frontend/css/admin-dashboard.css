@@ -10,7 +10,7 @@
       margin: 0;
       font-family: 'Poppins', sans-serif;
       background-color: #F5F7FA;
-      overflow: hidden;
+      overflow-x: hidden;
     }
     
     .sidebar {
@@ -19,10 +19,12 @@
       background-color: #0A2C59; 
       color: white;
       padding: 20px;
-      position: relative;
+      position: fixed; /* <-- changed from sticky to fixed */
       left: 0;
       top: 0;
       box-shadow: 2px 0 8px rgba(10,44,89,0.07);
+      z-index: 100;
+      overflow: hidden;
     }
     
     .logos{
@@ -99,11 +101,13 @@
     }
     
     .content{
-        flex: 1;   /* fills the rest of the screen */
-  padding: 15px;
-  background: #F5F7FA;
-  overflow-y: auto;
-  position: relative; /* Remove margin-left if using flex layout */
+        flex: 1;
+        padding: 15px;
+        background: #F5F7FA;
+        overflow-y: auto;
+        position: relative;
+        margin-left: 250px; /* <-- add this so content doesn't go under sidebar */
+        min-height: 100vh;
     }
     
     .parent {

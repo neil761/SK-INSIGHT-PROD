@@ -3,15 +3,15 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SK-INSIGHT</title>
+    <title>KK Profiling Dashboard | SK-INSIGHT</title>
+    <link rel="stylesheet" href="/Frontend/css/admin-dashboard.css" />
+    <link rel="stylesheet" href="/Frontend/css/header.css">
+    <link rel="stylesheet" href="/Frontend/css/dashboard-charts.css">
     <link
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <link rel="stylesheet" href="/Frontend/css/admin-dashboard.css" />
-    <link rel="stylesheet" href="/Frontend/css/header.css">
   </head>
   <body>
     <div class="sidebar">
@@ -67,65 +67,51 @@
       <div id="header-container"></div>
       <div class="title">
         <header class="page-header">
-          <h1 class="tit">Dashboard</h1>
-          <p class="subtitle">Welcome to the SK-INSIGHT Admin Dashboard</p>
+          <h1 class="tit">KK Profiling Dashboard</h1>
+          <p class="subtitle">Visualize and explore KK profiling data</p>
         </header>
       </div>
-      <div class="parent">
-        <div class="date">
-          <p id="greeting"></p>
-          <p id="datetime"></p>
+      <div class="dashboard-controls">
+        <label for="cycleDropdown" class="cycle-label">
+          <i class="fas fa-sync-alt"></i> Profiling Cycle:
+        </label>
+        <select id="cycleDropdown" class="cycle-dropdown"></select>
+      </div>
+      <div class="dashboard-grid">
+        <div class="chart-card">
+          <h2 class="chart-title">Gender Distribution</h2>
+          <canvas id="genderChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">Age Groups</h2>
+          <canvas id="ageChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">Civil Status</h2>
+          <canvas id="civilStatusChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">Educational Background</h2>
+          <canvas id="educationChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">Employment Status</h2>
+          <canvas id="employmentChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">SK Voter Registration & Participation</h2>
+          <canvas id="skVoterChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">KK Assembly Attendance</h2>
+          <canvas id="assemblyChart"></canvas>
+        </div>
+        <div class="chart-card">
+          <h2 class="chart-title">Barangay/Purok Distribution</h2>
+          <canvas id="purokChart"></canvas>
         </div>
       </div>
-      <!-- Dashboard content here -->
     </div>
-
-    <script>
-      fetch('./header.html')
-        .then(res => res.text())
-        .then(html => {
-          document.getElementById('header-container').innerHTML = html;
-          // After injecting, run the header JS
-          const script = document.createElement('script');
-          script.src = '../../js/admin/header.js';
-          document.body.appendChild(script);
-        });
-    </script>
-
-    <script>
-      // Fade in on load
-      const content = document.querySelector('.content');
-      content.classList.add('page-fade');
-      window.addEventListener('DOMContentLoaded', () => {
-        setTimeout(() => {
-          content.classList.remove('page-fade');
-          content.classList.add('page-fade-in');
-        }, 10);
-      });
-
-      // Fade out on navigation for all internal links
-      document.querySelectorAll('a[href]').forEach(link => {
-        const href = link.getAttribute('href');
-        if (
-          href &&
-          !href.startsWith('http') &&
-          !href.startsWith('mailto:') &&
-          !href.startsWith('#') &&
-          !link.hasAttribute('target')
-        ) {
-          link.addEventListener('click', function(e) {
-            // Only fade if not a sidebar link
-            // (Sidebar links are outside .content, so always fade .content)
-            e.preventDefault();
-            content.classList.remove('page-fade-in');
-            content.classList.add('page-fade');
-            setTimeout(() => {
-              window.location.href = href;
-            }, 180); // match the CSS transition duration
-          });
-        }
-      });
-    </script>
     <script src="../../js/admin/admin-dashboard.js"></script>
   </body>
 </html>
