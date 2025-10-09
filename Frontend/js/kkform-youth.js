@@ -12,12 +12,18 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('attendanceCount').value = saved.attendanceCount || '';
   document.getElementById('reasonDidNotAttend').value = saved.reasonDidNotAttend || '';
 
-  const imagePreview = document.getElementById('imagePreview');
+  // Separate preview containers
+  const profileImagePreview = document.getElementById('profileImagePreview');
+  const signatureImagePreview = document.getElementById('signatureImagePreview');
   const profileImage = document.getElementById('profileImage');
+  const signatureImage = document.getElementById('signatureImage');
 
   // ✅ Restore saved image if exists
   if (saved.profileImage) {
-    renderImage(saved.profileImage);
+    renderProfileImage(saved.profileImage);
+  }
+  if (saved.signatureImage) {
+    renderSignatureImage(saved.signatureImage);
   }
 
   // Attendance logic
@@ -34,17 +40,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
-  // Image preview + save to localStorage as Base64
+  // Profile image preview
   profileImage.addEventListener('change', (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
       reader.onload = (e) => {
         const base64Image = e.target.result;
-
-        // Render preview with X button
-        renderImage(base64Image);
-
+        renderProfileImage(base64Image);
         // Save to localStorage
         const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
         current.profileImage = base64Image;
@@ -52,14 +55,14 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       reader.readAsDataURL(file);
     }
-    saveStep3(); // autosave on image change too
+    saveStep3();
   });
 
-  function renderImage(base64Image) {
-    imagePreview.innerHTML = `
+  function renderProfileImage(base64Image) {
+    profileImagePreview.innerHTML = `
       <div style="position: relative; display: inline-block; max-width: 220px;">
         <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px;">
-        <button id="removeImageBtn" style="
+        <button id="removeProfileImageBtn" style="
           position:absolute;
           top:5px;
           right:5px;
@@ -73,13 +76,56 @@ document.addEventListener('DOMContentLoaded', function() {
         ">×</button>
       </div>
     `;
-
-    // Handle remove button click
-    document.getElementById('removeImageBtn').addEventListener('click', () => {
-      imagePreview.innerHTML = "";
-      profileImage.value = ""; // clear file input
+    document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
+      profileImagePreview.innerHTML = "";
+      profileImage.value = "";
       const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
+      localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+    });
+  }
+
+  // Signature image preview
+  signatureImage.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const base64Image = e.target.result;
+        renderSignatureImage(base64Image);
+        // Save to localStorage
+        const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        current.signatureImage = base64Image;
+        localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      };
+      reader.readAsDataURL(file);
+    }
+    saveStep3();
+  });
+
+  function renderSignatureImage(base64Image) {
+    signatureImagePreview.innerHTML = `
+      <div style="position: relative; display: inline-block; max-width: 220px;">
+        <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px;">
+        <button id="removeSignatureImageBtn" style="
+          position:absolute;
+          top:5px;
+          right:5px;
+          background:red;
+          color:white;
+          border:none;
+          border-radius:50%;
+          width:24px;
+          height:24px;
+          cursor:pointer;
+        ">×</button>
+      </div>
+    `;
+    document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
+      signatureImagePreview.innerHTML = "";
+      signatureImage.value = "";
+      const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+      delete current.signatureImage;
       localStorage.setItem('kkProfileStep3', JSON.stringify(current));
     });
   }
@@ -166,7 +212,16 @@ document.addEventListener('DOMContentLoaded', function() {
     Object.entries(step2).forEach(([k, v]) => formData.append(k, v));
     // Step 3 (excluding profileImage)
     Object.entries(step3).forEach(([k, v]) => {
-      if (k !== 'profileImage') {
+      // Only send attendanceCount if attended
+      if (k === 'attendanceCount' && step3.attendedKKAssembly) {
+        formData.append(k, v);
+      }
+      // Only send reasonDidNotAttend if NOT attended
+      else if (k === 'reasonDidNotAttend' && !step3.attendedKKAssembly) {
+        formData.append(k, v);
+      }
+      // Send other fields
+      else if (k !== 'profileImage' && k !== 'attendanceCount' && k !== 'reasonDidNotAttend') {
         formData.append(k, v);
       }
     });
@@ -178,6 +233,14 @@ document.addEventListener('DOMContentLoaded', function() {
       // ✅ Fallback: convert Base64 from localStorage into a File
       const file = base64ToFile(step3.profileImage, "profile.png");
       formData.append('profileImage', file);
+    }
+
+    // ✅ Add signature image file if selected
+    if (youthForm.signatureImage && youthForm.signatureImage.files.length > 0) {
+      formData.append('signatureImage', youthForm.signatureImage.files[0]);
+    } else if (step3.signatureImage) {
+      const file = base64ToFile(step3.signatureImage, "signature.png");
+      formData.append('signatureImage', file);
     }
 
     try {
