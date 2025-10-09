@@ -87,4 +87,140 @@ document.addEventListener("DOMContentLoaded", () => {
       submitBtn.textContent = "Submit";
     }
   });
+
+  // Add to the top of your user JS files (after DOMContentLoaded)
+  function handleKKProfileNavClick(event) {
+    event.preventDefault();
+    const token = sessionStorage.getItem("token") || localStorage.getItem("token");
+    if (!token) {
+      Swal.fire({
+        icon: "warning",
+        title: "You need to log in first",
+        text: "Please log in to access KK Profiling.",
+        confirmButtonText: "OK",
+      }).then(() => {
+        window.location.href = "/Frontend/html/user/login.html";
+      });
+      return;
+    }
+
+    fetch("http://localhost:5000/api/kkprofiling/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+      .then((res) => {
+        if (res.status === 404) {
+          return res.json().then((data) => {
+            if (data.error === "You have not submitted a KK profile yet for the current cycle.") {
+              window.location.href = "kkform-personal.html";
+              return;
+            }
+          });
+        }
+        if (res.ok) {
+          Swal.fire({
+            title: "You already answered KK Profiling Form",
+            text: "Do you want to view your response?",
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonText: "Yes",
+            cancelButtonText: "No",
+          }).then((result) => {
+            if (result.isConfirmed) {
+              window.location.href = "confirmation/html/kkcofirmation.html";
+            }
+          });
+        } else {
+          window.location.href = "kkform-personal.html";
+        }
+      })
+      .catch(() => {
+        window.location.href = "kkform-personal.html";
+      });
+  }
+
+  // Attach to desktop nav button
+  const kkProfileNavBtnDesktop = document.getElementById("kkProfileNavBtnDesktop");
+  if (kkProfileNavBtnDesktop) {
+    kkProfileNavBtnDesktop.addEventListener("click", handleKKProfileNavClick);
+  }
+  // Attach to mobile nav button
+  const kkProfileNavBtnMobile = document.getElementById("kkProfileNavBtnMobile");
+  if (kkProfileNavBtnMobile) {
+    kkProfileNavBtnMobile.addEventListener("click", handleKKProfileNavClick);
+  }
+
+  // Hamburger menu toggle
+  const hamburger = document.getElementById('navbarHamburger');
+  const mobileMenu = document.getElementById('navbarMobileMenu');
+  if (hamburger && mobileMenu) {
+    hamburger.addEventListener('click', function () {
+      mobileMenu.classList.toggle('active');
+    });
+    // Optional: close menu when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
+        mobileMenu.classList.remove('active');
+      }
+    });
+  }
+
+  function handleLGBTQProfileNavClick(event) {
+    event.preventDefault();
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'You need to log in first',
+        text: 'Please log in to access LGBTQ+ Profiling.',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        window.location.href = '/Frontend/html/user/login.html';
+      });
+      return;
+    }
+
+    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(res => {
+        if (res.status === 404) {
+          return res.json().then(data => {
+            if (data.error === "You have not submitted an LGBTQ+ profile yet for the current cycle.") {
+              window.location.href = "lgbtqform.html";
+              return;
+            }
+          });
+        }
+        if (res.ok) {
+          Swal.fire({
+            title: "You already answered LGBTQ+ Profiling Form",
+            text: "Do you want to view your response?",
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonText: "Yes",
+            cancelButtonText: "No"
+          }).then(result => {
+            if (result.isConfirmed) {
+              window.location.href = "confirmation/html/lgbtqconfirmation.html";
+            }
+          });
+        } else {
+          window.location.href = "lgbtqform.html";
+        }
+      })
+      .catch(() => {
+        window.location.href = "lgbtqform.html";
+      });
+  }
+
+  // Attach to desktop nav button
+  const lgbtqProfileNavBtnDesktop = document.getElementById('lgbtqProfileNavBtnDesktop');
+  if (lgbtqProfileNavBtnDesktop) {
+    lgbtqProfileNavBtnDesktop.addEventListener('click', handleLGBTQProfileNavClick);
+  }
+  // Attach to mobile nav button
+  const lgbtqProfileNavBtnMobile = document.getElementById('lgbtqProfileNavBtnMobile');
+  if (lgbtqProfileNavBtnMobile) {
+    lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
+  }
 });

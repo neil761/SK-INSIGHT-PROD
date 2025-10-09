@@ -20,9 +20,9 @@
         <a href="./index.html" class="title">SK-PBW</a>
       </div>
       <div class="navbar-center">
-        <a href="./kkform-personal.html" class="prof">KK Profile</a>
-        <a href="./lgbtqform.html" class="prof">LGBTQ+ Profile</a>
-        <a href="./Educational-assistance-user.html" class="prof">Educational Assistance</a>
+        <a href="./kkform-personal.html" id="kkProfileNavBtnDesktop" class="nav-btn">KK Profile</a>
+        <a href="./lgbtqform.html" id="lgbtqProfileNavBtnDesktop"  class="nav-btn">LGBTQ+ Profile</a>
+        <a href="./Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
       </div>
       <div class="navbar-right">
         <span class="navbar-hamburger" id="navbarHamburger">
@@ -34,9 +34,17 @@
     </div>
 
     <div class="navbar-mobile-menu" id="navbarMobileMenu">
-      <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
-      <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
+      <a href="./kkform-personal.html" id="kkProfileNavBtnMobile" class="nav-btn">KK Profile</a>
+      <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile"  class="nav-btn">LGBTQ+ Profile</a>
       <a href="./Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
+    </div>
+
+        <!-- Login Required Strip -->
+    <div id="login-strip" class="login-strip" style="display:none;">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>
+        You need to <a href="/Frontend/html/user/login.html">login</a> to access full features.
+      </span>
     </div>
 
     <!-- About Section -->
@@ -100,4 +108,5 @@
     </footer>
   </body>
   <script src="../../js/about.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </html>
