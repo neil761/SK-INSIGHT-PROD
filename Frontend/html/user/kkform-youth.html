@@ -106,8 +106,8 @@
         <label class="kk-label" for="reasonDidNotAttend">Why didn't you attend?</label>
         <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend">
           <option value="">Select</option>
-          <option value="there was no kk assembly">There was no KK assembly</option>
-          <option value="not interested">Not interested</option>
+          <option value="There was no KK Assembly">There was no KK Assembly</option>
+          <option value="Not interested">Not interested</option>
         </select>
       </div>
       <div class="kk-card">
@@ -118,9 +118,8 @@
           </label>
           <input type="file" id="profileImage" name="profileImage" accept="image/*" style="display:none;">
           <span class="file-name" id="profileImageFileName"></span>
-          <i class="fa-solid fa-eye view-icon" id="viewProfileImage" style="margin-left:8px;"></i>
-          <i class="fa-solid fa-trash delete-icon" id="deleteProfileImage" style="margin-left:8px;"></i>
         </span>
+        <div id="profileImagePreview" class="image-preview"></div>
       </div>
 
       <div class="kk-card">
@@ -131,12 +130,10 @@
           </label>
           <input type="file" id="signatureImage" name="signatureImage" accept="image/*" style="display:none;">
           <span class="file-name" id="signatureImageFileName"></span>
-          <i class="fa-solid fa-eye view-icon" id="viewSignatureImage" style="margin-left:8px;"></i>
-          <i class="fa-solid fa-trash delete-icon" id="deleteSignatureImage" style="margin-left:8px;"></i>
         </span>
+        <div id="signatureImagePreview" class="image-preview"></div>
       </div>
 
-      <div id="imagePreview" class="image-preview"></div>
       <div class="kk-btn-group">
         <button type="button" class="kk-btn" onclick="window.location.href='kkform-address.html'">Previous</button>
         <button type="submit" class="kk-btn kk-submit-btn">Finish</button>
