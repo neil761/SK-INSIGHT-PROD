@@ -1,5 +1,7 @@
+import { renderEducationalBackgroundBar } from '../charts/educational-background-chart.js';
+
 document.addEventListener("DOMContentLoaded", () => {
-  // Custom dropdown filter logic (like KK Profile)
+  // Filter dropdown logic only
   const yearDropdown = document.getElementById("yearDropdown");
   const yearButton = yearDropdown.querySelector(".dropdown-button");
   const yearContent = yearDropdown.querySelector(".dropdown-content");
@@ -116,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
       alert("Please select both year and cycle before filtering.");
       return;
     }
-    updateDashboard(currentFilters.year, currentFilters.cycle);
+    // You can add logic here to update the prediction chart based on filter if needed
   });
 
   // Clear filter resets everything
@@ -127,327 +129,201 @@ document.addEventListener("DOMContentLoaded", () => {
     yearContent.style.display = "none";
     cycleContent.style.display = "none";
     currentFilters = {};
-    updateDashboard(); // Show present profiling
+    // You can add logic here to reset the prediction chart if needed
   });
 
 
-  const chartConfigs = {};
+  fetchCycles();
+  initPredictionChart();
+  renderCivilStatusDonutFromAPI(); // <-- Call this directly here
+  renderEducationalBackgroundBar(); // Call the imported function
 
-  // Chart.js chart instances
-  let genderChart, ageChart, civilStatusChart, educationChart, employmentChart, skVoterChart, assemblyChart, purokChart;
+});
 
-  // Color palette for SK Insight
-  const palette = [
-    "#07B0F2", "#0A2C59", "#FED600", "#ef4444", "#22c55e", "#6366f1", "#f59e42", "#f472b6", "#a3e635"
+function renderCivilStatusDonutFromAPI(year, cycle) {
+  const civilStatusCategories = [
+    "Single", "Live-in", "Married", "Unknown", "Separated",
+    "Annulled", "Divorced", "Widowed"
+  ];
+  const colors = [
+    "#07B0F2", "#FED600", "#0A2C59", "#ef4444",
+    "#22c55e", "#6366f1", "#f59e42", "#f472b6"
   ];
 
-  // Fetch profiling data for selected cycle (using year & cycle)
-  // If no year/cycle, fetch present profiling (default)
-  async function fetchProfilingData(year, cycle) {
-    const token = sessionStorage.getItem("token");
-    if (!token) {
-      alert("Session expired. Please log in again.");
-      window.location.href = "/Frontend/html/admin/admin-log.html";
-      return {};
-    }
-    let url = "http://localhost:5000/api/kkprofiling";
-    if (year && cycle) {
-      url += `?year=${year}&cycle=${cycle}`;
-    }
-    const res = await fetch(url, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) {
-      if (res.status === 401 || res.status === 403) {
-        alert("Session expired or unauthorized. Please log in again.");
-        window.location.href = "/Frontend/html/admin/admin-log.html";
-        return {};
-      }
-      console.error("Failed to fetch profiling data:", res.status);
-      return {};
-    }
-    return await res.json();
-  }
+  const token = sessionStorage.getItem("token");
+  if (!token) return;
+  let url = "http://localhost:5000/api/kkprofiling";
+  if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
+  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => res.json())
+    .then(profiles => {
+      // Count civil status
+      const counts = civilStatusCategories.map(
+        status => profiles.filter(p => p.civilStatus === status).length
+      );
+      const total = counts.reduce((a, b) => a + b, 0);
+      const percentages = counts.map(v => total ? ((v / total) * 100).toFixed(1) : "0.0");
+      const mostCommonIdx = counts.indexOf(Math.max(...counts));
+      const mostCommon = civilStatusCategories[mostCommonIdx] || "—";
 
-  // Chart rendering helpers
-  function renderPieChart(ctx, labels, data, colors, title) {
-    if (chartConfigs[ctx]) chartConfigs[ctx].destroy();
-    chartConfigs[ctx] = new Chart(document.getElementById(ctx), {
-      type: "pie",
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { position: "bottom" },
-          title: { display: false }
-        }
-      }
-    });
-  }
-
-  function renderDonutChart(ctx, labels, data, colors) {
-    if (chartConfigs[ctx]) chartConfigs[ctx].destroy();
-    chartConfigs[ctx] = new Chart(document.getElementById(ctx), {
-      type: "doughnut",
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-        }]
-      },
-      options: {
-        responsive: true,
-        cutout: "60%",
-        plugins: {
-          legend: { position: "bottom" }
-        }
-      }
-    });
-  }
-
-  function renderBarChart(ctx, labels, data, colors, stacked = false) {
-    if (chartConfigs[ctx]) chartConfigs[ctx].destroy();
-    chartConfigs[ctx] = new Chart(document.getElementById(ctx), {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: colors,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
+      // Chart.js donut with center text for total respondents
+      const canvas = document.getElementById("civilStatusDonut");
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (window.civilStatusChart) window.civilStatusChart.destroy();
+      window.civilStatusChart = new Chart(ctx, {
+        type: "doughnut",
+        data: {
+          labels: civilStatusCategories,
+          datasets: [{
+            data: counts,
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: "#fff"
+          }]
         },
-        scales: {
-          x: { stacked },
-          y: { stacked, beginAtZero: true }
-        }
-      }
-    });
-  }
-
-  function renderLineChart(ctx, labels, data, colors) {
-    if (chartConfigs[ctx]) chartConfigs[ctx].destroy();
-    chartConfigs[ctx] = new Chart(document.getElementById(ctx), {
-      type: "line",
-      data: {
-        labels,
-        datasets: [{
-          data,
-          borderColor: colors[0],
-          backgroundColor: colors[0] + "33",
-          fill: true,
-        }]
-      },
-      options: {
-        responsive: true,
-        plugins: {
-          legend: { display: false }
-        }
-      }
-    });
-  }
-
-  // Aggregate dashboard data from profiles
-  function aggregateDashboardData(profiles) {
-    // Helper to count occurrences
-    const countBy = (arr, key) =>
-      arr.reduce((acc, obj) => {
-        const val = obj[key] || "Unknown";
-        acc[val] = (acc[val] || 0) + 1;
-        return acc;
-      }, {});
-
-    return {
-      gender: countBy(profiles, "gender"),
-      ageGroups: countBy(profiles, "youthAgeGroup"),
-      civilStatus: countBy(profiles, "civilStatus"),
-      education: countBy(profiles, "educationalBackground"),
-      employment: countBy(profiles, "workStatus"),
-      skVoter: {
-        Registered: profiles.filter(p => p.registeredSKVoter).length,
-        NotRegistered: profiles.filter(p => !p.registeredSKVoter).length,
-        Voted: profiles.filter(p => p.votedLastSKElection).length,
-        DidNotVote: profiles.filter(p => !p.votedLastSKElection).length
-      },
-      assemblyAttendance: countBy(profiles, "attendanceCount"),
-      purok: countBy(profiles, "purok")
-    };
-  }
-
-  // Main dashboard update
-  async function updateDashboard(year, cycle) {
-    // If no year/cycle, fetch present profiling
-    const profiles = await fetchProfilingData(year, cycle);
-    if (!Array.isArray(profiles) || profiles.length === 0) {
-      // Optionally clear charts or show "No data"
-      return;
-    }
-    const data = aggregateDashboardData(profiles);
-
-    // Use safe defaults to avoid breaking charts
-    const gender = data.gender || {};
-    const ageGroups = data.ageGroups || {};
-    const civilStatus = data.civilStatus || {};
-    const education = data.education || {};
-    const employment = data.employment || {};
-    const skVoter = data.skVoter || {};
-    const assemblyAttendance = data.assemblyAttendance || {};
-    const purok = data.purok || {};
-
-    // Gender Pie
-    renderPieChart(
-      "genderChart",
-      Object.keys(gender),
-      Object.values(gender),
-      palette,
-      "Gender Distribution"
-    );
-
-    // Age Bar
-    renderBarChart(
-      "ageChart",
-      Object.keys(ageGroups),
-      Object.values(ageGroups),
-      palette
-    );
-
-    // Civil Status Donut
-    renderDonutChart(
-      "civilStatusChart",
-      Object.keys(civilStatus),
-      Object.values(civilStatus),
-      palette
-    );
-
-    // Education Bar
-    renderBarChart(
-      "educationChart",
-      Object.keys(education),
-      Object.values(education),
-      palette
-    );
-
-    // Employment Pie
-    renderPieChart(
-      "employmentChart",
-      Object.keys(employment),
-      Object.values(employment),
-      palette
-    );
-
-    // SK Voter Bar
-    renderBarChart(
-      "skVoterChart",
-      Object.keys(skVoter),
-      Object.values(skVoter),
-      palette
-    );
-
-    // Assembly Stacked Bar
-    renderBarChart(
-      "assemblyChart",
-      Object.keys(assemblyAttendance),
-      Object.values(assemblyAttendance),
-      palette,
-      true
-    );
-
-    // Purok Bar
-    renderBarChart(
-      "purokChart",
-      Object.keys(purok),
-      Object.values(purok),
-      palette
-    );
-
-    // Update chart info (e.g., totals, majorities)
-    updateChartInfo(data);
-  }
-
-  // Add this function at the end of your file
-  function initPredictionChart() {
-    const ctx = document.getElementById('predictionChart').getContext('2d');
-    // Placeholder data
-    const actualData = [65, 78, 82, 75, 85, 92, 88, 95];
-    const predictedData = [null, null, null, 79, 88, 95, 98, 102];
-    const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
-
-    new Chart(ctx, {
-      type: 'line',
-      data: {
-        labels: labels,
-        datasets: [
-          {
-            label: 'Actual Data',
-            data: actualData,
-            borderColor: '#07B0F2',
-            backgroundColor: 'rgba(7,176,242,0.1)',
-            tension: 0.4,
-            fill: true
-          },
-          {
-            label: 'Predicted Trend',
-            data: predictedData,
-            borderColor: '#FED600',
-            backgroundColor: 'rgba(254,214,0,0.1)',
-            borderDash: [5, 5],
-            tension: 0.4,
-            fill: true
-          }
-        ]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-          legend: { display: false },
-          tooltip: {
-            mode: 'index',
-            intersect: false,
-            backgroundColor: 'rgba(255,255,255,0.9)',
-            titleColor: '#0A2C59',
-            bodyColor: '#0A2C59',
-            borderColor: '#e1e8ff',
-            borderWidth: 1,
-            padding: 12,
-            boxPadding: 6,
-            usePointStyle: true
+        options: {
+          responsive: true,
+          maintainAspectRatio: true,
+          aspectRatio: 1,
+          cutout: "70%",
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const idx = context.dataIndex;
+                  return `${civilStatusCategories[idx]}: ${counts[idx]} (${percentages[idx]}%)`;
+                }
+              }
+            },
+            doughnutCenter: {
+              display: true,
+              text1: "Total",
+              text2: total
+            }
           }
         },
-        scales: {
-          x: { grid: { display: false } },
-          y: { grid: { borderDash: [4, 4] } }
-        }
+        plugins: [{
+          id: 'doughnutCenter',
+          afterDraw: function(chart) {
+            const opts = chart.options.plugins.doughnutCenter;
+            if (!opts || !opts.display) return;
+            const { ctx, chartArea: area } = chart;
+            ctx.save();
+            ctx.font = "bold 0.75rem Poppins, sans-serif"; // smaller
+            ctx.fillStyle = "#0A2C59";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(opts.text1, (area.left + area.right) / 2, (area.top + area.bottom) / 2 - 10);
+            ctx.font = "bold 1.1rem Poppins, sans-serif"; // smaller
+            ctx.fillStyle = "#07B0F2";
+            ctx.fillText(opts.text2, (area.left + area.right) / 2, (area.top + area.bottom) / 2 + 12);
+            ctx.restore();
+          }
+        }]
+      });
+
+      // Legend
+      const legend = document.querySelector(".civil-status-legend");
+      if (legend) {
+        legend.innerHTML = civilStatusCategories.map((label, i) =>
+          `<span class="legend-item">
+            <span class="legend-dot" style="background:${colors[i]}"></span>
+            ${label}
+          </span>`
+        ).join("");
+      }
+
+      // Remove any Chart.js-generated HTML legend from previous renders (ul or div)
+      document.querySelectorAll('.chartjs-legend, ul.chartjs-legend, div.chartjs-legend').forEach(el => el.remove());
+
+      // Info summary (no total respondents here)
+      const mostElem = document.getElementById("civilStatusMost");
+      if (mostElem) mostElem.textContent = mostCommon;
+      const percElem = document.getElementById("civilStatusPercentages");
+      if (percElem) {
+        // Build two columns
+        const items = civilStatusCategories
+          .map((label, i) =>
+            counts[i] > 0
+              ? `<span><strong>${label}:</strong> ${percentages[i]}%  </span>`// (${counts[i]}) //this shouldd be beside the percentage if needed   
+              : ""
+          )
+          .filter(Boolean);
+
+        // Split into two columns
+        const mid = Math.ceil(items.length / 2);
+        const col1 = items.slice(0, mid);
+        const col2 = items.slice(mid);
+
+        percElem.innerHTML = `
+          <div style="display: flex; gap: 1rem;">
+            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+              ${col1.join("")}
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 0.2rem;">
+              ${col2.join("")}
+            </div>
+          </div>
+        `;
       }
     });
-  }
+}
 
-  // Call this after other charts are initialized
-  initPredictionChart();
+// Minimal prediction chart for demo
+function initPredictionChart() {
+  const ctx = document.getElementById('predictionChart').getContext('2d');
+  const actualData = [65, 78, 82, 75, 85, 92, 88, 95];
+  const predictedData = [null, null, null, 79, 88, 95, 98, 102];
+  const labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
 
-  // Example: Update chart info for Gender Distribution
-  function updateChartInfo(data) {
-    // Gender
-    const genderTotal = Object.values(data.gender || {}).reduce((a, b) => a + b, 0);
-    document.getElementById('genderTotal').textContent = genderTotal;
-    const majority = Object.entries(data.gender || {}).sort((a, b) => b[1] - a[1])[0];
-    document.getElementById('genderMajority').textContent = majority ? majority[0] : '-';
-
-    // Repeat for other charts: age, civil status, etc.
-  }
-
-  // Initial load
-  fetchCycles();
-  updateDashboard(); // Show present profiling by default
-});
+  new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'Actual Data',
+          data: actualData,
+          borderColor: '#07B0F2',
+          backgroundColor: 'rgba(7,176,242,0.1)',
+          tension: 0.4,
+          fill: true
+        },
+        {
+          label: 'Predicted Trend',
+          data: predictedData,
+          borderColor: '#FED600',
+          backgroundColor: 'rgba(254,214,0,0.1)',
+          borderDash: [5, 5],
+          tension: 0.4,
+          fill: true
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          mode: 'index',
+          intersect: false,
+          backgroundColor: 'rgba(255,255,255,0.9)',
+          titleColor: '#0A2C59',
+          bodyColor: '#0A2C59',
+          borderColor: '#e1e8ff',
+          borderWidth: 1,
+          padding: 12,
+          boxPadding: 6,
+          usePointStyle: true
+        }
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { grid: { borderDash: [4, 4] } }
+      }
+    }
+  });
+}
