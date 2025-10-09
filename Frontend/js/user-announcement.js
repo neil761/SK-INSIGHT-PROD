@@ -1,3 +1,6 @@
+// =========================
+// ANNOUNCEMENT SECTION
+// =========================
 document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.querySelector(".announcement-table tbody");
   const modal = document.getElementById("announcementModal");
@@ -8,53 +11,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const closeModalBtn = modal.querySelector(".close-modal");
 
   // Fetch announcements
-async function fetchAnnouncements() {
-  try {
-    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  async function fetchAnnouncements() {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
-    const res = await fetch("http://localhost:5000/api/announcements", {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+      const res = await fetch("http://localhost:5000/api/announcements", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
 
-    if (!res.ok) {
-      console.error("Fetch failed:", res.status, await res.text());
-      throw new Error("Failed to fetch announcements");
+      if (!res.ok) {
+        console.error("Fetch failed:", res.status, await res.text());
+        throw new Error("Failed to fetch announcements");
+      }
+
+      const data = await res.json();
+      if (!data.success) {
+        throw new Error(data.message || "Failed to fetch announcements");
+      }
+
+      renderAnnouncements(data.announcements || []);
+    } catch (err) {
+      console.error("Error fetching announcements:", err);
+      tableBody.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align:center">Error loading announcements</td>
+        </tr>
+      `;
     }
-
-    const data = await res.json();
-    if (!data.success) {
-      throw new Error(data.message || "Failed to fetch announcements");
-    }
-
-    renderAnnouncements(data.announcements || []);
-  } catch (err) {
-    console.error("Error fetching announcements:", err);
-    tableBody.innerHTML = `
-      <tr>
-        <td colspan="4" style="text-align:center">Error loading announcements</td>
-      </tr>
-    `;
   }
-}
-
-
 
   // Render announcements into table
   function renderAnnouncements(announcements) {
     tableBody.innerHTML = "";
 
-    // Filter out expired announcements
     const now = new Date();
     const upcomingAnnouncements = announcements.filter(a => {
       const ev = new Date(a.eventDate);
       return ev >= now;
     });
 
-    // Sort and limit to 5
     upcomingAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
     const limitedAnnouncements = upcomingAnnouncements.slice(0, 5);
 
-    // Render actual announcements
     limitedAnnouncements.forEach(a => {
       const status = getAnnouncementStatus(a.eventDate);
       const tr = document.createElement("tr");
@@ -76,45 +74,41 @@ async function fetchAnnouncements() {
       tableBody.appendChild(tr);
     });
 
-    // Fill remaining rows with "No Announcement yet."
     for (let i = limitedAnnouncements.length; i < 5; i++) {
-  const tr = document.createElement("tr");
-  tr.innerHTML = `
-    <td colspan="4" style="text-align:center; color: #888;">No announcements yet</td>
-  `;
-  tableBody.appendChild(tr);
-}
-  }
-
-  // Handle view button clicks (modal)
-  document.addEventListener("click", async (e) => {
-  if (e.target.closest(".view-btn")) {
-    const id = e.target.closest(".view-btn").dataset.id;
-    try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
-      const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`
-        }
-      });
-
-      if (!res.ok) throw new Error("Announcement not found");
-      const { announcement } = await res.json();
-
-      modalTitle.textContent = announcement.title;
-      modalEventDate.textContent = formatDateTime(announcement.eventDate);
-      modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
-      modalDescription.textContent = announcement.content;
-
-      modal.classList.add("active");
-    } catch (err) {
-      console.error("Error fetching announcement:", err);
-      alert("Failed to load announcement details");
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td colspan="4" style="text-align:center; color: #888;">No announcements yet</td>
+      `;
+      tableBody.appendChild(tr);
     }
   }
-});
 
+  // View modal handler
+  document.addEventListener("click", async (e) => {
+    if (e.target.closest(".view-btn")) {
+      const id = e.target.closest(".view-btn").dataset.id;
+      try {
+        const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+        const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error("Announcement not found");
+        const { announcement } = await res.json();
+
+        modalTitle.textContent = announcement.title;
+        modalEventDate.textContent = formatDateTime(announcement.eventDate);
+        modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
+        modalDescription.textContent = announcement.content;
+
+        modal.classList.add("active");
+      } catch (err) {
+        console.error("Error fetching announcement:", err);
+        alert("Failed to load announcement details");
+      }
+    }
+  });
 
   // Close modal
   closeModalBtn.addEventListener("click", () => {
@@ -124,12 +118,16 @@ async function fetchAnnouncements() {
     if (e.target === modal) modal.classList.remove("active");
   });
 
-  // Helpers
+  // Helper functions
   function formatDateTime(dt) {
     if (!dt) return "";
     return new Date(dt).toLocaleString("en-US", {
-      year: "numeric", month: "short", day: "2-digit",
-      hour: "2-digit", minute: "2-digit", hour12: true
+      year: "numeric",
+      month: "short",
+      day: "2-digit",
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true
     });
   }
 
@@ -140,15 +138,20 @@ async function fetchAnnouncements() {
     return ev >= now ? "Upcoming" : "Expired";
   }
 
-  // Initial load
+  // Load announcements on page load
   fetchAnnouncements();
 });
 
+
+// =========================
+// NAVBAR & KK PROFILING SECTION
+// =========================
 document.addEventListener('DOMContentLoaded', function() {
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
+
   if (hamburger && mobileMenu) {
-    console.log('hamburger:', hamburger, 'mobileMenu:', mobileMenu);
+    console.log('✅ Navbar loaded');
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
       mobileMenu.classList.toggle('active');
@@ -158,5 +161,129 @@ document.addEventListener('DOMContentLoaded', function() {
         mobileMenu.classList.remove('active');
       }
     });
+  }
+
+  // ✅ KK Profile click handler
+  async function handleKKProfileNavClick(event) {
+    event.preventDefault();
+    console.log("🟢 KK Profile button clicked");
+
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'You need to log in first',
+        text: 'Please log in to access KK Profiling.',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        window.location.href = '/Frontend/html/user/login.html';
+      });
+      return;
+    }
+
+    try {
+      console.log("📡 Fetching profile...");
+      const res = await fetch('http://localhost:5000/api/kkprofiling/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      console.log("📩 Response status:", res.status);
+
+      if (res.status === 404) {
+        const data = await res.json();
+        console.log("ℹ️ No KK profile yet:", data);
+        if (data.error === "You have not submitted a KK profile yet for the current cycle.") {
+          window.location.href = "kkform-personal.html";
+          return;
+        }
+      }
+
+      if (res.ok) {
+        console.log("✅ Profile exists, showing SweetAlert...");
+        Swal.fire({
+          title: "You already answered KK Profiling Form",
+          text: "Do you want to view your response?",
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        }).then(result => {
+          if (result.isConfirmed) {
+            console.log("➡️ Redirecting to confirmation page...");
+            window.location.href = "confirmation/html/kkcofirmation.html";
+          }
+        });
+      } else {
+        console.log("❌ Not OK response, redirecting to form...");
+        window.location.href = "kkform-personal.html";
+      }
+    } catch (error) {
+      console.error('🔥 Fetch error:', error);
+      window.location.href = "kkform-personal.html";
+    }
+  }
+
+  // ✅ Attach event listeners to both nav links
+  const kkProfileNavBtn = document.querySelector('.navbar-center a[href="./kkform-personal.html"]');
+  const kkProfileNavBtnMobile = document.getElementById('kkProfileNavBtnMobile');
+
+  if (kkProfileNavBtn) {
+    console.log("✅ Desktop KK Profile button found");
+    kkProfileNavBtn.addEventListener('click', handleKKProfileNavClick);
+  } else {
+    console.warn("⚠️ Desktop KK Profile button NOT found");
+  }
+
+  if (kkProfileNavBtnMobile) {
+    console.log("✅ Mobile KK Profile button found");
+    kkProfileNavBtnMobile.addEventListener('click', handleKKProfileNavClick);
+  } else {
+    console.warn("⚠️ Mobile KK Profile button NOT found");
+  }
+
+  // ✅ LGBTQ Profile click handler
+  async function handleLGBTQProfileNavClick(event) {
+    event.preventDefault();
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'You need to log in first',
+        text: 'Please log in to access LGBTQ+ Profiling.',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        window.location.href = '/Frontend/html/user/login.html';
+      });
+      return;
+    }
+
+    fetch('http://localhost:5000/api/lgbtqprofiling/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async res => {
+        const data = await res.json();
+        // If profile exists (res.ok), go to confirmation
+        if (res.ok && data && data._id) {
+          window.location.href = "confirmation/html/lgbtqconfirmation.html";
+          return;
+        }
+        // If no profile (404 or error), go to profiling form
+        window.location.href = "lgbtqform.html";
+      })
+      .catch(() => {
+        window.location.href = "lgbtqform.html";
+      });
+  }
+
+  // Attach to desktop nav button
+  const lgbtqProfileNavBtnDesktop = document.getElementById('lgbtqProfileNavBtnDesktop');
+  if (lgbtqProfileNavBtnDesktop) {
+    lgbtqProfileNavBtnDesktop.addEventListener('click', handleLGBTQProfileNavClick);
+  }
+
+  // Attach to mobile nav button
+  const lgbtqProfileNavBtnMobile = document.getElementById('lgbtqProfileNavBtnMobile');
+  if (lgbtqProfileNavBtnMobile) {
+    lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
   }
 });

@@ -280,6 +280,51 @@
     font-size: 14px;
     color: #cfd9e8;
   }
+
+  /* Login Strip */
+.login-strip {
+  position: fixed;
+  top: calc(1rem + 70px); /* 1rem navbar offset + navbar height */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 900px;
+  background: linear-gradient(90deg, #0A2C59 80%, #143d77 100%);
+  color: #fff;
+  text-align: center;
+  padding: 13px 0;
+  font-size: 17px;
+  font-weight: 500;
+  border-radius: 10px;
+  box-shadow: 0 4px 18px rgba(10,44,89,0.10);
+  border-bottom: 2px solid #ffd700;
+  letter-spacing: 0.5px;
+  opacity: 0.97;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  z-index: 1100;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.login-strip a {
+  color: #ffd700;
+  text-decoration: underline;
+  font-weight: bold;
+  transition: color 0.2s;
+}
+
+.login-strip a:hover {
+  color: #fffbe7;
+}
+
+.login-strip i {
+  color: #ffd700;
+  font-size: 20px;
+  margin-right: 6px;
+}
   
   /* ✅ Responsive Footer */
   @media (max-width: 992px) {
