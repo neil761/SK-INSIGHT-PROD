@@ -14,7 +14,12 @@ const ImageModule = require("docxtemplater-image-module-free");
 
 // Checkbox utility
 function checkbox(value, match) {
-  return value === match ? "☑" : "☐";
+  if (value === undefined || value === null) return "☐";
+  // If value is boolean, compare directly
+  if (typeof value === "boolean") return value === match ? "☑" : "☐";
+  // If value is not a string, convert to string
+  const valStr = typeof value === "string" ? value : String(value);
+  return valStr.trim().toLowerCase() === String(match).trim().toLowerCase() ? "☑" : "☐";
 }
 
 // Image module setup
@@ -51,7 +56,7 @@ router.get("/export/:id", protect, async (req, res) => {
 
     const templatePath = path.resolve(
       __dirname,
-      "../templates/kk_profiling_template - for merge.docx"
+      "../templates/kkForm.docx"
     );
     console.log("Template Path:", templatePath);
     if (!fs.existsSync(templatePath)) {
@@ -75,6 +80,7 @@ router.get("/export/:id", protect, async (req, res) => {
       return date.toLocaleDateString("en-US", options); // e.g., March 31, 2004
     }
 
+    // Helper for age calculation
     function calculateAge(birthday) {
       if (!birthday) return "";
       const today = new Date();
@@ -102,63 +108,124 @@ router.get("/export/:id", protect, async (req, res) => {
         ? { data: fs.readFileSync(signatureImagePath, "base64") }
         : null;
 
+    // Helper for dd/mm/yy format
+    function formatDateDMY(date) {
+      if (!date) return "";
+      const d = new Date(date);
+      const day = String(d.getDate()).padStart(2, "0");
+      const month = String(d.getMonth() + 1).padStart(2, "0");
+      const year = String(d.getFullYear()).slice(-2);
+      return `${day} /${month} /${year}`;
+    }
+
     // Render data into template
     doc.render({
-      // Personal info
-      firstname: profile.firstname || "",
       lastname: profile.lastname || "",
+      firstname: profile.firstname || "",
       middlename: profile.middlename || "",
-      age: calculateAge(profile.birthday),
+      // Middle initial (first letter of middlename, uppercased, with a dot if exists)
+      middle_initial: profile.middlename && profile.middlename.length > 0
+        ? profile.middlename.trim()[0].toUpperCase() + "."
+        : "",
+      suffix: profile.suffix || "",
       gender: profile.gender || "",
-      birthday: formatBirthday(profile.birthday),
-      address: `${profile.purok || ""}, ${profile.barangay || ""}, ${
-        profile.municipality || ""
-      }, ${profile.province || ""}`,
+
+      // Gender checkboxes
+      male: checkbox(profile.gender, "Male"),
+      female: checkbox(profile.gender, "Female"),
+
+      region: profile.region || "",
+      province: profile.province || "",
+      municipality: profile.municipality || "",
+      barangay: profile.barangay || "",
+      purok: profile.purok || "",
+
+      email: profile.email || "",
       contact: profile.contactNumber || "",
-      remarks: profile.remarks || "",
 
-      // Civil Status
-      single_checkbox: checkbox(profile.civilStatus, "Single"),
-      married_checkbox: checkbox(profile.civilStatus, "Married"),
-      widowed_checkbox: checkbox(profile.civilStatus, "Widowed"),
-      separated_checkbox: checkbox(profile.civilStatus, "Separated"),
+// Civil Status checkboxes
+      single: checkbox(profile.civilStatus, "Single"),
+      livein: checkbox(profile.civilStatus, "Live-in"),
+      married: checkbox(profile.civilStatus, "Married"),
+      unknown: checkbox(profile.civilStatus, "Unknown"),
+      separated: checkbox(profile.civilStatus, "Separated"),
+      annulled: checkbox(profile.civilStatus, "Annulled"),
+      divorced: checkbox(profile.civilStatus, "Divorced"),
+      widowed: checkbox(profile.civilStatus, "Widowed"),
 
-      // Educational Background
-      elem_grad_checkbox: checkbox(profile.educationalBackground, "Elementary Graduate"),
-      hs_grad_checkbox: checkbox(profile.educationalBackground, "High School Graduate"),
-      college_grad_checkbox: checkbox(profile.educationalBackground, "College Graduate"),
-      voc_grad_checkbox: checkbox(profile.educationalBackground, "Vocational Graduate"),
-      none_checkbox: checkbox(profile.educationalBackground, "None"),
+      // Youth Age Group checkboxes
+      child: checkbox(profile.youthAgeGroup, "Child Youth"),
+      core: checkbox(profile.youthAgeGroup, "Core Youth"),
+      young: checkbox(profile.youthAgeGroup, "Young Youth"),
 
-      // Work Status
-      employed_checkbox: checkbox(profile.workStatus, "Employed"),
-      unemployed_checkbox: checkbox(profile.workStatus, "Unemployed"),
-      student_checkbox: checkbox(profile.workStatus, "Student"),
-      self_checkbox: checkbox(profile.workStatus, "Self-Employed"),
-      others_checkbox:
-        profile.workStatus &&
-        !["Employed", "Unemployed", "Student", "Self-Employed"].includes(profile.workStatus)
-          ? "☑"
-          : "☐",
-      otherWorkStatus:
-        profile.workStatus &&
-        !["Employed", "Unemployed", "Student", "Self-Employed"].includes(profile.workStatus)
-          ? profile.workStatus
-          : "",
+      // Youth Classification checkboxes
+      is_c: checkbox(profile.youthClassification, "In School Youth"),
+      os_c: checkbox(profile.youthClassification, "Out of School Youth"),
+      work_c: checkbox(profile.youthClassification, "Working Youth"),
+      spec_c: checkbox(profile.youthClassification, "Youth with Specific Needs"),
 
-      // Youth Classification
-      inschool_checkbox: checkbox(profile.youthClassification, "In School Youth"),
-      outschool_checkbox: checkbox(profile.youthClassification, "Out of School Youth"),
-      working_checkbox: checkbox(profile.youthClassification, "Working Youth"),
-      special_checkbox: checkbox(profile.youthClassification, "Youth with Specific Needs"),
+      // Educational Background checkboxes
+      elemu_c: checkbox(profile.educationalBackground, "Elementary Undergraduate"),
+      elemg_c: checkbox(profile.educationalBackground, "Elementary Graduate"),
+      hsu_c: checkbox(profile.educationalBackground, "High School Undergraduate"),
+      hsg_c: checkbox(profile.educationalBackground, "High School Graduate"),
+      vocg_c: checkbox(profile.educationalBackground, "Vocational Graduate"),
+      collu_c: checkbox(profile.educationalBackground, "College Undergraduate"),
+      collg_c: checkbox(profile.educationalBackground, "College Graduate"),
+      masl_c: checkbox(profile.educationalBackground, "Masters Level"),
+      masg_c: checkbox(profile.educationalBackground, "Masters Graduate"),
+      doctl_c: checkbox(profile.educationalBackground, "Doctorate Level"),
+      doctg_c: checkbox(profile.educationalBackground, "Doctorate Graduate"),
 
-      // Images
-      profileImage: profileImagePath && fs.existsSync(profileImagePath)
-        ? { data: fs.readFileSync(profileImagePath, "base64") }
+      // Work Status checkboxes
+      emp_c: checkbox(profile.workStatus, "Employed"),
+      un_c: checkbox(profile.workStatus, "Unemployed"),
+      self_c: checkbox(profile.workStatus, "Self-Employed"),
+      look_c: checkbox(profile.workStatus, "Currently looking for a Job"),
+      not_c: checkbox(profile.workStatus, "Not interested in looking for a Job"),
+
+      // Attendance Count checkboxes
+      a12_c: checkbox(profile.attendanceCount, "1-2 times"),
+      a34_c: checkbox(profile.attendanceCount, "3-4 times"),
+      a5_c: checkbox(profile.attendanceCount, "5 and above"),
+
+      // had attended kk assembly checkboxes
+      vot_yes: checkbox(profile.attendedKKAssembly, true),
+      vot_no: checkbox(profile.attendedKKAssembly, false),
+
+      // Reason Did Not Attend checkboxes
+      rno_c: checkbox(profile.reasonDidNotAttend, "There was no KK Assembly"),
+      rnot_c: checkbox(profile.reasonDidNotAttend, "Not interested"),
+
+      // Registered SK Voter checkboxes
+      sk_yes: checkbox(profile.registeredSKVoter, true),
+      sk_no: checkbox(profile.registeredSKVoter, false),
+
+      // Registered National Voter checkboxes
+      nat_yes: checkbox(profile.registeredNationalVoter, true),
+      nat_no: checkbox(profile.registeredNationalVoter, false),
+
+      // Voted Last SK Election checkboxes
+      yes: checkbox(profile.votedLastSKElection, true),
+      no: checkbox(profile.votedLastSKElection, false),
+
+      // registeredSKVoter: profile.registeredSKVoter ? "Yes" : "No",
+      // registeredNationalVoter: profile.registeredNationalVoter ? "Yes" : "No",
+      // votedLastSKElection: profile.votedLastSKElection ? "Yes" : "No",
+
+      profileImage: profile.profileImage && fs.existsSync(path.resolve(__dirname, "../uploads/profile", profile.profileImage))
+        ? { data: fs.readFileSync(path.resolve(__dirname, "../uploads/profile", profile.profileImage), "base64") }
         : null,
-      signatureImage: signatureImagePath && fs.existsSync(signatureImagePath)
-        ? { data: fs.readFileSync(signatureImagePath, "base64") }
+      idImagePath: profile.idImagePath && fs.existsSync(path.resolve(__dirname, "../uploads/id", profile.idImagePath))
+        ? { data: fs.readFileSync(path.resolve(__dirname, "../uploads/id", profile.idImagePath), "base64") }
         : null,
+      signatureImagePath: profile.signatureImagePath && fs.existsSync(path.resolve(__dirname, "../uploads/signatures", profile.signatureImagePath))
+        ? { data: fs.readFileSync(path.resolve(__dirname, "../uploads/signatures", profile.signatureImagePath), "base64") }
+        : null,
+
+      birthday: formatDateDMY(profile.birthday),
+      submittedAt: formatDateDMY(profile.submittedAt),
+      age: calculateAge(profile.birthday),
     });
 
     const buf = doc.getZip().generate({ type: "nodebuffer" });

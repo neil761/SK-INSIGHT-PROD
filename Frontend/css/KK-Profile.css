@@ -741,6 +741,14 @@ body.modal-open .sidebar * {
 .tables th:nth-child(7), .tables td:nth-child(7) { width: 15%; text-align: center; }
 .tables th:nth-child(8), .tables td:nth-child(8) { width: 15%; text-align: center; }
 
+.modern-modal-download{
+  background-color: #0A2C59;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 5px;
+  border: white 0.5px solid;
+}
+
 @media (max-width: 900px) {
   .modern-modal {
     width: 98vw;
