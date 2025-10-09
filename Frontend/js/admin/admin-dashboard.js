@@ -1,4 +1,6 @@
 import { renderEducationalBackgroundBar } from '../charts/educational-background-chart.js';
+import { renderYouthAgeGroupBar } from '../charts/youth-age-group-chart.js';
+import { renderYouthClassificationBar } from '../charts/youth-classification-chart.js';
 
 document.addEventListener("DOMContentLoaded", () => {
   // Filter dropdown logic only
@@ -112,16 +114,21 @@ document.addEventListener("DOMContentLoaded", () => {
     cycleContent.style.display = "none";
   });
 
-  // Filter button logic
+  // --- Filter button logic ---
   filterBtn.addEventListener("click", () => {
     if (!currentFilters.year || !currentFilters.cycle) {
       alert("Please select both year and cycle before filtering.");
       return;
     }
-    // You can add logic here to update the prediction chart based on filter if needed
+    // Pass selected year and cycle to all chart renderers
+    renderPredictionChart(currentFilters.year, currentFilters.cycle);
+    renderCivilStatusDonutFromAPI(currentFilters.year, currentFilters.cycle);
+    renderEducationalBackgroundBar(currentFilters.year, currentFilters.cycle);
+    renderYouthAgeGroupBar(currentFilters.year, currentFilters.cycle);
+    renderYouthClassificationBar(currentFilters.year, currentFilters.cycle);
   });
 
-  // Clear filter resets everything
+  // --- Clear filter resets everything ---
   clearFilterBtn.addEventListener("click", () => {
     yearButton.textContent = "Year";
     cycleButton.textContent = "Cycle";
@@ -129,17 +136,102 @@ document.addEventListener("DOMContentLoaded", () => {
     yearContent.style.display = "none";
     cycleContent.style.display = "none";
     currentFilters = {};
-    // You can add logic here to reset the prediction chart if needed
+    // Render all charts with no filter (all data)
+    renderPredictionChart();
+    renderCivilStatusDonutFromAPI();
+    renderEducationalBackgroundBar();
+    renderYouthAgeGroupBar();
+    renderYouthClassificationBar();
   });
 
-
+  // Initial load: show all data
   fetchCycles();
-  initPredictionChart();
-  renderCivilStatusDonutFromAPI(); // <-- Call this directly here
-  renderEducationalBackgroundBar(); // Call the imported function
-
+  renderPredictionChart();
+  renderCivilStatusDonutFromAPI();
+  renderEducationalBackgroundBar();
+  renderYouthAgeGroupBar();
+  renderYouthClassificationBar();
 });
 
+// --- Prediction chart now fetches filtered data ---
+function renderPredictionChart(year, cycle) {
+  const token = sessionStorage.getItem("token");
+  if (!token) return;
+  let url = "http://localhost:5000/api/kkprofiling";
+  if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
+
+  fetch(url, { headers: { Authorization: `Bearer ${token}` } })
+    .then(res => res.json())
+    .then(profiles => {
+      // Example: show number of profiles per month (replace with your real logic)
+      // This demo assumes profiles have a "submittedAt" date field
+      const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug'];
+      const counts = Array(8).fill(0);
+      profiles.forEach(p => {
+        if (p.submittedAt) {
+          const d = new Date(p.submittedAt);
+          const m = d.getMonth();
+          if (m >= 0 && m < 8) counts[m]++;
+        }
+      });
+
+      // For demo, predictedData is just a shifted version of counts
+      const predictedData = counts.map((v, i) => (i < 2 ? null : Math.round(v * 1.1)));
+
+      const ctx = document.getElementById('predictionChart').getContext('2d');
+      if (window.predictionChart) window.predictionChart.destroy();
+      window.predictionChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: months,
+          datasets: [
+            {
+              label: 'Actual Data',
+              data: counts,
+              borderColor: '#07B0F2',
+              backgroundColor: 'rgba(7,176,242,0.1)',
+              tension: 0.4,
+              fill: true
+            },
+            {
+              label: 'Predicted Trend',
+              data: predictedData,
+              borderColor: '#FED600',
+              backgroundColor: 'rgba(254,214,0,0.1)',
+              borderDash: [5, 5],
+              tension: 0.4,
+              fill: true
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              mode: 'index',
+              intersect: false,
+              backgroundColor: 'rgba(255,255,255,0.9)',
+              titleColor: '#0A2C59',
+              bodyColor: '#0A2C59',
+              borderColor: '#e1e8ff',
+              borderWidth: 1,
+              padding: 12,
+              boxPadding: 6,
+              usePointStyle: true
+            }
+          },
+          scales: {
+            x: { grid: { display: false } },
+            y: { grid: { borderDash: [4, 4] } }
+          }
+        }
+      });
+    });
+}
+
+// --- Civil status donut already uses year/cycle ---
 function renderCivilStatusDonutFromAPI(year, cycle) {
   const civilStatusCategories = [
     "Single", "Live-in", "Married", "Unknown", "Separated",
