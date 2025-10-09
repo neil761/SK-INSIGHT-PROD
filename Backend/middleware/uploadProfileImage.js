@@ -11,11 +11,11 @@ const storage = multer.diskStorage({
   }
 });
 
-const fileFilter = (req, file, cb) => {
-  const allowed = ['image/jpeg', 'image/png', 'image/jpg'];
-  allowed.includes(file.mimetype)
-    ? cb(null, true)
-    : cb(new Error('Only JPG/PNG files allowed'));
-};
+function fileFilter(req, file, cb) {
+  if (!file.mimetype.match(/^image\/(jpeg|png)$/)) {
+    return cb(new Error("Only JPG/PNG files allowed"), false);
+  }
+  cb(null, true);
+}
 
 module.exports = multer({ storage, fileFilter });

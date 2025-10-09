@@ -250,8 +250,12 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // 🔹 Show modal with profile details
+  let currentProfileId = null; // Track the current profile ID
+
+  // Modify showProfileModal to set currentProfileId and update download button
   function showProfileModal(p) {
+    currentProfileId = p._id; // Set the current profile ID
+
     const modal = document.getElementById("profileModal");
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
@@ -358,12 +362,54 @@ document.addEventListener("DOMContentLoaded", () => {
                  </div>`
               : `<div class="profile-detail">
                     <span class="label">Reason for Not Attending</span>
-                    <span class="value">${p.nowhy || "-"}</span>
+                    <span class="value">${p.reasonDidNotAttend || "-"}</span>
                  </div>`
           }
         </div>
       </div>
     `;
+
+    // Download button logic
+    const downloadBtn = document.getElementById("downloadBtn");
+    if (downloadBtn) {
+      downloadBtn.onclick = async function () {
+        try {
+          const token = sessionStorage.getItem("token");
+          const res = await fetch(
+            `http://localhost:5000/api/kkprofiling/export/${currentProfileId}`,
+            {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+          if (!res.ok) {
+            Swal.fire("Error", "Failed to download profile.", "error");
+            return;
+          }
+          const blob = await res.blob();
+          // Try to get filename from header
+          let filename = "KKProfile.docx";
+          const disposition = res.headers.get("Content-Disposition");
+          if (disposition && disposition.indexOf("filename=") !== -1) {
+            filename = disposition.split("filename=")[1].replace(/"/g, "");
+          }
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = filename;
+          document.body.appendChild(a);
+          a.click();
+          setTimeout(() => {
+            window.URL.revokeObjectURL(url);
+            a.remove();
+          }, 100);
+        } catch (err) {
+          Swal.fire("Error", "Error downloading profile.", "error");
+        }
+      };
+    }
 
     modal.style.display = "flex";
     document.body.classList.add("modal-open");
