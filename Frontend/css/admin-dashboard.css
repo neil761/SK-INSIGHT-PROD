@@ -256,8 +256,8 @@
 /* Grid layout: compact and balanced */
 .dashboard-grid{
   display: grid;
-  grid-template-columns: 3fr 1fr;
-  grid-template-rows: auto auto;
+  grid-template-columns: 3fr 1fr;      /* First two rows: 3/4 and 1/4 */
+  grid-template-rows: auto auto auto;  /* Add a third row */
   gap: 2rem;
   padding: 2rem 2.5rem;
   align-items: stretch;
@@ -516,8 +516,8 @@
   flex-direction: column;
   align-items: flex-start;
   justify-content: flex-start;
-  min-width: 180px;
-  max-width: 260px;
+  min-width: 280px;
+  max-width: 360px;
   box-sizing: border-box;
   margin-top: -1rem;
   margin-bottom: 0.5rem;
@@ -581,7 +581,7 @@
 
 .summary-label {
   color: #6b7280;
-  font-weight: 500;
+  font-weight: 400;
 }
 
 .summary-value {
@@ -606,7 +606,7 @@ div.chartjs-legend {
 
 .educational-background-summary-item .summary-label {
   color: #0A2C59;
-  font-weight: 500;
+  font-weight: 700;
   /* Optional: set a fixed width for perfect alignment */
   min-width: 120px;
   display: inline-block;
@@ -620,5 +620,188 @@ div.chartjs-legend {
   display: inline-block;
 }
 
+/* Make the dashboard grid treat the third row as a single cell spanning both columns */
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 3fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 2rem;
+  padding: 2rem 2.5rem;
+  align-items: stretch;
+}
+
+.educational-background-card {
+  grid-column: 1 / 3;
+  grid-row: 2 / 3;
+}
+
+.third-row {
+  grid-column: 1 / 3;
+  grid-row: 3 / 4;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+  width: 100%;
+}
+
+.youth-age-group-card,
+.youth-classification-card {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 2px 12px rgba(10,44,89,0.04);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  animation: fadeInUp 0.5s cubic-bezier(.4,1.4,.6,1);
+  min-height: 5vh;
+  max-height: 100vh;
+  padding: 25px 20px 25px 20px;
+}
+
+/* Responsive: On small screens, stack the third row */
+@media (max-width: 1100px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+  }
+  .educational-background-card {
+    grid-column: 1 / 2;
+  }
+  .youth-age-group-card,
+  .youth-classification-card {
+    grid-column: 1 / 2;
+  }
+  .third-row {
+    grid-column: 1 / 2;
+    grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+}
+
+.portrait-chart-content {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  height: 100%;
+  width: 100%;
+  min-height: 400px;
+}
+
+.portrait-chart-content .chart-area {
+  width: 100%;
+  height: 260px; /* or 300px, adjust as needed */
+  position: relative;
+}
+
+.portrait-chart-content .educational-background-legend,
+.portrait-chart-content .youth-age-group-legend,
+.portrait-chart-content .youth-classification-legend {
+  margin: 0.5rem 0 0.5rem 0;
+  padding: 0 1rem;
+  width: 100%;
+  justify-content: flex-start;
+}
+
+.portrait-chart-content .educational-background-summary {
+  margin-top: 0.5rem;
+  padding: 0.5rem 1rem 0.5rem 1rem;
+  background: #f8faff;
+  border-radius: 10px;
+  min-height: 80px;
+}
+
+/* Modern summary for youth charts only */
+.modern-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 600;
+  color: #0A2C59;
+  padding: 0.2rem 0rem;
+}
+
+.modern-summary-icon {
+  background: #eaf6ff;
+  color: #07B0F2;
+  border-radius: 50%;
+  padding: 0.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.modern-summary-title {
+  letter-spacing: 0.01em;
+  
+}
+
+.modern-summary-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.18rem 0;
+  font-size: 0.8rem;
+  border-radius: 6px;
+  padding: 0.2rem;
+}
+
+.modern-summary-total {
+  background: #f8faff;
+  font-weight: 600;
+  color: #0A2C59;
+  margin-bottom: 0.15rem;
+}
+
+.modern-summary-most {
+  background: #fef9e7;
+  font-weight: 600;
+  color: #FED600;
+  margin-bottom: 0.15rem;
+  padding: 0.3rem 1rem;
+}
+
+.modern-summary-label {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #0A2C59;
+  font-weight: 500;
+}
+
+.modern-summary-value {
+  font-weight: 600;
+  color: #0A2C59;
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.modern-summary-breakdown {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.legend-dot {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  display: inline-block;
+  margin-right: 2px;
+  border: 1.5px solid #e1e8ff;
+  vertical-align: middle;
+}
 
 
+
+#youthAgeGroupSummary{
+  min-height: 25vh;
+}
