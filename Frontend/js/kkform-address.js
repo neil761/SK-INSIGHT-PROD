@@ -2,12 +2,40 @@ document.addEventListener('DOMContentLoaded', function() {
   const form = document.getElementById('addressForm');
   const saved = JSON.parse(localStorage.getItem('kkProfileStep2') || '{}');
 
+  // Get email from user info (from sessionStorage or localStorage after login/signup)
+  let userEmail = "";
+  try {
+    // Try sessionStorage first, then localStorage
+    const user = JSON.parse(sessionStorage.getItem('user') || localStorage.getItem('user') || '{}');
+    userEmail = user.email || "";
+  } catch (e) {
+    userEmail = "";
+  }
+
+  // If userEmail is still empty, try to fetch from backend using token
+  if (!userEmail) {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (token) {
+      fetch('http://localhost:5000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.json())
+        .then(user => {
+          if (user.email && !document.getElementById('email').value) {
+            document.getElementById('email').value = user.email;
+          }
+        })
+        .catch(() => {});
+    }
+  }
+
   document.getElementById('region').value = saved.region || '4-A CALABARZON';
   document.getElementById('province').value = saved.province || 'Batangas';
   document.getElementById('municipality').value = saved.municipality || 'Calaca City';
   document.getElementById('barangay').value = saved.barangay || 'Puting Bato West';
   document.getElementById('purok').value = saved.purok || '';
-  document.getElementById('email').value = saved.email || '';
+  // Default email: saved value, or user email from signup, or empty
+  document.getElementById('email').value = saved.email || userEmail || '';
   document.getElementById('contactNumber').value = saved.contactNumber || '';
   document.getElementById('civilStatus').value = saved.civilStatus || '';
 

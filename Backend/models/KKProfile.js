@@ -63,7 +63,7 @@ const kkProfileSchema = new mongoose.Schema({
   },
   reasonDidNotAttend: {
     type: String,
-    enum: ["there was no kk assembly", "not interested"],
+    enum: ["There was no KK Assembly", "Not interested"],
   },
   profileImage: { type: String, required: true },
   idImagePath: { type: String },
