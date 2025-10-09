@@ -10,7 +10,9 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
     />
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   </head>
+
   <body>
     <!-- Navbar -->
     <div class="navbar">
@@ -20,11 +22,14 @@
         </a>
         <a href="./index.html" class="title">SK-PBW</a>
       </div>
+
       <div class="navbar-center">
-        <a href="./kkform-personal.html" class="prof">KK Profile</a>
-        <a href="./lgbtqform.html" class="prof">LGBTQ+ Profile</a>
-        <a href="./Educational-assistance-user.html" class="prof">Educational Assistance</a>
+        <!-- ✅ Added unique ID for desktop -->
+        <a href="./kkform-personal.html" id="kkProfileNavBtnDesktop" class="prof">KK Profile</a>
+        <a href="./lgbtqform.html" id="lgbtqProfileNavBtnDesktop"  class="prof">LGBTQ+ Profile</a>
+        <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnDesktop" class="prof">Educational Assistance</a>
       </div>
+
       <div class="navbar-right">
         <span class="navbar-hamburger" id="navbarHamburger">
           <i class="fa-solid fa-bars"></i>
@@ -33,13 +38,16 @@
         <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
       </div>
     </div>
-  <div class="navbar-mobile-menu" id="navbarMobileMenu">
-      <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
-      <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="nav-btn">educational Assistance</a>
+
+    <!-- ✅ Mobile Navbar Menu -->
+    <div class="navbar-mobile-menu" id="navbarMobileMenu">
+      <!-- ✅ Added unique ID for mobile -->
+      <a href="./kkform-personal.html" id="kkProfileNavBtnMobile" class="nav-btn">KK Profile</a>
+      <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile"  class="nav-btn">LGBTQ+ Profile</a>
+      <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
     </div>
 
-    <!-- Login Required Strip (now under navbar) -->
+    <!-- Login Required Strip -->
     <div id="login-strip" class="login-strip" style="display:none;">
       <i class="fa-solid fa-circle-info"></i>
       <span>
@@ -60,23 +68,14 @@
       <a href="/Frontend/html/user/about.html" class="link">How it Works</a>
     </div>
 
-    <!-- Mobile Navbar Menu -->
-    <div class="navbar-mobile-menu" id="navbarMobileMenu">
-      <a href="./kkform-personal.html" class="nav-btn">KK Profile</a>
-      <a href="./lgbtqform.html" class="nav-btn">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="nav-btn">educational Assistance</a>
-    </div>
-
-    <!-- ✅ Footer should be OUTSIDE the about card -->
+    <!-- Footer -->
     <footer class="footer">
       <div class="footer-container">
-        <!-- Left Section -->
         <div class="footer-left">
           <h3>SK-INSIGHT</h3>
           <p>Empowering the youth through data-driven governance.</p>
         </div>
-    
-        <!-- Middle Section -->
+
         <div class="footer-middle">
           <h4>About</h4>
           <ul>
@@ -85,8 +84,7 @@
             <li><a href="#">Things About SK-INSIGHT</a></li>
           </ul>
         </div>
-    
-        <!-- Right Section -->
+
         <div class="footer-right">
           <h4>Follow Us</h4>
           <ul>
@@ -96,14 +94,14 @@
           </ul>
         </div>
       </div>
-    
+
       <hr />
-    
+
       <div class="footer-bottom">
         <p>© 2025 SK-INSIGHT. All rights reserved.</p>
       </div>
     </footer>
 
     <script src="../../js/index.js"></script>
-</body>
+  </body>
 </html>
