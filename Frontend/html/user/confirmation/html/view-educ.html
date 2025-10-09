@@ -52,32 +52,32 @@
   <form id="educationalAssistanceForm">
   <div class="card">
     <label for="surname">Last Name:</label>
-    <input type="text" id="surname" name="surname" placeholder="Your Answer">
+    <input type="text" id="surname" name="surname" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="firstName">First Name:</label>
-    <input type="text" id="firstName" name="firstName" placeholder="Your Answer">
+    <input type="text" id="firstName" name="firstName" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="middleName">Middle Name:</label>
-    <input type="text" id="middleName" name="middleName" placeholder="Your Answer">
+    <input type="text" id="middleName" name="middleName" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="suffix">Suffix (if applicable):</label>
-    <input type="text" id="suffix" name="suffix" placeholder="Your Answer">
+    <input type="text" id="suffix" name="suffix" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="birthday">Birthday:</label>
-    <input type="date" id="birthday" class="birthday-input" name="birthday" required>
+    <input type="date" id="birthday" class="birthday-input" name="birthday" readonly>
   </div>
 
   <div class="card">
     <label for="placeOfBirth">Place of Birth:</label>
-    <input type="text" id="placeOfBirth" name="placeOfBirth" placeholder="Your Answer">
+    <input type="text" id="placeOfBirth" name="placeOfBirth" placeholder="Your Answer" readonly>
   </div>
   
   <div class="card">
@@ -87,7 +87,7 @@
 
   <div class="card">
     <label for="gender">Gender:</label>
-    <select id="gender" name="gender" required>
+    <select id="gender" name="gender" readonly>
       <option value="">Select Gender</option>
       <option value="Male">Male</option>
       <option value="Female">Female</option>
@@ -96,7 +96,7 @@
 
   <div class="card">
     <label for="civilStatus">Civil Status:</label>
-    <select id="civilStatus" name="civilStatus" required>
+    <select id="civilStatus" name="civilStatus" readonly>
       <option value="">Select Civil Status</option>
       <option value="Single">Single</option>
       <option value="Live-in">Live-in</option>
@@ -111,32 +111,32 @@
 
   <div class="card">
     <label for="religion">Religion:</label>
-    <input type="text" id="religion" name="religion" placeholder="Your Answer">
+    <input type="text" id="religion" name="religion" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="email">E-mail Address:</label>
-    <input type="text" id="email" name="email" placeholder="Your Answer">
+    <input type="text" id="email" name="email" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="contact">Contact Number:</label>
-    <input type="text" id="contact" name="contact" placeholder="Your Answer">
+    <input type="text" id="contact" name="contact" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="schoolname">Name of School:</label>
-    <input type="text" id="schoolname" name="schoolname" placeholder="Your Answer">
+    <input type="text" id="schoolname" name="schoolname" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="schooladdress">School Address:</label>
-    <input type="text" id="schooladdress" name="schooladdress" placeholder="Your Answer">
+    <input type="text" id="schooladdress" name="schooladdress" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="year">Year:</label>
-    <select class="year" id="year" name="year" required>
+    <select class="year" id="year" name="year" readonly>
       <option value="">Select Classification</option>
       <option value="Grade 7">Grade 7</option>
       <option value="Grade 8">Grade 8</option>
@@ -149,27 +149,27 @@
 
   <div class="card">
     <label for="benefittype">Types of Benefiting as Applicant:</label>
-    <input type="text" id="benefittype" name="benefittype" placeholder="Your Answer">
+    <input type="text" id="benefittype" name="benefittype" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="fathername">Father's Name:</label>
-    <input type="text" id="fathername" name="fathername" placeholder="Your Answer">
+    <input type="text" id="fathername" name="fathername" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="fathercontact">Father's Contact Number:</label>
-    <input type="text" id="fathercontact" name="fathercontact" placeholder="Your Answer">
+    <input type="text" id="fathercontact" name="fathercontact" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="mothername">Mother's Name:</label>
-    <input type="text" id="mothername" name="mothername" placeholder="Your Answer">
+    <input type="text" id="mothername" name="mothername" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label for="mothercontact">Mother's Contact Number:</label>
-    <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer">
+    <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer" readonly>
   </div>
 
   <!-- Siblings Section -->
@@ -230,7 +230,7 @@
             <label for="sedulaImage" class="upload-plus" id="sedulaLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="sedulaImage" name="sedulaImage" accept="image/*" required>
+            <input type="file" id="sedulaImage" name="sedulaImage" accept="image/*" readonly>
             <span class="file-name" id="sedulaFileName"></span>
           </td>
         </tr>
@@ -242,7 +242,7 @@
             <label for="coeImage" class="upload-plus" id="coeLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="coeImage" name="coeImage" accept="image/*" required>
+            <input type="file" id="coeImage" name="coeImage" accept="image/*" readonly>
             <span class="file-name" id="coeFileName"></span>
           </td>
         </tr>
@@ -254,7 +254,7 @@
             <label for="signature" class="upload-plus" id="signatureLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="signature" name="signature" accept="image/*" required>
+            <input type="file" id="signature" name="signature" accept="image/*" readonly>
             <span class="file-name" id="signatureFileName"></span>
           </td>
         </tr>

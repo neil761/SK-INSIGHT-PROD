@@ -78,5 +78,7 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
 router.get("/kk", protect, authorizeRoles("admin"), ctrl.getKkCycles);
 router.get("/lgbtq", protect, authorizeRoles("admin"), ctrl.getLgbtqCycles);
 router.get("/educ", protect, authorizeRoles("admin"), ctrl.getEducCycles);
+// Public endpoint to get form status
+router.get("/status", ctrl.getFormStatus);
 
 module.exports = router;

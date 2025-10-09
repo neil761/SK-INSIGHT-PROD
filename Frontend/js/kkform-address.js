@@ -54,4 +54,48 @@ document.addEventListener('DOMContentLoaded', function() {
     localStorage.setItem('kkProfileStep2', JSON.stringify(data));
     window.location.href = 'kkform-youth.html';
   });
+
+  function handleLGBTQProfileNavClick(event) {
+    event.preventDefault();
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) {
+      Swal.fire({
+        icon: 'warning',
+        title: 'You need to log in first',
+        text: 'Please log in to access LGBTQ+ Profiling.',
+        confirmButtonText: 'OK'
+      }).then(() => {
+        window.location.href = '/Frontend/html/user/login.html';
+      });
+      return;
+    }
+
+    fetch('http://localhost:5000/api/lgbtqprofiling/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(async res => {
+        const data = await res.json();
+        // If profile exists (res.ok), go to confirmation
+        if (res.ok && data && data._id) {
+          window.location.href = "confirmation/html/lgbtqconfirmation.html";
+          return;
+        }
+        // If no profile (404 or error), go to profiling form
+        window.location.href = "lgbtqform.html";
+      })
+      .catch(() => {
+        window.location.href = "lgbtqform.html";
+      });
+  }
+
+  // Attach to desktop nav button
+  const lgbtqProfileNavBtnDesktop = document.getElementById('lgbtqProfileNavBtnDesktop');
+  if (lgbtqProfileNavBtnDesktop) {
+    lgbtqProfileNavBtnDesktop.addEventListener('click', handleLGBTQProfileNavClick);
+  }
+  // Attach to mobile nav button
+  const lgbtqProfileNavBtnMobile = document.getElementById('lgbtqProfileNavBtnMobile');
+  if (lgbtqProfileNavBtnMobile) {
+    lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
+  }
 });

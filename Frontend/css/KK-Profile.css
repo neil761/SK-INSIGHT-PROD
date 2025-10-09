@@ -742,11 +742,21 @@ body.modal-open .sidebar * {
 .tables th:nth-child(8), .tables td:nth-child(8) { width: 15%; text-align: center; }
 
 .modern-modal-download{
+  position: absolute;
+  top: 45px;
+  right: 90px;
   background-color: #0A2C59;
   color: white;
+  font-size: 14px;
+  font-weight: normal;
+  letter-spacing: 1px;
+  min-width: 120px;
+  min-height: 40px;
   padding: 5px 10px;
   border-radius: 5px;
-  border: white 0.5px solid;
+  border: white 2px solid;
+  z-index: 10;
+  cursor: pointer;
 }
 
 @media (max-width: 900px) {
@@ -776,6 +786,10 @@ body.modal-open .sidebar * {
     flex: 1;
     padding-left: 12px;
     padding-right: 12px;
+  }
+  .modern-modal-download {
+    top: 18px;
+    right: 18px;
   }
 }
 
