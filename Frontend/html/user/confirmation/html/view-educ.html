@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>SK-INSIGHT</title>
-  <link rel="stylesheet" href="../../css/Educational-assistance-user.css" />
+  <link rel="stylesheet" href="../../../../css/Educational-assistance-user.css" />
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -16,14 +16,15 @@
     <div class="navbar">
     <div class="navbar-left">
       <a href="./index.html">
-        <img src="../../assets/logo.png" alt="Logo" class="logo"/>
+        <img src="../../../../assets/logo.png" alt="Logo" class="logo"/>
       </a>
-      <a href="./index.html" class="title">SK-PBW</a>
+      <a href="../../index.html" class="title">SK-PBW</a>
     </div>
     <div class="navbar-center">
+      <!-- Desktop Navbar -->
       <a href="./kkform-personal.html" id="kkProfileNavBtnDesktop" class="prof">KK Profile</a>
       <a href="./lgbtqform.html" id="lgbtqProfileNavBtnDesktop" class="prof">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="prof">Educational Assistance</a>
+      <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnDesktop" class="prof">Educational Assistance</a>
     </div>
       <div class="navbar-right">
         <span class="navbar-hamburger" id="navbarHamburger">
@@ -34,9 +35,10 @@
       </div>
     </div>
     <div class="navbar-mobile-menu" id="navbarMobileMenu">
+      <!-- Mobile Navbar -->
       <a href="./kkform-personal.html" id="kkProfileNavBtnMobile" class="nav-btn">KK Profile</a>
       <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile" class="nav-btn">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
+      <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
     </div>
 
 <div class="container">
@@ -176,7 +178,6 @@
   <div class="card">
     <div class="card-header">
       <h3>Names of Brother/s and Sister/s</h3>
-      <button type="button" id="addSiblingBtn">+ Add Sibling</button>
     </div>
 
     <table id="siblingsTable">
@@ -185,7 +186,6 @@
           <th>Name</th>
           <th>Gender</th>
           <th>Age</th>
-          <th>Action</th>
         </tr>
       </thead>
       <tbody id="siblingsTableBody"></tbody>
@@ -193,16 +193,12 @@
   </div>
 
   <div class="card">
-    <div class="expense-header">
-      <button type="button" id="addExpenseBtn">+ Add Expense</button>
-    </div>
 
     <table id="expensesTable">
       <thead>
         <tr>
           <th>Fees and Other Expenses to be Incurred</th>
           <th>Expected Cost</th>
-          <th>Action</th>
         </tr>
       </thead>
       <tbody id="expensesTableBody"></tbody>
@@ -217,53 +213,31 @@
         <tr>
           <th>Documents</th>
           <th>View</th>
-          <th>Delete</th>
-          <th>Upload</th>
+          <th>Uploaded Images</th>
         </tr>
       </thead>
       <tbody>
         <tr>
           <td>Sedula</td>
           <td><i class="fa-solid fa-eye view-icon" id="viewSedula"></i></td>
-          <td><i class="fa-solid fa-trash delete-icon" id="deleteSedula"></i></td>
-          <td>
-            <label for="sedulaImage" class="upload-plus" id="sedulaLabel">
-              <i class="fa-solid fa-plus"></i>
-            </label>
-            <input type="file" id="sedulaImage" name="sedulaImage" accept="image/*" readonly>
-            <span class="file-name" id="sedulaFileName"></span>
-          </td>
+          <td id="sedulaUploadColumn"></td>
         </tr>
         <tr>
           <td>Certificate of Enrollment</td>
           <td><i class="fa-solid fa-eye view-icon" id="viewCOE"></i></td>
-          <td><i class="fa-solid fa-trash delete-icon" id="deleteCOE"></i></td>
-          <td>
-            <label for="coeImage" class="upload-plus" id="coeLabel">
-              <i class="fa-solid fa-plus"></i>
-            </label>
-            <input type="file" id="coeImage" name="coeImage" accept="image/*" readonly>
-            <span class="file-name" id="coeFileName"></span>
-          </td>
+          <td id="coeUploadColumn"></td>
         </tr>
         <tr>
           <td>Signature</td>
           <td><i class="fa-solid fa-eye view-icon" id="viewSchoolId"></i></td>
-          <td><i class="fa-solid fa-trash delete-icon" id="deleteSchoolId"></i></td>
-          <td>
-            <label for="signature" class="upload-plus" id="signatureLabel">
-              <i class="fa-solid fa-plus"></i>
-            </label>
-            <input type="file" id="signature" name="signature" accept="image/*" readonly>
-            <span class="file-name" id="signatureFileName"></span>
-          </td>
+          <td id="signatureUploadColumn"></td>
         </tr>
       </tbody>
     </table>
   </div>
 
   <div class="submit-btn-container">
-    <button type="submit" class="submit-btn">Submit</button>
+    <a href="../html/educConfirmation.html" type="submit" class="submit-btn">Done</a>
   </div>
 </form>
 </div>
@@ -273,6 +247,6 @@
   <img id="previewImg" src="" alt="Preview">
 </div>
 
-  <script src="../../js/educ-user.js"></script>
+  <script src="../../../../js/view-educ.js"></script>
 </body>
 </html>
