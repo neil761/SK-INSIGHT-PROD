@@ -1,12 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const passwordField = document.getElementById('passwordField');
-    const rememberMeCheckbox = document.getElementById('rememberMe'); // Make sure your checkbox has this id
+    const rememberMeCheckbox = document.getElementById('rememberMe');
+    const togglePassword = document.getElementById('togglePassword');
 
     // On page load, check for token in sessionStorage or localStorage
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (token) {
-        window.location.href = 'index.html'; // Redirect to dashboard/home if already logged in
+        window.location.href = 'index.html';
         return;
     }
 
@@ -45,12 +46,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     sessionStorage.setItem('token', data.token);
                     localStorage.removeItem('token');
                 }
-                window.location.href = 'index.html'; // Redirect to dashboard/home
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Login Successful!',
+                    text: 'Welcome SK Residents, you have successfully logged in.',
+                    showConfirmButton: false,
+                    timer: 2000
+                }).then(() => {
+                    window.location.href = 'index.html';
+                });
             } else {
-                alert(data.error || 'Login failed. Please check your credentials.');
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Login Failed',
+                    text: data.error || 'Login failed. Please check your credentials and try again.'
+                });
             }
         } catch (error) {
-            alert('Network error. Please try again.');
+            Swal.fire({
+                icon: 'error',
+                title: 'Network Error',
+                text: 'Unable to connect to the server. Please try again later.'
+            });
         }
     });
 });
