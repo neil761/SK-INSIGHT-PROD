@@ -1,11 +1,26 @@
 Chart.defaults.plugins.legend.display = false;
 
-export function renderYouthClassificationBar(year, cycle) {
+export function renderWorkStatusBar(year, cycle) {
   const categories = [
-    "In School Youth", "Out of School Youth",
-    "Working Youth", "Youth with Specific Needs"
+    "Employed",
+    "Unemployed",
+    "Self-Employed",
+    "Currently looking for a Job",
+    "Not interested in looking for a Job"
   ];
-  const colors = ["#07B0F2", "#FED600", "#0A2C59", "#ef4444"];
+  const colors = [
+    "#07B0F2", // Employed
+    "#FED600", // Unemployed
+    "#0A2C59", // Self-Employed
+    "#ef4444", // Currently looking for a Job
+    "#22c55e"  // Not interested in looking for a Job
+  ];
+  const icons = [
+    '<i class="fas fa-user-slash"></i>',
+    '<i class="fas fa-user-tie"></i>',
+    '<i class="fas fa-search"></i>',
+    '<i class="fas fa-user-times"></i>'
+  ];
 
   const token = sessionStorage.getItem("token");
   if (!token) return;
@@ -17,29 +32,35 @@ export function renderYouthClassificationBar(year, cycle) {
     .then(res => res.json())
     .then(profiles => {
       const counts = categories.map(
-        cat => profiles.filter(p => p.youthClassification === cat).length
+        cat => profiles.filter(p => p.workStatus === cat).length
       );
       const total = counts.reduce((a, b) => a + b, 0);
 
-      // Sort by value descending
+      // Sort by value descending for summary
       const summaryPairs = categories.map((cat, i) => ({
         label: cat,
         value: counts[i],
-        color: colors[i]
+        color: colors[i],
+        icon: icons[i]
       })).sort((a, b) => b.value - a.value);
 
+      // For chart: use sorted order
       const sortedLabels = summaryPairs.map(p => p.label);
       const sortedCounts = summaryPairs.map(p => p.value);
       const sortedColors = summaryPairs.map(p => p.color);
 
+      // Remove any Chart.js-generated HTML legend from previous renders
       document.querySelectorAll('.chartjs-legend, ul.chartjs-legend, div.chartjs-legend').forEach(el => el.remove());
-      if (window.youthClassificationChart) window.youthClassificationChart.destroy();
 
-      const canvas = document.getElementById("youthClassificationBar");
+      // Destroy any existing chart instance before re-rendering
+      if (window.workStatusChart) window.workStatusChart.destroy();
+
+      // Create the new bar chart
+      const canvas = document.getElementById("workStatusBar");
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
 
-      window.youthClassificationChart = new Chart(ctx, {
+      window.workStatusChart = new Chart(ctx, {
         type: "bar",
         data: {
           labels: sortedLabels,
@@ -53,12 +74,12 @@ export function renderYouthClassificationBar(year, cycle) {
         },
         options: {
           responsive: true,
-          maintainAspectRatio: true, // <-- set to true
-          aspectRatio: 2,            // <-- 2:1 width:height, adjust as needed
+          maintainAspectRatio: false, // <-- Important for full width/height
+          aspectRatio: 2,
           plugins: {
             legend: { display: false },
             tooltip: {
-              backgroundColor: "rgba(255,255,255,0.9)",
+              backgroundColor: "rgba(255,255,255,0.95)",
               titleColor: "#0A2C59",
               bodyColor: "#0A2C59",
               borderColor: "#e1e8ff",
@@ -88,16 +109,14 @@ export function renderYouthClassificationBar(year, cycle) {
         }
       });
 
-      // Summary
-      const summaryElem = document.getElementById("youthClassificationSummary"); // or youthAgeGroupSummary
+      // Modern, compact summary with icons
+      const summaryElem = document.getElementById("workStatusSummary");
       if (summaryElem) {
         const mostCommon = summaryPairs[0]?.label || "—";
         const mostCommonColor = summaryPairs[0]?.color || "#ccc";
-        const total = summaryPairs.reduce((sum, pair) => sum + pair.value, 0);
-
+        const mostCommonIcon = summaryPairs[0]?.icon || "";
         summaryElem.innerHTML = `
           <div class="modern-summary-header">
-            
             <span class="modern-summary-title">Summary</span>
           </div>
           <div class="modern-summary-row modern-summary-total">
@@ -125,11 +144,11 @@ export function renderYouthClassificationBar(year, cycle) {
         `;
       }
 
-      // Remove custom legend for youth classification
-      const legendElem = document.querySelector(".youth-classification-legend");
+      // Remove custom legend (if any)
+      const legendElem = document.querySelector(".work-status-legend");
       if (legendElem) {
         legendElem.innerHTML = "";
       }
     })
-    .catch(err => console.error("Error rendering youth classification chart:", err));
+    .catch(err => console.error("Error rendering work status chart:", err));
 }

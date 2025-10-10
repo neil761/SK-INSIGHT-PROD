@@ -60,7 +60,7 @@ export function renderEducationalBackgroundBar(year, cycle) {
             data: sortedCounts,
             backgroundColor: sortedColors,
             borderRadius: 8,
-            maxBarThickness: 32
+            maxBarThickness: 50
           }]
         },
         options: {

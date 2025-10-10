@@ -278,22 +278,40 @@ exports.deleteProfileById = async (req, res) => {
     const profile = await LGBTQProfile.findById(req.params.id);
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
-    // Delete the ID image file if it exists
-    if (profile.idImage) {
-      const imagePath = path.join(__dirname, "../uploads/lgbtq_id_images", profile.idImage);
-      fs.access(imagePath, fs.constants.F_OK, (err) => {
-        if (!err) {
-          fs.unlink(imagePath, (unlinkErr) => {
-            if (unlinkErr) {
-              console.error("Error deleting ID image:", unlinkErr);
-            }
-          });
-        }
-      });
-    }
+    profile.isDeleted = true;
+    profile.deletedAt = new Date();
+    await profile.save();
+
+    res.json({ message: "Profile moved to recycle bin" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Restore a deleted profile
+exports.restoreProfileById = async (req, res) => {
+  try {
+    const profile = await LGBTQProfile.findById(req.params.id);
+    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
+
+    profile.isDeleted = false;
+    profile.deletedAt = null;
+    await profile.save();
+
+    res.json({ message: "Profile restored" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Permanently delete a profile
+exports.permanentlyDeleteProfileById = async (req, res) => {
+  try {
+    const profile = await LGBTQProfile.findById(req.params.id);
+    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
 
     await profile.deleteOne();
-    res.json({ message: "Profile deleted" });
+    res.json({ message: "Profile permanently deleted" });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
@@ -430,3 +448,13 @@ async function getPresentCycle(formName) {
   }
   return status.cycleId;
 }
+
+// Get deleted profiles
+exports.getDeletedProfiles = async (req, res) => {
+  try {
+    const profiles = await LGBTQProfile.find({ isDeleted: true });
+    res.json(profiles);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};

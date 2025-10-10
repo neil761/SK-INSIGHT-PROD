@@ -211,19 +211,21 @@ const rejectedTable = document.getElementById("rejected");
 
       let actionBtn = "";
       if (app.status === "pending") {
-        actionBtn = `<button class="action-btn"><i class="fas fa-eye"></i> Review</button>`;
+        actionBtn = `<button class="action-btn"><i class="fas fa-eye"></i></button>`;
       } else {
-        // Use action-btn class for delete button
         actionBtn = `<button class="action-btn delete-btn"><i class="fas fa-trash"></i> Delete</button>`;
       }
 
+      // Removed School column
       const row = `
         <tr data-id="${app._id}">
           <td>${index + 1}</td>
           <td>${fullName}</td>
-          <td>${app.age}</td>
-          <td>${app.schoolAddress || "N/A"}</td>
-          <td>${app.sex}</td>
+          <td>${app.age ?? ""}</td>
+          <td>${app.civilStatus || "N/A"}</td>
+          <td>${app.religion || "N/A"}</td>
+          <td>${app.year || app.grade || "N/A"}</td>
+          <td>${app.sex || "N/A"}</td>
           <td>${actionBtn}</td>
         </tr>
       `;

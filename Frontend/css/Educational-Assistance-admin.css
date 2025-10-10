@@ -311,6 +311,21 @@ body{
   table-layout: fixed;
 }
 
+.tables th, .tables td {
+  text-align: left;
+  vertical-align: middle;
+  padding: 12px 10px;
+}
+
+.tables th:nth-child(1), .tables td:nth-child(1) { width: 10%; text-align: center; }
+.tables th:nth-child(2), .tables td:nth-child(2) { width: 25%; }
+.tables th:nth-child(3), .tables td:nth-child(3) { width: 15%; text-align: center; }
+.tables th:nth-child(4), .tables td:nth-child(4) { width: 15%; text-align: center; }
+.tables th:nth-child(5), .tables td:nth-child(5) { width: 15%; text-align: center; }
+.tables th:nth-child(6), .tables td:nth-child(6) { width: 15%; text-align: center; }
+.tables th:nth-child(7), .tables td:nth-child(7) { width: 15%; text-align: center; }
+.tables th:nth-child(8), .tables td:nth-child(8) { width: 15%; text-align: center; }
+
 .tables thead {
   position: sticky;
   top: 0;
@@ -352,7 +367,7 @@ thead th {
   background: #f4f6f8;
   font-weight: 600;
   color: #222;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -361,7 +376,6 @@ thead th {
 
 tbody td {
   padding: 9px 12px;
-  border-bottom: 1px solid #f0f0f0;
   vertical-align: middle;
   white-space: nowrap;
 }
