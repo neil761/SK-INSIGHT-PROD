@@ -134,7 +134,7 @@ exports.submitKKProfile = async (req, res) => {
         ? req.files.idImage[0].path
         : null,
       signatureImagePath: req.files?.signatureImage
-        ? req.files.signatureImage[0].path
+        ? req.files.signatureImage[0].filename
         : null,
 
       birthday,

@@ -431,3 +431,48 @@ body {
         margin-right: auto;
     }
 }
+
+/* Universal style for desktop nav buttons */
+.prof {
+    color: #fff;
+    padding: 10px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1rem;
+    margin: 0 8px;
+    transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+    box-shadow: 0 2px 8px rgba(20,61,119,0.08);
+    border: none;
+    outline: none;
+    display: inline-block;
+}
+
+.prof:hover, .prof.active {
+    background: #1e4e9e;
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(20,61,119,0.15);
+    text-decoration: underline;
+}
+
+/* Universal style for mobile nav buttons */
+.nav-btn {
+    color: #143d77;
+    background: #eaf3fa;
+    padding: 12px 22px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-decoration: none;
+    font-size: 1rem;
+    margin-bottom: 10px;
+    transition: background 0.18s, color 0.18s;
+    border: none;
+    outline: none;
+    display: block;
+}
+
+.nav-btn:hover, .nav-btn.active {
+    background: #1e4e9e;
+    color: #fff;
+    text-decoration: underline;
+}
