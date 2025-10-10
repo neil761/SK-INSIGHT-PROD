@@ -421,6 +421,17 @@
       margin: 0 auto;
       margin-top: 50px;
     }
+    
+
+.recycle-bin-container-nested{
+            background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(10,44,89,0.07);
+      padding: 32px 24px 24px 24px;
+      max-width: 80%;
+      margin: 0 auto;
+      margin-top: 50px;
+    }
     .form-config-row {
   display: flex;
   align-items: center;
@@ -496,12 +507,10 @@
 
     /* --- Recently Deleted (Recycle Bin) Tab Styles --- */
 .recycle-bin-container {
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 2px 8px rgba(10,44,89,0.07);
-  padding: 32px 24px 24px 24px;
-  max-width: 900px;
-  margin: 0 auto;
+      border-radius: 10px;
+      padding: 32px 24px 24px 24px;
+      max-width: 100%;
+      padding: 2rem 3rem;
 }
 
 .recycle-bin-container h1 {
