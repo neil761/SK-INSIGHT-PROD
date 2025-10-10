@@ -4,10 +4,11 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>KK Profiling Dashboard | SK-INSIGHT</title>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="/Frontend/css/admin-dashboard.css" />
     <link rel="stylesheet" href="/Frontend/css/header.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   </head>
   <body>
     <div class="sidebar">
@@ -82,6 +83,28 @@
           </div>
         </div>
       </div>
+      <div class="dashboard-summary-row">
+        <div class="summary-card" id="userAccountSummary">
+          <div class="summary-icon"><i class="fas fa-user"></i></div>
+          <div class="summary-label">User Accounts</div>
+          <div class="summary-value" id="userAccountCount">—</div>
+        </div>
+        <div class="summary-card" id="kkProfilingSummary">
+          <div class="summary-icon"><i class="fas fa-id-badge"></i></div>
+          <div class="summary-label">KK Profiling</div>
+          <div class="summary-value" id="kkProfilingCount">—</div>
+        </div>
+        <div class="summary-card" id="lgbtqProfilingSummary">
+          <div class="summary-icon"><i class="fas fa-rainbow"></i></div>
+          <div class="summary-label">LGBTQ Profiling</div>
+          <div class="summary-value" id="lgbtqProfilingCount">—</div>
+        </div>
+        <div class="summary-card" id="educationalAssistanceSummary">
+          <div class="summary-icon"><i class="fas fa-graduation-cap"></i></div>
+          <div class="summary-label">Educational Assistance</div>
+          <div class="summary-value" id="educationalAssistanceCount">—</div>
+        </div>
+      </div>
       <div class="dashboard-grid">
         <div class="chart-card prediction-card">
           <h2 class="chart-title"><i class="fas fa-chart-line"></i> KK Profile Trends & Predictions</h2>
@@ -106,7 +129,7 @@
             <div class="civil-status-summary">
               <div class="civil-status-legend"></div>
               <div class="civil-status-summary-row">
-                <span class="summary-label">Most Common:</span>
+                <span class="summary-label" id="civil-status-most-common">Most Common: </span>
                 <span class="summary-value" id="civilStatusMost">—</span>
               </div>
               <div class="civil-status-percentages" id="civilStatusPercentages"></div>
@@ -127,8 +150,48 @@
             </div>
           </div>
         </div>
+        <div class="third-row">
+          <!-- Youth Age Group Chart -->
+          <div class="chart-card youth-age-group-card">
+            <h2 class="chart-title">
+              <i class="fas fa-users"></i> Youth Age Group
+            </h2>
+            <div class="portrait-chart-content">
+              <div class="chart-area">
+                <canvas id="youthAgeGroupBar"></canvas>
+              </div>
+              <div class="youth-age-group-legend educational-background-legend"></div>
+              <div id="youthAgeGroupSummary" class="educational-background-summary"></div>
+            </div>  
+          </div>
+
+          <!-- Youth Classification Chart -->
+          <div class="chart-card youth-classification-card">
+            <h2 class="chart-title">
+              <i class="fas fa-user-graduate"></i> Youth Classification
+            </h2>
+            <div class="portrait-chart-content">
+              <canvas id="youthClassificationBar"></canvas>
+              <div class="youth-classification-legend educational-background-legend"></div>
+              <div id="youthClassificationSummary" class="educational-background-summary"></div>
+            </div>
+          </div>
+        </div>
+        <div class="chart-card work-status-card">
+          <h2 class="chart-title"><i class="fas fa-briefcase"></i> Work Status</h2>
+          <div class="work-status-content">
+            <div class="work-status-chart-area">
+              <canvas id="workStatusBar"></canvas>
+            </div>
+            <div class="work-status-side">
+              <div class="work-status-legend educational-background-legend"></div>
+              <div id="workStatusSummary" class="work-status-summary"></div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+        <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../../js/admin/admin-dashboard.js" type="module"></script>
     <script>
       fetch('./header.html')
@@ -140,7 +203,6 @@
           document.body.appendChild(script);
         });
     </script>
-    <script src="/Frontend/js/announcement-admin.js"></script>
     <link rel="stylesheet" href="/Frontend/css/header.css">
     <script>
       const content = document.querySelector('.content');

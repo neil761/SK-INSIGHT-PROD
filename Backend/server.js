@@ -175,4 +175,9 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, error: 'Server error' });
 });
 
+const autoDeleteKKProfiles = require("./utils/autoDeleteKKProfiles");
+setInterval(autoDeleteKKProfiles, 24 * 60 * 60 * 1000); // Run every 24 hours
+const autoDeleteLGBTQProfiles = require("./utils/autoDeleteLGBTQProfiles");
+setInterval(autoDeleteLGBTQProfiles, 24 * 60 * 60 * 1000); // Run every 24 hours
+
 console.log('Server started');

@@ -256,6 +256,7 @@ router.get("/me/image", protect, ctrl.getProfileImage);
 
 // Admin-only routes
 router.get("/export", protect, authorizeRoles("admin"), ctrl.exportProfilesToExcel);
+router.get("/deleted", protect, authorizeRoles("admin"), ctrl.getDeletedProfiles);
 
 // Profile submission with image
 router.post(
@@ -282,6 +283,8 @@ router.get("/me", protect, async (req, res) => {
 router.get("/:id", protect, authorizeRoles("admin"), ctrl.getProfileById);
 router.put("/:id", protect, ctrl.updateProfileById);
 router.delete("/:id", protect, authorizeRoles("admin"), ctrl.deleteProfileById);
+router.put("/:id/restore", protect, authorizeRoles("admin"), ctrl.restoreProfileById);
+router.delete("/:id/permanent", protect, authorizeRoles("admin"), ctrl.permanentlyDeleteProfileById);
 
 // Main filter route (admin)
 router.get("/", protect, authorizeRoles("admin"), ctrl.getAllProfiles);

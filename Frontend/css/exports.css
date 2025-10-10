@@ -385,21 +385,76 @@
     }
 
     .form-config-container {
-      background: #fff;
+      border-radius: 10px;
+      padding: 32px 24px 24px 24px;
+      max-width: 100%;
+      padding: 2rem 3rem;
+    }
+    .form-config-header {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 1.5rem;
+}
+
+.form-config-header img {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.09);
+  background: #fff;
+}
+
+.form-config-header h1 {
+  color: #0A2C59;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+    .form-config-nested{
+            background: #fff;
       border-radius: 10px;
       box-shadow: 0 2px 8px rgba(10,44,89,0.07);
       padding: 32px 24px 24px 24px;
-      max-width: 600px;
+      max-width: 60%;
       margin: 0 auto;
+      margin-top: 50px;
     }
-
     .form-config-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 18px;
-      gap: 24px;
-    }
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 18px;
+  gap: 24px;
+  background: #f4f6f8;
+  border-radius: 8px;
+  padding: 18px 18px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.07);
+}
+
+.form-config-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 10px;
+}
+
+.icon-bg {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #07B0F2, #0A2C59);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.09);
+}
+
+.icon-bg i {
+  font-size: 22px;
+  color: #fff;
+}
 
     .form-config-row label {
       font-weight: 500;
@@ -438,3 +493,107 @@
       min-width: 90px;
       text-align: center;
     }
+
+    /* --- Recently Deleted (Recycle Bin) Tab Styles --- */
+.recycle-bin-container {
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.07);
+  padding: 32px 24px 24px 24px;
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.recycle-bin-container h1 {
+  color: #0A2C59;
+  font-size: 1.7rem;
+  margin-bottom: 18px;
+  font-weight: 700;
+}
+
+.recycle-bin-container label {
+  font-weight: 500;
+  color: #0A2C59;
+  margin-right: 8px;
+}
+
+#deletedFilter {
+  padding: 7px 16px;
+  border-radius: 7px;
+  border: 1.5px solid #e0e0e0;
+  font-size: 1rem;
+  background: #f4f6f8;
+  color: #222;
+  transition: border 0.2s;
+  margin-left: 8px;
+}
+
+#deletedFilter:focus {
+  border-color: #07B0F2;
+  background: #fff;
+}
+
+#deletedTable {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 16px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.07);
+}
+
+#deletedTable th, #deletedTable td {
+  text-align: left;
+  padding: 12px 10px;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
+#deletedTable th {
+  background: #f4f6f8;
+  color: #0A2C59;
+  font-weight: 600;
+}
+
+#deletedTable tr:last-child td {
+  border-bottom: none;
+}
+
+.restore-btn, .permanent-delete-btn {
+  background: #07B0F2;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 0.98rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-right: 8px;
+  transition: background 0.18s;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.07);
+}
+
+.restore-btn:hover {
+  background: #22c55e;
+}
+
+.permanent-delete-btn {
+  background: #ef4444;
+}
+
+.permanent-delete-btn:hover {
+  background: #b91c1c;
+}
+
+@media (max-width: 900px) {
+  .recycle-bin-container {
+    padding: 18px 6px 18px 6px;
+    max-width: 100%;
+  }
+  #deletedTable th, #deletedTable td {
+    font-size: 0.95rem;
+    padding: 8px 4px;
+  }
+}

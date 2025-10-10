@@ -13,19 +13,6 @@ export function renderEducationalBackgroundBar(year, cycle) {
     "#6366f1", "#f59e42", "#f472b6", "#8b5cf6", "#fbbf24"
   ];
 
-  const acronyms = [
-    "EUG",  // Elementary Undergraduate
-    "EG",   // Elementary Graduate
-    "HSUG", // High School Undergraduate
-    "HSG",  // High School Graduate
-    "VG",   // Vocational Graduate
-    "CUG",  // College Undergraduate
-    "CG",   // College Graduate
-    "MG",   // Masters Graduate
-    "DL",   // Doctorate Level
-    "DG"    // Doctorate Graduate
-  ];
-
   const token = sessionStorage.getItem("token");
   if (!token) return;
 
@@ -35,11 +22,23 @@ export function renderEducationalBackgroundBar(year, cycle) {
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => res.json())
     .then(profiles => {
+      // Count for each category
       const counts = categories.map(
         cat => profiles.filter(p => p.educationalBackground === cat).length
       );
       const total = counts.reduce((a, b) => a + b, 0);
-      const maxIdx = counts.indexOf(Math.max(...counts));
+
+      // Pair and sort by value descending
+      const summaryPairs = categories.map((cat, i) => ({
+        label: cat,
+        value: counts[i],
+        color: colors[i]
+      })).sort((a, b) => b.value - a.value);
+
+      // For chart: use sorted order
+      const sortedLabels = summaryPairs.map(p => p.label);
+      const sortedCounts = summaryPairs.map(p => p.value);
+      const sortedColors = summaryPairs.map(p => p.color);
 
       // Remove any Chart.js-generated HTML legend from previous renders
       document.querySelectorAll('.chartjs-legend, ul.chartjs-legend, div.chartjs-legend').forEach(el => el.remove());
@@ -55,20 +54,20 @@ export function renderEducationalBackgroundBar(year, cycle) {
       window.educationalBackgroundChart = new Chart(ctx, {
         type: "bar",
         data: {
-          labels: categories, // still needed for tooltips
+          labels: sortedLabels,
           datasets: [{
             label: "Count",
-            data: counts,
-            backgroundColor: colors,
+            data: sortedCounts,
+            backgroundColor: sortedColors,
             borderRadius: 8,
-            maxBarThickness: 32
+            maxBarThickness: 50
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false }, // No default legend
+            legend: { display: false },
             tooltip: {
               backgroundColor: "rgba(255,255,255,0.9)",
               titleColor: "#0A2C59",
@@ -80,18 +79,19 @@ export function renderEducationalBackgroundBar(year, cycle) {
               usePointStyle: true,
               callbacks: {
                 label: function(context) {
-                  return `${categories[context.dataIndex]}: ${counts[context.dataIndex]}`;
+                  return `${sortedLabels[context.dataIndex]}: ${sortedCounts[context.dataIndex]}`;
                 }
               }
             }
           },
           scales: {
             x: {
-              display: false, // <--- Hide x-axis labels (category names)
+              display: false,
               grid: { display: false }
             },
             y: {
               beginAtZero: true,
+              max: total > 0 ? total : undefined, // Y-axis max is total respondents
               ticks: { color: "#0A2C59", font: { weight: "bold", size: 11 } },
               grid: { borderDash: [4, 4] }
             }
@@ -99,22 +99,10 @@ export function renderEducationalBackgroundBar(year, cycle) {
         }
       });
 
-      // Update summary text
+      // Update summary text (sorted, aligned)
       const summaryElem = document.getElementById("educationalBackgroundSummary");
       if (summaryElem) {
-        // Pair each category with its count
-        const summaryPairs = categories.map((cat, i) => ({
-          label: cat,
-          value: counts[i]
-        }));
-
-        // Sort descending by value
-        summaryPairs.sort((a, b) => b.value - a.value);
-
-        // Find the most common (now at index 0 after sort)
         const mostCommon = summaryPairs[0]?.label || "—";
-
-        // Build summary items
         const items = summaryPairs.map(pair =>
           `<div class="educational-background-summary-item">
             <span class="summary-label">${pair.label}:</span>
@@ -135,10 +123,9 @@ export function renderEducationalBackgroundBar(year, cycle) {
         `;
       }
 
-      // Custom legend (your own design)
+      // Custom legend (still in original order, not sorted)
       const legendElem = document.querySelector(".educational-background-legend");
       if (legendElem) {
-        // Build legend items
         const items = categories.map((label, i) => `
           <span class="legend-item">
             <span class="legend-dot" style="background:${colors[i]}"></span>

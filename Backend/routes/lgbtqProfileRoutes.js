@@ -55,4 +55,13 @@ router.put("/:id", protect, authorizeRoles("admin"), ctrl.updateProfileById);
 // Delete profile by ID
 router.delete("/:id", protect, authorizeRoles("admin"), ctrl.deleteProfileById);
 
+// Permanent delete profile by ID
+router.delete("/:id/permanent", protect, authorizeRoles("admin"), ctrl.permanentlyDeleteProfileById);
+
+// Restore profile by ID
+router.put("/:id/restore", protect, authorizeRoles("admin"), ctrl.restoreProfileById);
+
+// Get deleted profiles
+router.get("/deleted", protect, authorizeRoles("admin"), ctrl.getDeletedProfiles);
+
 module.exports = router;
