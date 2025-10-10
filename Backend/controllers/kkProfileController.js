@@ -205,8 +205,12 @@ exports.deleteProfileById = async (req, res) => {
     const profile = await KKProfile.findById(req.params.id);
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
-    await profile.deleteOne();
-    res.json({ message: "Profile deleted" });
+    // Soft delete: set isDeleted and deletedAt
+    profile.isDeleted = true;
+    profile.deletedAt = new Date();
+    await profile.save();
+
+    res.json({ message: "Profile moved to recycle bin" });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
@@ -607,6 +611,42 @@ exports.exportKKProfileDocx = async (req, res) => {
   } catch (err) {
     console.error("Error exporting DOCX:", err);
     res.status(500).json({ error: "Failed to export DOCX" });
+  }
+};
+
+exports.restoreProfileById = async (req, res) => {
+  try {
+    const profile = await KKProfile.findById(req.params.id);
+    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
+
+    profile.isDeleted = false;
+    profile.deletedAt = null;
+    await profile.save();
+
+    res.json({ message: "Profile restored" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.getDeletedProfiles = async (req, res) => {
+  try {
+    const profiles = await KKProfile.find({ isDeleted: true });
+    res.json(profiles);
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
+  }
+};
+
+exports.permanentlyDeleteProfileById = async (req, res) => {
+  try {
+    const profile = await KKProfile.findById(req.params.id);
+    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
+
+    await profile.deleteOne();
+    res.json({ message: "Profile permanently deleted" });
+  } catch (err) {
+    res.status(500).json({ error: "Server error" });
   }
 };
 

@@ -1,4 +1,39 @@
+import { renderPredictionChart } from '../charts/prediction-chart.js';
 import { renderEducationalBackgroundBar } from '../charts/educational-background-chart.js';
+import { renderYouthAgeGroupBar } from '../charts/youth-age-group-chart.js';
+import { renderYouthClassificationBar } from '../charts/youth-classification-chart.js';
+import { renderWorkStatusBar } from '../charts/work-status-chart.js';
+
+// --- Session check on page load ---
+(function() {
+  const token = sessionStorage.getItem("token"); // <-- Use only sessionStorage
+  function sessionExpired() {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Session Expired',
+      text: 'Please login again.',
+      confirmButtonColor: '#0A2C59',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    }).then(() => {
+      window.location.href = "./admin-log.html";
+    });
+  }
+  if (!token) {
+    sessionExpired();
+    return;
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      sessionStorage.removeItem("token");
+      sessionExpired();
+    }
+  } catch (e) {
+    sessionStorage.removeItem("token");
+    sessionExpired();
+  }
+})();
 
 document.addEventListener("DOMContentLoaded", () => {
   // Filter dropdown logic only
@@ -18,18 +53,13 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fetch cycles and populate year dropdown
   async function fetchCycles() {
     const token = sessionStorage.getItem("token");
-    if (!token) {
-      alert("Session expired. Please log in again.");
-      window.location.href = "/Frontend/html/admin/admin-log.html";
-      return [];
-    }
+    // Remove alert and redirect, session check is now global
     const res = await fetch("http://localhost:5000/api/formcycle/kk", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) {
       if (res.status === 401 || res.status === 403) {
-        alert("Session expired or unauthorized. Please log in again.");
-        window.location.href = "/Frontend/html/admin/admin-log.html";
+        // Session check is global, just return
         return [];
       }
       console.error("Failed to fetch cycles:", res.status);
@@ -112,16 +142,22 @@ document.addEventListener("DOMContentLoaded", () => {
     cycleContent.style.display = "none";
   });
 
-  // Filter button logic
+  // --- Filter button logic ---
   filterBtn.addEventListener("click", () => {
     if (!currentFilters.year || !currentFilters.cycle) {
       alert("Please select both year and cycle before filtering.");
       return;
     }
-    // You can add logic here to update the prediction chart based on filter if needed
+    // Pass selected year and cycle to all chart renderers
+    renderPredictionChart(currentFilters.year, currentFilters.cycle);
+    renderCivilStatusDonutFromAPI(currentFilters.year, currentFilters.cycle);
+    renderEducationalBackgroundBar(currentFilters.year, currentFilters.cycle);
+    renderYouthAgeGroupBar(currentFilters.year, currentFilters.cycle);
+    renderYouthClassificationBar(currentFilters.year, currentFilters.cycle);
+    renderWorkStatusBar(currentFilters.year, currentFilters.cycle);
   });
 
-  // Clear filter resets everything
+  // --- Clear filter resets everything ---
   clearFilterBtn.addEventListener("click", () => {
     yearButton.textContent = "Year";
     cycleButton.textContent = "Cycle";
@@ -129,17 +165,30 @@ document.addEventListener("DOMContentLoaded", () => {
     yearContent.style.display = "none";
     cycleContent.style.display = "none";
     currentFilters = {};
-    // You can add logic here to reset the prediction chart if needed
+    // Render all charts with no filter (all data)
+    renderPredictionChart();
+    renderCivilStatusDonutFromAPI();
+    renderEducationalBackgroundBar();
+    renderYouthAgeGroupBar();
+    renderYouthClassificationBar();
+    renderWorkStatusBar();
   });
 
-
+  // Initial load: show all data
   fetchCycles();
-  initPredictionChart();
-  renderCivilStatusDonutFromAPI(); // <-- Call this directly here
-  renderEducationalBackgroundBar(); // Call the imported function
-
+  renderPredictionChart();
+  renderCivilStatusDonutFromAPI();
+  renderEducationalBackgroundBar();
+  renderYouthAgeGroupBar();
+  renderYouthClassificationBar();
+  renderWorkStatusBar();
+  fetchDashboardSummaries();
 });
 
+// --- Prediction chart now fetches filtered data ---
+
+
+// --- Civil status donut already uses year/cycle ---
 function renderCivilStatusDonutFromAPI(year, cycle) {
   const civilStatusCategories = [
     "Single", "Live-in", "Married", "Unknown", "Separated",
@@ -163,8 +212,17 @@ function renderCivilStatusDonutFromAPI(year, cycle) {
       );
       const total = counts.reduce((a, b) => a + b, 0);
       const percentages = counts.map(v => total ? ((v / total) * 100).toFixed(1) : "0.0");
-      const mostCommonIdx = counts.indexOf(Math.max(...counts));
-      const mostCommon = civilStatusCategories[mostCommonIdx] || "—";
+
+      // --- SORT civil status by count descending ---
+      const summaryPairs = civilStatusCategories.map((label, i) => ({
+        label,
+        count: counts[i],
+        percent: percentages[i],
+        color: colors[i]
+      })).sort((a, b) => b.count - a.count);
+
+      // Find most common after sorting
+      const mostCommon = summaryPairs[0]?.label || "—";
 
       // Chart.js donut with center text for total respondents
       const canvas = document.getElementById("civilStatusDonut");
@@ -243,14 +301,12 @@ function renderCivilStatusDonutFromAPI(year, cycle) {
       if (mostElem) mostElem.textContent = mostCommon;
       const percElem = document.getElementById("civilStatusPercentages");
       if (percElem) {
-        // Build two columns
-        const items = civilStatusCategories
-          .map((label, i) =>
-            counts[i] > 0
-              ? `<span><strong>${label}:</strong> ${percentages[i]}%  </span>`// (${counts[i]}) //this shouldd be beside the percentage if needed   
-              : ""
-          )
-          .filter(Boolean);
+        // Build two columns, sorted by count
+        const items = summaryPairs
+          .filter(pair => pair.count > 0)
+          .map(pair =>
+            `<span><strong>${pair.label}:</strong> ${pair.percent}%</span>`
+          );
 
         // Split into two columns
         const mid = Math.ceil(items.length / 2);
@@ -327,3 +383,44 @@ function initPredictionChart() {
     }
   });
 }
+
+// --- Dashboard summaries fetch logic ---
+async function fetchDashboardSummaries() {
+  const token = sessionStorage.getItem("token");
+  const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+  // User Accounts
+  fetch("http://localhost:5000/api/users", { headers })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("userAccountCount").textContent = Array.isArray(data) ? data.length : "-";
+    })
+    .catch(() => {
+      document.getElementById("userAccountCount").textContent = "-";
+    });
+
+  // KK Profiling
+  fetch("http://localhost:5000/api/kkprofiling", { headers })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("kkProfilingCount").textContent = Array.isArray(data) ? data.length : "-";
+    });
+
+  // LGBTQ Profiling
+  fetch("http://localhost:5000/api/lgbtqprofiling", { headers })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById("lgbtqProfilingCount").textContent = Array.isArray(data) ? data.length : "-";
+    });
+
+  // Educational Assistance (pending + accepted)
+  Promise.all([
+    fetch("http://localhost:5000/api/educational-assistance/status?status=pending", { headers }).then(res => res.json()),
+    fetch("http://localhost:5000/api/educational-assistance/status?status=accepted", { headers }).then(res => res.json())
+  ]).then(([pending, accepted]) => {
+    const total = (Array.isArray(pending) ? pending.length : 0) + (Array.isArray(accepted) ? accepted.length : 0);
+    document.getElementById("educationalAssistanceCount").textContent = total;
+  });
+}
+
+// Call this in DOMContentLoaded

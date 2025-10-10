@@ -224,18 +224,31 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderProfiles(profiles) {
     tableBody.innerHTML = "";
     if (!profiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="5">No profiles found</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
       return;
     }
 
     profiles.forEach((p, i) => {
+      const birthday = p.displayData?.birthday
+        ? new Date(p.displayData.birthday).toLocaleDateString()
+        : "N/A";
+      const age = p.displayData?.age ?? "N/A";
       const row = document.createElement("tr");
       row.innerHTML = `
         <td>${i + 1}</td>
         <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${age}</td>
+        <td>${birthday}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
         <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td><button class="view-btn" data-id="${p._id}" style="color: white;"><i class="fa-solid fa-eye" style = "color: #ffffffff"></i> Review</button></td>
+        <td>
+          <button class="view-btn" data-id="${p._id}" style="color: white;">
+            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
+          </button>
+          <button class="delete-btn" data-id="${p._id}">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
       `;
       tableBody.appendChild(row);
     });
@@ -255,6 +268,32 @@ document.addEventListener("DOMContentLoaded", () => {
         showProfileModal(profile);
       })
     );
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to delete this form?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#0A2C59",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+          });
+          if (res.ok) {
+            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
+            fetchProfiles(); // Refresh table
+          }
+        }
+      });
+    });
   }
 
   // 🔹 Show modal

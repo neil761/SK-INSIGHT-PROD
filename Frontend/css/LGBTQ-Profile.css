@@ -437,7 +437,7 @@ body{
     background: #fff;
     border-radius: 10px;
     box-shadow: 0 2px 8px rgba(10,44,89,0.07);
-    padding: 18px 18px 8px 18px;
+    padding: 18px 18px 18px 18px;
     display: flex;
     flex-direction: column;
   }
@@ -492,7 +492,7 @@ thead th {
   background: #f4f6f8;
   font-weight: 600;
   color: #222;
-  border-bottom: 2px solid #e0e0e0;
+  border-bottom: 1px solid #e0e0e0;
   position: sticky;
   top: 0;
   z-index: 1;
@@ -501,7 +501,6 @@ thead th {
 
 tbody td {
   padding: 9px 12px;
-  border-bottom: 1px solid #f0f0f0;
   vertical-align: middle;
   white-space: nowrap;
 }
@@ -519,15 +518,42 @@ tbody tr:hover {
   background: #e1e8ff;
 }
 
-  .view-btn{
-    padding: 7px 14px;
-    background: #0A2C59;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-  }
 
+  .view-btn, .action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #0A2C59;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.view-btn:hover, .action-btn:hover {
+  background: #08305e;
+}
+
+  .delete-btn, .action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  background: #0A2C59;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover, .action-btn:hover {
+  background: #08305e;
+}
   .modal-header {
   display: flex;
   align-items: center;
@@ -640,6 +666,21 @@ tbody tr:hover {
 .navbar-mobile-menu.active {
     display: flex !important;
 }
+
+/* Table header and cell alignment for LGBTQ table (copied from KK Profile) */
+.tables th, .tables td {
+  text-align: left;
+  vertical-align: middle;
+  padding: 12px 10px;
+}
+
+.tables th:nth-child(1), .tables td:nth-child(1) { width: 10%; text-align: center; }
+.tables th:nth-child(2), .tables td:nth-child(2) { width: 20%; }
+.tables th:nth-child(3), .tables td:nth-child(3) { width: 5%; text-align: left; }   /* Age */
+.tables th:nth-child(4), .tables td:nth-child(4) { width: 15%; text-align: center; }   /* Birthday */
+.tables th:nth-child(5), .tables td:nth-child(5) { width: 15%; text-align: center; }
+.tables th:nth-child(6), .tables td:nth-child(6) { width: 15%; text-align: center; }
+.tables th:nth-child(7), .tables td:nth-child(7) { width: 15%; text-align: center; }
 
 
 
