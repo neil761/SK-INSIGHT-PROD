@@ -205,10 +205,18 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById('formTab').style.display = tab.dataset.tab === 'form' ? '' : 'none';
       document.getElementById('deletedTab').style.display = tab.dataset.tab === 'deleted' ? '' : 'none';
       if (tab.dataset.tab === 'deleted') {
+        // Always reset filter to "all" when opening the tab
+        document.getElementById("deletedFilter").value = "all";
         fetchDeletedProfiles();
       }
     });
   });
+
+  // If the Recently Deleted tab is active on page load, show all deleted
+  if (document.querySelector('.settings-tab.active').dataset.tab === 'deleted') {
+    document.getElementById("deletedFilter").value = "all";
+    fetchDeletedProfiles();
+  }
 
   // --- Form Cycle Status Logic ---
   const cycleStatusIds = {
@@ -417,23 +425,34 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchDeletedProfiles() {
     const token = sessionStorage.getItem("token");
     const filter = document.getElementById("deletedFilter").value;
-    let kk = [], lgbtq = [];
-    if (filter === "all" || filter === "kk") {
+    let profiles = [];
+
+    if (filter === "kk") {
+      // Only KK deleted profiles
       const resKK = await fetch("http://localhost:5000/api/kkprofiling/deleted", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      kk = await resKK.json();
-    }
-    if (filter === "all" || filter === "lgbtq") {
+      profiles = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
+    } else if (filter === "lgbtq") {
+      // Only LGBTQ deleted profiles
       const resLGBTQ = await fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      lgbtq = await resLGBTQ.json();
+      profiles = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
+    } else {
+      // All deleted profiles (KK + LGBTQ)
+      const [resKK, resLGBTQ] = await Promise.all([
+        fetch("http://localhost:5000/api/kkprofiling/deleted", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      const kk = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
+      const lgbtq = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
+      profiles = [...kk, ...lgbtq];
     }
-    let profiles = [];
-    if (filter === "kk") profiles = kk;
-    else if (filter === "lgbtq") profiles = lgbtq;
-    else profiles = [...kk.map(p => ({...p, type: "KK"})), ...lgbtq.map(p => ({...p, type: "LGBTQ"}))];
 
     // Sort by deletedAt descending
     profiles.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
@@ -442,17 +461,16 @@ document.addEventListener("DOMContentLoaded", () => {
     tbody.innerHTML = "";
     profiles.forEach((p, i) => {
       const name = p.displayData?.residentName || p.firstname || p.name || "N/A";
-      const type = p.type || (p.sexAssignedAtBirth ? "LGBTQ" : "KK");
       const deletedDate = p.deletedAt ? new Date(p.deletedAt).toLocaleDateString() : "—";
       tbody.innerHTML += `
         <tr>
           <td>${i + 1}</td>
           <td>${name}</td>
-          <td>${type}</td>
+          <td>${p.type}</td>
           <td>${deletedDate}</td>
           <td>
-            <button class="restore-btn" data-id="${p._id}" data-type="${type}">Restore</button>
-            <button class="permanent-delete-btn" data-id="${p._id}" data-type="${type}">Delete Forever</button>
+            <button class="restore-btn" data-id="${p._id}" data-type="${p.type}">Restore</button>
+            <button class="permanent-delete-btn" data-id="${p._id}" data-type="${p.type}">Delete Forever</button>
           </td>
         </tr>
       `;
