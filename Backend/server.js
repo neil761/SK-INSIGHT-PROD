@@ -88,6 +88,9 @@ app.use("/uploads/lgbtq_id_images", express.static(path.join(__dirname, "uploads
 // Serve profile_images at /profile_images
 app.use('/profile_images', express.static(path.join(__dirname, 'uploads/profile_images')));
 
+// Serve signatures at /signatures
+app.use('/signatures', express.static(path.join(__dirname, 'uploads/signatures')));
+
 // ---------------------------
 // Example Generate DOCX Route (for testing only)
 // ---------------------------

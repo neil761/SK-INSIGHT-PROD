@@ -17,8 +17,20 @@ document.addEventListener('DOMContentLoaded', async function() {
     document.getElementById('registeredNationalVoter').checked = !!data.registeredNationalVoter;
     document.getElementById('votedLastSKElection').checked = !!data.votedLastSKElection;
     document.getElementById('attendedKKAssembly').checked = !!data.attendedKKAssembly;
-    document.getElementById('attendanceCount').value = data.attendanceCount || '';
-    document.getElementById('reasonDidNotAttend').value = data.reasonDidNotAttend || '';
+
+    if (data.attendedKKAssembly) {
+      // Show "How many times?" and hide "Why didn't you attend?"
+      document.getElementById('attendanceCountGroup').style.display = '';
+      document.getElementById('reasonGroup').style.display = 'none';
+      document.getElementById('attendanceCount').value = data.attendanceCount || '';
+      document.getElementById('reasonDidNotAttend').value = '';
+    } else {
+      // Show "Why didn't you attend?" and hide "How many times?"
+      document.getElementById('attendanceCountGroup').style.display = 'none';
+      document.getElementById('reasonGroup').style.display = '';
+      document.getElementById('attendanceCount').value = '';
+      document.getElementById('reasonDidNotAttend').value = data.reasonDidNotAttend || '';
+    }
 
     // Profile image preview (if exists)
     if (data.profileImage) {
@@ -27,6 +39,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         : `http://localhost:5000/profile_images/${data.profileImage}`;
       document.getElementById('imagePreview').innerHTML =
         `<img src="${imageUrl}" alt="Profile Image" style="width:520px;border-radius:10px;">`;
+    }
+
+    // Signature image preview (if exists)
+    if (data.signatureImagePath) {
+      const signatureUrl = data.signatureImagePath.startsWith('http')
+        ? data.signatureImagePath
+        : `http://localhost:5000/signatures/${data.signatureImagePath.replace(/^.*[\\/]/, '')}`;
+      document.getElementById('signaturePreview').innerHTML =
+        `<img src="${signatureUrl}" alt="Signature Image" style="width:220px;border-radius:10px;">`;
     }
   } catch (err) {
     console.error('Failed to fetch KKProfile data:', err);
@@ -68,11 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // ✅ KK Profile click handler
-  async function handleKKProfileNavClick(event) {
+  // KK Profile Navigation
+  function handleKKProfileNavClick(event) {
     event.preventDefault();
-    console.log("🟢 KK Profile button clicked");
-
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) {
       Swal.fire({
@@ -81,51 +100,67 @@ document.addEventListener('DOMContentLoaded', function() {
         text: 'Please log in to access KK Profiling.',
         confirmButtonText: 'OK'
       }).then(() => {
-        window.location.href = '/Frontend/html/user/login.html';
+        window.location.href = '../../login.html';
       });
       return;
     }
-
-    try {
-      console.log("📡 Fetching profile...");
-      const res = await fetch('http://localhost:5000/api/kkprofiling/me', {
+    Promise.all([
+      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
         headers: { Authorization: `Bearer ${token}` }
-      });
-
-      console.log("📩 Response status:", res.status);
-
-      if (res.status === 404) {
-        const data = await res.json();
-        console.log("ℹ️ No KK profile yet:", data);
-        if (data.error === "You have not submitted a KK profile yet for the current cycle.") {
-          window.location.href = "kkform-personal.html";
-          return;
-        }
-      }
-
-      if (res.ok) {
-        console.log("✅ Profile exists, showing SweetAlert...");
+      }),
+      fetch('http://localhost:5000/api/kkprofiling/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ])
+    .then(async ([cycleRes, profileRes]) => {
+      let cycleData = await cycleRes.json().catch(() => null);
+      let profileData = await profileRes.json().catch(() => ({}));
+      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
+      const formName = latestCycle?.formName || "KK Profiling";
+      const isFormOpen = latestCycle?.isOpen ?? false;
+      const hasProfile = profileRes.ok && profileData && profileData._id;
+      // CASE 1: Form closed, user already has profile
+      if (!isFormOpen && hasProfile) {
         Swal.fire({
-          title: "You already answered KK Profiling Form",
+          icon: "info",
+          title: `The ${formName} is currently closed`,
+          text: `but you already have a ${formName} profile. Do you want to view your response?`,
+          showCancelButton: true,
+          confirmButtonText: "Yes, view my response",
+          cancelButtonText: "No"
+        }).then(result => {
+          if (result.isConfirmed) window.location.href = "kkcofirmation.html";
+        });
+        return;
+      }
+      // CASE 2: Form closed, user has NO profile
+      if (!isFormOpen && !hasProfile) {
+        Swal.fire({
+          icon: "warning",
+          title: `The ${formName} form is currently closed`,
+          text: "You cannot submit a new response at this time.",
+          confirmButtonText: "OK"
+        });
+        return;
+      }
+      // CASE 3: Form open, user already has a profile
+      if (isFormOpen && hasProfile) {
+        Swal.fire({
+          title: `You already answered ${formName} Form`,
           text: "Do you want to view your response?",
           icon: "info",
           showCancelButton: true,
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) {
-            console.log("➡️ Redirecting to confirmation page...");
-            window.location.href = "confirmation/html/kkcofirmation.html";
-          }
+          if (result.isConfirmed) window.location.href = "kkcofirmation.html";
         });
-      } else {
-        console.log("❌ Not OK response, redirecting to form...");
-        window.location.href = "kkform-personal.html";
+        return;
       }
-    } catch (error) {
-      console.error('🔥 Fetch error:', error);
-      window.location.href = "kkform-personal.html";
-    }
+      // CASE 4: Form open, no profile → Go to form
+      window.location.href = "../../kkform-personal.html";
+    })
+    .catch(() => window.location.href = "../../kkform-personal.html");
   }
 
   // ✅ Attach event listeners to both nav links
@@ -146,8 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
     console.warn("⚠️ Mobile KK Profile button NOT found");
   }
 
-  // ✅ LGBTQ Profile click handler
-  async function handleLGBTQProfileNavClick(event) {
+  // LGBTQ+ Profile Navigation
+  function handleLGBTQProfileNavClick(event) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) {
@@ -161,39 +196,63 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       return;
     }
-
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-      .then(res => {
-        if (res.status === 404) {
-          return res.json().then(data => {
-            if (data.error === "You have not submitted an LGBTQ+ profile yet for the current cycle.") {
-              window.location.href = "lgbtqform.html";
-              return;
-            }
-          });
-        }
-        if (res.ok) {
-          Swal.fire({
-            title: "You already answered LGBTQ+ Profiling Form",
-            text: "Do you want to view your response?",
-            icon: "info",
-            showCancelButton: true,
-            confirmButtonText: "Yes",
-            cancelButtonText: "No"
-          }).then(result => {
-            if (result.isConfirmed) {
-              window.location.href = "confirmation/html/lgbtqconfirmation.html";
-            }
-          });
-        } else {
-          window.location.href = "lgbtqform.html";
-        }
+    Promise.all([
+      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+        headers: { Authorization: `Bearer ${token}` }
       })
-      .catch(() => {
-        window.location.href = "lgbtqform.html";
-      });
+    ])
+    .then(async ([cycleRes, profileRes]) => {
+      let cycleData = await cycleRes.json().catch(() => null);
+      let profileData = await profileRes.json().catch(() => ({}));
+      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
+      const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
+      const isFormOpen = latestCycle?.isOpen ?? false;
+      const hasProfile = profileData && profileData._id ? true : false;
+      // CASE 1: Form closed, user already has profile
+      if (!isFormOpen && hasProfile) {
+        Swal.fire({
+          icon: "info",
+          title: `The ${formName} is currently closed`,
+          text: `but you already have a ${formName} profile. Do you want to view your response?`,
+          showCancelButton: true,
+          confirmButtonText: "Yes, view my response",
+          cancelButtonText: "No"
+        }).then(result => {
+          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+        });
+        return;
+      }
+      // CASE 2: Form closed, user has NO profile
+      if (!isFormOpen && !hasProfile) {
+        Swal.fire({
+          icon: "warning",
+          title: `The ${formName} form is currently closed`,
+          text: "You cannot submit a new response at this time.",
+          confirmButtonText: "OK"
+        });
+        return;
+      }
+      // CASE 3: Form open, user already has a profile
+      if (isFormOpen && hasProfile) {
+        Swal.fire({
+          title: `You already answered ${formName} Form`,
+          text: "Do you want to view your response?",
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        }).then(result => {
+          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+        });
+        return;
+      }
+      // CASE 4: Form open, no profile → Go to form
+      window.location.href = "lgbtqform.html";
+    })
+    .catch(() => window.location.href = "lgbtqform.html");
   }
 
   // Attach to desktop nav button
@@ -207,4 +266,310 @@ document.addEventListener('DOMContentLoaded', function() {
   if (lgbtqProfileNavBtnMobile) {
     lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
   }
+});
+
+// Educational Assistance Navigation
+function handleEducAssistanceNavClick(event) {
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'You need to log in first',
+      text: 'Please log in to access Educational Assistance.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      window.location.href = '/Frontend/html/user/login.html';
+    });
+    return;
+  }
+  Promise.all([
+    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    fetch('http://localhost:5000/api/educational-assistance/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  ])
+  .then(async ([cycleRes, profileRes]) => {
+    let cycleData = await cycleRes.json().catch(() => null);
+    let profileData = await profileRes.json().catch(() => ({}));
+    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
+    const formName = latestCycle?.formName || "Educational Assistance";
+    const isFormOpen = latestCycle?.isOpen ?? false;
+    const hasProfile = profileData && profileData._id ? true : false;
+    // CASE 1: Form closed, user already has profile
+    if (!isFormOpen && hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `The ${formName} is currently closed`,
+        text: `but you already have an application. Do you want to view your response?`,
+        showCancelButton: true,
+        confirmButtonText: "Yes, view my response",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+      });
+      return;
+    }
+    // CASE 2: Form closed, user has NO profile
+    if (!isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "warning",
+        title: `The ${formName} form is currently closed`,
+        text: "You cannot submit a new application at this time.",
+        confirmButtonText: "OK"
+      });
+      return;
+    }
+    // CASE 3: Form open, user already has a profile
+    if (isFormOpen && hasProfile) {
+      Swal.fire({
+        title: `You already applied for ${formName}`,
+        text: "Do you want to view your response?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+      });
+      return;
+    }
+    // CASE 4: Form open, no profile → Go to form
+    window.location.href = "Educational-assistance-user.html";
+  })
+  .catch(() => window.location.href = "Educational-assistance-user.html");
+}
+
+// 1. Define all navigation handler functions FIRST
+function handleKKProfileNavClick(event) {
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'You need to log in first',
+      text: 'Please log in to access KK Profiling.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      window.location.href = '../../login.html';
+    });
+    return;
+  }
+  Promise.all([
+    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    fetch('http://localhost:5000/api/kkprofiling/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  ])
+  .then(async ([cycleRes, profileRes]) => {
+    let cycleData = await cycleRes.json().catch(() => null);
+    let profileData = await profileRes.json().catch(() => ({}));
+    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
+    const formName = latestCycle?.formName || "KK Profiling";
+    const isFormOpen = latestCycle?.isOpen ?? false;
+    const hasProfile = profileRes.ok && profileData && profileData._id;
+    // CASE 1: Form closed, user already has profile
+    if (!isFormOpen && hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `The ${formName} is currently closed`,
+        text: `but you already have a ${formName} profile. Do you want to view your response?`,
+        showCancelButton: true,
+        confirmButtonText: "Yes, view my response",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "kkcofirmation.html";
+      });
+      return;
+    }
+    // CASE 2: Form closed, user has NO profile
+    if (!isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "warning",
+        title: `The ${formName} form is currently closed`,
+        text: "You cannot submit a new response at this time.",
+        confirmButtonText: "OK"
+      });
+      return;
+    }
+    // CASE 3: Form open, user already has a profile
+    if (isFormOpen && hasProfile) {
+      Swal.fire({
+        title: `You already answered ${formName} Form`,
+        text: "Do you want to view your response?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "kkcofirmation.html";
+      });
+      return;
+    }
+    // CASE 4: Form open, no profile → Go to form
+    window.location.href = "../../kkform-personal.html";
+  })
+  .catch(() => window.location.href = "../../kkform-personal.html");
+}
+
+function handleLGBTQProfileNavClick(event) {
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'You need to log in first',
+      text: 'Please log in to access LGBTQ+ Profiling.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      window.location.href = '/Frontend/html/user/login.html';
+    });
+    return;
+  }
+  Promise.all([
+    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  ])
+  .then(async ([cycleRes, profileRes]) => {
+    let cycleData = await cycleRes.json().catch(() => null);
+    let profileData = await profileRes.json().catch(() => ({}));
+    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
+    const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
+    const isFormOpen = latestCycle?.isOpen ?? false;
+    const hasProfile = profileData && profileData._id ? true : false;
+    // CASE 1: Form closed, user already has profile
+    if (!isFormOpen && hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `The ${formName} is currently closed`,
+        text: `but you already have a ${formName} profile. Do you want to view your response?`,
+        showCancelButton: true,
+        confirmButtonText: "Yes, view my response",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+      });
+      return;
+    }
+    // CASE 2: Form closed, user has NO profile
+    if (!isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "warning",
+        title: `The ${formName} form is currently closed`,
+        text: "You cannot submit a new response at this time.",
+        confirmButtonText: "OK"
+      });
+      return;
+    }
+    // CASE 3: Form open, user already has a profile
+    if (isFormOpen && hasProfile) {
+      Swal.fire({
+        title: `You already answered ${formName} Form`,
+        text: "Do you want to view your response?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+      });
+      return;
+    }
+    // CASE 4: Form open, no profile → Go to form
+    window.location.href = "lgbtqform.html";
+  })
+  .catch(() => window.location.href = "lgbtqform.html");
+}
+
+function handleEducAssistanceNavClick(event) {
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'You need to log in first',
+      text: 'Please log in to access Educational Assistance.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      window.location.href = '/Frontend/html/user/login.html';
+    });
+    return;
+  }
+  Promise.all([
+    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      headers: { Authorization: `Bearer ${token}` }
+    }),
+    fetch('http://localhost:5000/api/educational-assistance/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+  ])
+  .then(async ([cycleRes, profileRes]) => {
+    let cycleData = await cycleRes.json().catch(() => null);
+    let profileData = await profileRes.json().catch(() => ({}));
+    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
+    const formName = latestCycle?.formName || "Educational Assistance";
+    const isFormOpen = latestCycle?.isOpen ?? false;
+    const hasProfile = profileData && profileData._id ? true : false;
+    // CASE 1: Form closed, user already has profile
+    if (!isFormOpen && hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `The ${formName} is currently closed`,
+        text: `but you already have an application. Do you want to view your response?`,
+        showCancelButton: true,
+        confirmButtonText: "Yes, view my response",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+      });
+      return;
+    }
+    // CASE 2: Form closed, user has NO profile
+    if (!isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "warning",
+        title: `The ${formName} form is currently closed`,
+        text: "You cannot submit a new application at this time.",
+        confirmButtonText: "OK"
+      });
+      return;
+    }
+    // CASE 3: Form open, user already has a profile
+    if (isFormOpen && hasProfile) {
+      Swal.fire({
+        title: `You already applied for ${formName}`,
+        text: "Do you want to view your response?",
+        icon: "info",
+        showCancelButton: true,
+        confirmButtonText: "Yes",
+        cancelButtonText: "No"
+      }).then(result => {
+        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+      });
+      return;
+    }
+    // CASE 4: Form open, no profile → Go to form
+    window.location.href = "Educational-assistance-user.html";
+  })
+  .catch(() => window.location.href = "Educational-assistance-user.html");
+}
+
+// 2. Then attach event listeners inside DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
+  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
+
+  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
+  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
+
+  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
+  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
 });

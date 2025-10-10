@@ -6,6 +6,7 @@
   <title>KK Profiling - Personal Info</title>
   <link rel="stylesheet" href="/Frontend/html/user/confirmation/css/view-personal.css" />
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 </head>
 <body>
   <div class="navbar">
@@ -14,9 +15,10 @@
       <span class="title">SK-PBW</span>
     </div>
     <div class="navbar-center">
-        <a href="../../kkform-personal.html" id="kkProfileNavBtnDesktop" class="nav-btn">KK Profile</a>
-        <a href="../../lgbtqform.html" id="lgbtqProfileNavBtnDesktop" class="nav-btn">LGBTQ+ Profile</a>
-        <a href="../../Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
+        <!-- Desktop Navbar -->
+        <a href="./kkform-personal.html" id="kkProfileNavBtnDesktop" class="prof">KK Profile</a>
+        <a href="./lgbtqform.html" id="lgbtqProfileNavBtnDesktop" class="prof">LGBTQ+ Profile</a>
+        <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnDesktop" class="prof">Educational Assistance</a>
     </div>
     <div class="navbar-right">
       <span class="navbar-hamburger" id="navbarHamburger">
@@ -29,9 +31,10 @@
 
   <!-- ✅ Mobile dropdown menu -->
   <div class="navbar-mobile-menu" id="navbarMobileMenu">
+      <!-- Mobile Navbar -->
       <a href="./kkform-personal.html" id="kkProfileNavBtnMobile" class="nav-btn">KK Profile</a>
       <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile" class="nav-btn">LGBTQ+ Profile</a>
-      <a href="./Educational-assistance-user.html" class="nav-btn">Educational Assistance</a>
+      <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
   </div>
 
   <div class="kk-container">
@@ -78,6 +81,6 @@
     </form>
   </div>
   
-  <script src="/Frontend/js/view-kkpersonal.js"></script>
+  <script src="../../../../js/view-kkpersonal.js"></script>
 </body>
 </html>

@@ -1,42 +1,11 @@
 document.addEventListener('DOMContentLoaded', async function() {
-  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return;
-  
 
-  try {
-    const res = await fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) return;
-    const data = await res.json();
-
-    // Fill form fields with fetched data
-    document.getElementById('lastName').value = data.lastname || '';
-    document.getElementById('firstName').value = data.firstname || '';
-    document.getElementById('middleName').value = data.middlename || '';
-    document.getElementById('birthday').value =
-      data.kkInfo && data.kkInfo.birthday
-        ? new Date(data.kkInfo.birthday).toISOString().split('T')[0]
-        : '';
-    document.getElementById('sex').value = data.sexAssignedAtBirth || '';
-    document.getElementById('identity').value = data.lgbtqClassification || '';
-
-    // Profile image preview (if exists)
-    if (data.idImage) {
-      const imageUrl = data.idImage.startsWith('http')
-        ? data.idImage
-        : `http://localhost:5000/lgbtq_id_images/${data.idImage}`;
-      document.getElementById('imagePreview').innerHTML =
-        `<img src="${imageUrl}" alt="ID Image" style="width:320px;border-radius:10px;">`;
-    }
-    console.log("Fetched profile data:", data);
-  } catch (err) {
-    console.error('Failed to fetch LGBTQ Profile data:', err);
-  }
-
-  // Hamburger menu code (optional, if you use it)
-  const hamburger = document.getElementById('navbarHamburger');
+    const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
+
+  // Handle mobile menu toggle
   if (hamburger && mobileMenu) {
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
@@ -48,9 +17,112 @@ document.addEventListener('DOMContentLoaded', async function() {
       }
     });
   }
+
+  try {
+    const res = await fetch('http://localhost:5000/api/educational-assistance/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) return;
+    const data = await res.json();
+
+    // Fill form fields with fetched data
+    document.getElementById('surname').value = data.surname || '';
+    document.getElementById('firstName').value = data.firstname || '';
+    document.getElementById('middleName').value = data.middlename || '';
+    document.getElementById('suffix').value = data.suffix || '';
+    document.getElementById('birthday').value = data.birthday
+      ? new Date(data.birthday).toISOString().split('T')[0]
+      : '';
+    document.getElementById('placeOfBirth').value = data.placeOfBirth || '';
+    document.getElementById('age').value = data.age || '';
+    document.getElementById('gender').value = data.sex || '';
+    document.getElementById('civilStatus').value = data.civilStatus || '';
+    document.getElementById('religion').value = data.religion || '';
+    document.getElementById('email').value = data.email || '';
+    document.getElementById('contact').value = data.contactNumber || '';
+    document.getElementById('schoolname').value = data.school || '';
+    document.getElementById('schooladdress').value = data.schoolAddress || '';
+    document.getElementById('year').value = data.year || '';
+    document.getElementById('benefittype').value = data.typeOfBenefit || '';
+    document.getElementById('fathername').value = data.fatherName || '';
+    document.getElementById('fathercontact').value = data.fatherPhone || '';
+    document.getElementById('mothername').value = data.motherName || '';
+    document.getElementById('mothercontact').value = data.motherPhone || '';
+
+    // Siblings table
+    const siblingsBody = document.getElementById('siblingsTableBody');
+    siblingsBody.innerHTML = '';
+    if (Array.isArray(data.siblings)) {
+      data.siblings.forEach(sibling => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${sibling.name || ''}</td>
+          <td>${sibling.gender || ''}</td>
+          <td>${sibling.age || ''}</td>
+        `;
+        siblingsBody.appendChild(row);
+      });
+    }
+
+    // Expenses table
+    const expensesBody = document.getElementById('expensesTableBody');
+    expensesBody.innerHTML = '';
+    if (Array.isArray(data.expenses)) {
+      data.expenses.forEach(expense => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.item || ''}</td>
+          <td>${expense.expectedCost || ''}</td>
+        `;
+        expensesBody.appendChild(row);
+      });
+    }
+
+    // Requirements: Sedula, COE, Signature (show file name only, remove folder path)
+    if (data.sedulaImage) {
+      document.getElementById('sedulaUploadColumn').textContent = data.sedulaImage.replace(/^.*[\\/]/, '');
+    }
+    if (data.coeImage) {
+      document.getElementById('coeUploadColumn').textContent = data.coeImage.replace(/^.*[\\/]/, '');
+    }
+    if (data.signature) {
+      document.getElementById('signatureUploadColumn').textContent = data.signature.replace(/^.*[\\/]/, '');
+    }
+
+    // Optionally, add preview logic for images if you want
+    // Example for Sedula:
+    document.getElementById('viewSedula').onclick = function() {
+      if (data.sedulaImage) {
+        document.getElementById('previewImg').src = `/uploads/${data.sedulaImage}`;
+        document.getElementById('imagePreviewModal').style.display = 'block';
+      }
+    };
+    document.getElementById('closePreviewBtn').onclick = function() {
+      document.getElementById('imagePreviewModal').style.display = 'none';
+    };
+
+    // Repeat for COE and Signature if needed
+
+  } catch (err) {
+    console.error('Failed to fetch Educational Assistance data:', err);
+  }
 });
 
-// 1. Define all navigation handler functions FIRST
+document.addEventListener('DOMContentLoaded', function() {
+  // KK Profile
+  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
+  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
+
+  // LGBTQ+ Profile
+  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
+  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
+
+  // Educational Assistance
+  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
+  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
+});
+
+// KK Profile Navigation
 function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
@@ -271,17 +343,3 @@ function handleEducAssistanceNavClick(event) {
   })
   .catch(() => window.location.href = "Educational-assistance-user.html");
 }
-
-document.addEventListener('DOMContentLoaded', function() {
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
-
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-});
