@@ -46,7 +46,7 @@ function handleKKProfileNavClick(event) {
 
   // Fetch both form cycle status and user profile
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/kk', {
+    fetch('http://localhost:5000/api/formcycle/status?formName=KK Profiling', {
       headers: { Authorization: `Bearer ${token}` }
     }),
     fetch('http://localhost:5000/api/kkprofiling/me', {

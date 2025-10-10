@@ -4,6 +4,7 @@ const ctrl = require("../controllers/kkProfileController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 const KKProfile = require("../models/KKProfile");
 const upload = require("../middleware/uploadProfileImage");
+const signatureUpload = require('../middleware/signatureUploadMiddleware');
 
 // New imports for DOCX generation
 const fs = require("fs");
@@ -293,5 +294,11 @@ router.get("/cycles-and-present", protect, authorizeRoles("admin"), ctrl.getCycl
 
 // Admin: Get KK Profile image by KKProfile ID
 router.get("/image/:id", protect, authorizeRoles("admin"), ctrl.getKKProfileImageById);
+
+// For single signature image upload
+router.post('/upload-signature', signatureUpload.single('signatureImage'), (req, res) => {
+  // Save req.file.filename or req.file.path to your database as needed
+  res.json({ filename: req.file.filename });
+});
 
 module.exports = router;
