@@ -177,9 +177,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
-      allProfiles = data;
+      // Filter out deleted profiles
+      const visibleProfiles = data.filter(p => !p.isDeleted);
+      allProfiles = visibleProfiles;
       console.log("✅ Profiles fetched:", data);
-      renderProfiles(data); // render table
+      renderProfiles(visibleProfiles); // render table
     } catch (err) {
       console.error("❌ Error fetching profiles:", err);
     }
@@ -226,7 +228,10 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${workStatus}</td>
         <td>
           <button class="view-btn" data-id="${p._id}">
-            <i class="fa-solid fa-eye" style="color: #fff"></i> Review
+            <i class="fa-solid fa-eye"></i>
+          </button>
+          <button class="delete-btn" data-id="${p._id}">
+            <i class="fa-solid fa-trash"></i>
           </button>
         </td>
       `;
@@ -248,6 +253,32 @@ document.addEventListener("DOMContentLoaded", () => {
         showProfileModal(profile);
       })
     );
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to delete this form?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#0A2C59",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(`http://localhost:5000/api/kkprofiling/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+          });
+          if (res.ok) {
+            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
+            fetchProfiles(); // Refresh table
+          }
+        }
+      });
+    });
   }
 
   let currentProfileId = null; // Track the current profile ID

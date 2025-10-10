@@ -45,7 +45,7 @@ export function renderYouthAgeGroupBar(year, cycle) {
             data: sortedCounts,
             backgroundColor: sortedColors,
             borderRadius: 8,
-            maxBarThickness: 32
+            maxBarThickness: 60
           }]
         },
         options: {

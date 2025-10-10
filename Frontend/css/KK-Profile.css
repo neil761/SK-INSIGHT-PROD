@@ -239,7 +239,7 @@ body{
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(10,44,89,0.07);
-  padding: 18px 18px 8px 18px;
+  padding: 18px 18px 18px 18px;
   /* Fixed height for the container */
 
   display: flex;
@@ -297,9 +297,10 @@ thead th {
   text-align: left;
   padding: 10px 12px;
   background: #f4f6f8;
+    border-bottom: 1px solid #e0e0e0;
   font-weight: 600;
   color: #222;
-  border-bottom: 2px solid #e0e0e0;
+
   position: sticky;
   top: 0;
   z-index: 1;
@@ -308,7 +309,6 @@ thead th {
 
 tbody td {
   padding: 9px 12px;
-  border-bottom: 1px solid #f0f0f0;
   vertical-align: middle;
   white-space: nowrap;
 }
@@ -344,6 +344,23 @@ tbody tr:hover {
   background: #08305e;
 }
 
+.delete-btn, .action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  background: #0A2C59;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover, .action-btn:hover {
+  background: #08305e;
+}
 /* Make the search bar fit the table width and look modern */
 .search-container {
   position: relative;
