@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const passwordField = document.getElementById('passwordField');
-    const rememberMeCheckbox = document.getElementById('rememberMe');
+    // const rememberMeCheckbox = document.getElementById('rememberMe');
     const togglePassword = document.getElementById('togglePassword');
 
     // On page load, check for token in sessionStorage or localStorage
@@ -26,7 +26,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const email = loginForm.email.value;
         const password = passwordField.value;
-        const rememberMe = rememberMeCheckbox.checked;
+        // const rememberMe = rememberMeCheckbox.checked;
 
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -39,13 +39,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
             if (response.ok && data.token) {
                 // Store token based on Remember Me
-                if (rememberMe) {
-                    localStorage.setItem('token', data.token);
-                    sessionStorage.removeItem('token');
-                } else {
-                    sessionStorage.setItem('token', data.token);
-                    localStorage.removeItem('token');
-                }
+                // if (rememberMe) {
+                //     localStorage.setItem('token', data.token);
+                //     sessionStorage.removeItem('token');
+                // } else {
+                //     sessionStorage.setItem('token', data.token);
+                //     localStorage.removeItem('token');
+                // }
+                sessionStorage.setItem('token', data.token);
+                localStorage.removeItem('token');
                 Swal.fire({
                     icon: 'success',
                     title: 'Login Successful!',

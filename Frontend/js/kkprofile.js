@@ -284,171 +284,172 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentProfileId = null; // Track the current profile ID
 
   // Modify showProfileModal to set currentProfileId and update download button
-  function showProfileModal(p) {
-    currentProfileId = p._id; // Set the current profile ID
+function showProfileModal(p) {
+  currentProfileId = p._id; // Set the current profile ID
 
-    const modal = document.getElementById("profileModal");
-    const header = document.getElementById("profileHeader");
-    const details = document.getElementById("profileDetails");
+  const modal = document.getElementById("profileModal");
+  const header = document.getElementById("profileHeader");
+  const details = document.getElementById("profileDetails");
 
-    const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-    const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
-    const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
+  const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+  const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
+  const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
 
-    // Fetch image as blob with token
-    fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
-      headers: {
-        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-      },
+  // ✅ Fetch profile image
+  fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
+    headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error("Image not found");
+      return res.blob();
     })
-      .then((res) => {
-        if (!res.ok) throw new Error("Image not found");
-        return res.blob();
-      })
-      .then((blob) => {
-        const imgUrl = URL.createObjectURL(blob);
-        header.innerHTML = `
-          <img src="${imgUrl}" alt="Profile Image" />
-          <div class="profile-name">${fullName}</div>
-        `;
-      })
-      .catch(() => {
-        header.innerHTML = `
-          <img src="/Frontend/assets/default-profile.png" alt="Profile Image" />
-          <div class="profile-name">${fullName}</div>
-        `;
-      });
+    .then((blob) => {
+      const imgUrl = URL.createObjectURL(blob);
+      header.innerHTML = `
+        <img src="${imgUrl}" alt="Profile Image" />
+        <div class="profile-name">${fullName}</div>
+      `;
+    })
+    .catch(() => {
+      header.innerHTML = `
+        <img src="/Frontend/assets/default-profile.png" alt="Profile Image" />
+        <div class="profile-name">${fullName}</div>
+      `;
+    });
 
-    details.innerHTML = `
-      <div class="profile-details-modal">
-        <div class="profile-details-row full">
-          <div class="profile-detail">
-            <span class="label">Address</span>
-            <span class="value">${p.purok ? `Purok ${p.purok}` : ""}${p.barangay ? `, ${p.barangay}` : ""}${p.municipality ? `, ${p.municipality}` : ""}</span>
-          </div>
-        </div>
-        <div class="profile-details-row">
-          <div class="profile-detail">
-            <span class="label">Age</span>
-            <span class="value">${p.user?.age ?? "N/A"}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">Gender</span>
-            <span class="value">${p.gender}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">Birthday</span>
-            <span class="value">${p.user?.birthday ? new Date(p.user.birthday).toLocaleDateString() : "-"}</span>
-          </div>
-        </div>
-        
-        <div class="profile-details-row">
-          <div class="profile-detail">
-            <span class="label">Email</span>
-            <span class="value">${p.email || "-"}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">Contact</span>
-            <span class="value">${p.contactNumber || "-"}</span>
-          </div>
-        </div>
-        <div class="profile-details-row">
-          <div class="profile-detail">
-            <span class="label">Civil Status</span>
-            <span class="value">${p.civilStatus || "-"}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">Youth Age Group</span>
-            <span class="value">${p.youthAgeGroup || "-"}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">Education</span>
-            <span class="value">${p.educationalBackground || "-"}</span>
-          </div>
-        </div>
-        <div class="profile-details-row">
-          <div class="profile-detail">
-            <span class="label">Work Status</span>
-            <span class="value">${p.workStatus || "-"}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">SK Voter</span>
-            <span class="value">${p.registeredSKVoter ? "Yes" : "No"}</span>
-          </div>
-          <div class="profile-detail">
-            <span class="label">National Voter</span>
-            <span class="value">${p.registeredNationalVoter ? "Yes" : "No"}</span>
-          </div>
-        </div>
-        <div class="profile-details-row">
-          <div class="profile-detail">
-            <span class="label">Attended KK Assembly</span>
-            <span class="value">${p.attendedKKAssembly ? "Yes" : "No"}</span>
-          </div>
-          ${
-            p.attendedKKAssembly
-              ? `<div class="profile-detail">
-                    <span class="label">Times Attended</span>
-                    <span class="value">${p.attendanceCount || "-"}</span>
-                 </div>`
-              : `<div class="profile-detail">
-                    <span class="label">Reason for Not Attending</span>
-                    <span class="value">${p.reasonDidNotAttend || "-"}</span>
-                 </div>`
-          }
+  // ✅ Fill in modal details
+  details.innerHTML = `
+    <div class="profile-details-modal">
+      <div class="profile-details-row full">
+        <div class="profile-detail">
+          <span class="label">Address</span>
+          <span class="value">
+            ${p.purok ? `Purok ${p.purok}` : ""}${p.barangay ? `, ${p.barangay}` : ""}${p.municipality ? `, ${p.municipality}` : ""}
+          </span>
         </div>
       </div>
-    `;
-
-    // Download button logic
-    const downloadBtn = document.getElementById("downloadBtn");
-    if (downloadBtn) {
-      downloadBtn.onclick = async function () {
-        try {
-          const token = sessionStorage.getItem("token");
-          const res = await fetch(
-            `http://localhost:5000/api/kkprofiling/export/${currentProfileId}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-          if (!res.ok) {
-            Swal.fire("Error", "Failed to download profile.", "error");
-            return;
-          }
-          const blob = await res.blob();
-          // Try to get filename from header
-          let filename = "KKProfile.docx";
-          const disposition = res.headers.get("Content-Disposition");
-          if (disposition && disposition.indexOf("filename=") !== -1) {
-            filename = disposition.split("filename=")[1].replace(/"/g, "");
-          }
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-            a.remove();
-          }, 100);
-        } catch (err) {
-          Swal.fire("Error", "Error downloading profile.", "error");
+      <div class="profile-details-row">
+        <div class="profile-detail">
+          <span class="label">Age</span>
+          <span class="value">${p.user?.age ?? "N/A"}</span>
+        </div>
+        <div class="profile-detail">
+          <span class="label">Gender</span>
+          <span class="value">${p.gender}</span>
+        </div>
+        <div class="profile-detail">
+          <span class="label">Birthday</span>
+          <span class="value">${p.user?.birthday ? new Date(p.user.birthday).toLocaleDateString() : "-"}</span>
+        </div>
+      </div>
+      <div class="profile-details-row">
+        <div class="profile-detail">
+          <span class="label">Email</span>
+          <span class="value">${p.email || "-"}</span>
+        </div>
+        <div class="profile-detail">
+          <span class="label">Contact</span>
+          <span class="value">${p.contactNumber || "-"}</span>
+        </div>
+      </div>
+      <div class="profile-details-row">
+        <div class="profile-detail">
+          <span class="label">Civil Status</span>
+          <span class="value">${p.civilStatus || "-"}</span>
+        </div>
+        <div class="profile-detail">
+          <span class="label">Youth Age Group</span>
+          <span class="value">${p.youthAgeGroup || "-"}</span>
+        </div>
+        ${p.youthClassification === "Youth with Specific Needs" ? `
+          <div class="profile-detail">
+            <span class="label">Specific Needs Type</span>
+            <span class="value">${p.specificNeedsType || "-"}</span>
+          </div>
+        ` : ""}
+        <div class="profile-detail">
+          <span class="label">Education</span>
+          <span class="value">${p.educationalBackground || "-"}</span>
+        </div>
+      </div>
+      <div class="profile-details-row">
+        <div class="profile-detail">
+          <span class="label">Work Status</span>
+          <span class="value">${p.workStatus || "-"}</span>
+        </div>
+        <div class="profile-detail">
+          <span class="label">SK Voter</span>
+          <span class="value">${p.registeredSKVoter ? "Yes" : "No"}</span>
+        </div>
+        <div class="profile-detail">
+          <span class="label">National Voter</span>
+          <span class="value">${p.registeredNationalVoter ? "Yes" : "No"}</span>
+        </div>
+      </div>
+      <div class="profile-details-row">
+        <div class="profile-detail">
+          <span class="label">Attended KK Assembly</span>
+          <span class="value">${p.attendedKKAssembly ? "Yes" : "No"}</span>
+        </div>
+        ${
+          p.attendedKKAssembly
+            ? `<div class="profile-detail">
+                <span class="label">Times Attended</span>
+                <span class="value">${p.attendanceCount || "-"}</span>
+              </div>`
+            : `<div class="profile-detail">
+                <span class="label">Reason for Not Attending</span>
+                <span class="value">${p.reasonDidNotAttend || "-"}</span>
+              </div>`
         }
-      };
-    }
+      </div>
+    </div>
+  `;
 
-    modal.style.display = "flex";
-    document.body.classList.add("modal-open");
-    document.querySelector(".close-btn").onclick = () => {
-      modal.style.display = "none";
-      document.body.classList.remove("modal-open");
+  // ✅ Download button
+  const downloadBtn = document.getElementById("downloadBtn");
+  if (downloadBtn) {
+    downloadBtn.onclick = async function () {
+      try {
+        const token = sessionStorage.getItem("token");
+        const res = await fetch(`http://localhost:5000/api/kkprofiling/export/${currentProfileId}`, {
+          method: "GET",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!res.ok) {
+          Swal.fire("Error", "Failed to download profile.", "error");
+          return;
+        }
+        const blob = await res.blob();
+        let filename = "KKProfile.docx";
+        const disposition = res.headers.get("Content-Disposition");
+        if (disposition && disposition.includes("filename=")) {
+          filename = disposition.split("filename=")[1].replace(/"/g, "");
+        }
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        setTimeout(() => {
+          window.URL.revokeObjectURL(url);
+          a.remove();
+        }, 100);
+      } catch (err) {
+        Swal.fire("Error", "Error downloading profile.", "error");
+      }
     };
   }
+
+  modal.style.display = "flex";
+  document.body.classList.add("modal-open");
+  document.querySelector(".close-btn").onclick = () => {
+    modal.style.display = "none";
+    document.body.classList.remove("modal-open");
+  };
+}
+
 
   // Download button logic
   document.addEventListener("DOMContentLoaded", function () {

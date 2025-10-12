@@ -99,7 +99,14 @@
       <div class="card">
         <label for="idImage">Upload Valid ID Image:</label>
         <input type="file" id="idImage" name="idImage" accept="image/*" required>
+
+        <!-- ✅ Preview Container -->
+        <div id="imagePreviewContainer" class="image-preview-container">
+          <button type="button" id="removeImageBtn" class="remove-image-btn" title="Remove image">&times;</button>
+          <img id="imagePreview" alt="Image preview" />
+        </div>
       </div>
+
       <div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
         <button type="submit" id="submitBtn" class="submit-btn" style="width: auto; padding: 8px 20px;">
           Submit
