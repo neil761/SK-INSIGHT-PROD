@@ -255,10 +255,21 @@ try {
   // Logout button functionality
   const logoutBtn = document.querySelector('.logout-btn');
   if (logoutBtn) {
-    logoutBtn.addEventListener('click', function() {
-      localStorage.removeItem('token');
-      sessionStorage.removeItem('token');
-      window.location.href = './index.html'; // Adjust path if needed
+    logoutBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      Swal.fire({
+        title: 'Are you sure you want to log out?',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonText: 'Yes, log out',
+        cancelButtonText: 'Cancel'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          localStorage.removeItem('token');
+          sessionStorage.removeItem('token');
+          window.location.href = './index.html'; // Adjust path if needed
+        }
+      });
     });
   }
 

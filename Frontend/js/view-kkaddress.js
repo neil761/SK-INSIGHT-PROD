@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           cancelButtonText: "No",
         });
         if (result.isConfirmed)
-          window.location.href = "/html/user/confirmation/html/lgbtqconfirmation.html";
+          window.location.href = "lgbtqconfirmation.html";
         return;
       }
 
@@ -193,7 +193,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           cancelButtonText: "No",
         });
         if (result.isConfirmed)
-          window.location.href = "/html/user/confirmation/html/lgbtqconfirmation.html";
+          window.location.href = "lgbtqconfirmation.html";
         return;
       }
 
@@ -252,7 +252,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           cancelButtonText: "No",
         });
         if (result.isConfirmed)
-          window.location.href = "/html/user/confirmation/html/educConfirmation.html";
+          window.location.href = "educConfirmation.html";
         return;
       }
 
@@ -276,7 +276,7 @@ document.addEventListener("DOMContentLoaded", async function () {
           cancelButtonText: "No",
         });
         if (result.isConfirmed)
-          window.location.href = "/html/user/confirmation/html/educConfirmation.html";
+          window.location.href = "educConfirmation.html";
         return;
       }
 

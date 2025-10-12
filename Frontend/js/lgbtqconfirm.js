@@ -150,7 +150,7 @@ function handleLGBTQProfileNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+        if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
       });
       return;
     }

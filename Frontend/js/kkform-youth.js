@@ -149,10 +149,13 @@ document.addEventListener('DOMContentLoaded', function() {
       reasonDidNotAttend: youthForm.reasonDidNotAttend.value
     };
 
-    // Keep existing saved image
+    // Keep existing saved images
     const existing = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
     if (existing.profileImage) {
       step3Data.profileImage = existing.profileImage;
+    }
+    if (existing.signatureImage) {
+      step3Data.signatureImage = existing.signatureImage;
     }
 
     localStorage.setItem('kkProfileStep3', JSON.stringify(step3Data));
