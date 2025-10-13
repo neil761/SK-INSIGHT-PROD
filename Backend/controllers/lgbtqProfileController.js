@@ -452,9 +452,15 @@ async function getPresentCycle(formName) {
 // Get deleted profiles
 exports.getDeletedProfiles = async (req, res) => {
   try {
+    console.log("GET /api/lgbtqprofiling/deleted called");
+    // Check if request is authenticated and authorized
+    console.log("User:", req.user);
+    // Query for deleted profiles
     const profiles = await LGBTQProfile.find({ isDeleted: true });
+    console.log("Deleted profiles found:", profiles.length);
     res.json(profiles);
   } catch (err) {
-    res.status(500).json({ error: "Server error" });
+    console.error("Error in getDeletedProfiles:", err);
+    res.status(500).json({ error: err.message || "Server error" });
   }
 };
