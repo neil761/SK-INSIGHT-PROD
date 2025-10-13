@@ -34,13 +34,22 @@ const kkProfileSchema = new mongoose.Schema({
     type: String,
     enum: ["In School Youth","Out of School Youth","Working Youth","Youth with Specific Needs"],
   },
+    specificNeedType: {
+    type: String,
+    enum: [
+      'Person w/Disability',
+      'Children in Conflict w/Law',
+      'Indigenous People'
+    ],
+    default: null
+  },
   educationalBackground: {
     type: String,
     enum: [
       "Elementary Undergraduate", "Elementary Graduate",
       "High School Undergraduate", "High School Graduate",
       "Vocational Graduate", "College Undergraduate",
-      "College Graduate", "Masters Graduate",
+      "College Graduate", "Masters Level", "Masters Graduate",
       "Doctorate Level", "Doctorate Graduate"
     ],
   },

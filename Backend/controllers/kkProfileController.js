@@ -66,6 +66,7 @@ exports.submitKKProfile = async (req, res) => {
       civilStatus,
       youthAgeGroup,
       youthClassification,
+      specificNeedType,
       educationalBackground,
       workStatus,
       registeredSKVoter,
@@ -111,6 +112,7 @@ exports.submitKKProfile = async (req, res) => {
       civilStatus,
       youthAgeGroup,
       youthClassification,
+      specificNeedType: youthClassification === "Youth with Specific Needs" ? specificNeedType : null,
       educationalBackground,
       workStatus,
       registeredSKVoter,
@@ -593,6 +595,8 @@ exports.exportKKProfileDocx = async (req, res) => {
         ? new Date(profile.user.birthday).toLocaleDateString()
         : "",
       age: profile.user?.age || "",
+      // Add this line for the dropdown value:
+      specificNeedType: profile.specificNeedType || "",
     };
 
     doc.render(data);
@@ -649,4 +653,8 @@ exports.permanentlyDeleteProfileById = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
+
+
+// Use isPWD, isCICL, isIP as needed here
 

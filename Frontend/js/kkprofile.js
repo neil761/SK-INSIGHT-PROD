@@ -361,18 +361,22 @@ function showProfileModal(p) {
           <span class="label">Youth Age Group</span>
           <span class="value">${p.youthAgeGroup || "-"}</span>
         </div>
+        <div class="profile-detail">
+          <span class="label" style = "font-size: 14px">Youth Classification</span>
+          <span class="value" style = "font-size: 14px">${p.youthClassification || "-"}</span>
+        </div>
         ${p.youthClassification === "Youth with Specific Needs" ? `
           <div class="profile-detail">
-            <span class="label">Specific Needs Type</span>
-            <span class="value">${p.specificNeedsType || "-"}</span>
+            <span class="label" style = "font-size: 14px">Specific Needs Type</span>
+            <span class="value" style = "font-size: 14px">${p.specificNeedType || "-"}</span>
           </div>
         ` : ""}
-        <div class="profile-detail">
-          <span class="label">Education</span>
-          <span class="value">${p.educationalBackground || "-"}</span>
-        </div>
       </div>
       <div class="profile-details-row">
+        <div class="profile-detail">
+          <span class="label">Education</span>
+        <span class="value" style = "font-size: 15px">${p.educationalBackground || "-"}</span>
+        </div>
         <div class="profile-detail">
           <span class="label">Work Status</span>
           <span class="value">${p.workStatus || "-"}</span>
