@@ -185,7 +185,11 @@
 
       <!-- Recently Deleted Profiles Container -->
       <div class="recycle-bin-container settings-tab-content" id="deletedTab" style="display:none;">
-        <h1>Recently Deleted Profiles</h1>
+         <h1 style="color:#0A2C59; font-size:2rem; font-weight:700; margin-bottom:0.5rem;">Recently Deleted Profiles</h1>
+          <p class="subtitle" style="color:#666; margin-bottom:2rem;">
+            View and manage profiles that have been deleted. You can restore or permanently delete items from the recycle bin.
+          </p>
+          <div class="recycle-bin-container-nested">
         <div style="margin-bottom: 16px;">
           <label for="deletedFilter"><strong>Filter:</strong></label>
           <select id="deletedFilter">
@@ -208,6 +212,7 @@
             <!-- Rows will be injected by JS -->
           </tbody>
         </table>
+      </div>
       </div>
     </div>
 
