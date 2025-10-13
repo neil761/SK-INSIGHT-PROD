@@ -542,7 +542,7 @@ tbody tr:hover {
   align-items: center;
   gap: 6px;
   padding: 6px 13px;
-  background: #0A2C59;
+  background: #b80c0c;
   color: white;
   border: none;
   border-radius: 7px;
@@ -579,11 +579,10 @@ tbody tr:hover {
 
 .modal-content {
   background: #ffffff;
-  padding: 20px;
   width: 50vw;
   max-height: 80vh;
   overflow-y: auto;
-  border-radius: 12px;
+  border-radius: 20px;
   box-shadow: 0px 5px 15px rgba(0,0,0,0.3);
   animation: fadeIn 0.3s ease-in-out;
   position: relative;      
@@ -681,6 +680,196 @@ tbody tr:hover {
 .tables th:nth-child(5), .tables td:nth-child(5) { width: 15%; text-align: center; }
 .tables th:nth-child(6), .tables td:nth-child(6) { width: 15%; text-align: center; }
 .tables th:nth-child(7), .tables td:nth-child(7) { width: 15%; text-align: center; }
+
+/* Modern Modal Styles for LGBTQ (inspired by KK Profile) */
+.modern-modal-header {
+  background: #0A2C59;
+  padding: 32px 48px 20px 48px;
+  display: flex;
+  align-items: center;
+  border-radius: 10px 10px 0 0;
+  position: relative;
+  gap: 24px;
+  margin-bottom: 15px;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+}
+
+.profile-header img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid #fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+}
+
+.profile-header .profile-name {
+  color: #fff;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.08);
+}
+
+.modern-modal-close {
+  position: absolute;
+  top: 18px;
+  right: 24px;
+  color: rgba(255,255,255,0.8);
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  transition: color 0.2s, transform 0.2s;
+  padding: 4px;
+  line-height: 0.8;
+}
+
+.modern-modal-close:hover {
+  color: #fff;
+  transform: rotate(90deg) scale(1.1);
+}
+
+.modern-modal-body {
+  padding: 5px 48px 32px 48px;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.profile-details-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.profile-details-row {
+  display: flex;
+  gap: 32px;
+  margin-bottom: 0;
+}
+
+.profile-details-row.full {
+  flex-direction: row;
+  gap: 0;
+}
+
+.profile-detail {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 20px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.06);
+  border: 1px solid #f0f4fa;
+}
+
+.profile-detail .label {
+  color: #64748b;
+  font-size: 1.01rem;
+  font-weight: 500;
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+
+.profile-detail .value {
+  color: #0A2C59;
+  font-size: 1.13rem;
+  font-weight: 600;
+  word-break: break-word;
+  letter-spacing: 0.01em;
+}
+
+.id-image-container {
+  margin-top: 8px;
+  text-align: center;
+}
+
+.id-image {
+  max-width: 180px;
+  max-height: 120px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.09);
+  border: 1.5px solid #e0e0e0;
+}
+
+/* Pagination styles */
+.pagination-container {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 18px 0 0 0;
+}
+
+.pagination-btn {
+  background: #0A2C59;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.pagination-btn.active {
+  background: #07B0F2;
+  color: #fff;
+  font-weight: bold;
+}
+
+.pagination-btn:disabled {
+  background: #e0e0e0;
+  color: #aaa;
+  cursor: not-allowed;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .modern-modal {
+    width: 98vw;
+    min-width: 0;
+    height: auto;
+  }
+  .modern-modal-header,
+  .modern-modal_body {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  .profile-details-row {
+    flex-direction: column;
+    gap: 8px;
+  }
+  .profile-details-row.full .profile-detail {
+    flex: 1;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
+
+@media (max-width: 1200px) {
+  .modern-modal {
+    width: 98vw;
+    min-width: 0;
+  }
+  .modern-modal-header,
+  .modern-modal-body {
+    padding-left: 18px;
+    padding-right: 18px;
+  }
+  .profile-details-row {
+    gap: 18px;
+  }
+}
 
 
 
