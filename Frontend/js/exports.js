@@ -460,17 +460,30 @@ document.addEventListener("DOMContentLoaded", () => {
     const tbody = document.querySelector("#deletedTable tbody");
     tbody.innerHTML = "";
     profiles.forEach((p, i) => {
-      const name = p.displayData?.residentName || p.firstname || p.name || "N/A";
+      // Build full name for KK and LGBTQ profiles
+      let fullName = "N/A";
+      if (p.type === "KK") {
+        // For KK: use firstname, middlename, surname
+        const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+        fullName = [p.firstname, mi, p.surname].filter(Boolean).join(" ");
+      } else if (p.type === "LGBTQ") {
+        // For LGBTQ: use firstname, middlename, lastname
+        const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+        fullName = [p.firstname, mi, p.lastname].filter(Boolean).join(" ");
+      } else {
+        // Fallback to displayData or name
+        fullName = p.displayData?.residentName || p.name || "N/A";
+      }
       const deletedDate = p.deletedAt ? new Date(p.deletedAt).toLocaleDateString() : "—";
       tbody.innerHTML += `
         <tr>
           <td>${i + 1}</td>
-          <td>${name}</td>
+          <td>${fullName}</td>
           <td>${p.type}</td>
           <td>${deletedDate}</td>
           <td>
             <button class="restore-btn" data-id="${p._id}" data-type="${p.type}">Restore</button>
-            <button class="permanent-delete-btn" data-id="${p._id}" data-type="${p.type}">Delete Forever</button>
+            <button class="permanent-delete-btn" data-id="${p._id}" data-type="${p.type}">Delete</button>
           </td>
         </tr>
       `;
@@ -515,14 +528,14 @@ document.addEventListener("DOMContentLoaded", () => {
           ? `http://localhost:5000/api/kkprofiling/${id}/permanent`
           : `http://localhost:5000/api/lgbtqprofiling/${id}/permanent`;
         const result = await Swal.fire({
-          title: "Delete Forever?",
+          title: "Delete ?",
           text: "This action cannot be undone. Are you sure?",
           icon: "warning",
           showCancelButton: true,
           confirmButtonColor: "#ef4444",
           cancelButtonColor: "#0A2C59",
-          confirmButtonText: "Yes, delete forever",
-          cancelButtonText: "Cancel"
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
         });
         if (result.isConfirmed) {
           const res = await fetch(endpoint, {
