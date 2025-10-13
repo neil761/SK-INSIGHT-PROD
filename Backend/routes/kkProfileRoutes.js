@@ -119,6 +119,9 @@ router.get("/export/:id", protect, async (req, res) => {
       return `${day} /${month} /${year}`;
     }
 
+    // Before doc.render(), add:
+    const specificNeedType = profile.specificNeedType || "";
+
     // Render data into template
     doc.render({
       lastname: profile.lastname || "",
@@ -191,24 +194,24 @@ router.get("/export/:id", protect, async (req, res) => {
       a5_c: checkbox(profile.attendanceCount, "5 and above"),
 
       // had attended kk assembly checkboxes
-      vot_yes: checkbox(profile.attendedKKAssembly, true),
-      vot_no: checkbox(profile.attendedKKAssembly, false),
+      vot_yes: checkbox(profile.attendedKKAssembly, "Yes"),
+      vot_no: checkbox(profile.attendedKKAssembly, "No"),
 
       // Reason Did Not Attend checkboxes
       rno_c: checkbox(profile.reasonDidNotAttend, "There was no KK Assembly"),
       rnot_c: checkbox(profile.reasonDidNotAttend, "Not interested"),
 
       // Registered SK Voter checkboxes
-      sk_yes: checkbox(profile.registeredSKVoter, true),
-      sk_no: checkbox(profile.registeredSKVoter, false),
+      sk_yes: checkbox(profile.registeredSKVoter, "Yes"),
+      sk_no: checkbox(profile.registeredSKVoter, "No"),
 
       // Registered National Voter checkboxes
-      nat_yes: checkbox(profile.registeredNationalVoter, true),
-      nat_no: checkbox(profile.registeredNationalVoter, false),
+      nat_yes: checkbox(profile.registeredNationalVoter, "Yes"),
+      nat_no: checkbox(profile.registeredNationalVoter, "No"),
 
       // Voted Last SK Election checkboxes
-      yes: checkbox(profile.votedLastSKElection, true),
-      no: checkbox(profile.votedLastSKElection, false),
+      yes: checkbox(profile.votedLastSKElection, "Yes"),
+      no: checkbox(profile.votedLastSKElection, "No"),
 
       // registeredSKVoter: profile.registeredSKVoter ? "Yes" : "No",
       // registeredNationalVoter: profile.registeredNationalVoter ? "Yes" : "No",
@@ -227,6 +230,12 @@ router.get("/export/:id", protect, async (req, res) => {
       birthday: formatDateDMY(profile.birthday),
       submittedAt: formatDateDMY(profile.submittedAt),
       age: calculateAge(profile.birthday),
+
+      // New fields for DOCX
+      specificNeedType: specificNeedType,
+      pwd_c: specificNeedType === "Person w/Disability" ? "☑" : "☐",
+      cicl_c: specificNeedType === "Children in Conflict w/Law" ? "☑" : "☐",
+      ip_c: specificNeedType === "Indigenous People" ? "☑" : "☐",
     });
 
     const buf = doc.getZip().generate({ type: "nodebuffer" });
