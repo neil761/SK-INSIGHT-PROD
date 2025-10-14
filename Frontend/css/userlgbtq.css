@@ -225,6 +225,42 @@ body {
 .submit-btn:hover {
   background: #143d77;
 }
+.image-preview-container {
+  position: relative;
+  display: none;
+  margin-top: 10px;
+  max-width: 300px;
+}
+
+.image-preview-container img {
+  width: 100%;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+}
+
+.remove-image-btn {
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #fff;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  line-height: 20px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.remove-image-btn:hover {
+  background: rgba(255, 0, 0, 0.7);
+}
+
 
 /* Responsive */
 @media (max-width: 768px) {

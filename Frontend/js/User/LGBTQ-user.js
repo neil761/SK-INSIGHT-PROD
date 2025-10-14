@@ -285,3 +285,34 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
   document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
 });
+
+// ✅ Image preview + remove logic
+const idImageInput = document.getElementById("idImage");
+const imagePreview = document.getElementById("imagePreview");
+const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+const removeImageBtn = document.getElementById("removeImageBtn");
+
+if (idImageInput && imagePreview && removeImageBtn) {
+  // Hide preview by default
+  imagePreviewContainer.style.display = "none";
+
+  // When user selects a file
+  idImageInput.addEventListener("change", (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        imagePreview.src = e.target.result;
+        imagePreviewContainer.style.display = "inline-block";
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+
+  // When user clicks the X button
+  removeImageBtn.addEventListener("click", () => {
+    idImageInput.value = ""; // clear file input
+    imagePreview.src = "";
+    imagePreviewContainer.style.display = "none";
+  });
+}

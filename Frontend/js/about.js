@@ -25,6 +25,33 @@ document.addEventListener('DOMContentLoaded', function() {
       loginStrip.style.display = 'flex';
     }
     document.body.classList.add('has-login-strip');
+
+    // Disable all navbar buttons for non-logged-in users
+    const navSelectors = [
+      '.navbar-center a',           // All main nav links
+      '.navbar-right a',            // User profile, logout, etc.
+      '.navbar-mobile-menu a',      // Mobile nav links
+      '.announcement-btn',          // Announcement button (if it has this class or id)
+      '#userProfileBtn',            // User profile button (if it has this id)
+      '.prof',                      // Profile nav buttons
+      '.nav-btn'                    // Mobile nav buttons
+    ];
+    navSelectors.forEach(selector => {
+      document.querySelectorAll(selector).forEach(btn => {
+        btn.classList.add('disabled');
+        btn.setAttribute('tabindex', '-1');
+        btn.setAttribute('aria-disabled', 'true');
+        btn.addEventListener('click', function(e) {
+          e.preventDefault();
+          Swal.fire({
+            icon: 'warning',
+            title: 'You need to log in first',
+            text: 'Please log in to access this feature.',
+            confirmButtonText: 'OK'
+          });
+        });
+      });
+    });
   }
 
   // KK Profile Navigation
@@ -67,7 +94,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes, view my response",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }
@@ -91,7 +118,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }

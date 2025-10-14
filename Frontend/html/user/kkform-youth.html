@@ -45,15 +45,25 @@
           <option value="Young Youth">Young Youth</option>
         </select>
       </div>
-      <div class="kk-card">
-        <label class="kk-label" for="youthClassification">Youth Classification:</label>
-        <select class="kk-input" id="youthClassification" name="youthClassification" required>
-          <option value="">Select Classification</option>
-          <option value="In School Youth">In School Youth</option>
-          <option value="Out of School Youth">Out of School Youth</option>
+      <div class="form-group">
+        <label for="youthClassification">Youth Classification</label>
+        <select id="youthClassification" name="youthClassification" class="kk-input">
+          <option value="">Select classification</option>
+          <option value="In-School Youth">In-School Youth</option>
+          <option value="Out of School Youth">Out-of-School Youth</option>
           <option value="Working Youth">Working Youth</option>
           <option value="Youth with Specific Needs">Youth with Specific Needs</option>
         </select>
+
+        <div id="specificNeedsGroup" style="display: none; margin-top: 12px;">
+          <label for="specificNeedType">If Youth with Specific Needs, specify:</label>
+          <select id="specificNeedType" name="specificNeedType" class="kk-input">
+            <option value="">Select Specific Need</option>
+            <option value="Person w/Disability">Person w/Disability</option>
+            <option value="Children in Conflict w/Law">Children in Conflict w/Law</option>
+            <option value="Indigenous People">Indigenous People</option>
+          </select>
+        </div>
       </div>
       <div class="kk-card">
         <label class="kk-label" for="educationalBackground">Educational Background:</label>
@@ -66,11 +76,13 @@
           <option value="Vocational Graduate">Vocational Graduate</option>
           <option value="College Undergraduate">College Undergraduate</option>
           <option value="College Graduate">College Graduate</option>
+          <option value="Masters Level">Masters Level</option>
           <option value="Masters Graduate">Masters Graduate</option>
           <option value="Doctorate Level">Doctorate Level</option>
           <option value="Doctorate Graduate">Doctorate Graduate</option>
         </select>
       </div>
+
       <div class="kk-card">
         <label class="kk-label" for="workStatus">Work Status:</label>
         <select class="kk-input" id="workStatus" name="workStatus" required>
@@ -82,61 +94,75 @@
           <option value="Not interested in looking for a Job">Not interested in looking for a Job</option>
         </select>
       </div>
-      <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="registeredSKVoter" name="registeredSKVoter"> Registered SK Voter</label>
-      </div>
-      <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="registeredNationalVoter" name="registeredNationalVoter"> Registered National Voter</label>
-      </div>
-      <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="votedLastSKElection" name="votedLastSKElection"> Voted in Last SK Election</label>
-      </div>
-      <div class="kk-card kk-checkbox-group">
-        <label><input type="checkbox" id="attendedKKAssembly" name="attendedKKAssembly"> Attended KK Assembly</label>
-      </div>
-      <div class="kk-card" id="attendanceCountGroup" style="display: none;">
-        <label class="kk-label" for="attendanceCount">How many times?</label>
-        <select class="kk-input" id="attendanceCount" name="attendanceCount">
+      <div class="kk-card">
+        <label class="kk-label" for="registeredSKVoter">Registered SK Voter:</label>
+        <select class="kk-input" id="registeredSKVoter" name="registeredSKVoter" required>
           <option value="">Select</option>
-          <option value="1-2 times">1-2 times</option>
-          <option value="3-4 times">3-4 times</option>
-          <option value="5 and above">5 and above</option>
-        </select>
-      </div>
-      <div class="kk-card" id="reasonGroup" style="display: none;">
-        <label class="kk-label" for="reasonDidNotAttend">Why didn't you attend?</label>
-        <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend">
-          <option value="">Select</option>
-          <option value="There was no KK Assembly">There was no KK Assembly</option>
-          <option value="Not interested">Not interested</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
         </select>
       </div>
       <div class="kk-card">
-        <label class="kk-label">Upload Profile Image:</label>
-        <span>
-          <label for="profileImage" class="upload-plus" id="profileImageLabel">
-            <i class="fa-solid fa-plus"></i>
-          </label>
-          <input type="file" id="profileImage" name="profileImage" accept="image/*" style="display:none;">
-          <span class="file-name" id="profileImageFileName"></span>
-        </span>
-        <div id="profileImagePreview" class="image-preview"></div>
+        <label class="kk-label" for="registeredNationalVoter">Registered National Voter:</label>
+        <select class="kk-input" id="registeredNationalVoter" name="registeredNationalVoter" required>
+          <option value="">Select</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
       </div>
+      <div class="kk-card">
+        <label class="kk-label" for="votedLastSKElection">Voted in Last SK Election:</label>
+        <select class="kk-input" id="votedLastSKElection" name="votedLastSKElection" required>
+          <option value="">Select</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+      <div class="kk-card">
+        <label class="kk-label" for="attendedKKAssembly">Attended KK Assembly:</label>
+        <select class="kk-input" id="attendedKKAssembly" name="attendedKKAssembly" required>
+          <option value="">Select</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
 
-      <div class="kk-card">
-        <label class="kk-label">Upload Signature:</label>
-        <span>
-          <label for="signatureImage" class="upload-plus" id="signatureImageLabel">
-            <i class="fa-solid fa-plus"></i>
-          </label>
-          <input type="file" id="signatureImage" name="signatureImage" accept="image/*" style="display:none;">
-          <span class="file-name" id="signatureImageFileName"></span>
-        </span>
-        <div id="signatureImagePreview" class="image-preview"></div>
+        <!-- These two groups are now inside the same kk-card container -->
+        <div id="attendanceCountGroup" style="display: none; margin-top: 12px;">
+          <label class="kk-label" for="attendanceCount">How many times?</label>
+          <select class="kk-input" id="attendanceCount" name="attendanceCount">
+            <option value="">Select</option>
+            <option value="1-2 times">1-2 times</option>
+            <option value="3-4 times">3-4 times</option>
+            <option value="5 and above">5 and above</option>
+          </select>
+        </div>
+        <div id="reasonGroup" style="display: none; margin-top: 12px;">
+          <label class="kk-label" for="reasonDidNotAttend">Why didn't you attend?</label>
+          <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend">
+            <option value="">Select</option>
+            <option value="There was no KK Assembly">There was no KK Assembly</option>
+            <option value="Not interested">Not interested</option>
+          </select>
+        </div>
+      </div>
+      <!-- Side-by-side image upload containers -->
+      <div class="kk-upload-row">
+        <div class="kk-card kk-upload-col">
+          <label class="kk-label">Profile Image (ID):</label>
+          <button type="button" id="customUploadBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Image</button>
+          <div id="profileImagePreview" class="kk-upload-preview"></div>
+          <input type="file" id="profileImage" accept="image/*" style="display:none;">
+        </div>
+        <div class="kk-card kk-upload-col">
+          <label class="kk-label">Signature Image:</label>
+          <button type="button" id="customSignatureBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Signature</button>
+          <div id="signatureImagePreview" class="kk-upload-preview"></div>
+          <input type="file" id="signatureImage" accept="image/*" style="display:none;">
+        </div>
       </div>
 
       <div class="kk-btn-group">
-        <button type="button" class="kk-btn" onclick="window.location.href='kkform-address.html'">Previous</button>
+        <button type="button" id="previousBtn" class="kk-btn" onclick="window.location.href='kkform-address.html'">Previous</button>
         <button type="submit" class="kk-btn kk-submit-btn">Finish</button>
       </div>
     </form>
