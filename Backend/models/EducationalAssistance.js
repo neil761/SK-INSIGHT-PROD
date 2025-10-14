@@ -61,6 +61,7 @@ const educationalAssistanceSchema = new mongoose.Schema({
   },
   rejectionReason: { type: String },
   resubmissionCount: { type: Number, default: 0 },
+  isRead: { type: Boolean, default: false }, // <-- Add this line
 
   createdAt: { type: Date, default: Date.now },
 });

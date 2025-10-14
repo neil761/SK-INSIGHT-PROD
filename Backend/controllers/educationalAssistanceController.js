@@ -241,6 +241,12 @@ exports.getApplicationById = async (req, res) => {
   );
   if (!app) return res.status(404).json({ error: "Application not found" });
 
+  // Mark as read ONLY for admin users
+  if (req.user && req.user.role === "admin" && !app.isRead) {
+    app.isRead = true;
+    await app.save();
+  }
+
   // Mark related notifications as read
   await Notification.updateMany(
     { referenceId: app._id, type: "educational-assistance", read: false },
