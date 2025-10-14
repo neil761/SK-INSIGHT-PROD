@@ -221,7 +221,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes, view my response",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+          if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
         });
         return;
       }
@@ -245,7 +245,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+          if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
         });
         return;
       }
@@ -308,7 +308,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "educConfirmation.html";
       });
       return;
     }
@@ -332,7 +332,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "educConfirmation.html";
       });
       return;
     }
@@ -455,7 +455,7 @@ function handleLGBTQProfileNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+        if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
       });
       return;
     }
@@ -479,7 +479,7 @@ function handleLGBTQProfileNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
+        if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
       });
       return;
     }
@@ -528,7 +528,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "educConfirmation.html";
       });
       return;
     }
@@ -552,7 +552,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "educConfirmation.html";
       });
       return;
     }

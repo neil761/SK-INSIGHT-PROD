@@ -296,6 +296,13 @@ body {
     color: #1e4e9e;
 }
 
+/* Disabled States */
+a.disabled, button.disabled {
+  pointer-events: none;
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .navbar {

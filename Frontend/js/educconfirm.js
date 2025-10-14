@@ -199,7 +199,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "educConfirmation.html";
       });
       return;
     }
@@ -223,7 +223,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "educConfirmation.html";
       });
       return;
     }
