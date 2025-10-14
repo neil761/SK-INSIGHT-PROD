@@ -11,7 +11,10 @@ router.post(
   "/",
   protect,
   (req, res, next) => {
-    uploadLGBTQIdImage.single("idImage")(req, res, function (err) {
+    upload.fields([
+      { name: "idImageFront", maxCount: 1 },
+      { name: "idImageBack", maxCount: 1 }
+    ])(req, res, function (err) {
       if (err) {
         return res.status(400).json({ success: false, error: err.message });
       }
