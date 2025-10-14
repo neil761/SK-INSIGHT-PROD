@@ -41,17 +41,19 @@ exports.submitLGBTQProfile = async (req, res) => {
       return res.status(409).json({ success: false, error: "You already submitted during this form cycle" });
     }
 
-    // Check for required demographics and image
+    // Check for required demographics and images
     const { lastname, firstname, middlename, sexAssignedAtBirth, lgbtqClassification } = req.body;
     if (!lastname || !firstname || !middlename || !sexAssignedAtBirth || !lgbtqClassification) {
-      // Delete uploaded file if present
-      if (req.file) {
-        fs.unlink(req.file.path, () => {});
-      }
+      // Delete uploaded files if present
+      if (req.files?.idImageFront) fs.unlink(req.files.idImageFront[0].path, () => {});
+      if (req.files?.idImageBack) fs.unlink(req.files.idImageBack[0].path, () => {});
       return res.status(400).json({ success: false, error: "All demographic fields are required." });
     }
-    if (!req.file) {
-      return res.status(400).json({ success: false, error: "ID image is required." });
+    if (!req.files || !req.files.idImageFront || !req.files.idImageBack) {
+      // Delete uploaded files if only one was uploaded
+      if (req.files?.idImageFront) fs.unlink(req.files.idImageFront[0].path, () => {});
+      if (req.files?.idImageBack) fs.unlink(req.files.idImageBack[0].path, () => {});
+      return res.status(400).json({ success: false, error: "Both front and back ID images are required." });
     }
 
     const newProfile = new LGBTQProfile({
@@ -62,7 +64,8 @@ exports.submitLGBTQProfile = async (req, res) => {
       middlename,
       sexAssignedAtBirth,
       lgbtqClassification,
-      idImage: req.file.filename, // Save filename
+      idImageFront: req.files.idImageFront[0].filename,
+      idImageBack: req.files.idImageBack[0].filename,
     });
 
     await newProfile.save();
