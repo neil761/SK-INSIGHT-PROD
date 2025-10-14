@@ -51,6 +51,10 @@ document.addEventListener("DOMContentLoaded", () => {
 const approvedTable = document.getElementById("approved");
 const rejectedTable = document.getElementById("rejected");
 
+  let currentPage = 1;
+const ITEMS_PER_PAGE = 15; // or 30, as you prefer
+let applicants = [];
+
   // ---------------- Tabs ----------------
   tabButtons.forEach(button => {
     button.addEventListener("click", () => {
@@ -204,44 +208,118 @@ const rejectedTable = document.getElementById("rejected");
 
     const searchTerm = searchInput.value.toLowerCase();
 
-    data.forEach((app, index) => {
+    // Filter by search
+    const filtered = data.filter(app => {
+      const mi = app.middlename ? app.middlename[0].toUpperCase() + "." : "";
+      const fullName = `${app.firstname} ${mi} ${app.surname}`.trim().toLowerCase();
+      return fullName.includes(searchTerm);
+    });
+
+    // Pagination
+    const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
+    if (currentPage > totalPages) currentPage = totalPages;
+    const startIdx = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIdx = startIdx + ITEMS_PER_PAGE;
+    const pageData = filtered.slice(startIdx, endIdx);
+
+    pageData.forEach((app, index) => {
       const mi = app.middlename ? app.middlename[0].toUpperCase() + "." : "";
       const fullName = `${app.firstname} ${mi} ${app.surname}`.trim();
-      if (!fullName.toLowerCase().includes(searchTerm)) return;
 
       let actionBtn = "";
       if (app.status === "pending") {
         actionBtn = `<button class="action-btn"><i class="fas fa-eye"></i></button>`;
-      } else {
+      } else if (app.status === "rejected") {
         actionBtn = `<button class="action-btn delete-btn"><i class="fas fa-trash"></i> Delete</button>`;
       }
 
-      // Removed School column
       const row = `
         <tr data-id="${app._id}">
-          <td>${index + 1}</td>
+          <td>${startIdx + index + 1}</td>
           <td>${fullName}</td>
           <td>${app.age ?? ""}</td>
           <td>${app.civilStatus || "N/A"}</td>
           <td>${app.religion || "N/A"}</td>
           <td>${app.year || app.grade || "N/A"}</td>
           <td>${app.sex || "N/A"}</td>
-          <td>${actionBtn}</td>
+          ${app.status !== "approved" ? `<td>${actionBtn}</td>` : ""}
         </tr>
       `;
 
       if (app.status === "pending") {
         pendingTable.innerHTML += row;
       } else if (app.status === "approved") {
-        approvedTable.innerHTML += row;
+        approvedTable.innerHTML += `
+          <tr data-id="${app._id}">
+            <td>${startIdx + index + 1}</td>
+            <td>${fullName}</td>
+            <td>${app.age ?? ""}</td>
+            <td>${app.civilStatus || "N/A"}</td>
+            <td>${app.religion || "N/A"}</td>
+            <td>${app.year || app.grade || "N/A"}</td>
+            <td>${app.sex || "N/A"}</td>
+          </tr>
+        `;
       } else if (app.status === "rejected") {
         rejectedTable.innerHTML += row;
       }
     });
 
-    // Attach modal openers and delete handlers after table rows are rendered
+    renderPagination(filtered.length, totalPages);
     attachModalOpeners();
     attachDeleteHandlers();
+  }
+
+  function renderPagination(totalItems, totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    // Prev
+    const prevBtn = document.createElement("button");
+    prevBtn.className = "pagination-btn";
+    prevBtn.textContent = "Prev";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderTables(applicants);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    pagination.appendChild(prevBtn);
+
+    // Page numbers (max 5)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+      pageBtn.textContent = i;
+      pageBtn.onclick = () => {
+        currentPage = i;
+        renderTables(applicants);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      };
+      pagination.appendChild(pageBtn);
+    }
+
+    // Next
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "pagination-btn";
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderTables(applicants);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    };
+    pagination.appendChild(nextBtn);
   }
 
   // Add this after renderTables function
@@ -420,96 +498,7 @@ const rejectedTable = document.getElementById("rejected");
         };
       }
     }
-      //   modal.querySelector("#printProfileBtn").onclick = function () {
-      //   const printWindow = window.open("", "_blank", "width=900,height=650");
-
-      //   printWindow.document.write(`
-      //     <html>
-      //       <head>
-      //         <title>Applicant Profile</title>
-      //         <style>
-      //           body { font-family: 'Poppins', sans-serif; margin: 40px; color: #222; }
-      //           h1 { text-align: center; color: #0A2C59; }
-      //           .section { margin-top: 20px; }
-      //           .section b { display: inline-block; width: 180px; color: #0A2C59; }
-      //           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-      //           th, td { border: 1px solid #ccc; padding: 8px; font-size: 14px; }
-      //           th { background: #f7f7f7; }
-      //         </style>
-      //       </head>
-      //       <body>
-      //         <h1>Applicant Profile</h1>
-
-      //         <div class="section">
-      //           <b>Name:</b> ${app.firstname} ${app.middlename || ""} ${app.surname}<br>
-      //           <b>Birthday:</b> ${app.birthday ? new Date(app.birthday).toLocaleDateString("en-US", { month: "long", day: "2-digit", year: "numeric" }) : ""}<br>
-      //           <b>Place of Birth:</b> ${app.placeOfBirth || ""}<br>
-      //           <b>Age:</b> ${app.age ?? ""}<br>
-      //           <b>Gender:</b> ${app.sex || ""}<br>
-      //           <b>Civil Status:</b> ${app.civilStatus || ""}<br>
-      //           <b>Religion:</b> ${app.religion || ""}<br>
-      //           <b>Email:</b> ${app.user?.email || "-"}
-      //         </div>
-
-      //         <div class="section">
-      //           <b>School:</b> ${app.school || "-"}<br>
-      //           <b>School Address:</b> ${app.schoolAddress || "-"}<br>
-      //           <b>Course:</b> ${app.course || "-"}<br>
-      //           <b>Year Level:</b> ${app.yearLevel || "-"}<br>
-      //           <b>Type of Benefit:</b> ${app.typeOfBenefit || "Educational Assistance"}
-      //         </div>
-
-      //         <div class="section">
-      //           <b>Father’s Name:</b> ${app.fatherName || ""} (${app.fatherPhone || ""})<br>
-      //           <b>Mother’s Name:</b> ${app.motherName || ""} (${app.motherPhone || ""})
-      //         </div>
-
-      //         <div class="section">
-      //           <h3>Names of Brother/s and Sister/s</h3>
-      //           <table>
-      //             <thead>
-      //               <tr><th>Name</th><th>Gender</th><th>Age</th></tr>
-      //             </thead>
-      //             <tbody>
-      //               ${(app.siblings || []).map(sib => `
-      //                 <tr>
-      //                   <td>${sib.name}</td>
-      //                   <td>${sib.gender}</td>
-      //                   <td>${sib.age}</td>
-      //                 </tr>
-      //               `).join("")}
-      //             </tbody>
-      //           </table>
-      //         </div>
-
-      //         <div class="section">
-      //           <h3>Fees and Other Expenses</h3>
-      //           <table>
-      //             <thead>
-      //               <tr><th>Expense</th><th>Expected Cost</th></tr>
-      //             </thead>
-      //             <tbody>
-      //               ${(app.expenses || []).map(exp => `
-      //                 <tr>
-      //                   <td>${exp.item}</td>
-      //                   <td>${exp.expectedCost}</td>
-      //                 </tr>
-      //               `).join("")}
-      //             </tbody>
-      //           </table>
-      //         </div>
-      //       </body>
-      //     </html>
-      //   `);
-
-      //   printWindow.document.close();
-      //   printWindow.focus();
-      //   printWindow.print();
-      // };
-  
-
-  // Handle approve/reject clicks
-  // Approve button
+    
 const approveBtn = modal.querySelector(".approve-btn");
 if (approveBtn) {
   approveBtn.textContent = "Accept";
@@ -618,7 +607,11 @@ document.getElementById("submitRejectionBtn").onclick = async function() {
   // After renderTables, attach modal openers for all .action-btn
   function attachModalOpeners() {
   document.querySelectorAll(".action-btn").forEach(btn => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", (e) => {
+      // Prevent modal if delete button was clicked
+      if (btn.classList.contains("delete-btn")) return;
+      // Prevent modal if event originated from inside a delete button
+      if (e.target.closest(".delete-btn")) return;
       const row = btn.closest("tr");
       const appId = row.dataset.id;
       const app = applicants.find(a => a._id === appId);
@@ -673,8 +666,18 @@ function attachDeleteHandlers() {
 }
 
   // ---------------- Event Listeners ----------------
-  searchInput.addEventListener("input", () => renderTables(applicants));
-
+  searchInput.addEventListener("input", () => {
+  currentPage = 1;
+  renderTables(applicants);
+});
+filterBtn.addEventListener("click", () => {
+  currentPage = 1;
+  fetchApplicants();
+});
+clearFilterBtn.addEventListener("click", () => {
+  currentPage = 1;
+  fetchApplicants();
+});
 
   // ---------------- Initial Load ----------------
   fetchFormCycles().then(fetchApplicants);
@@ -708,7 +711,15 @@ function attachDeleteHandlers() {
     const newRes = await fetch('http://localhost:5000/api/notifications/unread', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    const newNotifs = await newRes.json();
+    let newNotifs = await newRes.json();
+
+    // Filter: only pending and within last 24 hours
+    const now = Date.now();
+    newNotifs = newNotifs.filter(n => {
+      if (n.status !== "pending") return false;
+      const created = new Date(n.createdAt).getTime();
+      return (now - created) <= 24 * 60 * 60 * 1000;
+    });
 
     // Fetch overdue applications
     const overdueRes = await fetch('http://localhost:5000/api/notifications/overdue', {
@@ -731,10 +742,21 @@ function attachDeleteHandlers() {
       const name = n.fullname || 'unknown';
       const status = n.status || 'unknown';
       const date = new Date(n.createdAt).toLocaleString();
+      const type = n.typeOfBenefit || 'Educational Assistance';
+      const cycle = n.cycle ? `Cycle: ${n.cycle}` : '';
+      const year = n.year ? `Year: ${n.year}` : '';
+      const school = n.school || '';
+      const email = n.email || '';
       container.innerHTML += `
         <div class="notif-item">
-          <span><strong>${name}</strong>
+          <span>
+            <strong>${name}</strong>
             <span class="notif-status ${isOverdue ? 'notif-overdue' : ''}">${status}${isOverdue ? ' (Overdue)' : ''}</span>
+          </span>
+          <span class="notif-details">
+            ${type}${cycle ? ' | ' + cycle : ''}${year ? ' | ' + year : ''}
+            ${school ? ' | School: ' + school : ''}
+            ${email ? ' | Email: ' + email : ''}
           </span>
           <span class="notif-date">${date}</span>
         </div>
