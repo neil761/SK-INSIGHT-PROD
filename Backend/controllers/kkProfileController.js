@@ -129,15 +129,9 @@ exports.submitKKProfile = async (req, res) => {
           : undefined,
 
       // ✅ Save uploaded images if present
-      profileImage: req.files?.profileImage
-        ? req.files.profileImage[0].filename
-        : null,
-      idImagePath: req.files?.idImage
-        ? req.files.idImage[0].path
-        : null,
-      signatureImagePath: req.files?.signatureImage
-        ? req.files.signatureImage[0].filename
-        : null,
+      profileImage: req.files?.profileImage ? req.files.profileImage[0].path : null, // Cloudinary URL
+      idImagePath: req.files?.idImage ? req.files.idImage[0].path : null,           // Cloudinary URL
+      signatureImagePath: req.files?.signatureImage ? req.files.signatureImage[0].path : null, // Cloudinary URL
 
       birthday,
     });
