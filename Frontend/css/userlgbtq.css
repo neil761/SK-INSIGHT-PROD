@@ -149,8 +149,21 @@ body {
 /* Container */
 .container {
   max-width: 900px;
-  margin: 2rem auto;
+  margin: 4.5rem auto 2rem auto; /* Increased top margin for tunnel effect */
   padding: 20px;
+}
+
+.container::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* adjust to match navbar height */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #d1e1f5 80%, transparent 100%);
+  z-index: 900;
 }
 
 /* Card */
