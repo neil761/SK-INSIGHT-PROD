@@ -554,3 +554,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Filter dropdown change handler
   document.getElementById("deletedFilter").addEventListener("change", fetchDeletedProfiles);
 });
+
+// --- SOCKET.IO ALERT FOR NEW EDUCATIONAL ASSISTANCE ---
+const socket = io("http://localhost:5000", { transports: ["websocket"] });
+
+socket.on("educational-assistance:newSubmission", (data) => {
+  Swal.fire({
+    icon: 'info',
+    title: 'New Educational Assistance Application',
+    text: 'A new application has arrived!',
+    timer: 8000,
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end'
+  });
+});
