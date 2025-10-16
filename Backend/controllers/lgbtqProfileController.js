@@ -64,8 +64,8 @@ exports.submitLGBTQProfile = async (req, res) => {
       middlename,
       sexAssignedAtBirth,
       lgbtqClassification,
-      idImageFront: req.files.idImageFront[0].filename,
-      idImageBack: req.files.idImageBack[0].filename,
+      idImageFront: req.files.idImageFront[0].path, // Cloudinary URL
+      idImageBack: req.files.idImageBack[0].path,   // Cloudinary URL
     });
 
     await newProfile.save();
