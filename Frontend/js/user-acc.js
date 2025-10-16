@@ -1,4 +1,35 @@
 document.addEventListener("DOMContentLoaded", () => {
+
+  (function() {
+  const token = sessionStorage.getItem("token"); // Only sessionStorage!
+  function sessionExpired() {
+    Swal.fire({
+      icon: 'warning',
+      title: 'Session Expired',
+      text: 'Please login again.',
+      confirmButtonColor: '#0A2C59',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+    }).then(() => {
+      window.location.href = "./admin-log.html";
+    });
+  }
+  if (!token) {
+    sessionExpired();
+    return;
+  }
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]));
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      sessionStorage.removeItem("token");
+      sessionExpired();
+    }
+  } catch (e) {
+    sessionStorage.removeItem("token");
+    sessionExpired();
+  }
+})();
+
   const tableBody = document.querySelector(".tables table tbody");
   const token = sessionStorage.getItem("token") || localStorage.getItem("token"); // <-- Updated line
   const searchInput = document.getElementById("userSearch"); // <-- Add this line
@@ -65,4 +96,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Initial load
   fetchUsers();
+
+const socket = io("http://localhost:5000", { transports: ["websocket"] });
+
+socket.on("educational-assistance:newSubmission", (data) => {
+  Swal.fire({
+    icon: 'info',
+    title: 'New Educational Assistance Application',
+    text: 'A new application has arrived!',
+    timer: 8000,
+    showConfirmButton: false,
+    toast: true,
+    position: 'top-end'
+  });
+  // Optionally refresh or update something if needed
+});
 });
