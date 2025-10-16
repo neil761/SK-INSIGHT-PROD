@@ -77,7 +77,7 @@
       </div>
       <div class="card">
         <label for="sex">Sex Assigned at Birth:</label>
-        <select id="sex" name="sexAssignedAtBirth" readonly>
+        <select id="sex" name="sexAssignedAtBirth" disabled>
           <option value="">Select Sex Assigned at Birth</option>
           <option value="Male">Male</option>
           <option value="Female">Female</option>
@@ -85,7 +85,7 @@
       </div>
       <div class="card">
         <label for="identity">LGBTQIA+ Classification:</label>
-        <select id="identity" name="lgbtqClassification" readonly>
+        <select id="identity" name="lgbtqClassification" disabled>
           <option value="">Select your Gender Identity</option>
           <option value="Lesbian">Lesbian</option>
           <option value="Gay">Gay</option>
@@ -96,10 +96,23 @@
           <option value="Asexual">Asexual</option>
         </select>
       </div>  
-      <div class="card">
-        <label for="idImage">Uploaded ID Image:</label>
-        <div id="imagePreview"></div>
-      </div>
+      <!-- Front ID Image Upload -->
+      <div class="kk-upload-row">
+        <div class="card kk-upload-col">
+          <label for="idImageFront">Valid ID Image (Front):</label>
+          <div id="imagePreviewContainerFront" class="image-preview-container">
+            <img id="imagePreviewFront" alt="Front ID preview" />
+          </div>
+        </div>
+
+        <!-- Back ID Image Upload -->
+        <div class="card kk-upload-col">
+          <label for="idImageBack">Valid ID Image (Back):</label>
+          <div id="imagePreviewContainerBack" class="image-preview-container">
+            <img id="imagePreviewBack" alt="Back ID preview" />
+          </div>
+        </div>
+       </div>
       <div style="max-width: 900px; margin: 0 auto 25px auto; text-align: left;">
         <a href="../html/lgbtqconfirmation.html" type="submit" id="submitBtn" class="submit-btn" style="width: auto; padding: 8px 20px; text-decoration: none;">
           Done
