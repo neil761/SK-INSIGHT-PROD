@@ -4,17 +4,23 @@ const ctrl = require("../controllers/educationalAssistanceController");
 const { protect, authorizeRoles } = require("../middleware/authMiddleware");
 const multer = require("multer");
 const upload = require("../middleware/signatureUploadMiddleware"); // or your custom middleware
+const uploadIdEduc = require("../middleware/idEducUploadMiddleware");
+const uploadCOE = require("../middleware/coeUploadMiddleware");
+const uploadVoterCert = require("../middleware/VotersCertUploadMiddleware");
 
 // ===== User Routes =====
 router.post(
   "/",
   protect,
-  upload.fields([
-    { name: "signature", maxCount: 1 },
-    { name: "sedulaImage", maxCount: 1 },
-    { name: "coeImage", maxCount: 1 },
-  ]),
-  ctrl.submitApplication
+  // use the id middleware to handle front/back, coe middleware for coe, voter middleware for voter's cert
+  // call idEduc.fields for front/back, and individual .single for COE and Voter
+upload.fields([
+  { name: "voter", maxCount: 1 },
+  { name: "coeImage", maxCount: 1 },
+  { name: "frontImage", maxCount: 1 },
+  { name: "backImage", maxCount: 1 }
+]),
+  ctrl.submitApplication 
 );
 router.get("/me", protect, ctrl.getMyApplication);
 
