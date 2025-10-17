@@ -44,6 +44,8 @@ router.get(
   authorizeRoles("admin"),
   ctrl.getCyclesAndPresent
 );
+
+// Explicitly define the export route before the dynamic `/:id` route
 router.get(
   "/export/excel",
   protect,
@@ -51,7 +53,7 @@ router.get(
   ctrl.exportApplicationsToExcel
 );
 
-// ID-specific admin routes — keep these LAST to avoid conflicts
+// ===== ID-specific Admin Routes (Keep these LAST to avoid conflicts) =====
 router.put(
   "/:id/status",
   protect,

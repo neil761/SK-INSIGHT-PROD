@@ -133,10 +133,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     let endpoint = "";
     if (exportType === "kk") {
-      // Updated KK Profiling Export API
       endpoint = `http://localhost:5000/api/kkprofiling/export-template?year=${year}&cycle=${cycle}`;
     } else if (exportType === "educational") {
-      endpoint = `http://localhost:5000/api/educational-assistance/export?year=${year}&cycle=${cycle}`;
+      endpoint = `http://localhost:5000/api/educational-assistance/export/excel?year=${year}&cycle=${cycle}`;
     } else if (exportType === "lgbtq") {
       endpoint = `http://localhost:5000/api/lgbtqprofiling/export/excel?year=${year}&cycle=${cycle}`;
     }
@@ -147,10 +146,12 @@ document.addEventListener("DOMContentLoaded", () => {
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
+
       const res = await fetch(endpoint, {
         method: "GET",
         headers: { Authorization: `Bearer ${token}` }
       });
+
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
         Swal.close();
@@ -162,6 +163,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         return;
       }
+
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
@@ -171,6 +173,7 @@ document.addEventListener("DOMContentLoaded", () => {
       a.click();
       a.remove();
       window.URL.revokeObjectURL(url);
+
       Swal.close();
       Swal.fire({
         icon: "success",
