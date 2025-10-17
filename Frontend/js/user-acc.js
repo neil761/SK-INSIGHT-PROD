@@ -66,20 +66,29 @@ document.addEventListener("DOMContentLoaded", () => {
     if (counter) counter.textContent = data.length;
 
     if (!data.length) {
-      tableBody.innerHTML = `<tr><td colspan="4">No users found</td></tr>`;
+      tableBody.innerHTML = `<tr><td colspan="5">No users found</td></tr>`;
       return;
     }
 
     data.forEach((u, index) => {
       const tr = document.createElement("tr");
+      tr.setAttribute("data-id", u._id); // For modal
       tr.innerHTML = `
-        <td>${index + 1}</td>
+        <td style="text-align: center;">${index + 1}</td>
         <td>${u.username}</td>
         <td>${u.email}</td>
-        <td>${u.birthday ? new Date(u.birthday).toLocaleDateString() : "-"}</td>
+        <td style="text-align: center;">${u.birthday ? new Date(u.birthday).toLocaleDateString() : "-"}</td>
+        <td style="text-align: center;">
+          <button class="view-btn" data-id="${u._id}" title="View">
+            <i class="fa-solid fa-eye"></i>
+          </button>
+        </td>
       `;
       tableBody.appendChild(tr);
     });
+
+    // Attach modal openers
+    attachUserModalOpeners();
   }
 
   // Search filter
@@ -112,3 +121,58 @@ socket.on("educational-assistance:newSubmission", (data) => {
   // Optionally refresh or update something if needed
 });
 });
+
+function attachUserModalOpeners() {
+  document.querySelectorAll(".view-btn").forEach(btn => {
+    btn.addEventListener("click", async () => {
+      const userId = btn.dataset.id;
+      // Fetch user details if needed, then show modal
+      showUserModal(userId);
+    });
+  });
+}
+
+async function showUserModal(userId) {
+  try {
+    const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+      headers: {
+        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+      },
+    });
+    const user = await response.json();
+
+    Swal.fire({
+      title: '<h2 style="color: #0A2C59; font-size: 24px;">User Details</h2>',
+      html: `
+        <div class="user-modal-content">
+          <div class="user-info-group">
+            <label>Username:</label>
+            <span>${user.username}</span>
+          </div>
+          <div class="user-info-group">
+            <label>Email:</label>
+            <span>${user.email}</span>
+          </div>
+          <div class="user-info-group">
+            <label>Birthday:</label>
+            <span>${user.birthday ? new Date(user.birthday).toLocaleDateString() : 'Not set'}</span>
+          </div>
+        </div>
+      `,
+      showCloseButton: true,
+      showConfirmButton: false,
+      width: '500px',
+      customClass: {
+        popup: 'user-modal-popup',
+        closeButton: 'user-modal-close'
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching user details:', error);
+    Swal.fire({
+      icon: 'error',
+      title: 'Error',
+      text: 'Failed to load user details'
+    });
+  }
+}
