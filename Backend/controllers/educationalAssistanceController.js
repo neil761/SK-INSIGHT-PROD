@@ -68,14 +68,17 @@ exports.submitApplication = async (req, res) => {
     }
 
     // Save file paths if files are uploaded
-    if (req.files?.signature?.[0]) {
-      data.signature = req.files.signature[0].path;
+    if (req.files?.frontImage?.[0]) {
+      data.frontImage = req.files.frontImage[0].path;
     }
-    if (req.files?.sedulaImage?.[0]) {
-      data.sedulaImage = req.files.sedulaImage[0].path;
+    if (req.files?.backImage?.[0]) {
+      data.backImage = req.files.backImage[0].path;
     }
     if (req.files?.coeImage?.[0]) {
       data.coeImage = req.files.coeImage[0].path;
+    }
+    if (req.files?.voter?.[0]) {
+      data.voter = req.files.voter[0].path;
     }
 
     const presentCycle = await getPresentCycle("Educational Assistance");
