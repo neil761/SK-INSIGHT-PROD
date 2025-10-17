@@ -493,9 +493,9 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
   }
 
   // Close preview button
-  document.getElementById('closePreviewBtn').addEventListener('click', function() {
-    document.getElementById('imagePreviewModal').style.display = 'none';
-  });
+  // document.getElementById('closePreviewBtn').addEventListener('click', function() {
+  //   document.getElementById('imagePreviewModal').style.display = 'none';
+  // });
 
   // Get user data from localStorage or sessionStorage
   let userData = JSON.parse(localStorage.getItem('user')) || JSON.parse(sessionStorage.getItem('user')) || {};
