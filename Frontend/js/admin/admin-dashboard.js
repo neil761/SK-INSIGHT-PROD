@@ -397,10 +397,10 @@ async function fetchDashboardSummaries(year, cycle) {
   fetch("http://localhost:5000/api/users", { headers })
     .then(res => res.json())
     .then(data => {
-      document.getElementById("userAccountCount").textContent = Array.isArray(data) ? data.length : "-";
+      document.getElementById("userAccountCount").textContent = Array.isArray(data) ? data.length : "0";
     })
     .catch(() => {
-      document.getElementById("userAccountCount").textContent = "-";
+      document.getElementById("userAccountCount").textContent = "0";
     });
 
   // KK Profiling (Filtered by year, cycle, and excluding deleted profiles)
@@ -416,17 +416,17 @@ async function fetchDashboardSummaries(year, cycle) {
       document.getElementById("kkProfilingCount").textContent = validProfiles.length;
     })
     .catch(() => {
-      document.getElementById("kkProfilingCount").textContent = "-";
+      document.getElementById("kkProfilingCount").textContent = "0";
     });
 
   // LGBTQ Profiling (Unfiltered)
   fetch("http://localhost:5000/api/lgbtqprofiling", { headers })
     .then(res => res.json())
     .then(data => {
-      document.getElementById("lgbtqProfilingCount").textContent = Array.isArray(data) ? data.length : "-";
+      document.getElementById("lgbtqProfilingCount").textContent = Array.isArray(data) ? data.length : "0";
     })
     .catch(() => {
-      document.getElementById("lgbtqProfilingCount").textContent = "-";
+      document.getElementById("lgbtqProfilingCount").textContent = "0";
     });
 
   // Educational Assistance (Unfiltered)
