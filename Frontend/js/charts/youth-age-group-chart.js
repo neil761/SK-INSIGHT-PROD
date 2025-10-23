@@ -11,8 +11,23 @@ export function renderYouthAgeGroupBar(year, cycle) {
   if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
 
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-    .then(res => res.json())
-    .then(profiles => {
+    .then(res => {
+      if (!res.ok) {
+        console.error(`kkprofiling fetch failed: ${res.status} ${res.statusText}`);
+        return [];
+      }
+      return res.json();
+    })
+    .then(data => {
+      let profiles = data;
+      if (!Array.isArray(profiles)) {
+        if (profiles && Array.isArray(profiles.data)) profiles = profiles.data;
+        else {
+          console.warn("kkprofiling returned non-array response:", profiles);
+          profiles = [];
+        }
+      }
+
       const counts = categories.map(
         cat => profiles.filter(p => p.youthAgeGroup === cat).length
       );
