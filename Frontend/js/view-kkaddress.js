@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", async function () {
-  if (!validateTokenAndRedirect("KK Address Profile")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("KK Address Profile")) {
+  //   return;
+  // }
   
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 

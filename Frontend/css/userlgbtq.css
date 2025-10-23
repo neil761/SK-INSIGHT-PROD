@@ -156,6 +156,28 @@ body {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+    .card.intro{
+    margin-top: -3%;
+    padding: 20px; 
+    width: 90%;
+  }
+  .card {
+    padding: 20px;
+    width: 90%;
+  }
+  
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-left,
+  .footer-middle,
+  .footer-right {
+    width: 100%;
+  }
   .navbar {
     padding: 10px 15px;
   }
@@ -495,28 +517,7 @@ body {
 
 /* Responsive Footer */
 @media (max-width: 768px) {
-  .card.intro{
-    margin-top: -3%;
-    padding: 20px; 
-    width: 90%;
-  }
-  .card {
-    padding: 20px;
-    width: 90%;
-  }
-  
-  .footer-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 20px;
-  }
 
-  .footer-left,
-  .footer-middle,
-  .footer-right {
-    width: 100%;
-  }
 }
 
 @media (max-width: 480px) {
@@ -532,6 +533,9 @@ body {
     min-width: 90px;
     padding: 8px 20px;
     font-size: 0.9rem;
+  }
+  .kk-upload-col{
+    padding: 7% !important;
   }
   .footer {
     padding: 30px 20px 15px;
@@ -642,42 +646,126 @@ body {
 }
 
 
-/* Side-by-side upload containers */
+/* Upload containers: side-by-side on wide screens, identical card styling and sizing on mobile */
 .kk-upload-row {
+  width: 100%;
   display: flex;
-  gap: 32px;
-  justify-content: space-between;
+  gap: 1%;
+  justify-content: center;
   align-items: flex-start;
+  flex-wrap: wrap; /* allow wrapping on narrower widths */
 }
+
+/* Desktop / tablet: two columns that visually match .card */
 .kk-upload-col {
   flex: 1 1 0;
-  min-width: 220px;
+  min-width: 280px;
+  width: calc(50% - 16px); /* two columns with gap compensation */
+  max-width: 29vw;
+  background-color: #fff;
+  border-radius: 15px;
+  padding: 3%; /* same padding as .card */
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+  margin-bottom: 25px;
+  box-sizing: border-box;
 }
-@media (max-width: 700px) {
-    .form-group{
-        background: #fff;
-        padding: 20px;
-        margin-bottom: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.10);
-        max-width: 900px;
-        margin-left: auto;
-        margin-right: auto;
-    }
+
+/* Desktop / laptop and larger screens */
+@media (min-width: 769px) {
+  .kk-upload-row {
+    width: 90%;          /* Same as .card width */
+    max-width: 900px;    /* Same as .card max-width */
+    margin: 12px auto 25px auto;  /* Same as .card margin */
+    gap: 32px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  } 
+
+  .kk-upload-col {
+    flex: 1;
+    min-width: auto;
+    width: calc(50% - 16px);
+    max-width: none;
+    padding: 30px;
+    margin: 0;
+  }
+}
+
+/* Make image preview behave like card content */
+.kk-upload-col .image-preview-container {
+  margin-top: 15px;
+  display: none;
+  max-width: 100%;
+}
+.kk-upload-col .image-preview-container img {
+  width: 100%;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid #bcd4ec;
+}
+
+/* File input styling – matches dropdown inputs */
+.kk-upload-col label {
+  display: block;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #0A2C59;
+}
+.kk-upload-col input[type="file"] {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid #bcd4ec;
+  border-radius: 8px;
+  background: #f5faff;
+  font-size: 15px;
+  color: #143d77;
+  cursor: pointer;
+  transition: border 0.2s, box-shadow 0.2s;
+}
+.kk-upload-col input[type="file"]:focus {
+  border: 1.5px solid #143d77;
+  background: #eaf3fa;
+  outline: none;
+}
+
+/* Mobile: stack and match .card width/padding */
+@media (max-width: 768px) {
   .kk-upload-row {
     flex-direction: column;
-    gap: 0;
-    width: 100%;
+    gap: 1rem;
+    align-items: stretch;
   }
+
   .kk-upload-col {
-    width: 100%;
-    max-width: 100vw;
-    background: #fff;
-    padding: 20px;
-    margin-bottom: 25px;
+    width: 90%;
+    max-width: 900px; /* same as .card */
+    flex: 0 0 auto;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 4%; /* match .card */
     border-radius: 15px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.10);
-    margin-left: 0;
-    margin-right: 0;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-sizing: border-box;
+  }
+
+  .image-preview-container {
+    position: relative;
+    margin-top: 0.75rem;
+    padding-top: 0;
+  }
+
+  .remove-image-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
   }
 }
+

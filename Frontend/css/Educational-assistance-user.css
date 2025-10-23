@@ -1020,3 +1020,11 @@ textarea:focus {
     font-size: 12px;
   }
 }
+
+#navbarMobileMenu {
+    display: none; /* Initially hidden */
+}
+
+#navbarMobileMenu.active {
+    display: block; /* Show when active */
+}

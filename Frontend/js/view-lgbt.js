@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function() {
-  if (!validateTokenAndRedirect("LGBTQ+ Profile")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("LGBTQ+ Profile")) {
+  //   return;
+  // }
   
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   

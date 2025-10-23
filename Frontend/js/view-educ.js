@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', async function() {
-  if (!validateTokenAndRedirect("Educational Assistance Profile")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("Educational Assistance Profile")) {
+  //   return;
+  // }
   
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
@@ -492,9 +492,9 @@ function truncateFileName(fileName, maxLength = 6) {
 }
 
 document.addEventListener('DOMContentLoaded', async function () {
-  if (!validateTokenAndRedirect("Educational Assistance Profile")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("Educational Assistance Profile")) {
+  //   return;
+  // }
   
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 

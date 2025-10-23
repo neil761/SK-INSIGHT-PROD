@@ -1,9 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  if (!validateTokenAndRedirect("LGBTQ+ Confirmation")) {
-    return;
-  }
-  
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
   hamburger.addEventListener('click', function() {
@@ -18,19 +13,19 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // KK Profile Navigation
 function handleKKProfileNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'You need to log in first',
-      text: 'Please log in to access KK Profiling.',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return;
-  }
+  // event.preventDefault();
+  // const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  // if (!token) {
+  //   Swal.fire({
+  //     icon: 'warning',
+  //     title: 'You need to log in first',
+  //     text: 'Please log in to access KK Profiling.',
+  //     confirmButtonText: 'OK'
+  //   }).then(() => {
+  //     window.location.href = '/Frontend/html/user/login.html';
+  //   });
+  //   return;
+  // }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
       headers: { Authorization: `Bearer ${token}` }
@@ -92,19 +87,19 @@ function handleKKProfileNavClick(event) {
 
 // LGBTQ+ Profile Navigation
 function handleLGBTQProfileNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'You need to log in first',
-      text: 'Please log in to access LGBTQ+ Profiling.',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return;
-  }
+  // event.preventDefault();
+  // const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  // if (!token) {
+  //   Swal.fire({
+  //     icon: 'warning',
+  //     title: 'You need to log in first',
+  //     text: 'Please log in to access LGBTQ+ Profiling.',
+  //     confirmButtonText: 'OK'
+  //   }).then(() => {
+  //     window.location.href = '/Frontend/html/user/login.html';
+  //   });
+  //   return;
+  // }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
       headers: { Authorization: `Bearer ${token}` }
@@ -166,19 +161,19 @@ function handleLGBTQProfileNavClick(event) {
 
 // Educational Assistance Navigation
 function handleEducAssistanceNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'You need to log in first',
-      text: 'Please log in to access Educational Assistance.',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return;
-  }
+  // event.preventDefault();
+  // const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  // if (!token) {
+  //   Swal.fire({
+  //     icon: 'warning',
+  //     title: 'You need to log in first',
+  //     text: 'Please log in to access Educational Assistance.',
+  //     confirmButtonText: 'OK'
+  //   }).then(() => {
+  //     window.location.href = '/Frontend/html/user/login.html';
+  //   });
+  //   return;
+  // }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
       headers: { Authorization: `Bearer ${token}` }

@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', function() {
-  if (!validateTokenAndRedirect("KK Confirmation")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("KK Confirmation")) {
+  //   return;
+  // }
   
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
