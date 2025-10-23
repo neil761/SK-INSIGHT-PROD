@@ -3,24 +3,24 @@
 // =========================
 
 // Token validation helper function
-function validateTokenAndRedirect(featureName = "this feature") {
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'Authentication Required',
-      text: `You need to log in first to access ${featureName}.`,
-      confirmButtonText: 'Go to Login',
-      confirmButtonColor: '#0A2C59',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return false;
-  }
-  return true;
-}
+// function validateTokenAndRedirect(featureName = "this feature") {
+//   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+//   if (!token) {
+//     Swal.fire({
+//       icon: 'warning',
+//       title: 'Authentication Required',
+//       text: `You need to log in first to access ${featureName}.`,
+//       confirmButtonText: 'Go to Login',
+//       confirmButtonColor: '#0A2C59',
+//       allowOutsideClick: false,
+//       allowEscapeKey: false,
+//     }).then(() => {
+//       window.location.href = '/Frontend/html/user/login.html';
+//     });
+//     return false;
+//   }
+//   return true;
+// }
 
 document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.querySelector(".announcement-table tbody");
@@ -49,9 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fetch announcements
   async function fetchAnnouncements() {
     // Check token first
-    if (!validateTokenAndRedirect("announcements")) {
-      return;
-    }
+    // if (!validateTokenAndRedirect("announcements")) {
+    //   return;
+    // }
 
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");

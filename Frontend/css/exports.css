@@ -119,7 +119,6 @@
     
     .subtitle {
       color: #666;
-      margin-bottom: 2rem;
     }
     
     .export-grid {
@@ -422,7 +421,7 @@
       padding: 32px 24px 24px 24px;
       max-width: 60%;
       margin: 0 auto;
-      margin-top: 50px;
+      margin-top: 32px;
     }
     
 

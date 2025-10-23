@@ -1,7 +1,7 @@
 document.addEventListener("DOMContentLoaded", () => {
-  if (!validateTokenAndRedirect("LGBTQ+ Form")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("LGBTQ+ Form")) {
+  //   return;
+  // }
   
   console.log("✅ LGBTQ-user.js loaded");
 
@@ -372,17 +372,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // Hamburger menu toggle
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function () {
+
+  hamburger.addEventListener('click', function() {
+      console.log('Hamburger clicked');
       mobileMenu.classList.toggle('active');
-    });
-    // Optional: close menu when clicking outside
-    document.addEventListener('click', function (e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
+  });
 
   // LGBTQ+ Profile Navigation
   function handleLGBTQProfileNavClick(event) {

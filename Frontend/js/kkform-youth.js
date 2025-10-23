@@ -1,9 +1,9 @@
 console.log("✅ kkform-youth.js loaded");
 
 document.addEventListener('DOMContentLoaded', function() {
-  if (!validateTokenAndRedirect("KK Youth Form")) {
-    return;
-  }
+  // if (!validateTokenAndRedirect("KK Youth Form")) {
+  //   return;
+  // }
   
   console.log("✅ DOM ready");
 
