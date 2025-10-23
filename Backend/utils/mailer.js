@@ -11,7 +11,4 @@ const otpTransporter = nodemailer.createTransport({
   secure: false
 });
 
-console.log('OTP USER:', process.env.GMAIL_OTP_USER);
-console.log('OTP PASS:', process.env.GMAIL_OTP_PASS);
-
 module.exports = otpTransporter;
