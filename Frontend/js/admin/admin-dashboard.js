@@ -208,8 +208,23 @@ function renderCivilStatusDonutFromAPI(year, cycle) {
   let url = "http://localhost:5000/api/kkprofiling";
   if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-    .then(res => res.json())
-    .then(profiles => {
+    .then(res => {
+      if (!res.ok) {
+        console.error(`kkprofiling fetch failed: ${res.status} ${res.statusText}`);
+        return [];
+      }
+      return res.json();
+    })
+    .then(data => {
+      let profiles = data;
+      if (!Array.isArray(profiles)) {
+        if (profiles && Array.isArray(profiles.data)) profiles = profiles.data;
+        else {
+          console.warn("kkprofiling returned non-array response:", profiles);
+          profiles = [];
+        }
+      }
+
       // Count civil status
       const counts = civilStatusCategories.map(
         status => profiles.filter(p => p.civilStatus === status).length
@@ -328,7 +343,8 @@ function renderCivilStatusDonutFromAPI(year, cycle) {
           </div>
         `;
       }
-    });
+    })
+    .catch(err => console.error("Civil status fetch error:", err));
 }
 
 // Minimal prediction chart for demo

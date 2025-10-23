@@ -20,8 +20,24 @@ export function renderEducationalBackgroundBar(year, cycle) {
   if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
 
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
-    .then(res => res.json())
-    .then(profiles => {
+    .then(res => {
+      if (!res.ok) {
+        console.error(`kkprofiling fetch failed: ${res.status} ${res.statusText}`);
+        return [];
+      }
+      return res.json();
+    })
+    .then(data => {
+      // Defensive: ensure we have an array of profiles
+      let profiles = data;
+      if (!Array.isArray(profiles)) {
+        if (profiles && Array.isArray(profiles.data)) profiles = profiles.data;
+        else {
+          console.warn("kkprofiling returned non-array response:", profiles);
+          profiles = [];
+        }
+      }
+
       // Count for each category
       const counts = categories.map(
         cat => profiles.filter(p => p.educationalBackground === cat).length
@@ -91,7 +107,7 @@ export function renderEducationalBackgroundBar(year, cycle) {
             },
             y: {
               beginAtZero: true,
-              max: total > 0 ? total : undefined, // Y-axis max is total respondents
+              max: total > 0 ? total : undefined,
               ticks: { color: "#0A2C59", font: { weight: "bold", size: 11 } },
               grid: { borderDash: [4, 4] }
             }
@@ -105,6 +121,15 @@ export function renderEducationalBackgroundBar(year, cycle) {
         const mostCommon = summaryPairs[0]?.label || "—";
         const items = summaryPairs.map(pair =>
           `<div class="educational-background-summary-item">
+            <span class="color-indicator" style="
+              display: inline-block;
+              width: 12px;
+              height: 12px;
+              background-color: ${pair.color};
+              margin-right: 8px;
+              border-radius: 50%;
+              vertical-align: middle;
+            "></span>
             <span class="summary-label">${pair.label}:</span>
             <span class="summary-value">${pair.value}</span>
           </div>`
@@ -121,29 +146,6 @@ export function renderEducationalBackgroundBar(year, cycle) {
           </div>
           ${items}
         `;
-      }
-
-      // Custom legend (still in original order, not sorted)
-      const legendElem = document.querySelector(".educational-background-legend");
-      if (legendElem) {
-        const items = categories.map((label, i) => `
-          <span class="legend-item">
-            <span class="legend-dot" style="background:${colors[i]}"></span>
-            ${label}
-          </span>
-        `);
-
-        // Arrange as 3 columns (column-wise)
-        const columns = 3;
-        const rows = Math.ceil(items.length / columns);
-        let legendHTML = '';
-        for (let row = 0; row < rows; row++) {
-          for (let col = 0; col < columns; col++) {
-            const idx = col * rows + row;
-            if (items[idx]) legendHTML += items[idx];
-          }
-        }
-        legendElem.innerHTML = legendHTML;
       }
     })
     .catch(err => console.error("Error rendering educational background chart:", err));
