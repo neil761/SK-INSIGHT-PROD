@@ -31,32 +31,33 @@ body {
 
 
 /* Navbar */
-.navbar {
-  position: fixed;
-  top: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 90%;
-  background: #0A2C59;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 15px 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-  z-index: 1000;
+  .navbar {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    height: 7.9%;
+    background: #0A2C59;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 1000;
 }
 
 .navbar img {
-  height: 40px;
+  height: 4vh;
   border-radius: 50%;
 }
 
 .navbar .title {
     color: white;
     text-decoration: none;
-  font-size: 18px;
+  font-size: 1rem !important;
   font-weight: bold;
   margin-left: 10px;
 }
@@ -82,9 +83,10 @@ body {
 .bell {
     color: white;
     cursor: pointer;
-    margin-top: 5px;
+    margin-top: 0;
     margin-right: 5px;
-    font-size: 22px;
+    font-size: 1rem;
+    line-height: 1;
 }
 
 .prof {
@@ -99,7 +101,7 @@ body {
 
 .navbar-right {
   display: flex;
-  gap: 15px;
+  gap: 8px;
   font-size: 20px;
 }
 
@@ -118,14 +120,21 @@ body {
     border: none;
     outline: none;
 }
+
 .nav-btn:hover, .nav-btn.active {
     background: #1e4e9e;
     color: #fff;
 }
-/* Default: hide hamburger, show center */
+
+.kk-btns{
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Hamburger Icon */
 .navbar-hamburger {
   display: none;
-  font-size: 1.8rem;
+  font-size: 1.5rem;
   cursor: pointer;
   margin-right: 10px;
 }
@@ -262,6 +271,19 @@ body {
 .announcement-heading-container h2 {
     font-size: 2rem;
     font-weight: 700;
+}
+
+.announcement-heading-container h2::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* adjust to match navbar height */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #eaf2fb 80%, transparent 100%);
+  z-index: 900; /* below navbar (1000) but above page content */
 }
 
 /* Announcement Table Container */

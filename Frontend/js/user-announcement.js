@@ -353,9 +353,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // KK Profile Navigation
   function handleKKProfileNavClick(event) {
     event.preventDefault();
-    if (!validateTokenAndRedirect("KK Profiling")) {
-      return;
-    }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
@@ -382,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes, view my response",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "./confirmation/html/kkcofirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
         });
         return;
       }
@@ -406,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "./confirmation/html/kkcofirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
         });
         return;
       }
@@ -429,9 +426,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // LGBTQ+ Profile Navigation
   function handleLGBTQProfileNavClick(event) {
     event.preventDefault();
-    if (!validateTokenAndRedirect("LGBTQ+ Profiling")) {
-      return;
-    }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
@@ -505,9 +499,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Educational Assistance Navigation
   function handleEducAssistanceNavClick(event) {
     event.preventDefault();
-    if (!validateTokenAndRedirect("Educational Assistance")) {
-      return;
-    }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
@@ -577,7 +568,6 @@ document.addEventListener('DOMContentLoaded', function() {
     })
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }
-
   // KK Profile
   document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
   document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);

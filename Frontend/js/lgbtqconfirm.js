@@ -13,19 +13,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
 // KK Profile Navigation
 function handleKKProfileNavClick(event) {
-  // event.preventDefault();
-  // const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  // if (!token) {
-  //   Swal.fire({
-  //     icon: 'warning',
-  //     title: 'You need to log in first',
-  //     text: 'Please log in to access KK Profiling.',
-  //     confirmButtonText: 'OK'
-  //   }).then(() => {
-  //     window.location.href = '/Frontend/html/user/login.html';
-  //   });
-  //   return;
-  // }
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
       headers: { Authorization: `Bearer ${token}` }
@@ -41,7 +30,7 @@ function handleKKProfileNavClick(event) {
     const formName = latestCycle?.formName || "KK Profiling";
     const isFormOpen = latestCycle?.isOpen ?? false;
     const hasProfile = profileRes.ok && profileData && profileData._id;
-    // CASE 1: Form closed, user already has profile
+    
     if (!isFormOpen && hasProfile) {
       Swal.fire({
         icon: "info",
@@ -55,7 +44,6 @@ function handleKKProfileNavClick(event) {
       });
       return;
     }
-    // CASE 2: Form closed, user has NO profile
     if (!isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "warning",
@@ -65,7 +53,6 @@ function handleKKProfileNavClick(event) {
       });
       return;
     }
-    // CASE 3: Form open, user already has a profile
     if (isFormOpen && hasProfile) {
       Swal.fire({
         title: `You already answered ${formName} Form`,
@@ -79,27 +66,26 @@ function handleKKProfileNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Go to form
-    window.location.href = "kkform-personal.html";
+    // Added Case 4 SweetAlert
+    if (isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        confirmButtonText: "Go to form"
+      }).then(() => {
+        window.location.href = "../../kkform-personal.html";
+      });
+      return;
+    }
   })
-  .catch(() => window.location.href = "kkform-personal.html");
+  .catch(() => window.location.href = "../../kkform-personal.html");
 }
 
 // LGBTQ+ Profile Navigation
 function handleLGBTQProfileNavClick(event) {
-  // event.preventDefault();
-  // const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  // if (!token) {
-  //   Swal.fire({
-  //     icon: 'warning',
-  //     title: 'You need to log in first',
-  //     text: 'Please log in to access LGBTQ+ Profiling.',
-  //     confirmButtonText: 'OK'
-  //   }).then(() => {
-  //     window.location.href = '/Frontend/html/user/login.html';
-  //   });
-  //   return;
-  // }
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
       headers: { Authorization: `Bearer ${token}` }
@@ -115,7 +101,7 @@ function handleLGBTQProfileNavClick(event) {
     const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
     const isFormOpen = latestCycle?.isOpen ?? false;
     const hasProfile = profileData && profileData._id ? true : false;
-    // CASE 1: Form closed, user already has profile
+    
     if (!isFormOpen && hasProfile) {
       Swal.fire({
         icon: "info",
@@ -129,7 +115,6 @@ function handleLGBTQProfileNavClick(event) {
       });
       return;
     }
-    // CASE 2: Form closed, user has NO profile
     if (!isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "warning",
@@ -139,7 +124,6 @@ function handleLGBTQProfileNavClick(event) {
       });
       return;
     }
-    // CASE 3: Form open, user already has a profile
     if (isFormOpen && hasProfile) {
       Swal.fire({
         title: `You already answered ${formName} Form`,
@@ -153,27 +137,26 @@ function handleLGBTQProfileNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Go to form
-    window.location.href = "lgbtqform.html";
+    // Added Case 4 SweetAlert
+    if (isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        confirmButtonText: "Go to form"
+      }).then(() => {
+        window.location.href = "lgbtqform.html";
+      });
+      return;
+    }
   })
   .catch(() => window.location.href = "lgbtqform.html");
 }
 
 // Educational Assistance Navigation
 function handleEducAssistanceNavClick(event) {
-  // event.preventDefault();
-  // const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  // if (!token) {
-  //   Swal.fire({
-  //     icon: 'warning',
-  //     title: 'You need to log in first',
-  //     text: 'Please log in to access Educational Assistance.',
-  //     confirmButtonText: 'OK'
-  //   }).then(() => {
-  //     window.location.href = '/Frontend/html/user/login.html';
-  //   });
-  //   return;
-  // }
+  event.preventDefault();
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
       headers: { Authorization: `Bearer ${token}` }
@@ -189,7 +172,7 @@ function handleEducAssistanceNavClick(event) {
     const formName = latestCycle?.formName || "Educational Assistance";
     const isFormOpen = latestCycle?.isOpen ?? false;
     const hasProfile = profileData && profileData._id ? true : false;
-    // CASE 1: Form closed, user already has profile
+    
     if (!isFormOpen && hasProfile) {
       Swal.fire({
         icon: "info",
@@ -203,7 +186,6 @@ function handleEducAssistanceNavClick(event) {
       });
       return;
     }
-    // CASE 2: Form closed, user has NO profile
     if (!isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "warning",
@@ -213,7 +195,6 @@ function handleEducAssistanceNavClick(event) {
       });
       return;
     }
-    // CASE 3: Form open, user already has a profile
     if (isFormOpen && hasProfile) {
       Swal.fire({
         title: `You already applied for ${formName}`,
@@ -227,10 +208,20 @@ function handleEducAssistanceNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Go to form
-    window.location.href = "../../Educational-assistance-user.html";
+    // Added Case 4 SweetAlert
+    if (isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        confirmButtonText: "Go to form"
+      }).then(() => {
+        window.location.href = "../../Educational-assistance-user.html";
+      });
+      return;
+    }
   })
-  .catch(() => window.location.href = "Educational-assistance-user.html");
+  .catch(() => window.location.href = "../../Educational-assistance-user.html");
 }
 
 document.addEventListener('DOMContentLoaded', function() {
