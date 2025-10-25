@@ -39,3 +39,12 @@ function hasValidToken() {
     return false;
   }
 }
+
+// Automatically validate on page load for any file that includes this script.
+// If you need some pages to be public, hide the validation there or remove the script tag.
+document.addEventListener('DOMContentLoaded', () => {
+  // Only run if the validation function and SweetAlert (Swal) are available
+  if (typeof validateTokenAndRedirect === 'function' && typeof Swal !== 'undefined') {
+    validateTokenAndRedirect();
+  }
+});

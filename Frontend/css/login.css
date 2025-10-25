@@ -138,7 +138,7 @@ body {
         min-height: 100vh;
         flex-direction: column;
         align-items: center;
-        background: linear-gradient(to bottom, #0A2C59 30%, #ffffff 30%);
+        background: linear-gradient(to bottom, #0A2C59 40%, #ffffff 30%);
     }
     .container {
         width: 95vw;
@@ -173,9 +173,9 @@ body {
 }
 
 /* For very small screens */
-@media (min-width: 380px) and (max-width: 490px) {
+@media (min-width: 320px) and (max-width: 490px) {
     .container {
-        padding: 10px;
+        padding: 5%;
         max-width: 98vw;
         margin-top: 30%;
     }
@@ -203,7 +203,7 @@ body {
         align-items: center;
     }
     .container {
-        padding: 10px;
+        padding: 5%;
         max-width: 80vw;
         margin-top: 20%;
     }
@@ -306,6 +306,7 @@ body {
 
     .right-side {
         background-color: white;
+        padding: 5%;
     }
 
     .logo {
