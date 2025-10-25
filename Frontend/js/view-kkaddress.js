@@ -55,17 +55,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   function handleKKProfileNavClick(event) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    if (!token) {
-      Swal.fire({
-        icon: 'warning',
-        title: 'You need to log in first',
-        text: 'Please log in to access KK Profiling.',
-        confirmButtonText: 'OK'
-      }).then(() => {
-        window.location.href = '/Frontend/html/user/login.html';
-      });
-      return;
-    }
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
         headers: { Authorization: `Bearer ${token}` }
@@ -141,16 +130,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   async function handleLGBTQProfileNavClick(event) {
     event.preventDefault();
     const token = sessionStorage.getItem("token") || localStorage.getItem("token");
-    if (!token) {
-      await Swal.fire({
-        icon: "warning",
-        title: "You need to log in first",
-        text: "Please log in to access LGBTQ+ Profiling.",
-        confirmButtonText: "OK",
-      });
-      window.location.href = "/html/user/login.html";
-      return;
-    }
 
     try {
       const [cycleRes, profileRes] = await Promise.all([
@@ -235,16 +214,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   async function handleEducAssistanceNavClick(event) {
     event.preventDefault();
     const token = sessionStorage.getItem("token") || localStorage.getItem("token");
-    if (!token) {
-      await Swal.fire({
-        icon: "warning",
-        title: "You need to log in first",
-        text: "Please log in to access Educational Assistance.",
-        confirmButtonText: "OK",
-      });
-      window.location.href = "/html/user/login.html";
-      return;
-    }
 
     try {
       const [cycleRes, profileRes] = await Promise.all([

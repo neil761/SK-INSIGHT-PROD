@@ -233,17 +233,6 @@ document.addEventListener('DOMContentLoaded', function() {
 function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'You need to log in first',
-      text: 'Please log in to access KK Profiling.',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return;
-  }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
       headers: { Authorization: `Bearer ${token}` }
@@ -317,17 +306,6 @@ function handleKKProfileNavClick(event) {
 function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'You need to log in first',
-      text: 'Please log in to access LGBTQ+ Profiling.',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return;
-  }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
       headers: { Authorization: `Bearer ${token}` }
@@ -401,17 +379,6 @@ function handleLGBTQProfileNavClick(event) {
 function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
-    Swal.fire({
-      icon: 'warning',
-      title: 'You need to log in first',
-      text: 'Please log in to access Educational Assistance.',
-      confirmButtonText: 'OK'
-    }).then(() => {
-      window.location.href = '/Frontend/html/user/login.html';
-    });
-    return;
-  }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
       headers: { Authorization: `Bearer ${token}` }
@@ -541,55 +508,48 @@ document.getElementById('closePreviewBtn').addEventListener('click', function ()
   if (modal) modal.style.display = 'none';
 });
 
-document.addEventListener('DOMContentLoaded', function() {
-  const form = document.getElementById('educationalAssistanceForm');
+// Attach Done button handler (shows confirmation then go to educConfirmation.html)
+// ...existing code...
 
-  if (form) {
-    form.addEventListener('submit', async function(e) {
-      e.preventDefault();
+// Attach Done button handler — remove SweetAlert, redirect immediately
+document.addEventListener('DOMContentLoaded', () => {
+  const doneSelector = [
+    '#doneBtn',
+    '.done-btn',
+    'button[data-action="done"]',
+    'input[type="submit"][value="Done"]',
+    'button[type="submit"].done'
+  ];
 
-      const formData = new FormData(form);
+  let doneBtn = null;
+  for (const sel of doneSelector) {
+    try { doneBtn = document.querySelector(sel); } catch (e) {}
+    if (doneBtn) break;
+  }
 
-      // Append files manually if needed
-      const maybeAppendFile = (id, key) => {
-        const inp = document.getElementById(id);
-        if (inp && inp.files && inp.files.length > 0) {
-          formData.append(key, inp.files[0]);
-        }
-      };
+  // Fallback: find a button whose visible text/value is "Done"
+  if (!doneBtn) {
+    const btns = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]'));
+    doneBtn = btns.find(b => ((b.innerText || b.value || '').trim().toLowerCase() === 'done'));
+  }
 
-      maybeAppendFile('voter', 'voter');
-      maybeAppendFile('coeImage', 'coeImage');
-      maybeAppendFile('frontImage', 'frontImage');
-      maybeAppendFile('backImage', 'backImage');
+  const goToConfirmation = () => {
+    window.location.href = '/Frontend/html/user/confirmation/html/educConfirmation.html';
+  };
 
-      try {
-        const res = await fetch('http://localhost:5000/api/educational-assistance', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem('token') || sessionStorage.getItem('token')}`,
-          },
-          body: formData
-        });
-
-        const data = await res.json();
-
-        if (!res.ok) {
-          console.error('Submit failed', res.status, data);
-          Swal.fire('Error', data.error || 'Failed to submit form', 'error');
-          return;
-        }
-
-        Swal.fire('Success', 'Form submitted successfully!', 'success').then(() => {
-          window.location.href = '../html/educConfirmation.html';
-        });
-
-      } catch (err) {
-        console.error('Fetch error:', err);
-        Swal.fire('Error', 'Network or server error', 'error');
-      }
+  if (doneBtn) {
+    doneBtn.addEventListener('click', (e) => {
+      if (e && e.preventDefault) e.preventDefault();
+      goToConfirmation();
     });
   } else {
-    console.error('Form element not found in DOM.');
+    document.body.addEventListener('click', (e) => {
+      const target = e.target.closest('[data-done]');
+      if (target) {
+        e.preventDefault();
+        goToConfirmation();
+      }
+    });
   }
 });
+
