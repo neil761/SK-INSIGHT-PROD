@@ -1,4 +1,3 @@
-
 let lastPredictedCycle = null;
 let lastPredictedYear = null;
 let lastPredictionResult = null;
@@ -198,6 +197,17 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
         `;
       }
       infoGrid.innerHTML = html;
+    }
+
+    // Render cycle/year info
+    const cycleInfoElem = document.querySelector(".prediction-cycle-info");
+    if (cycleInfoElem) {
+      cycleInfoElem.innerHTML = `
+        <div class="cycle-info-box">
+          <span class="cycle-label">Current Year and Cycle:</span>
+          <span class="cycle-value">Year <b>${year}</b>, Cycle <b>${cycle}</b></span>
+        </div>
+      `;
     }
   });
 }

@@ -308,17 +308,6 @@
   align-items: stretch;
 }
 
-/* Make prediction card span all columns on first row */
-.prediction-card {
-  grid-column: 1 / 2;
-  grid-row: 1 / 2;
-  min-height: 220px;
-  max-height: 500px;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-  
-}
 
 .chart-card {
   background: #fff;
@@ -345,7 +334,6 @@
   font-size: 0.9rem;
   font-weight: 600;
   color: #0A2C59;
-  margin-bottom: 0.8rem;
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -1037,8 +1025,8 @@ div.chartjs-legend {
   display: flex;
   flex-direction: column;
   padding: 24px 20px 18px 20px;
-  min-height: 520px;
-  max-height: 520px;
+  min-height: 700;
+  max-height: 820px;
   margin-bottom: 2rem;
 }
 
@@ -1169,3 +1157,24 @@ div.chartjs-legend {
 
 .prediction-info-item .actual { color: #07B0F2; }
 .prediction-info-item .predicted { color: #FED600; }
+
+/* Add to your CSS file */
+.cycle-info-box {
+  background: #fff;
+  border-radius: 8px;
+  padding: 8px 5px;
+  margin-bottom: 1rem;
+  display: inline-block;
+  font-size: 1.1em;
+  color: #1a237e;
+}
+.cycle-label {
+  font-weight: 600;
+  color: #07B0F2;
+  margin-right: 8px;
+}
+.cycle-value b {
+  color: #FED600;
+  font-weight: 600;
+  letter-spacing: 1.5px;
+}
