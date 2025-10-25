@@ -136,7 +136,7 @@ document.addEventListener("DOMContentLoaded", () => {
       // Updated KK Profiling Export API
       endpoint = `http://localhost:5000/api/kkprofiling/export-template?year=${year}&cycle=${cycle}`;
     } else if (exportType === "educational") {
-      endpoint = `http://localhost:5000/api/educational-assistance/export?year=${year}&cycle=${cycle}`;
+      endpoint = `http://localhost:5000/api/educational-assistance/export/excel?year=${year}&cycle=${cycle}`;
     } else if (exportType === "lgbtq") {
       endpoint = `http://localhost:5000/api/lgbtqprofiling/export/excel?year=${year}&cycle=${cycle}`;
     }
