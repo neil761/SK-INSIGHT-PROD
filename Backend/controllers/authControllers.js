@@ -19,6 +19,27 @@ exports.loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ error: "Invalid credentials" });
 
+    // --- Age and accessLevel update logic ---
+    if (user.birthday) {
+      const today = new Date();
+      const birthDate = new Date(user.birthday);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      if (
+        today.getMonth() < birthDate.getMonth() ||
+        (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
+      ) {
+        age--;
+      }
+      if (user.age !== age) {
+        user.age = age;
+      }
+      if (age > 30 && user.accessLevel !== "limited") {
+        user.accessLevel = "limited";
+      }
+      await user.save();
+    }
+    // ----------------------------------------
+
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
@@ -30,6 +51,8 @@ exports.loginUser = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
+        age: user.age,
+        accessLevel: user.accessLevel,
       },
       token,
     });

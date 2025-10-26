@@ -135,15 +135,12 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
     }
 
     try {
-      // Show loading SweetAlert
       Swal.fire({
         title: 'Submitting...',
         text: 'Please wait while your application is being submitted.',
         allowOutsideClick: false,
         allowEscapeKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
+        didOpen: () => Swal.showLoading()
       });
 
       const res = await fetch('http://localhost:5000/api/educational-assistance', {
@@ -154,14 +151,22 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
         body: formData
       });
 
-      Swal.close(); // Close loading modal
+      Swal.close();
 
       const text = await res.text();
       let data = null;
-      try { data = JSON.parse(text); } catch (err) { /* not JSON */ }
+      try { data = JSON.parse(text); } catch (err) {}
+
+      if (res.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
+        return Swal.fire({
+          icon: 'error',
+          title: 'Not Eligible',
+          text: data?.error || 'You are not eligible to submit this form due to age restrictions.',
+          confirmButtonColor: '#0A2C59'
+        });
+      }
 
       if (!res.ok) {
-        console.error('Submit failed', res.status, text);
         const message = data?.message || data?.error || text || `Server returned ${res.status}`;
         return Swal.fire('Submission failed', message, 'error');
       }
@@ -176,7 +181,6 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
       form.reset();
     } catch (err) {
       Swal.close();
-      console.error('Fetch error', err);
       Swal.fire('Error', 'Network or server error. Check console for details.', 'error');
     }
   });

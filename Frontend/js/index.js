@@ -261,7 +261,7 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No profile found`,
+        title: `No Application found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
         confirmButtonText: "Go to form"
       }).then(() => {

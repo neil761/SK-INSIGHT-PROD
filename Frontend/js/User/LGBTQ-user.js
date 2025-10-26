@@ -36,9 +36,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ✅ Handle submit
   form.addEventListener("submit", async (e) => {
-    e.preventDefault(); // stop auto refresh
-    e.stopPropagation(); // extra safety
-    console.log("👉 Custom submit handler triggered");
+    e.preventDefault();
+    e.stopPropagation();
 
     if (!token) {
       Swal.fire({
@@ -49,11 +48,9 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // disable button
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
 
-    // Show loading SweetAlert
     Swal.fire({
       title: "Submitting...",
       text: "Please wait while we process your profile.",
@@ -66,20 +63,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const formData = new FormData(form);
-      console.log("📦 FormData entries:", [...formData.entries()]);
-
       const res = await fetch("http://localhost:5000/api/lgbtqprofiling", {
         method: "POST",
-        headers: { Authorization: `Bearer ${token}` }, // let browser set multipart headers
+        headers: { Authorization: `Bearer ${token}` },
         body: formData,
       });
 
       const data = await res.json().catch(() => ({}));
+      Swal.close();
 
-      Swal.close(); // Close loading SweetAlert
+      if (res.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
+        Swal.fire({
+          icon: "error",
+          title: "Not Eligible",
+          text: data?.error || "You are not eligible to submit this form due to age restrictions.",
+          confirmButtonColor: "#0A2C59"
+        });
+        return;
+      }
 
       if (res.ok && data.success) {
-        console.log("✅ Submission success:", data);
         Swal.fire({
           icon: "success",
           title: "Profile submitted!",
@@ -89,7 +92,6 @@ document.addEventListener("DOMContentLoaded", () => {
           window.location.href = "confirmation/html/lgbtqconfirmation.html";
         });
       } else {
-        console.error("❌ Submission failed:", data);
         Swal.fire({
           icon: "error",
           title: "Error",
@@ -98,7 +100,6 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     } catch (err) {
       Swal.close();
-      console.error("❌ Exception:", err);
       Swal.fire({ icon: "error", title: "Error", text: "Server error." });
     } finally {
       submitBtn.disabled = false;
@@ -313,7 +314,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (isFormOpen && !hasProfile) {
         Swal.fire({
           icon: "info",
-          title: `No profile found`,
+          title: `No Application found`,
           text: `You don't have a profile yet. Please fill out the form to create one.`,
           confirmButtonText: "Go to form"
         }).then(() => {

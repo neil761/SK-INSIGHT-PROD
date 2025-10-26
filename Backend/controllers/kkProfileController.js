@@ -26,6 +26,10 @@ async function getPresentCycle(formName) {
 exports.submitKKProfile = async (req, res) => {
   try {
     const userId = req.user.id;
+    // Example for KK Profiling
+    if (req.user.accessLevel === "limited" || req.user.age > 30) {
+      return res.status(403).json({ error: "You are not eligible to submit this form due to age restrictions." });
+    }
 
     const formStatus = await FormStatus.findOne({ formName: "KK Profiling" });
     if (!formStatus || !formStatus.isOpen) {
