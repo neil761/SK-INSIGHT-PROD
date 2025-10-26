@@ -11,8 +11,11 @@ function calculateAge(birthday) {
   const birthDate = new Date(birthday);
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
-  const m = today.getMonth() - birthDate.getMonth();
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+  // Adjust if birthday hasn't occurred yet this year
+  if (
+    today.getMonth() < birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
+  ) {
     age--;
   }
   return age;
@@ -285,6 +288,15 @@ exports.smartRegister = async (req, res) => {
     const { username, email, password, birthday } = req.body;
     const idImagePath = req.file.path;
 
+    // Validate input birthday format
+    const normalizedInputBirthday = normalizeDate(birthday);
+    if (!normalizedInputBirthday) {
+      return res.status(400).json({
+        message: "Please enter a valid birthday in YYYY-MM-DD format.",
+        code: "birthday_invalid"
+      });
+    }
+
     // OCR extraction
     const { birthday: ocrBirthday, address: ocrAddress } =
       await extractFromIDImage(idImagePath);
@@ -292,6 +304,14 @@ exports.smartRegister = async (req, res) => {
     // Log extracted birthday and address
     console.log("Extracted birthday (controller):", ocrBirthday);
     console.log("Extracted address (controller):", ocrAddress);
+
+    // Require birthday match
+    if (!ocrBirthday || ocrBirthday !== normalizedInputBirthday) {
+      return res.status(400).json({
+        message: "Birthday on ID does not match the input birthday.",
+        code: "birthday_mismatch"
+      });
+    }
 
     // Address validation (accept "CALACA" or "CALACA CITY", any case)
     const addressValid =
@@ -303,19 +323,30 @@ exports.smartRegister = async (req, res) => {
     if (!addressValid) {
       return res.status(400).json({
         message: "Address must be Puting Bato West, Calaca City, Batangas.",
+        code: "address_invalid"
       });
     }
 
-    // Tiered access level logic
-    let accessLevel = "partial";
-    if (ocrBirthday && ocrBirthday === normalizeDate(birthday)) {
-      accessLevel = "full";
+    // Calculate precise age
+    const computedAge = calculateAge(ocrBirthday);
+
+    // Enforce age restriction (15-30)
+    if (computedAge < 15 || computedAge > 30) {
+      return res.status(400).json({
+        message: "Registration is only allowed for ages 15 to 30.",
+        code: "age_invalid"
+      });
     }
 
     // Check if email already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser)
-      return res.status(400).json({ error: "Email already in use" });
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail)
+      return res.status(400).json({ message: "Email already in use", code: "email_exists" });
+
+    // Check if username already exists
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername)
+      return res.status(400).json({ message: "Username already in use", code: "username_exists" });
 
     // Clean up the extracted address before saving
     let cleanedAddress = ocrAddress
@@ -329,7 +360,7 @@ exports.smartRegister = async (req, res) => {
       password,
       birthday: ocrBirthday,
       verifiedAddress: cleanedAddress,
-      accessLevel,
+      accessLevel: "full",
       idImage: path.basename(idImagePath),
     });
     await user.save();
@@ -355,6 +386,6 @@ exports.smartRegister = async (req, res) => {
     });
   } catch (err) {
     console.error("Smart registration error:", err);
-    res.status(500).json({ message: "Server error during registration." });
+    res.status(500).json({ message: "Server error during registration.", code: "server_error" });
   }
 };

@@ -11,8 +11,9 @@ function extractBirthdayAndAddress(ocrText) {
   // Birthday extraction (support text month formats)
   const birthdayRegexes = [
     /\b\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}\b/, // 31/03/2004
-    /\b\d{4}[\/\-\.]\d{2}[\/\-\.]\d{2}\b/, // 2004-03-31 or 2004/03/31
+    /\b\d{4}[\/\-\.]\d{2}[\/\-\.]\d{2}\b/, // 2004-03-31
     /\b[A-Z]{3,9} \d{1,2}, \d{4}\b/i,      // MARCH 31, 2004
+    /\b\d{2}-[A-Za-z]{3}-\d{4}\b/,         // 10-Sep-2003
   ];
   let birthday = null;
 
@@ -49,18 +50,26 @@ function extractBirthdayAndAddress(ocrText) {
 
   let address = null;
   const lowerText = ocrText.toLowerCase().replace(/\s+/g, " ");
-  if (
-    addressKeywords.every((k) => lowerText.includes(k)) &&
-    calacaRegex.test(lowerText)
-  ) {
-    address =
-      ocrText
-        .split("\n")
-        .find(
-          (line) =>
-            addressKeywords.every((k) => line.toLowerCase().includes(k)) &&
-            calacaRegex.test(line)
-        ) || "Puting Bato West, Calaca, Batangas";
+
+  // Try to find any line with "batangas"
+  const addressLine = ocrText
+    .split("\n")
+    .find(line => line.toLowerCase().includes("batangas"));
+
+  if (addressLine) {
+    // Remove leading non-letter characters and trim
+    address = addressLine.replace(/^[^a-zA-Z]+/, "").trim();
+  }
+
+  // If not found by context, fall back to first address match in whole text
+  if (!address) {
+    for (const regex of addressKeywords) {
+      const match = ocrText.match(regex);
+      if (match) {
+        address = match[0];
+        break;
+      }
+    }
   }
 
   // Log extracted birthday and address for debugging

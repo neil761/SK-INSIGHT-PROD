@@ -108,10 +108,14 @@
       </div>
       <div class="dashboard-grid">
         <div class="chart-card prediction-card">
-          <h2 class="chart-title"><i class="fas fa-chart-line"></i> Youth Classification Predictions</h2>
+          <div class="chart-title-row">
+            <h2 class="chart-title">
+              <i class="fas fa-chart-line"></i> Youth Classification Predictions
+            </h2>
+            <div class="prediction-cycle-info"></div>
+          </div>
           <div class="prediction-content">
             <!-- Place this above your chart canvas -->
-            <div class="prediction-cycle-info"></div>
             <div class="prediction-legend"></div>
             <div class="prediction-chart-area">
               <canvas id="predictionChart"></canvas>
@@ -144,7 +148,7 @@
           </h2>
           <div class="educational-background-content">
             <div class="educational-background-chart-area">
-              <canvas id="educationalBackgroundBar" style="max-width: 900px; max-height: 260px;"></canvas>
+              <canvas id="educationalBackgroundBar" style="max-width: 900px; max-height: 330px;"></canvas>
               <div class="educational-background-legend"></div> <!-- Move legend here -->
             </div>
             <div class="educational-background-side">
