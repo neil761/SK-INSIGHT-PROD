@@ -26,11 +26,23 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const formData = new FormData(signupForm);
 
+        // Show loading alert
+        Swal.fire({
+            title: 'Registering...',
+            text: 'Please wait while we process your registration.',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
         try {
             const response = await fetch('http://localhost:5000/api/users/smart/register', {
                 method: 'POST',
                 body: formData
             });
+
+            Swal.close(); // Close loading alert
 
             console.log('Fetch completed. Status:', response.status);
 
@@ -62,14 +74,19 @@ document.addEventListener('DOMContentLoaded', () => {
                     window.location.href = '/Frontend/html/user/login.html';
                 });
             } else {
+                let alertText = data.message || 'Please try again.';
+                if (data.code === "email_exists") alertText = "This email is already registered.";
+                if (data.code === "username_exists") alertText = "This username is already taken.";
+                if (data.code === "address_invalid") alertText = "Your ID address does not match the required location.";
                 Swal.fire({
                     icon: 'error',
                     title: 'Registration Failed',
-                    text: data.message || 'Please try again.',
+                    text: alertText,
                 });
             }
 
         } catch (error) {
+            Swal.close(); // Close loading alert if fetch fails
             console.error('Fetch Error:', error);
             Swal.fire({
                 icon: 'error',

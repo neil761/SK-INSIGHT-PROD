@@ -57,18 +57,18 @@ function normalizeDate(input) {
       day = match[2];
       year = match[3];
     } else {
-      // Format: 31 March 2004
+      // Format: 31 March 2004 or 10-Sep-2003
       day = match[1];
       monthStr = match[2];
       year = match[3];
     }
 
+    // Accept both short and long month names
     const month =
       FULL_MONTHS[monthStr.toLowerCase()] ||
       MONTHS[monthStr.toLowerCase().slice(0, 3)];
 
     if (month) {
-      // Return manually constructed date string to avoid UTC shift
       return `${year}-${month}-${day.padStart(2, "0")}`;
     }
   }
