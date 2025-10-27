@@ -33,19 +33,24 @@ document.addEventListener('DOMContentLoaded', async function () {
     return;
   }
 
+  // Fetch and set the user's email
+  const emailInput = document.getElementById('email');
+  if (!emailInput) {
+    console.error('Email input field not found in the DOM.');
+    return;
+  }
+
+  const userDetails = await fetchUserDetails();
+  if (userDetails?.email) {
+    emailInput.value = userDetails.email;
+    emailInput.readOnly = true; // Make it non-editable
+  }
+
   // Fetch and set the user's birthday
   const birthdayInput = document.getElementById('birthday');
-  const userDetails = await fetchUserDetails();
   if (birthdayInput && userDetails?.birthday) {
     birthdayInput.value = userDetails.birthday.split('T')[0]; // Format as yyyy-mm-dd
     birthdayInput.readOnly = true; // Make it non-editable
-  }
-
-  // Fetch and set the user's email
-  const emailInput = document.getElementById('email');
-  if (emailInput && userDetails?.email) {
-    emailInput.value = userDetails.email;
-    emailInput.readOnly = true; // Make it non-editable
   }
 
   function calculateAge(birthday) {
@@ -63,7 +68,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Set default benefit type
   document.getElementById('benefittype').value = 'Educational Assistance';
 
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     // Client-side validation (add/remove fields as required by your backend)
@@ -118,6 +123,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
     formData.append('expenses', JSON.stringify(expenses));
 
+    // Append file inputs (requirements)
+    const fileInputs = ['frontImage', 'backImage', 'coeImage', 'voter'];
+    for (const inputId of fileInputs) {
+      const input = document.getElementById(inputId);
+      if (input && input.files && input.files.length > 0) {
+        formData.append(inputId, input.files[0]); // Append file to FormData
+      }
+    }
+
     try {
       Swal.fire({
         title: 'Submitting...',
@@ -129,7 +143,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         }
       });
 
-      const res = await fetch('http://localhost:5000/api/educational-assistance', {
+      const response = await fetch('http://localhost:5000/api/educational-assistance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${sessionStorage.getItem('token') || localStorage.getItem('token')}`
@@ -137,30 +151,22 @@ document.addEventListener('DOMContentLoaded', async function () {
         body: formData
       });
 
-      Swal.close(); // Close loading modal
+      Swal.close();
 
-      const text = await res.text();
-      let data = null;
-      try { data = JSON.parse(text); } catch (err) { /* not JSON */ }
-
-      if (!res.ok) {
-        console.error('Submit failed', res.status, text);
-        const message = data?.message || data?.error || text || `Server returned ${res.status}`;
-        return Swal.fire('Submission failed', message, 'error');
+      const data = await response.json();
+      if (!response.ok) {
+        console.error('Submit failed', response.status, data);
+        return Swal.fire('Submission failed', data?.message || 'Server error occurred.', 'error');
       }
 
-      // success
-      Swal.fire('Success', data?.message || 'Form submitted successfully!', 'success').then(() => {
-        sessionStorage.removeItem('educ_siblings');
-        sessionStorage.removeItem('educ_expenses');
-        sessionStorage.removeItem('educationalAssistanceFormData');
+      Swal.fire('Success', 'Form submitted successfully!', 'success').then(() => {
+        form.reset();
         window.location.href = "confirmation/html/educConfirmation.html";
       });
-      form.reset();
-    } catch (err) {
+    } catch (error) {
       Swal.close();
-      console.error('Fetch error', err);
-      Swal.fire('Error', 'Network or server error. Check console for details.', 'error');
+      console.error('Error submitting form:', error);
+      Swal.fire('Error', 'Network or server error. Please try again later.', 'error');
     }
   });
 
