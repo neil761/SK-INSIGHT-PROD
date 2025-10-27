@@ -1,4 +1,58 @@
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
+  async function fetchUserDetails() {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (!token) {
+      console.error('No token found. User is not logged in.');
+      return null;
+    }
+
+    try {
+      const response = await fetch('http://localhost:5000/api/users/me', {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        console.error('Failed to fetch user details:', response.status, await response.text());
+        return null;
+      }
+
+      const userData = await response.json();
+      return userData; // Return the user data object
+    } catch (error) {
+      console.error('Error fetching user details:', error);
+      return null;
+    }
+  }
+
+  const form = document.getElementById('educationalAssistanceForm');
+  if (!form) {
+    console.error('Educational Assistance form not found.');
+    return;
+  }
+
+  // Fetch and set the user's email
+  const emailInput = document.getElementById('email');
+  if (!emailInput) {
+    console.error('Email input field not found in the DOM.');
+    return;
+  }
+
+  const userDetails = await fetchUserDetails();
+  if (userDetails?.email) {
+    emailInput.value = userDetails.email;
+    emailInput.readOnly = true; // Make it non-editable
+  }
+
+  // Fetch and set the user's birthday
+  const birthdayInput = document.getElementById('birthday');
+  if (birthdayInput && userDetails?.birthday) {
+    birthdayInput.value = userDetails.birthday.split('T')[0]; // Format as yyyy-mm-dd
+    birthdayInput.readOnly = true; // Make it non-editable
+  }
+
   function calculateAge(birthday) {
     if (!birthday) return '';
     const birthDate = new Date(birthday);
@@ -11,44 +65,14 @@ document.addEventListener('DOMContentLoaded', async function() {
     return age;
   }
 
-  const form = document.getElementById('educationalAssistanceForm');
-  if (!form) return; // Prevents error if form is missing
+  // Set default benefit type
+  document.getElementById('benefittype').value = 'Educational Assistance';
 
-  // Fetch birthday and set it in the form
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (token) {
-    try {
-      const res = await fetch('http://localhost:5000/api/users/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const user = await res.json();
-        const birthdayInput = document.getElementById('birthday');
-        if (birthdayInput && user.birthday) {
-          birthdayInput.value = user.birthday.split('T')[0]; // format as yyyy-mm-dd
-          birthdayInput.readOnly = true; // make it non-editable
-        }
-
-        // After fetching user data
-        if (user.email) {
-          const emailInput = document.getElementById('email');
-          if (emailInput) {
-            emailInput.value = user.email;
-            emailInput.readOnly = true; // Optional: make email not editable
-          }
-        }
-      }
-    } catch (err) {
-      console.error('Failed to fetch birthday:', err);
-    }
-  }
-    document.getElementById('benefittype').value = 'Educational Assistance';
-
-  form.addEventListener('submit', async function(e) {
+  form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     // Client-side validation (add/remove fields as required by your backend)
-    const requiredIds = ['surname','firstName','birthday','contact','year'];
+    const requiredIds = ['surname', 'firstName', 'birthday', 'contact', 'year'];
     for (const id of requiredIds) {
       const el = document.getElementById(id);
       if (!el || !el.value.trim()) {
@@ -61,24 +85,25 @@ document.addEventListener('DOMContentLoaded', async function() {
     const typeValue = typeEl && typeEl.value ? typeEl.value : 'Applicant';
 
     const formData = new FormData();
-formData.append('surname', document.getElementById('surname').value.trim());
-formData.append('firstname', document.getElementById('firstName').value.trim());
-formData.append('middlename', document.getElementById('middleName')?.value?.trim() || '');
-formData.append('placeOfBirth', document.getElementById('placeOfBirth')?.value || '');
-formData.append('age', Number(document.getElementById('age')?.value || 0));
-formData.append('sex', document.getElementById('gender')?.value || '');
-formData.append('civilStatus', document.getElementById('civilstatus')?.value || '');
-formData.append('religion', document.getElementById('religion')?.value || '');
-formData.append('email', document.getElementById('email')?.value || '');
-formData.append('contactNumber', Number(document.getElementById('contact')?.value || 0));
-formData.append('school', document.getElementById('schoolname')?.value || '');
-formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
-formData.append('year', document.getElementById('year')?.value || '');
-formData.append('typeOfBenefit', typeValue); // <-- use this name
-formData.append('fatherName', document.getElementById('fathername')?.value || '');
-formData.append('fatherPhone', document.getElementById('fathercontact')?.value || '');
-formData.append('motherName', document.getElementById('mothername')?.value || '');
-formData.append('motherPhone', document.getElementById('mothercontact')?.value || '');
+    formData.append('surname', document.getElementById('surname').value.trim());
+    formData.append('firstname', document.getElementById('firstName').value.trim());
+    formData.append('middlename', document.getElementById('middleName')?.value?.trim() || '');
+    formData.append('placeOfBirth', document.getElementById('placeOfBirth')?.value || '');
+    formData.append('age', calculateAge(birthdayInput.value)); // Calculate age based on the birthday input
+    formData.append('birthday', birthdayInput.value); // Include birthday in the form submission
+    formData.append('sex', document.getElementById('gender')?.value || '');
+    formData.append('civilStatus', document.getElementById('civilstatus')?.value || '');
+    formData.append('religion', document.getElementById('religion')?.value || '');
+    formData.append('email', document.getElementById('email')?.value || '');
+    formData.append('contactNumber', Number(document.getElementById('contact')?.value || 0));
+    formData.append('school', document.getElementById('schoolname')?.value || '');
+    formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
+    formData.append('year', document.getElementById('year')?.value || '');
+    formData.append('typeOfBenefit', typeValue); // <-- use this name
+    formData.append('fatherName', document.getElementById('fathername')?.value || '');
+    formData.append('fatherPhone', document.getElementById('fathercontact')?.value || '');
+    formData.append('motherName', document.getElementById('mothername')?.value || '');
+    formData.append('motherPhone', document.getElementById('mothercontact')?.value || '');
 
     // siblings & expenses as before
     const siblings = [];
@@ -98,40 +123,13 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
     });
     formData.append('expenses', JSON.stringify(expenses));
 
-    // Files (only append if present and valid)
-    const maybeAppendFile = (id, key) => {
-      const inp = document.getElementById(id);
-      if (inp && inp.files && inp.files.length > 0) {
-        const file = inp.files[0];
-        const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-        
-        // Double-check file size before submission
-        if (file.size > maxSize) {
-          throw new Error(`File "${file.name}" is too large (${(file.size / (1024 * 1024)).toFixed(2)}MB). Maximum size allowed is 5MB.`);
-        }
-        
-        // Check file type
-        if (!file.type.startsWith('image/')) {
-          throw new Error(`File "${file.name}" is not a valid image file. Please upload JPG, PNG, GIF, or other image formats.`);
-        }
-        
-        formData.append(key, file);
+    // Append file inputs (requirements)
+    const fileInputs = ['frontImage', 'backImage', 'coeImage', 'voter'];
+    for (const inputId of fileInputs) {
+      const input = document.getElementById(inputId);
+      if (input && input.files && input.files.length > 0) {
+        formData.append(inputId, input.files[0]); // Append file to FormData
       }
-    };
-    try {
-      // Validate and append files
-      maybeAppendFile('voter', 'voter');
-      maybeAppendFile('coeImage', 'coeImage');
-      maybeAppendFile('frontImage', 'frontImage');
-      maybeAppendFile('backImage', 'backImage');
-    } catch (fileError) {
-      return Swal.fire({
-        icon: 'error',
-        title: 'File Validation Error',
-        text: fileError.message,
-        confirmButtonText: 'OK',
-        confirmButtonColor: '#0A2C59'
-      });
     }
 
     try {
@@ -143,7 +141,7 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
         didOpen: () => Swal.showLoading()
       });
 
-      const res = await fetch('http://localhost:5000/api/educational-assistance', {
+      const response = await fetch('http://localhost:5000/api/educational-assistance', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${sessionStorage.getItem('token') || localStorage.getItem('token')}`
@@ -171,17 +169,14 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
         return Swal.fire('Submission failed', message, 'error');
       }
 
-      // success
-      Swal.fire('Success', data?.message || 'Form submitted successfully!', 'success').then(() => {
-        sessionStorage.removeItem('educ_siblings');
-        sessionStorage.removeItem('educ_expenses');
-        sessionStorage.removeItem('educationalAssistanceFormData');
+      Swal.fire('Success', 'Form submitted successfully!', 'success').then(() => {
+        form.reset();
         window.location.href = "confirmation/html/educConfirmation.html";
       });
-      form.reset();
-    } catch (err) {
+    } catch (error) {
       Swal.close();
-      Swal.fire('Error', 'Network or server error. Check console for details.', 'error');
+      console.error('Error submitting form:', error);
+      Swal.fire('Error', 'Network or server error. Please try again later.', 'error');
     }
   });
 
@@ -547,7 +542,6 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
   handleFileInput('backImage', 'backLabel', 'backFileName', 'viewBack', 'deleteBack');
 
   // Set age when birthday is loaded from backend
-  const birthdayInput = document.getElementById('birthday');
   const ageInput = document.getElementById('age');
   if (birthdayInput && ageInput) {
     // When birthday is fetched from backend
@@ -566,12 +560,12 @@ formData.append('motherPhone', document.getElementById('mothercontact')?.value |
   // });
 
   // Get user data from localStorage or sessionStorage
-  let userData = JSON.parse(localStorage.getItem('user')) || JSON.parse(sessionStorage.getItem('user')) || {};
-  const emailInput = document.getElementById('email');
-  if (emailInput && userData.email) {
-    emailInput.value = userData.email;
-    emailInput.readOnly = true; // Optional: make it not editable
-  }
+  // let userData = JSON.parse(localStorage.getItem('user')) || JSON.parse(sessionStorage.getItem('user')) || {};
+  // const emailInput = document.getElementById('email');
+  // if (emailInput && userData.email) {
+  //   emailInput.value = userData.email; // Set the email input value
+  //   emailInput.readOnly = true; // Optional: make it not editable
+  // }
 
   // Restore form data from localStorage if available
 const savedFormData = JSON.parse(sessionStorage.getItem('educationalAssistanceFormData') || '{}');
@@ -683,8 +677,18 @@ function handleKKProfileNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Go to form
-    window.location.href = "kkform-personal.html";
+    // CASE 4: Form open, no profile → Show SweetAlert and go to form
+    if (isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        confirmButtonText: "Go to form"
+      }).then(() => {
+        window.location.href = "kkform-personal.html";
+      });
+      return;
+    }
   })
   .catch(() => window.location.href = "kkform-personal.html");
 }
@@ -746,8 +750,18 @@ function handleLGBTQProfileNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Go to form
-    window.location.href = "lgbtqform.html";
+    // CASE 4: Form open, no profile → Show SweetAlert and go to form
+    if (isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        confirmButtonText: "Go to form"
+      }).then(() => {
+        window.location.href = "lgbtqform.html";
+      });
+      return;
+    }
   })
   .catch(() => window.location.href = "lgbtqform.html");
 }
@@ -756,17 +770,6 @@ function handleLGBTQProfileNavClick(event) {
 function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  // if (!token) {
-  //   Swal.fire({
-  //     icon: 'warning',
-  //     title: 'You need to log in first',
-  //     text: 'Please log in to access Educational Assistance.',
-  //     confirmButtonText: 'OK'
-  //   }).then(() => {
-  //     window.location.href = '/Frontend/html/user/login.html';
-  //   });
-  //   return;
-  // }
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
       headers: { Authorization: `Bearer ${token}` }
@@ -820,8 +823,18 @@ function handleEducAssistanceNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Go to form
-    window.location.href = "Educational-assistance-user.html";
+    // CASE 4: Form open, no profile → Show SweetAlert and go to form
+    if (isFormOpen && !hasProfile) {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        confirmButtonText: "Go to form"
+      }).then(() => {
+        window.location.href = "Educational-assistance-user.html";
+      });
+      return;
+    }
   })
   .catch(() => window.location.href = "Educational-assistance-user.html");
 }

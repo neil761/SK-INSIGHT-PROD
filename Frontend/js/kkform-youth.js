@@ -994,4 +994,27 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('customSignatureBtn').addEventListener('click', function() {
     document.getElementById('signatureImage').click();
   });
+
+  // Add this event listener to handle the change for registeredSKVoter
+  const registeredSKVoter = document.getElementById('registeredSKVoter');
+  const votedLastSKElection = document.getElementById('votedLastSKElection');
+
+  if (registeredSKVoter) {
+    registeredSKVoter.addEventListener('change', function() {
+      if (this.value === 'No') {
+        votedLastSKElection.value = 'No'; // Automatically set to No
+        votedLastSKElection.disabled = true; // Disable the field
+      } else {
+        votedLastSKElection.disabled = false; // Enable the field if registered
+      }
+    });
+
+    // Initial check to set the state based on the current value
+    if (registeredSKVoter.value === 'No') {
+      votedLastSKElection.value = 'No';
+      votedLastSKElection.disabled = true;
+    } else {
+      votedLastSKElection.disabled = false;
+    }
+  }
 });
