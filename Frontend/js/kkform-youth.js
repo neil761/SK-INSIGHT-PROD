@@ -418,19 +418,33 @@ document.addEventListener('DOMContentLoaded', function() {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/kkprofiling', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }, // don't set Content-Type manually
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
+      Swal.close();
       if (response.ok) {
-        Swal.close();
         await Swal.fire("Submitted!", "Form submitted successfully!", "success");
         localStorage.removeItem('kkProfileStep1');
         localStorage.removeItem('kkProfileStep2');
         localStorage.removeItem('kkProfileStep3');
         window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
       } else if (response.status === 409) {
-        Swal.close();
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
+        return;
+      } else if (response.status === 403) {
+        let error;
+        try {
+          error = await response.json();
+        } catch {
+          error = { error: await response.text() };
+        }
+        // Show SweetAlert for age/access restriction
+        Swal.fire({
+          icon: "error",
+          title: "Not Eligible",
+          text: error.error || error.message || "You are not eligible to submit this form due to age restrictions.",
+          confirmButtonColor: "#0A2C59"
+        });
         return;
       } else {
         let error;
@@ -439,7 +453,6 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch {
           error = { message: await response.text() };
         }
-        Swal.close();
         Swal.fire("Error", error.message || 'Something went wrong', "error");
       }
     } catch (error) {
@@ -669,7 +682,7 @@ document.addEventListener('DOMContentLoaded', function() {
       if (isFormOpen && !hasProfile) {
         Swal.fire({
           icon: "info",
-          title: `No profile found`,
+          title: `No Application found`,
           text: `You don't have a profile yet. Please fill out the form to create one.`,
           confirmButtonText: "Go to form"
         }).then(() => {
@@ -818,7 +831,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       const response = await fetch('http://localhost:5000/api/kkprofiling', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }, // don't set Content-Type manually
+        headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
       Swal.close();
@@ -830,6 +843,21 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
       } else if (response.status === 409) {
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
+        return;
+      } else if (response.status === 403) {
+        let error;
+        try {
+          error = await response.json();
+        } catch {
+          error = { error: await response.text() };
+        }
+        // Show SweetAlert for age/access restriction
+        Swal.fire({
+          icon: "error",
+          title: "Not Eligible",
+          text: error.error || error.message || "You are not eligible to submit this form due to age restrictions.",
+          confirmButtonColor: "#0A2C59"
+        });
         return;
       } else {
         let error;

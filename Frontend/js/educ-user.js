@@ -138,9 +138,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         text: 'Please wait while your application is being submitted.',
         allowOutsideClick: false,
         allowEscapeKey: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
+        didOpen: () => Swal.showLoading()
       });
 
       const response = await fetch('http://localhost:5000/api/educational-assistance', {
@@ -153,10 +151,22 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       Swal.close();
 
-      const data = await response.json();
-      if (!response.ok) {
-        console.error('Submit failed', response.status, data);
-        return Swal.fire('Submission failed', data?.message || 'Server error occurred.', 'error');
+      const text = await res.text();
+      let data = null;
+      try { data = JSON.parse(text); } catch (err) {}
+
+      if (res.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
+        return Swal.fire({
+          icon: 'error',
+          title: 'Not Eligible',
+          text: data?.error || 'You are not eligible to submit this form due to age restrictions.',
+          confirmButtonColor: '#0A2C59'
+        });
+      }
+
+      if (!res.ok) {
+        const message = data?.message || data?.error || text || `Server returned ${res.status}`;
+        return Swal.fire('Submission failed', message, 'error');
       }
 
       Swal.fire('Success', 'Form submitted successfully!', 'success').then(() => {

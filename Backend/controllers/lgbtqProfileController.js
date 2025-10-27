@@ -28,6 +28,10 @@ exports.submitLGBTQProfile = async (req, res) => {
       formName: "LGBTQIA+ Profiling",
     });
 
+        if (req.user.accessLevel === "limited" || req.user.age > 30) {
+      return res.status(403).json({ error: "You are not eligible to submit this form due to age restrictions." });
+    }
+
     if (!formStatus || !formStatus.isOpen) {
       return res.status(403).json({ success: false, error: "Form is currently closed" });
     }

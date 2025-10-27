@@ -145,12 +145,12 @@ function handleLGBTQProfileNavClick(event) {
         text: `You don't have a profile yet. Please fill out the form to create one.`,
         confirmButtonText: "Go to form"
       }).then(() => {
-        window.location.href = "lgbtqform.html";
+        window.location.href = "../../lgbtqform.html";
       });
       return;
     }
   })
-  .catch(() => window.location.href = "lgbtqform.html");
+  .catch(() => window.location.href = "../../lgbtqform.html");
 }
 
 // Educational Assistance Navigation
@@ -212,7 +212,7 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No profile found`,
+        title: `No Application found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
         confirmButtonText: "Go to form"
       }).then(() => {

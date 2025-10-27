@@ -20,6 +20,10 @@ exports.submitApplication = async (req, res) => {
   try {
     const userId = req.user.id;
 
+    
+    if (req.user.accessLevel === "limited" || req.user.age > 30) {
+      return res.status(403).json({ error: "You are not eligible to submit this form due to age restrictions." });
+    }
     // Check if form is open
     const formStatus = await FormStatus.findOne({
       formName: "Educational Assistance",

@@ -133,6 +133,27 @@ exports.getCurrentUser = async (req, res) => {
     const user = await User.findById(req.user._id).select("-password");
     if (!user) return res.status(404).json({ error: "User not found" });
 
+    // --- Age and accessLevel update logic ---
+    if (user.birthday) {
+      const today = new Date();
+      const birthDate = new Date(user.birthday);
+      let age = today.getFullYear() - birthDate.getFullYear();
+      if (
+        today.getMonth() < birthDate.getMonth() ||
+        (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())
+      ) {
+        age--;
+      }
+      if (user.age !== age) {
+        user.age = age;
+      }
+      if (age > 30 && user.accessLevel !== "limited") {
+        user.accessLevel = "limited";
+      }
+      await user.save();
+    }
+    // ----------------------------------------
+
     res.json(user);
   } catch (err) {
     res.status(500).json({ error: err.message });
