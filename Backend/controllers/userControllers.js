@@ -162,11 +162,21 @@ exports.getCurrentUser = async (req, res) => {
 
 exports.sendVerificationOtp = asyncHandler(async (req, res) => {
   const { email } = req.body;
-
   const user = await User.findOne({ email });
   if (!user) return res.status(404).json({ message: "User not found" });
   if (user.isVerified)
     return res.status(400).json({ message: "User already verified" });
+
+  // Check lockout
+  if (user.otpLockedUntil && user.otpLockedUntil > Date.now()) {
+    const unlockAt = user.otpLockedUntil;
+    const secondsLeft = Math.ceil((unlockAt - Date.now()) / 1000);
+    return res.status(429).json({
+      message: `Too many failed attempts. Try again in ${Math.ceil(secondsLeft / 60)} minutes.`,
+      unlockAt,
+      secondsLeft
+    });
+  }
 
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   const otpExpires = Date.now() + 10 * 60 * 1000;
@@ -286,7 +296,7 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
     user.otpAttempts = (user.otpAttempts || 0) + 1;
 
     if (user.otpAttempts >= 5) {
-      user.otpLockedUntil = Date.now() + 30 * 60 * 1000; // 30 minutes
+      user.otpLockedUntil = Date.now() + 5 * 60 * 1000; // 5 minutes
       user.otpAttempts = 0;
     }
 
