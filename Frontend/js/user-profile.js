@@ -1,27 +1,14 @@
 // Token validation helper function
-// function validateTokenAndRedirect(featureName = "this feature") {
-//   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-//   if (!token) {
-//     Swal.fire({
-//       icon: 'warning',
-//       title: 'Authentication Required',
-//       text: `You need to log in first to access ${featureName}.`,
-//       confirmButtonText: 'Go to Login',
-//       confirmButtonColor: '#0A2C59',
-//       allowOutsideClick: false,
-//       allowEscapeKey: false,
-//     }).then(() => {
-//       window.location.href = '/Frontend/html/user/login.html';
-//     });
-//     return false;
-//   }
-//   return true;
-// }
+ 
 
 document.addEventListener("DOMContentLoaded", async () => {
-  // if (!validateTokenAndRedirect("user profile")) {
-  //   return;
-  // }
+  // OTP lockout check on page load
+  const unlockAt = localStorage.getItem('otpLockoutUntil');
+  if (unlockAt && Date.now() < unlockAt) {
+    const seconds = Math.ceil((Number(unlockAt) - Date.now()) / 1000);
+    showOtpLockoutModal(Number(unlockAt));
+    disableVerifyBtn(seconds);
+  }
   
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
 
@@ -216,19 +203,21 @@ try {
       // Step 3: Ask for OTP
       const { value: otp } = await Swal.fire({
         title: 'Enter OTP',
-        html:
-          `<div style="display:flex;justify-content:center;gap:8px;">
-            <input id="otp1" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;" autofocus>
-            <input id="otp2" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;">
-            <input id="otp3" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;">
-            <input id="otp4" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;">
-            <input id="otp5" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;">
-            <input id="otp6" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;">
-          </div>`,
+        html: `
+          <div style="display:flex;justify-content:center;gap:8px;">
+            ${Array.from({length: 6}).map((_, i) =>
+              `<input id="otp${i+1}" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;border-radius:8px;border:1px solid #0A2C59;background:#f7faff;box-shadow:0 2px 8px rgba(7,176,242,0.07);" autofocus>`
+            ).join('')}
+          </div>
+          <div style="margin-top:12px;font-size:14px;color:#0A2C59;">Check your email for the 6-digit code.</div>
+        `,
         showCancelButton: true,
         confirmButtonText: 'Verify',
         cancelButtonText: 'Cancel',
         focusConfirm: false,
+        customClass: {
+          popup: 'otp-modal-popup'
+        },
         didOpen: () => {
           // Auto-focus next input on input
           for (let i = 1; i <= 6; i++) {
@@ -246,7 +235,7 @@ try {
           }
           document.getElementById('otp1').focus();
         },
-        preConfirm: () => {
+        preConfirm: async () => {
           const otp = [
             document.getElementById('otp1').value,
             document.getElementById('otp2').value,
@@ -257,30 +246,49 @@ try {
           ].join('');
           if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
             Swal.showValidationMessage('Please enter the 6-digit OTP');
+            return false;
           }
-          return otp;
+          const result = await verifyOtp(email, otp);
+          return result;
         }
       });
 
       if (!otp) return;
 
       // Step 4: Verify OTP with backend
-      try {
+      async function verifyOtp(email, otp) {
         const verifyRes = await fetch('http://localhost:5000/api/users/verify/confirm', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, otp })
         });
-        const verifyData = await verifyRes.json();
+
         if (verifyRes.ok) {
           Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
             window.location.reload();
           });
+          return true;
+        } else if (verifyRes.status === 429) {
+          const verifyData = await verifyRes.json();
+          const unlockAt = Date.now() + (verifyData.secondsLeft ? verifyData.secondsLeft * 1000 : 5 * 60 * 1000);
+          setUserLockout(email, unlockAt);
+
+          showOtpLockoutModal(unlockAt, email);
+          return false;
         } else {
-          Swal.fire('Error', verifyData.message || 'Invalid or expired OTP', 'error');
+          const verifyData = await verifyRes.json();
+          Swal.showValidationMessage(verifyData.message || 'Invalid or expired OTP');
+          return false;
         }
-      } catch (err) {
-        Swal.fire('Error', 'Failed to verify OTP', 'error');
+      }
+
+      if (otp) {
+        const isVerified = await verifyOtp(email, otp);
+        if (isVerified) {
+          Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
+            window.location.reload();
+          });
+        }
       }
     });
   }
@@ -553,5 +561,76 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
   document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
 });
+
+function showOtpLockoutModal(unlockAt, email) {
+  let seconds = Math.ceil((unlockAt - Date.now()) / 1000);
+  Swal.fire({
+    icon: 'error',
+    title: 'Too Many Attempts',
+    html: `<span id="otp-timer"></span> before you can send another OTP.`,
+    confirmButtonColor: '#0A2C59',
+    allowOutsideClick: true,
+    allowEscapeKey: true,
+    showConfirmButton: false,
+    didOpen: () => {
+      const timerElem = Swal.getHtmlContainer().querySelector('#otp-timer');
+      const interval = setInterval(() => {
+        seconds--;
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        timerElem.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+        if (seconds <= 0) {
+          clearInterval(interval);
+          Swal.close();
+          clearUserLockout(email);
+          enableVerifyBtn();
+        }
+      }, 1000);
+      timerElem.textContent = `${Math.floor(seconds / 60)}:${(seconds % 60).toString().padStart(2, '0')}`;
+    }
+  });
+  disableVerifyBtn(seconds);
+}
+
+function disableVerifyBtn(seconds) {
+  const verifyBtn = document.querySelector('.verify-btn');
+  if (verifyBtn) {
+    verifyBtn.disabled = true;
+    const origText = verifyBtn.textContent;
+    let left = seconds;
+    const interval = setInterval(() => {
+      left--;
+      const m = Math.floor(left / 60);
+      const s = left % 60;
+      verifyBtn.textContent = `Wait ${m}:${s.toString().padStart(2, '0')}`;
+      if (left <= 0) {
+        clearInterval(interval);
+        verifyBtn.disabled = false;
+        verifyBtn.textContent = origText;
+      }
+    }, 1000);
+  }
+}
+
+function enableVerifyBtn() {
+  const verifyBtn = document.querySelector('.verify-btn');
+  if (verifyBtn) {
+    verifyBtn.disabled = false;
+    verifyBtn.textContent = "Verify Account";
+  }
+}
+
+function getLockoutKey(email) {
+  return `otpLockoutUntil_${email}`;
+}
+function setUserLockout(email, unlockAt) {
+  localStorage.setItem(getLockoutKey(email), unlockAt);
+}
+function getUserLockout(email) {
+  return localStorage.getItem(getLockoutKey(email));
+}
+function clearUserLockout(email) {
+  localStorage.removeItem(getLockoutKey(email));
+}
 
 

@@ -495,3 +495,18 @@ body {
   background: linear-gradient(to bottom, #eaf2fb 80%, transparent 100%);
   z-index: 900; /* below navbar (1000) but above page content */
 }
+
+/* Add at the end of userProfile.css */
+.swal2-popup.otp-modal-popup {
+  border-radius: 16px !important;
+  background: #f7faff !important;
+  box-shadow: 0 8px 32px rgba(7,176,242,0.09) !important;
+}
+.swal2-title {
+  color: #0A2C59 !important;
+  font-weight: 700 !important;
+}
+.swal2-confirm, .swal2-cancel {
+  border-radius: 8px !important;
+  font-weight: 600 !important;
+}
