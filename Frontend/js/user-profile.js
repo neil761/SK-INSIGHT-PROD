@@ -117,18 +117,26 @@ try {
   const imgRes = await fetch("http://localhost:5000/api/kkprofiling/me/image", {
     headers: { Authorization: `Bearer ${token}` }
   });
+  const profileImg = document.getElementById("profile-img");
   if (imgRes.ok) {
     const { imageUrl } = await imgRes.json();
-    console.log("Profile image response:", { imageUrl });
-
-    const profileImg = document.getElementById("profile-img");
-    if (profileImg && imageUrl) {
-      console.log("Setting profile image:", imageUrl);
-      profileImg.src = `http://localhost:5000/profile_images/1758435327738-305279128.png`;
+    if (profileImg) {
+      if (imageUrl) {
+        profileImg.src = imageUrl.startsWith("http") ? imageUrl : `http://localhost:5000/${imageUrl}`;
+      } else {
+        // No KK profile image, use default
+        profileImg.src = "../../assets/default-profile.jpg";
+      }
     }
+  } else if (profileImg) {
+    // No KK profile yet, use default
+    profileImg.src = "../../assets/default-profile.jpg";
   }
 } catch (err) {
-  console.error("Failed to fetch KKProfile image:", err);
+  const profileImg = document.getElementById("profile-img");
+  if (profileImg) {
+    profileImg.src = "../../assets/default-profile.jpg";
+  }
 }
 
   // Always enable the verify button for unverified users
@@ -264,9 +272,8 @@ try {
         });
 
         if (verifyRes.ok) {
-          Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
-            window.location.reload();
-          });
+          await Swal.fire('Verified!', 'Your account has been verified.', 'success');
+          window.location.reload();
           return true;
         } else if (verifyRes.status === 429) {
           const verifyData = await verifyRes.json();

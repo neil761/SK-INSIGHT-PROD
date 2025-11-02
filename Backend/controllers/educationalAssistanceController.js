@@ -251,7 +251,7 @@ exports.getAllApplications = async (req, res) => {
 exports.getApplicationById = async (req, res) => {
   const app = await EducationalAssistance.findById(req.params.id).populate(
     "user",
-    "username email"
+    "username email birthday"
   );
   if (!app) return res.status(404).json({ error: "Application not found" });
 
