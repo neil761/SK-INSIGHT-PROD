@@ -648,3 +648,13 @@ document.addEventListener('DOMContentLoaded', async function() {
     });
   }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+  const finishBtn = document.getElementById('finishBtn');
+  if (finishBtn) {
+    finishBtn.addEventListener('click', function (e) {
+      e.preventDefault(); // Prevent form submission
+      window.location.href = 'kkcofirmation.html'; // Redirect to confirmation page
+    });
+  }
+});

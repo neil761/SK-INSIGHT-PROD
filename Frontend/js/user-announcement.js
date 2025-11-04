@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes, view my response",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }
