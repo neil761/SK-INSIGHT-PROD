@@ -36,7 +36,6 @@ document.addEventListener("DOMContentLoaded", async function () {
   const mobileMenu = document.getElementById("navbarMobileMenu");
 
   if (hamburger && mobileMenu) {
-    console.log("✅ Navbar loaded");
     hamburger.addEventListener("click", function (e) {
       e.stopPropagation();
       mobileMenu.classList.toggle("active");
@@ -299,14 +298,12 @@ document.addEventListener("DOMContentLoaded", async function () {
   const kkProfileNavBtnMobile = document.getElementById("kkProfileNavBtnMobile");
 
   if (kkProfileNavBtnDesktop) {
-    console.log("✅ Desktop KK Profile button found");
     kkProfileNavBtnDesktop.addEventListener("click", handleKKProfileNavClick);
   } else {
     console.warn("⚠️ Desktop KK Profile button NOT found");
   }
 
   if (kkProfileNavBtnMobile) {
-    console.log("✅ Mobile KK Profile button found");
     kkProfileNavBtnMobile.addEventListener("click", handleKKProfileNavClick);
   } else {
     console.warn("⚠️ Mobile KK Profile button NOT found");

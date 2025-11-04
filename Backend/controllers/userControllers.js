@@ -217,24 +217,42 @@ exports.sendVerificationOtp = asyncHandler(async (req, res) => {
       margin: 30px auto;
       background: #ffffff;
       border-radius: 10px;
-      padding: 40px;
+      padding: 0;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
       text-align: center;
+      overflow: hidden;
+    }
+    .header {
+      background: #0A2C59;
+      color: #fff;
+      padding: 32px 0 16px 0;
+      border-top-left-radius: 10px;
+      border-top-right-radius: 10px;
     }
     .logo {
       max-width: 120px;
-      margin-bottom: 20px;
+      margin-bottom: 12px;
     }
     h2 {
-      color: #0A2C59;
+      color: #fff;
       margin-bottom: 10px;
+      font-size: 2rem;
+      font-weight: 700;
+    }
+    .content {
+      padding: 32px 40px 24px 40px;
     }
     .otp {
-      font-size: 28px;
+      font-size: 32px;
       font-weight: bold;
-      letter-spacing: 6px;
+      letter-spacing: 8px;
       color: #0A2C59;
-      margin: 20px 0;
+      margin: 24px 0;
+      background: #eaf3fb;
+      border-radius: 8px;
+      display: inline-block;
+      padding: 12px 32px;
+      box-shadow: 0 2px 8px rgba(7,176,242,0.07);
     }
     p {
       color: #333;
@@ -242,19 +260,27 @@ exports.sendVerificationOtp = asyncHandler(async (req, res) => {
       margin-bottom: 10px;
     }
     .footer {
-      font-size: 12px;
-      color: #888;
-      margin-top: 30px;
+      background: #0A2C59;
+      color: #fff;
+      font-size: 13px;
+      padding: 18px 0;
+      border-bottom-left-radius: 10px;
+      border-bottom-right-radius: 10px;
+      margin-top: 0;
     }
   </style>
 </head>
 <body>
   <div class="container">
-    <img class="logo" src="https://res.cloudinary.com/dnmawrba8/image/upload/v1754197673/logo_no_bg_ycz1nn.png" alt="SK Insight Logo" />
-    <h2>Your OTP Code</h2>
-    <p>Use the following code to verify your email. It is valid for 10 minutes.</p>
-    <div class="otp">${otp}</div>
-    <p>If you didn’t request this, please ignore this email.</p>
+    <div class="header">
+      <img class="logo" src="https://res.cloudinary.com/dnmawrba8/image/upload/v1754197673/logo_no_bg_ycz1nn.png" alt="SK Insight Logo" />
+      <h2>Your OTP Code</h2>
+    </div>
+    <div class="content">
+      <p>Use the following code to verify your email. It is valid for 10 minutes.</p>
+      <div class="otp">${otp}</div>
+      <p>If you didn’t request this, please ignore this email.</p>
+    </div>
     <div class="footer">
       &copy; ${new Date().getFullYear()} SK Insight. All rights reserved.
     </div>

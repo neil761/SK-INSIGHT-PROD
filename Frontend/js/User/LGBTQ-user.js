@@ -3,8 +3,6 @@ document.addEventListener("DOMContentLoaded", () => {
   //   return;
   // }
   
-  console.log("✅ LGBTQ-user.js loaded");
-
   const form = document.getElementById("lgbtqForm");
   const birthdayInput = document.getElementById("birthday");
   const submitBtn = document.getElementById("submitBtn");
@@ -342,7 +340,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const mobileMenu = document.getElementById('navbarMobileMenu');
 
   hamburger.addEventListener('click', function() {
-      console.log('Hamburger clicked');
+
       mobileMenu.classList.toggle('active');
   });
 

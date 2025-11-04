@@ -36,7 +36,6 @@
 let allProfiles = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("lgbtqprofile.js loaded ✅");
 
   const tableBody = document.querySelector(".tables tbody");
 
@@ -202,7 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const query = new URLSearchParams(queryObj).toString();
       if (query) url += `?${query}`;
 
-      console.log("🔎 Request URL:", url);
 
       const res = await fetch(url, {
         headers: {
@@ -215,7 +213,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // Filter out deleted profiles (same as KK profiling)
       const visibleProfiles = data.filter(p => !p.isDeleted);
       allProfiles = visibleProfiles;
-      console.log("✅ Profiles fetched:", visibleProfiles);
       renderProfiles(visibleProfiles);
     } catch (err) {
       console.error("❌ Error fetching profiles:", err);

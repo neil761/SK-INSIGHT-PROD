@@ -290,31 +290,31 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Listen for announcement updates
   socket.on("announcement:created", (data) => {
-    console.log("New announcement created:", data);
+
     // Refresh announcements to show the new one
     fetchAnnouncements();
   });
 
   socket.on("announcement:updated", (data) => {
-    console.log("Announcement updated:", data);
+
     // Refresh announcements to show the updated one
     fetchAnnouncements();
   });
 
   socket.on("announcement:deleted", (data) => {
-    console.log("Announcement deleted:", data);
+
     // Refresh announcements to remove the deleted one
     fetchAnnouncements();
   });
 
   socket.on("announcement:pinned", (data) => {
-    console.log("Announcement pinned:", data);
+
     // Refresh announcements to show pin status
     fetchAnnouncements();
   });
 
   socket.on("announcement:unpinned", (data) => {
-    console.log("Announcement unpinned:", data);
+
     // Refresh announcements to show pin status
     fetchAnnouncements();
   });
@@ -379,7 +379,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes, view my response",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }
@@ -403,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }

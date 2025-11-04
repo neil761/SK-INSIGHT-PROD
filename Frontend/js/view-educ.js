@@ -481,7 +481,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     ];
 
     requirements.forEach((req) => {
-      console.log(`Checking ID: ${req.column}UploadColumn`);
       const column = document.getElementById(`${req.column}UploadColumn`);
       if (!column) {
         console.warn(`⚠️ Column with ID "${req.column}UploadColumn" not found in the DOM.`);

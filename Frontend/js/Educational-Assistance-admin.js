@@ -182,7 +182,6 @@ let applicants = [];
     if (searchInput.value) params.push(`search=${encodeURIComponent(searchInput.value)}`);
     const queryString = params.length ? `?${params.join('&')}` : '';
     const endpoint = `http://localhost:5000/api/educational-assistance/filter${queryString}`;
-    console.log("Fetching applicants with endpoint:", endpoint);
 
     try {
       const token = sessionStorage.getItem("token");
@@ -387,17 +386,17 @@ let applicants = [];
     const nameDiv = document.getElementById("profileName");
     const details = document.getElementById("profileDetails");
 
-    const mi = app.middlename ? app.middlename[0].toUpperCase() + "." : "";
-    nameDiv.textContent = `${app.firstname} ${mi} ${app.surname}`;
+    const mi = freshApp.middlename ? freshApp.middlename[0].toUpperCase() + "." : "";
+    nameDiv.textContent = `${freshApp.firstname} ${mi} ${freshApp.surname}`;
 
     // Default image placeholders
     const defaultImage = "/Frontend/assets/default-profile.jpg";
 
     // Use Cloudinary URLs or default placeholders for images
-    const frontImage = app.frontImage || defaultImage;
-    const backImage = app.backImage || defaultImage;
-    const coeImage = app.coeImage || defaultImage;
-    const voterImage = app.voter || defaultImage;
+    const frontImage = freshApp.frontImage || defaultImage;
+    const backImage = freshApp.backImage || defaultImage;
+    const coeImage = freshApp.coeImage || defaultImage;
+    const voterImage = freshApp.voter || defaultImage;
 
     details.innerHTML = `
       <div class="profile-details-modal">
@@ -405,15 +404,19 @@ let applicants = [];
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">Age</div>
-            <div class="value">${app.age ?? "-"}</div>
+            <div class="value">${freshApp.age ?? "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Gender</div>
-            <div class="value">${app.sex || "-"}</div>
+            <div class="value">${freshApp.sex || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Birthday</div>
-            <div class="value">${app.birthday ? new Date(app.birthday).toLocaleDateString() : "-"}</div>
+            <div class="value">${
+              freshApp.user?.birthday
+                ? new Date(freshApp.user.birthday).toLocaleDateString()
+                : "-"
+            }</div>
           </div>
         </div>
 
@@ -421,15 +424,15 @@ let applicants = [];
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">Place of Birth</div>
-            <div class="value">${app.placeOfBirth || "-"}</div>
+            <div class="value">${freshApp.placeOfBirth || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Email</div>
-            <div class="value">${app.user?.email || "-"}</div>
+            <div class="value">${freshApp.user?.email || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Contact Number</div>
-            <div class="value">${app.contactNumber || "-"}</div>
+            <div class="value">${freshApp.contactNumber || "-"}</div>
           </div>
         </div>
 
@@ -437,15 +440,15 @@ let applicants = [];
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">Civil Status</div>
-            <div class="value">${app.civilStatus || "-"}</div>
+            <div class="value">${freshApp.civilStatus || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Religion</div>
-            <div class="value">${app.religion || "-"}</div>
+            <div class="value">${freshApp.religion || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Type of Benefit</div>
-            <div class="value">${app.typeOfBenefit || "-"}</div>
+            <div class="value">${freshApp.typeOfBenefit || "-"}</div>
           </div>
         </div>
 
@@ -453,17 +456,17 @@ let applicants = [];
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">School</div>
-            <div class="value">${app.school || "-"}</div>
+            <div class="value">${freshApp.school || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">School Address</div>
-            <div class="value">${app.schoolAddress || "-"}</div>
+            <div class="value">${freshApp.schoolAddress || "-"}</div>
           </div>
         </div>
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">Year Level</div>
-            <div class="value">${app.year || "-"}</div>
+            <div class="value">${freshApp.year || "-"}</div>
           </div>
         </div>
 
@@ -471,22 +474,22 @@ let applicants = [];
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">Father's Name</div>
-            <div class="value">${app.fatherName || "-"}</div>
+            <div class="value">${freshApp.fatherName || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Father's Contact</div>
-            <div class="value">${app.fatherPhone || "-"}</div>
+            <div class="value">${freshApp.fatherPhone || "-"}</div>
           </div>
         </div>
         
         <div class="profile-details-row">
           <div class="profile-detail">
             <div class="label">Mother's Name</div>
-            <div class="value">${app.motherName || "-"}</div>
+            <div class="value">${freshApp.motherName || "-"}</div>
           </div>
           <div class="profile-detail">
             <div class="label">Mother's Contact</div>
-            <div class="value">${app.motherPhone || "-"}</div>
+            <div class="value">${freshApp.motherPhone || "-"}</div>
           </div>
         </div>
 
@@ -503,7 +506,7 @@ let applicants = [];
                 </tr>
               </thead>
               <tbody>
-                ${(app.siblings || []).map(sib => `
+                ${(freshApp.siblings || []).map(sib => `
                   <tr>
                     <td>${sib.name}</td>
                     <td>${sib.gender}</td>
@@ -527,7 +530,7 @@ let applicants = [];
                 </tr>
               </thead>
               <tbody>
-                ${(app.expenses || []).map(exp => `
+                ${(freshApp.expenses || []).map(exp => `
                   <tr>
                     <td>${exp.item}</td>
                     <td>₱${exp.expectedCost.toLocaleString()}</td>
@@ -573,7 +576,7 @@ let applicants = [];
         </div>
 
         <!-- Action Buttons -->
-        ${app.status === "pending" ? `
+        ${freshApp.status === "pending" ? `
           <div class="modal-actions">
             <button class="modal-btn modal-btn-danger reject-btn">Reject</button>
             <button class="modal-btn modal-btn-primary approve-btn">Accept</button>
@@ -584,7 +587,7 @@ let applicants = [];
 
 
     // Add event listeners for approve/reject buttons if status is pending
-    if (app.status === "pending") {
+    if (freshApp.status === "pending") {
       const approveBtn = modal.querySelector(".modal-btn-primary");
       const rejectBtn = modal.querySelector(".modal-btn-danger");
 

@@ -81,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (kkRes.ok) {
       const kkProfile = await kkRes.json();
-      console.log("Raw KKProfile:", kkProfile);
 
       // Construct full name: firstname middle initial lastname
       const middleInitial = kkProfile.middlename
@@ -99,8 +98,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       // ✅ Age comes from User's birthday
       if (user && user.birthday) {
         setValue("age", calculateAge(user.birthday));
-        console.log("User birthday:", user.birthday);
-        console.log("Calculated age:", calculateAge(user.birthday));
       }
 
       setValue("gender", kkProfile.gender);
@@ -117,18 +114,26 @@ try {
   const imgRes = await fetch("http://localhost:5000/api/kkprofiling/me/image", {
     headers: { Authorization: `Bearer ${token}` }
   });
+  const profileImg = document.getElementById("profile-img");
   if (imgRes.ok) {
     const { imageUrl } = await imgRes.json();
-    console.log("Profile image response:", { imageUrl });
-
-    const profileImg = document.getElementById("profile-img");
-    if (profileImg && imageUrl) {
-      console.log("Setting profile image:", imageUrl);
-      profileImg.src = `http://localhost:5000/profile_images/1758435327738-305279128.png`;
+    if (profileImg) {
+      if (imageUrl) {
+        profileImg.src = imageUrl.startsWith("http") ? imageUrl : `http://localhost:5000/${imageUrl}`;
+      } else {
+        // No KK profile image, use default
+        profileImg.src = "../../assets/default-profile.jpg";
+      }
     }
+  } else if (profileImg) {
+    // No KK profile yet, use default
+    profileImg.src = "../../assets/default-profile.jpg";
   }
 } catch (err) {
-  console.error("Failed to fetch KKProfile image:", err);
+  const profileImg = document.getElementById("profile-img");
+  if (profileImg) {
+    profileImg.src = "../../assets/default-profile.jpg";
+  }
 }
 
   // Always enable the verify button for unverified users
@@ -264,6 +269,26 @@ try {
         });
 
         if (verifyRes.ok) {
+          await Swal.fire('Verified!', 'Your account has been verified.', 'success');
+          window.location.reload();
+          return true;
+        } else if (verifyRes.status === 429) {
+          const verifyData = await verifyRes.json();
+          const unlockAt = Date.now() + (verifyData.secondsLeft ? verifyData.secondsLeft * 1000 : 5 * 60 * 1000);
+          setUserLockout(email, unlockAt);
+
+          showOtpLockoutModal(unlockAt, email);
+          return false;
+        } else {
+          const verifyData = await verifyRes.json();
+          Swal.showValidationMessage(verifyData.message || 'Invalid or expired OTP');
+          return false;
+        }
+      }
+
+      if (otp) {
+        const isVerified = await verifyOtp(email, otp);
+        if (isVerified) {
           Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
             window.location.reload();
           });

@@ -1,14 +1,11 @@
-console.log("✅ kkform-youth.js loaded");
 
 document.addEventListener('DOMContentLoaded', function() {
   // if (!validateTokenAndRedirect("KK Youth Form")) {
   //   return;
   // }
   
-  console.log("✅ DOM ready");
 
   const educationalBackground = document.getElementById('educationalBackground');
-  console.log("🎯 Found dropdown:", educationalBackground);
 
   if (!educationalBackground) {
     console.error("❌ No element with id='educationalBackground' found!");
@@ -20,7 +17,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // Restore value
   if (saved.educationalBackground) {
     educationalBackground.value = saved.educationalBackground;
-    console.log("🔁 Restored:", saved.educationalBackground);
   }
 
   // Save on change
@@ -28,7 +24,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
     current.educationalBackground = this.value;
     localStorage.setItem('kkProfileStep3', JSON.stringify(current));
-    console.log("💾 Saved educational background:", this.value);
   });
 });
 
@@ -273,7 +268,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
       current.educationalBackground = this.value;
       localStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      console.log('✅ Saved educational background:', this.value);
     });
   }
 
