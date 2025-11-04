@@ -81,7 +81,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     if (kkRes.ok) {
       const kkProfile = await kkRes.json();
-      console.log("Raw KKProfile:", kkProfile);
 
       // Construct full name: firstname middle initial lastname
       const middleInitial = kkProfile.middlename
@@ -99,8 +98,6 @@ document.addEventListener("DOMContentLoaded", async () => {
       // ✅ Age comes from User's birthday
       if (user && user.birthday) {
         setValue("age", calculateAge(user.birthday));
-        console.log("User birthday:", user.birthday);
-        console.log("Calculated age:", calculateAge(user.birthday));
       }
 
       setValue("gender", kkProfile.gender);

@@ -1,6 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log("✅ DOM fully loaded");
-
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
 

@@ -182,7 +182,6 @@ let applicants = [];
     if (searchInput.value) params.push(`search=${encodeURIComponent(searchInput.value)}`);
     const queryString = params.length ? `?${params.join('&')}` : '';
     const endpoint = `http://localhost:5000/api/educational-assistance/filter${queryString}`;
-    console.log("Fetching applicants with endpoint:", endpoint);
 
     try {
       const token = sessionStorage.getItem("token");

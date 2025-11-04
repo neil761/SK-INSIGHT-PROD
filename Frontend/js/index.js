@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', function() {
-  console.log("✅ DOM fully loaded");
+
 
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
@@ -278,14 +278,12 @@ function handleEducAssistanceNavClick(event) {
   const kkProfileNavBtnMobile = document.getElementById('kkProfileNavBtnMobile');
 
   if (kkProfileNavBtn) {
-    console.log("✅ Desktop KK Profile button found");
     kkProfileNavBtn.addEventListener('click', handleKKProfileNavClick);
   } else {
     console.warn("⚠️ Desktop KK Profile button NOT found");
   }
 
   if (kkProfileNavBtnMobile) {
-    console.log("✅ Mobile KK Profile button found");
     kkProfileNavBtnMobile.addEventListener('click', handleKKProfileNavClick);
   } else {
     console.warn("⚠️ Mobile KK Profile button NOT found");

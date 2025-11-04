@@ -34,7 +34,6 @@
 let allProfiles = [];
 
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("kkprofile.js loaded ✅");
 
   const tableBody = document.querySelector(".tables tbody");
   const yearDropdown = document.getElementById("yearDropdown");
@@ -167,7 +166,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ? `http://localhost:5000/api/kkprofiling?${query}`
         : `http://localhost:5000/api/kkprofiling`;
 
-      console.log("🔎 Request URL:", url);
 
       const res = await fetch(url, {
         headers: {
@@ -180,7 +178,6 @@ document.addEventListener("DOMContentLoaded", () => {
       // Filter out deleted profiles
       const visibleProfiles = data.filter(p => !p.isDeleted);
       allProfiles = visibleProfiles;
-      console.log("✅ Profiles fetched:", data);
       renderProfiles(visibleProfiles); // render table
     } catch (err) {
       console.error("❌ Error fetching profiles:", err);
