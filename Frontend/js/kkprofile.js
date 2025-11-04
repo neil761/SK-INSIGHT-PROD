@@ -282,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Modify showProfileModal to set currentProfileId and update download button
 function showProfileModal(p) {
-  currentProfileId = p._id; // Set the current profile ID
+  currentProfileId = p._id;
 
   const modal = document.getElementById("profileModal");
   const header = document.getElementById("profileHeader");
@@ -292,27 +292,15 @@ function showProfileModal(p) {
   const suffix = p.suffix && p.suffix.toLowerCase() !== "n/a" ? p.suffix : "";
   const fullName = `${p.lastname}, ${p.firstname} ${mi} ${suffix}`.trim();
 
-  // ✅ Fetch profile image
-  fetch(`http://localhost:5000/api/kkprofiling/image/${p._id}`, {
-    headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
-  })
-    .then((res) => {
-      if (!res.ok) throw new Error("Image not found");
-      return res.blob();
-    })
-    .then((blob) => {
-      const imgUrl = URL.createObjectURL(blob);
-      header.innerHTML = `
-        <img src="${imgUrl}" alt="Profile Image" />
-        <div class="profile-name">${fullName}</div>
-      `;
-    })
-    .catch(() => {
-      header.innerHTML = `
-        <img src="/Frontend/assets/default-profile.png" alt="Profile Image" />
-        <div class="profile-name">${fullName}</div>
-      `;
-    });
+  // Use profileImage from API, fallback to default if missing
+  const profileImgUrl = p.profileImage && p.profileImage.startsWith("http")
+    ? p.profileImage
+    : "/Frontend/assets/default-profile.png";
+
+  header.innerHTML = `
+    <img src="${profileImgUrl}" alt="Profile Image" />
+    <div class="profile-name">${fullName}</div>
+  `;
 
   // ✅ Fill in modal details
   details.innerHTML = `
