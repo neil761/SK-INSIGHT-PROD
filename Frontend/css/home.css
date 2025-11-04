@@ -207,7 +207,7 @@ body::before {
   }
   
   .navbar-right {
-    gap: 5px;
+    gap: 0.01%;
     font-size: 18px;
     display: flex;
     align-items: center;
@@ -451,11 +451,11 @@ a.disabled, button.disabled {
 /* Responsive Adjustments */
 @media (max-width: 768px) {
   .navbar {
-    padding: 10px 20px;
+    padding: 10px 15px;
   }
 
   .navbar-right {
-    gap: 10px;
+    gap: 0.01%;
   }
 
   .card {

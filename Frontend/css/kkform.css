@@ -542,7 +542,7 @@ body {
 .card.intro {
   width: 90% !important;
   max-width: 900px !important;
-  margin-top: 3.7%;
+  margin-top: 10vh; /* Default margin for larger screens */
   margin-left: auto;
   margin-right: auto;
 }
@@ -1011,7 +1011,7 @@ select.form-control:focus {
 
 @media (max-width: 480px) {
   .card, .card.intro, .kk-card, .kk-upload-col{
-    margin-top: 0;
+    margin-top: 26%;
     width: 90%;
   }
   .notifs{
@@ -1243,5 +1243,19 @@ select.form-control:focus {
     justify-content: flex-end; /* Align buttons to the right */
     align-items: end; /* Align buttons vertically */
     gap: 16px; 
+  }
+  .notif{
+    font-size: 1.4rem;
+  }
+}
+
+/* Adjustments for .card.intro margin based on screen size */
+.card.intro {
+  margin-top: 10vh; /* Default margin for larger screens */
+}
+
+@media (max-width: 600px) and (min-width: 481px) {
+  .card.intro {
+    margin-top: 15vh; /* Increase margin for screen sizes between 481px and 600px */
   }
 }

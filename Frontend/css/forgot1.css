@@ -53,21 +53,34 @@ body {
 
 .container {
     width: 50%;
-    max-width: 400px;
+    max-width: 300px;
     padding: 20px;
     background-color: white;
     border-radius: 15px;
     box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    margin: 50px auto 0 auto;
+    margin: 25% auto 0 auto;
 }
 
 .acc {
     margin-top: 10%;
     text-align: center;
 }
+.log{
+    margin-top: 5%;
+}
 
 /* Tablet adjustments */
 @media (min-width: 768px) {
+    body {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(to bottom, #0A2C59 40%, #ffffff 30%);
+    min-height: 100vh;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
     .logo {
         width: 100px;
     }
