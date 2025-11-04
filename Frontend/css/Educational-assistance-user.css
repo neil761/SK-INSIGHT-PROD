@@ -149,6 +149,9 @@ body {
 
     /* Mobile navbar optimization */
     @media (max-width: 768px) {
+        .card.intro {
+    margin-top: 12vh; /* Slightly larger margin for smaller screens */
+  }
       .navbar {
         padding: 4% 3%;
       }
@@ -275,7 +278,7 @@ body {
     }
 
     .card.intro{
-      margin-top: 3.7%;
+      margin-top: 10vh;
     }
 
     /* Intro Card */
@@ -383,7 +386,7 @@ textarea:focus {
             margin-bottom: 20px;
         }
         .card.intro{
-            margin-top: 1%;
+            margin-top: 26%;
             width: 90%;
         }
         .container {
@@ -403,6 +406,11 @@ textarea:focus {
           padding: 5%; 
         }
     }
+    @media (max-width: 768px) and (min-width: 481px) {
+  .card.intro {
+    margin-top: 15vh; /* Increase margin for screen sizes between 481px and 600px */
+  }
+}
 
     @media (max-width: 564px) {
         .container {
@@ -525,6 +533,9 @@ textarea:focus {
       
       .card, .cardintro {
         font-size: 14px;
+      }
+      .notif{
+        font-size: 1.2rem;
       }
       
       .requirements-table th, .requirements-table td {
