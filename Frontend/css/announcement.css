@@ -197,7 +197,7 @@ body {
   }
   
   .navbar-right {
-    gap: 5px;
+    gap: 0.01%;
     font-size: 18px;
     display: flex;
     align-items: center;
