@@ -292,6 +292,27 @@ try {
           Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
             window.location.reload();
           });
+          return true;
+        } else if (verifyRes.status === 429) {
+          const verifyData = await verifyRes.json();
+          const unlockAt = Date.now() + (verifyData.secondsLeft ? verifyData.secondsLeft * 1000 : 5 * 60 * 1000);
+          setUserLockout(email, unlockAt);
+
+          showOtpLockoutModal(unlockAt, email);
+          return false;
+        } else {
+          const verifyData = await verifyRes.json();
+          Swal.showValidationMessage(verifyData.message || 'Invalid or expired OTP');
+          return false;
+        }
+      }
+
+      if (otp) {
+        const isVerified = await verifyOtp(email, otp);
+        if (isVerified) {
+          Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
+            window.location.reload();
+          });
         }
       }
     });
