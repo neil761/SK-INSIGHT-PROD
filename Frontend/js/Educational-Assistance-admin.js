@@ -875,6 +875,11 @@ clearFilterBtn.addEventListener("click", () => {
     });
     const overdueNotifs = await overdueRes.json();
 
+    // --- Update summary counts ---
+    document.getElementById('notifNewToday').textContent = newNotifs.length;
+    document.getElementById('notifOverdueTotal').textContent = overdueNotifs.length;
+
+    // --- Render lists as before ---
     renderNotifList(notifListNew, newNotifs, false);
     renderNotifList(notifListOverdue, overdueNotifs, true);
   }
@@ -922,10 +927,12 @@ clearFilterBtn.addEventListener("click", () => {
   });
 
   // --- SOCKET.IO REALTIME ARRIVAL ---
+  // Only ONE socket connection and listeners!
   const socket = io("http://localhost:5000", { transports: ["websocket"] });
 
-  socket.on("educational-assistance:newSubmission", (data) => {
-    // Optionally show a toast/notification
+  // Real-time badge update and toast
+  socket.on("educational-assistance:newSubmission", () => {
+    updateNotifBadge();
     Swal.fire({
       icon: 'info',
       title: 'New Educational Assistance Application',
@@ -935,23 +942,39 @@ clearFilterBtn.addEventListener("click", () => {
       toast: true,
       position: 'top-end'
     });
-    // Refresh applicants table
     fetchApplicants();
   });
-});
 
-
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
-
-socket.on("educational-assistance:newSubmission", (data) => {
-  Swal.fire({
-    icon: 'info',
-    title: 'New Educational Assistance Application',
-    text: 'A new application has arrived!',
-    timer: 8000,
-    showConfirmButton: false,
-    toast: true,
-    position: 'top-end'
+  socket.on("educational-assistance:statusChanged", () => {
+    updateNotifBadge();
   });
-  // Optionally refresh or update something if needed
+
+  // Call badge update on page load
+  updateNotifBadge();
 });
+
+// Remove any duplicate socket initializations and listeners below this point!
+
+// --- Add or ensure this function exists ---
+async function updateNotifBadge() {
+  const token = sessionStorage.getItem("token");
+  try {
+    const res = await fetch('http://localhost:5000/api/notifications/educational/pending/count', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const count = data.count || 0;
+    const badge = document.getElementById('notifBadge');
+    if (badge) {
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    const badge = document.getElementById('notifBadge');
+    if (badge) badge.style.display = 'none';
+  }
+}

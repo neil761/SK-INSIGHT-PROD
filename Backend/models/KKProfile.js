@@ -84,6 +84,7 @@ const kkProfileSchema = new mongoose.Schema({
   },
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
+  isRead: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("KKProfile", kkProfileSchema);

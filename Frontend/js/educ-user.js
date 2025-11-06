@@ -151,11 +151,11 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       Swal.close();
 
-      const text = await res.text();
+      const text = await response.text();
       let data = null;
       try { data = JSON.parse(text); } catch (err) {}
 
-      if (res.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
+      if (response.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
         return Swal.fire({
           icon: 'error',
           title: 'Not Eligible',
@@ -164,8 +164,8 @@ document.addEventListener('DOMContentLoaded', async function () {
         });
       }
 
-      if (!res.ok) {
-        const message = data?.message || data?.error || text || `Server returned ${res.status}`;
+      if (!response.ok) {
+        const message = data?.message || data?.error || text || `Server returned ${response.status}`;
         return Swal.fire('Submission failed', message, 'error');
       }
 

@@ -36,6 +36,9 @@
 let allProfiles = [];
 
 document.addEventListener("DOMContentLoaded", () => {
+  updateNotifBadge();
+  updateLGBTQNotifBadge();
+  fetchProfiles({});
 
   const tableBody = document.querySelector(".tables tbody");
 
@@ -241,10 +244,25 @@ document.addEventListener("DOMContentLoaded", () => {
         ? new Date(p.displayData.birthday).toLocaleDateString()
         : "N/A";
       const age = p.displayData?.age ?? "N/A";
+      // Build name: Last Name, First Name M.
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
       const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id);
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
-        <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${formattedName}</td>
         <td>${age}</td>
         <td>${birthday}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
@@ -252,9 +270,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <button class="view-btn" data-id="${p._id}" style="color: white;">
             <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-          <button class="delete-btn" data-id="${p._id}">
-            <i class="fa-solid fa-trash"></i>
           </button>
         </td>
       `;
@@ -276,6 +291,13 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         const profile = await res.json();
         showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
       })
     );
 
@@ -375,10 +397,25 @@ document.addEventListener("DOMContentLoaded", () => {
         ? new Date(p.displayData.birthday).toLocaleDateString()
         : "N/A";
       const age = p.displayData?.age ?? "N/A";
+      // Build name: Last Name, First Name M.
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
       const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id);
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
-        <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${formattedName}</td>
         <td>${age}</td>
         <td>${birthday}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
@@ -386,9 +423,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <button class="view-btn" data-id="${p._id}" style="color: white;">
             <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-          <button class="delete-btn" data-id="${p._id}">
-            <i class="fa-solid fa-trash"></i>
           </button>
         </td>
       `;
@@ -410,6 +444,13 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         const profile = await res.json();
         showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
       })
     );
 
@@ -509,10 +550,25 @@ document.addEventListener("DOMContentLoaded", () => {
         ? new Date(p.displayData.birthday).toLocaleDateString()
         : "N/A";
       const age = p.displayData?.age ?? "N/A";
+      // Build name: Last Name, First Name M.
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
       const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id);
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
-        <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${formattedName}</td>
         <td>${age}</td>
         <td>${birthday}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
@@ -520,9 +576,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <button class="view-btn" data-id="${p._id}" style="color: white;">
             <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-          <button class="delete-btn" data-id="${p._id}">
-            <i class="fa-solid fa-trash"></i>
           </button>
         </td>
       `;
@@ -544,6 +597,13 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         const profile = await res.json();
         showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
       })
     );
 
@@ -643,10 +703,25 @@ document.addEventListener("DOMContentLoaded", () => {
         ? new Date(p.displayData.birthday).toLocaleDateString()
         : "N/A";
       const age = p.displayData?.age ?? "N/A";
+      // Build name: Last Name, First Name M.
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
       const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id);
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
-        <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${formattedName}</td>
         <td>${age}</td>
         <td>${birthday}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
@@ -654,9 +729,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <button class="view-btn" data-id="${p._id}" style="color: white;">
             <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-          <button class="delete-btn" data-id="${p._id}">
-            <i class="fa-solid fa-trash"></i>
           </button>
         </td>
       `;
@@ -678,6 +750,13 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         const profile = await res.json();
         showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
       })
     );
 
@@ -777,10 +856,25 @@ document.addEventListener("DOMContentLoaded", () => {
         ? new Date(p.displayData.birthday).toLocaleDateString()
         : "N/A";
       const age = p.displayData?.age ?? "N/A";
+      // Build name: Last Name, First Name M.
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
       const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id);
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
-        <td>${p.displayData?.residentName || "N/A"}</td>
+        <td>${formattedName}</td>
         <td>${age}</td>
         <td>${birthday}</td>
         <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
@@ -788,9 +882,6 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>
           <button class="view-btn" data-id="${p._id}" style="color: white;">
             <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-          <button class="delete-btn" data-id="${p._id}">
-            <i class="fa-solid fa-trash"></i>
           </button>
         </td>
       `;
@@ -812,6 +903,13 @@ document.addEventListener("DOMContentLoaded", () => {
         );
         const profile = await res.json();
         showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
       })
     );
 
@@ -840,6 +938,209 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
     });
+  }
+
+  // Add this function for pagination controls:
+  function renderPagination(totalProfiles, totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    // Previous button
+    const prevBtn = document.createElement("button");
+    prevBtn.className = "pagination-btn";
+    prevBtn.textContent = "Prev";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(prevBtn);
+
+    // Page numbers (show max 5 pages at a time)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+      pageBtn.textContent = i;
+      pageBtn.onclick = () => {
+        currentPage = i;
+        renderProfiles(allProfiles);
+      };
+      pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "pagination-btn";
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(nextBtn);
+  }
+
+  // 🔹 Render profiles
+  function renderProfiles(profiles) {
+    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
+    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
+    const endIdx = startIdx + PROFILES_PER_PAGE;
+    const pageProfiles = profiles.slice(startIdx, endIdx);
+
+    tableBody.innerHTML = "";
+    if (!pageProfiles.length) {
+      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
+      renderPagination(profiles.length, totalPages);
+      return;
+    }
+
+    pageProfiles.forEach((p, i) => {
+      const birthday = p.displayData?.birthday
+        ? new Date(p.displayData.birthday).toLocaleDateString()
+        : "N/A";
+      const age = p.displayData?.age ?? "N/A";
+      // Build name: Last Name, First Name M.
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
+      const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id);
+      row.innerHTML = `
+        <td>${startIdx + i + 1}</td>
+        <td>${formattedName}</td>
+        <td>${age}</td>
+        <td>${birthday}</td>
+        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
+        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
+        <td>
+          <button class="view-btn" data-id="${p._id}" style="color: white;">
+            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    renderPagination(profiles.length, totalPages);
+
+    // Attach modal openers
+    document.querySelectorAll(".view-btn").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const res = await fetch(
+          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+            },
+          }
+        );
+        const profile = await res.json();
+        showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
+      })
+    );
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to delete this form?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#0A2C59",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+          });
+          if (res.ok) {
+            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
+            fetchProfiles(); // Refresh table
+          }
+        }
+      });
+    });
+  }
+
+  // Add this function for pagination controls:
+  function renderPagination(totalProfiles, totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    // Previous button
+    const prevBtn = document.createElement("button");
+    prevBtn.className = "pagination-btn";
+    prevBtn.textContent = "Prev";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(prevBtn);
+
+    // Page numbers (show max 5 pages at a time)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+      pageBtn.textContent = i;
+      pageBtn.onclick = () => {
+        currentPage = i;
+        renderProfiles(allProfiles);
+      };
+      pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "pagination-btn";
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(nextBtn);
   }
 
   // 🔹 Show modal
@@ -945,10 +1246,44 @@ document.addEventListener("DOMContentLoaded", () => {
       </div>
     `;
 
+    details.innerHTML += `
+    <div class="profile-details-row">
+      <button id="deleteProfileBtn" class="delete-btn" >
+        Delete Profile
+      </button>
+    </div>
+  `;
+
+    // Add delete button functionality
+    const deleteBtn = document.getElementById("deleteProfileBtn");
+    deleteBtn.addEventListener("click", async () => {
+      const result = await Swal.fire({
+        title: "Are you sure?",
+        text: "Do you really want to delete this profile?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#0A2C59",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "Yes",
+        cancelButtonText: "No",
+      });
+      if (result.isConfirmed) {
+        const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${p._id}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
+        });
+        if (res.ok) {
+          Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
+          fetchProfiles(); // Refresh table
+          modal.style.display = "none"; // Close modal
+        } else {
+          Swal.fire("Error", "Failed to delete profile.", "error");
+        }
+      }
+    });
+
     modal.style.display = "flex";
     document.body.classList.add("modal-open");
-
-    // Attach close event to the correct button after rendering
     const closeBtn = modal.querySelector(".modern-modal-close");
     if (closeBtn) {
       closeBtn.onclick = () => {
@@ -1004,24 +1339,219 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Initial load
   fetchCycles();
   fetchProfiles({});
+
+  // --- Real-time update with socket.io ---
+  const socket = io("http://localhost:5000", { transports: ["websocket"] });
+
+  socket.on("lgbtq-profile:newSubmission", () => {
+    updateLGBTQNotifBadge();
+    fetchNotifications();
+    fetchProfiles({});
+  });
+  socket.on("lgbtq-profile:read", () => {
+    updateLGBTQNotifBadge();
+    fetchNotifications();
+    fetchProfiles({});
+  });
+  socket.on("lgbtq-profile:deleted", () => {
+    updateLGBTQNotifBadge();
+    fetchNotifications();
+    fetchProfiles({});
+  });
+
+  socket.on("educational-assistance:deleted", () => {
+  updateNotifBadge();
+  fetchApplicants(); // Refresh table
+  fetchNotifications(); // Refresh notification list if open
 });
+
+socket.on("educational-assistance:newSubmission", () => {
+    updateNotifBadge();
+    Swal.fire({
+      icon: 'info',
+      title: 'New Educational Assistance Application',
+      text: 'A new application has arrived!',
+      timer: 8000,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
+    });
+    fetchApplicants();
+  });
+
+  socket.on("educational-assistance:statusChanged", () => {
+    updateNotifBadge();
+  });
+});
+
+
 
 // Helper: Capitalize first letter
 function capitalize(str) {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
 }
+
+// --- Notification Bell Logic for LGBTQ ---
+const notifBell = document.getElementById('notifBell');
+const notifDropdown = document.getElementById('notifDropdown');
+const notifTabs = notifDropdown.querySelectorAll('.notif-tab');
+const notifListNew = document.getElementById('notifListNew');
+const notifListUnread = document.getElementById('notifListUnread');
+
+notifBell.addEventListener('click', () => {
+  notifDropdown.style.display = notifDropdown.style.display === 'none' ? 'block' : 'none';
+  fetchNotifications();
+});
+
+notifTabs.forEach(tab => {
+  tab.addEventListener('click', function() {
+    notifTabs.forEach(t => t.classList.remove('active'));
+    this.classList.add('active');
+    notifListNew.style.display = this.dataset.tab === 'new' ? 'block' : 'none';
+    notifListUnread.style.display = this.dataset.tab === 'unread' ? 'block' : 'none';
+  });
+});
+
+async function fetchNotifications() {
+  const token = sessionStorage.getItem("token");
+  // Fetch new LGBTQ profiles (within 24 hours)
+  const newRes = await fetch('http://localhost:5000/api/notifications/lgbtq/new', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const newNotifs = await newRes.json();
+
+  // Fetch unread LGBTQ profiles (older than 24 hours, still unread)
+  const unreadRes = await fetch('http://localhost:5000/api/notifications/lgbtq/unread', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  const unreadNotifs = await unreadRes.json();
+
+  renderNotifList(notifListNew, newNotifs, false);
+  renderNotifList(notifListUnread, unreadNotifs, true);
+}
+
+function renderNotifList(container, notifs, isUnread) {
+  container.innerHTML = '';
+  if (!Array.isArray(notifs) || notifs.length === 0) {
+    container.innerHTML = `<div class="notif-item">No notifications.</div>`;
+    return;
+  }
+  notifs.forEach(n => {
+    // Format name: Last, First M.
+    const name = n.referenceId
+      ? `${n.referenceId.lastname || ""}, ${n.referenceId.firstname || ""} ${n.referenceId.middlename ? n.referenceId.middlename[0].toUpperCase() + "." : ""}`.trim()
+      : "Unknown";
+    // Format date and time
+    let dateStr = "";
+    if (n.referenceId?.createdAt) {
+      const dateObj = new Date(n.referenceId.createdAt);
+      const options = { year: 'numeric', month: 'long', day: 'numeric' };
+      const datePart = dateObj.toLocaleDateString(undefined, options);
+      let hours = dateObj.getHours();
+      const minutes = dateObj.getMinutes().toString().padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12 || 12;
+      const timePart = `${hours}:${minutes} ${ampm}`;
+      dateStr = `${datePart} ${timePart}`;
+    }
+    // Status
+    const status = n.referenceId && n.referenceId.isRead ? "Read" : "Unread";
+    container.innerHTML += `
+      <div class="notif-item" data-id="${n._id}">
+        <div><b>${name}</b></div>
+        <div class="notif-date">${dateStr}</div>
+        <div class="notif-status">${status}</div>
+      </div>
+    `;
+  });
+}
+
+// Hide dropdown when clicking outside
+document.addEventListener('click', function(e) {
+  if (!notifDropdown.contains(e.target) && !notifBell.contains(e.target)) {
+    notifDropdown.style.display = 'none';
+  }
+});
+
+// --- Badge update logic ---
+async function updateNotifBadge() {
+  const token = sessionStorage.getItem("token");
+  try {
+    const res = await fetch('http://localhost:5000/api/notifications/lgbtq/unread/count', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const count = data.count || 0;
+    const badge = document.getElementById('notifBadge');
+    const sidebarBadge = document.getElementById('sidebarLGBTQNotifBadge');
+    // Debug log
+    console.log("LGBTQ notif count:", count, badge, sidebarBadge);
+    if (badge && sidebarBadge) {
+      if (count > 0) {
+        badge.textContent = count;
+        badge.style.display = 'inline-block';
+        sidebarBadge.textContent = count;
+        sidebarBadge.style.display = 'inline-block';
+      } else {
+        badge.style.display = 'none';
+        sidebarBadge.style.display = 'none';
+      }
+    }
+  } catch (err) {
+    const badge = document.getElementById('notifBadge');
+    const sidebarBadge = document.getElementById('sidebarLGBTQNotifBadge');
+    if (badge) badge.style.display = 'none';
+    if (sidebarBadge) sidebarBadge.style.display = 'none';
+    console.error("Error updating LGBTQ notif badge:", err);
+  }
+}
+
+// --- Real-time update with socket.io ---
 const socket = io("http://localhost:5000", { transports: ["websocket"] });
 
-socket.on("educational-assistance:newSubmission", (data) => {
-  Swal.fire({
-    icon: 'info',
-    title: 'New Educational Assistance Application',
-    text: 'A new application has arrived!',
-    timer: 8000,
-    showConfirmButton: false,
-    toast: true,
-    position: 'top-end'
-  });
-  // Optionally refresh or update something if needed
+socket.on("lgbtq-profile:newSubmission", () => {
+  updateLGBTQNotifBadge();
+  fetchNotifications();
+  fetchProfiles({});
 });
+socket.on("lgbtq-profile:read", () => {
+  updateLGBTQNotifBadge();
+  fetchNotifications();
+  fetchProfiles({});
+});
+socket.on("lgbtq-profile:deleted", () => {
+  updateLGBTQNotifBadge();
+  fetchNotifications();
+  fetchProfiles({});
+});
+
+// Real-time badge update function
+async function updateLGBTQNotifBadge() {
+  const token = sessionStorage.getItem("token");
+  try {
+    const res = await fetch('http://localhost:5000/api/notifications/lgbtq/unread/count', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const count = data.count || 0;
+    const badge = document.getElementById('sidebarLGBTQNotifBadge');
+    const bellBadge = document.getElementById('notifBadge'); // If you use same badge for all
+    if (badge) {
+      badge.textContent = count;
+      badge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+    if (bellBadge) {
+      bellBadge.textContent = count;
+      bellBadge.style.display = count > 0 ? 'inline-block' : 'none';
+    }
+  } catch (err) {
+    const badge = document.getElementById('sidebarLGBTQNotifBadge');
+    const bellBadge = document.getElementById('notifBadge');
+    if (badge) badge.style.display = 'none';
+    if (bellBadge) bellBadge.style.display = 'none';
+  }
+}
+
+// Always show the unread notification badge on page load
+document.addEventListener("DOMContentLoaded", updateNotifBadge);
