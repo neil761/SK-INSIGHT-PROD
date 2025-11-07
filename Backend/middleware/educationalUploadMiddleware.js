@@ -6,15 +6,14 @@ const storage = new CloudinaryStorage({
   cloudinary,
   params: (req, file) => {
     let folder = "educational_assistance";
-    
-    // Handle different field names for COE
+
     if (file.fieldname === "frontImage") {
       folder = "educational_assistance/id/front";
     } else if (file.fieldname === "backImage") {
       folder = "educational_assistance/id/back";
-    } else if (file.fieldname === "coeImage" || file.fieldname === "coe") {
+    } else if (file.fieldname === "coeImage") {
       folder = "educational_assistance/coe";
-    } else if (file.fieldname === "voter" || file.fieldname === "voterImage") {
+    } else if (file.fieldname === "voter") {
       folder = "educational_assistance/parent_voter_cert";
     }
 
