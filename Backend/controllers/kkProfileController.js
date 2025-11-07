@@ -48,6 +48,7 @@ exports.submitKKProfile = async (req, res) => {
     const existing = await KKProfile.findOne({
       user: userId,
       formCycle: formCycle._id,
+      isDeleted: false // Only block if not deleted
     });
     if (existing) {
       return res.status(409).json({ error: "Already submitted this cycle" });
@@ -277,6 +278,7 @@ exports.getMyProfile = async (req, res) => {
     const profile = await KKProfile.findOne({
       user: userId,
       formCycle: formStatus.cycleId,
+      isDeleted: false // <-- Only get non-deleted profiles
     }).populate("formCycle");
 
     if (!profile) {
@@ -545,7 +547,22 @@ exports.exportKKProfileDocx = async (req, res) => {
 exports.restoreProfileById = async (req, res) => {
   try {
     const profile = await KKProfile.findById(req.params.id);
-    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
+    if (!profile || !profile.isDeleted) {
+      return res.status(404).json({ error: "Profile not found or not deleted" });
+    }
+
+    // Check for duplicate (non-deleted) profile for the same user and cycle
+    const duplicate = await KKProfile.findOne({
+      user: profile.user,
+      formCycle: profile.formCycle,
+      isDeleted: false
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        error: "The User already submitted a new profile for this cycle, your only option is to permanently delete this profile."
+      });
+    }
 
     profile.isDeleted = false;
     profile.deletedAt = null;

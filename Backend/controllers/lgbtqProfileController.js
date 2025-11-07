@@ -6,7 +6,8 @@ const ExcelJS = require("exceljs");
 const fs = require("fs");
 const path = require("path");
 const Notification = require("../models/Notification"); // <-- Import Notification model
-
+const mongoose = require("mongoose");
+// ...existing imports...
 // Helper to get demographics from LGBTQProfile only
 async function getDemographics(profile) {
   // Make sure profile.user is populated with birthday and age
@@ -41,6 +42,7 @@ exports.submitLGBTQProfile = async (req, res) => {
     const existing = await LGBTQProfile.findOne({
       user: userId,
       formCycle: formStatus.cycleId,
+      isDeleted: false 
     });
     if (existing) {
       return res.status(409).json({ success: false, error: "You already submitted during this form cycle" });
@@ -113,7 +115,9 @@ exports.submitLGBTQProfile = async (req, res) => {
 
 // Helper to enrich profile with KK info
 const attachKKInfo = async (profile) => {
-  const kk = await KKProfile.findOne({ user: profile.user });
+  // Always use user ID for query
+  const userId = profile.user?._id || profile.user;
+  const kk = await KKProfile.findOne({ user: userId });
   const profileObj = profile.toObject();
   profileObj.kkInfo = kk
     ? {
@@ -263,19 +267,37 @@ exports.getProfileById = async (req, res) => {
 // Get my profile for current cycle
 exports.getMyProfile = async (req, res) => {
   try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ error: "Unauthorized" });
+    }
+
     const formStatus = await FormStatus.findOne({
       formName: "LGBTQIA+ Profiling",
     });
+
+    if (
+      !formStatus ||
+      !formStatus.cycleId ||
+      !mongoose.Types.ObjectId.isValid(formStatus.cycleId)
+    ) {
+      return res.status(404).json({ error: "No active cycle found." });
+    }
+
+    // Populate all needed user fields
     const profile = await LGBTQProfile.findOne({
       user: req.user.id,
-      formCycle: formStatus?.cycleId, // FIXED
-    }).populate("user", "username email");
+      formCycle: formStatus.cycleId,
+      isDeleted: false
+    }).populate("user", "username email birthday age");
 
     if (!profile)
       return res.status(404).json({ error: "No profile found for this cycle" });
+
+    // Defensive: ensure .toObject exists
     const enriched = await attachKKInfo(profile);
     res.status(200).json(enriched);
   } catch (error) {
+    console.error("getMyProfile error:", error); // <-- Add this for debugging
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -332,7 +354,22 @@ exports.deleteProfileById = async (req, res) => {
 exports.restoreProfileById = async (req, res) => {
   try {
     const profile = await LGBTQProfile.findById(req.params.id);
-    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
+    if (!profile || !profile.isDeleted) {
+      return res.status(404).json({ error: "Profile not found or not deleted" });
+    }
+
+    // Check for duplicate (non-deleted) profile for the same user and cycle
+    const duplicate = await LGBTQProfile.findOne({
+      user: profile.user,
+      formCycle: profile.formCycle,
+      isDeleted: false
+    });
+
+    if (duplicate) {
+      return res.status(409).json({
+        error: "The User already submitted a new profile for this cycle, your only option is to permanently delete this profile."
+      });
+    }
 
     profile.isDeleted = false;
     profile.deletedAt = null;
