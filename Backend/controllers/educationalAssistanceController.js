@@ -339,10 +339,15 @@ exports.filterApplications = async (req, res) => {
 // Admin - delete application
 exports.deleteApplication = async (req, res) => {
   try {
-    const deleted = await EducationalAssistance.findByIdAndDelete(
-      req.params.id
-    );
+    const deleted = await EducationalAssistance.findByIdAndDelete(req.params.id);
     if (!deleted) return res.status(404).json({ message: "Not found" });
+
+    // Delete all notifications related to this application
+    await Notification.deleteMany({
+      referenceId: deleted._id,
+      type: "educational-assistance"
+    });
+
     res.json({ message: "Deleted successfully" });
   } catch (err) {
     res.status(500).json({ message: "Server error" });
@@ -417,6 +422,14 @@ exports.updateApplicationStatus = async (req, res) => {
         "No valid recipient email found for rejection email. User:",
         app.user
       );
+    }
+
+    // --- EMIT SOCKET EVENT FOR REAL-TIME BADGE UPDATE ---
+    if (req.app.get("io")) {
+      req.app.get("io").emit("educational-assistance:statusChanged", {
+        id: app._id,
+        status: app.status,
+      });
     }
 
     res.json({ message: "Status updated successfully", application: app });

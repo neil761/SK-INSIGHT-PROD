@@ -86,7 +86,7 @@ body {
 .navbar-right {
   display: flex;
   gap: 8px;
-  font-size: 1.1rem;
+  font-size: 20px;
 }
 
 .navbar-right a {
@@ -531,7 +531,7 @@ body {
   width: 90%;
     max-width: 900px;
     background: #fff;
-    padding: 20px;
+    padding: 30px;
     margin-bottom: 25px;
     border-radius: 15px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
@@ -549,7 +549,7 @@ body {
 
 /* Add to kkform.css */
 .card.intro h2{
-  margin-bottom: 5%;
+  margin-bottom: 1%;
   font-size: 1.4rem;
   font-weight: bold;
   color: #0a2c59;
@@ -800,6 +800,13 @@ select.form-control:focus {
   box-shadow: none;
   padding: 0;
   margin-top: -10px; /* pull a bit closer if needed */
+}
+
+.card.intro h2{
+  margin-bottom: 5%;
+  font-size: 1.4rem;
+  font-weight: bold;
+  color: #0a2c59;
 }
 }
 

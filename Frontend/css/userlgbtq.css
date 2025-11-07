@@ -305,12 +305,12 @@ body {
   box-sizing: border-box;
 }
 .card.intro{
-  margin-top: 3.7%;
+  margin-top: 10vh; /* Add a responsive margin-top */
 }
     /* Intro Card */
     .card.intro h2 {
       font-size: 1.4rem;
-      margin-bottom: 5%;
+      margin-bottom: 1%;
       color: #0a2c59;
   }
 
@@ -532,7 +532,7 @@ body {
       margin-top: 1%;
     }
   .card.intro{
-    margin-top: 1%;
+    margin-top: 26%;
     width: 90%;
   }
   .kk-btn-group {

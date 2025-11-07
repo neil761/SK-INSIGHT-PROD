@@ -37,15 +37,19 @@
           <a href="./KK-Profile.html" class="flex items-center space-x-2">
             <i class="Kk fas fa-id-badge"></i>
             <span class="kk">KK Profile</span>
+            <span id="sidebarNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
           </a>
         </div>
         <a href="./LGBTQ-Profile.html" class="flex items-center space-x-2">
           <i class="fas fa-rainbow"></i>
           <span class="dash">LGBTQ Profile</span>
+          <span id="sidebarLGBTQNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
+      </a>
         </a>
         <a href="./Educational-Assistance-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-graduation-cap"></i>
-          <span class="educ">Educational Assistance</span>
+          <span class="educ">Educational</span>
+          <span id="sidebarEducNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
         </a>
         <a href="./Announcement-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-bell"></i>
@@ -141,9 +145,9 @@
           <div class="modern-modal-header">
             <div class="profile-header" id="profileHeader"></div>
             
-            <!-- <button id="downloadBtn" class="modern-modal-download" title="Download Profile">
+            <button id="downloadBtn" class="modern-modal-download" title="Download Profile">
               <i class="fa-solid fa-download"></i> Download
-            </button> -->
+            </button>
             <button class="modern-modal-close close-btn" title="Close">&times;</button>
           </div>
           <div class="modern-modal-body" id="profileDetails">
@@ -153,7 +157,19 @@
         </div>
       </div>
 
-
+      <!-- Notification Bell -->
+      <div class="notification-bell" id="notifBell" style="position:absolute; right:40px; top:65px; cursor:pointer; z-index:200;">
+        <i class="fas fa-bell" id="bell1" style="font-size: 1.7em; color: #0A2C59;"></i>
+        <span id="notifBadge" class="notif-badge" style="display:none;">0</span>
+      </div>
+      <div class="notification-dropdown" id="notifDropdown" style="display:none;">
+        <div class="notif-tabs">
+          <button class="notif-tab active" data-tab="new">New</button>
+          <button class="notif-tab" data-tab="unread">Unread</button>
+        </div>
+        <div class="notif-list" id="notifListNew"></div>
+        <div class="notif-list" id="notifListUnread" style="display:none;"></div>
+      </div>
     </div>
     <script>
       fetch('./header.html')
@@ -202,5 +218,6 @@
         }
       });
     </script>
+    <script src="/Frontend/js/admin/sidebar-notif-badge.js"></script>
   </body>
 </html>

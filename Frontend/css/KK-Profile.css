@@ -348,19 +348,17 @@ tbody tr:hover {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 13px;
+  padding: 10px 15px;
   background: #b80c0c;
   color: white;
   border: none;
   border-radius: 7px;
   cursor: pointer;
   font-size: 13px;
+  font-weight: 600;
   transition: background 0.2s;
 }
 
-.delete-btn:hover, .action-btn:hover {
-  background: #08305e;
-}
 /* Make the search bar fit the table width and look modern */
 .search-container {
   position: relative;
@@ -579,14 +577,18 @@ body.modal-open .sidebar * {
 .modal-content {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(10,44,89,0.18);
-  /* padding: 32px 28px 24px 28px; */
+  box-shadow: 0 8px 32px rgba(10, 44, 89, 0.18);
   min-width: 340px;
   max-width: 420px;
   width: 100%;
   position: relative;
   margin-right: 11%;
-  animation: modalPop 0.18s cubic-bezier(.4,1.4,.6,1) 1;
+  animation: modalPop 0.18s cubic-bezier(.4, 1.4, .6, 1) 1;
+
+  /* Fixed height for the modal */
+  height: 80vh !important; /* Ensure this is applied */
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- Landscape, Modern, Symmetric Modal --- */
@@ -685,6 +687,10 @@ body.modal-open .sidebar * {
   display: flex;
   flex-direction: column;
   gap: 28px;
+
+  /* Enable scrolling */
+  overflow-y: auto;
+  flex: 1; /* Take up remaining space in the modal */
 }
 
 .profile-details-modal {
@@ -776,6 +782,126 @@ body.modal-open .sidebar * {
   cursor: pointer;
 }
 
+/* Notification Bell Dropdown Modal */
+.notification-dropdown {
+  position: absolute;
+  top: 120px; /* adjust as needed to appear below the bell */
+  right: 100px;
+  width: 370px;
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(10,44,89,0.18);
+  z-index: 9999;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid #e0e0e0;
+  animation: modalPop 0.18s cubic-bezier(.4,1.4,.6,1) 1;
+}
+
+.notif-tabs {
+  display: flex;
+  border-bottom: 1px solid #e0e0e0;
+  background: #f8fafc;
+}
+
+.notif-tab {
+  flex: 1;
+  padding: 14px 0;
+  background: none;
+  border: none;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #0A2C59;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+}
+
+.notif-tab.active {
+  background: #fff;
+  color: #07B0F2;
+  border-bottom: 2.5px solid #07B0F2;
+}
+
+.notif-list {
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.notif-item {
+  padding: 16px 18px 12px 18px;
+  border-bottom: 1px solid #f0f4fa;
+  cursor: pointer;
+  transition: background 0.13s;
+  background: #fff;
+}
+
+.notif-item:hover {
+  background: #eaf3ff;
+}
+
+.notif-item:last-child {
+  border-bottom: none;
+}
+
+.notif-date {
+  font-size: 0.92em;
+  color: #888;
+  margin-left: 6px;
+  margin-top: 3px;
+}
+
+.notif-details {
+  font-size: 0.97em;
+  color: #444;
+  margin-top: 2px;
+}
+
+.notif-status {
+  font-size: 0.92em;
+  color: #07B0F2;
+  font-weight: 600;
+  margin-top: 2px;
+  display: inline-block;
+    margin-left: 6px;
+}
+.notif-badge {
+  display: inline-block;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+  border-radius: 50%;
+  text-align: center;
+  line-height: 20px;
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 10;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+#sidebarNotifBadge {
+  position: static;
+  font-size: 12px;
+  vertical-align: middle;
+  margin-bottom: 2px;
+}
+
+/* Custom z-index for SweetAlert */
+.swal-custom-zindex {
+  z-index: 2000 !important; /* Ensure it's higher than the KK Profile modal */
+}
+
+/* KK Profile modal z-index */
+#profileModal {
+  z-index: 1050; /* Ensure it's lower than SweetAlert */
+}
+
+
 @media (max-width: 900px) {
   .modern-modal {
     width: 98vw;
@@ -859,7 +985,43 @@ body.modal-open .sidebar * {
 }
 
 
+/* Add to your admin CSS file */
+.row-unread {
+  background: #eaf3ff !important;
+  border-left: 5px solid #07B0F2;
+  font-weight: 600;
+  color: #174a8c;
+}
+.row-read {
+  background: #fff !important;
+  border-left: 5px solid transparent;
+  font-weight: 400;
+  color: #333;
+}
+#sidebarLGBTQNotifBadge {
+    position: static;
+    font-size: 12px;
+    vertical-align: middle;
+}
 
+#sidebarNotifBadge {
+    position: static;
+    font-size: 12px;
+    vertical-align: middle;
+
+}
+#sidebarEducNotifBadge {
+    position: static;
+    font-size: 12px;
+    vertical-align: middle;
+}
+
+
+#bell1{
+  position: absolute;
+  right: 4vh;
+  top: 4vh;
+}
 
 
 

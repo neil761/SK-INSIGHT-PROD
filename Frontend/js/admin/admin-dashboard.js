@@ -157,8 +157,8 @@ document.addEventListener("DOMContentLoaded", () => {
     renderYouthClassificationBar(currentFilters.year, currentFilters.cycle);
     renderWorkStatusBar(currentFilters.year, currentFilters.cycle);
 
-    // Fetch filtered KK Profiling summary
-    fetchDashboardSummaries(currentFilters.year, currentFilters.cycle);
+    // Fetch filtered KK Profiling summary only (NOT the 4 summary boxes)
+    fetchDashboardSummaries(); // Always unfiltered for summary boxes!
   });
 
   // --- Clear filter resets everything ---
@@ -405,7 +405,8 @@ function initPredictionChart() {
 }
 
 // --- Dashboard summaries fetch logic ---
-async function fetchDashboardSummaries(year, cycle) {
+// Always fetches UNFILTERED data for the 4 summary boxes
+async function fetchDashboardSummaries() {
   const token = sessionStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
@@ -419,12 +420,8 @@ async function fetchDashboardSummaries(year, cycle) {
       document.getElementById("userAccountCount").textContent = "0";
     });
 
-  // KK Profiling (Filtered by year, cycle, and excluding deleted profiles)
-  let kkProfilingUrl = "http://localhost:5000/api/kkprofiling";
-  if (year && cycle) {
-    kkProfilingUrl += `?year=${year}&cycle=${cycle}`;
-  }
-  fetch(kkProfilingUrl, { headers })
+  // KK Profiling (Unfiltered for summary box)
+  fetch("http://localhost:5000/api/kkprofiling", { headers })
     .then(res => res.json())
     .then(data => {
       // Filter out deleted profiles
@@ -455,9 +452,11 @@ async function fetchDashboardSummaries(year, cycle) {
   });
 }
 
+// --- SOCKET.IO REALTIME ARRIVAL ---
+// Only ONE socket connection and listeners!
 const socket = io("http://localhost:5000", { transports: ["websocket"] });
 
-socket.on("educational-assistance:newSubmission", (data) => {
+socket.on("educational-assistance:newSubmission", () => {
   Swal.fire({
     icon: 'info',
     title: 'New Educational Assistance Application',
@@ -467,4 +466,9 @@ socket.on("educational-assistance:newSubmission", (data) => {
     toast: true,
     position: 'top-end'
   });
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+socket.on("educational-assistance:statusChanged", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
 });

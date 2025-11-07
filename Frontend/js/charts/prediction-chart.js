@@ -4,63 +4,47 @@ let lastPredictionResult = null;
 export async function renderPredictionChart(year, cycle) {
   const token = sessionStorage.getItem("token");
 
-  // Always get the latest cycle/year from the efficient endpoint
+  // Fetch all predictions from the new GET API
+  let predictionsArr = [];
   try {
-    const res = await fetch("http://localhost:5000/api/formcycle/latest-kk", {
+    const res = await fetch("http://localhost:5000/api/cycle-predict", {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (res.ok) {
-      const latest = await res.json();
-      year = latest.year;
-      cycle = latest.cycleNumber;
+      predictionsArr = await res.json();
     }
   } catch (err) {
-    console.error("Failed to fetch latest KK cycle:", err);
-    return;
-  }
-  if (!year || !cycle) return;
-
-  // Only fetch new prediction if cycle/year changed
-  if (
-    lastPredictedCycle === cycle &&
-    lastPredictedYear === year &&
-    lastPredictionResult
-  ) {
-    // Use cached result
-    renderPredictionChartWithData(lastPredictionResult, year, cycle, token);
+    console.error("Failed to fetch predictions:", err);
     return;
   }
 
-  // Fetch predicted data from backend
-  let predicted = {};
-  let suggestions = [];
-  try {
-    const res = await fetch("http://localhost:5000/api/cycle-predict", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${token}`
-      },
-      body: JSON.stringify({ year, cycle })
-    });
-    if (res.ok) {
-      const data = await res.json();
-      predicted = data.predictions || {};
-      suggestions = data.suggestions || [];
-      // Cache the result
-      lastPredictedCycle = cycle;
-      lastPredictedYear = year;
-      lastPredictionResult = { predicted, suggestions };
-    }
-  } catch (err) {
-    console.error("Prediction fetch error:", err);
+  // Find the prediction to display
+  let predictionObj;
+  if (year && cycle) {
+    // Find the latest prediction for the selected year/cycle
+    predictionObj = predictionsArr
+      .filter(p => p.year === Number(year) && p.cycleNumber === Number(cycle))
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+  } else {
+    // No filter: show the latest prediction overall
+    predictionObj = predictionsArr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }
 
-  renderPredictionChartWithData({ predicted, suggestions }, year, cycle, token);
+  // If no prediction found, show empty chart
+  if (!predictionObj) {
+    renderPredictionChartWithData({ predicted: {}, suggestions: [] }, year, cycle, token);
+    return;
+  }
+
+  // Use the predictions and suggestions from the selected predictionObj
+  const predicted = predictionObj.predictions || {};
+  const suggestions = predictionObj.suggestions || [];
+
+  renderPredictionChartWithData({ predicted, suggestions }, predictionObj.year, predictionObj.cycleNumber, token);
 }
 
 function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, token) {
-  const chartLabels = [
+  let chartLabels = [
     "In School Youth",
     "Out of School Youth",
     "Working Youth",
@@ -76,10 +60,24 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
 
   // Fetch actual data from backend
   fetchActualData(year, cycle, token, chartLabels).then(actual => {
-    const predictedData = chartLabels.map(label =>
+    // Prepare predicted and actual data arrays
+    let predictedData = chartLabels.map(label =>
       predicted[predictionKeyMap[label]] || 0
     );
-    const actualData = chartLabels.map(label => actual[label] || 0);
+    let actualData = chartLabels.map(label => actual[label] || 0);
+
+    // --- Sort by predicted value descending ---
+    const sorted = chartLabels
+      .map((label, idx) => ({
+        label,
+        predicted: predictedData[idx],
+        actual: actualData[idx]
+      }))
+      .sort((a, b) => b.predicted - a.predicted);
+
+    chartLabels = sorted.map(item => item.label);
+    predictedData = sorted.map(item => item.predicted);
+    actualData = sorted.map(item => item.actual);
 
     // Chart.js grouped vertical bar chart
     const canvas = document.getElementById("predictionChart");
@@ -91,7 +89,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
     window.predictionChart = new Chart(ctx, {
       type: "bar",
       data: {
-        labels: chartLabels, // Chart.js needs this for spacing, but we hide them
+        labels: chartLabels,
         datasets: [
           {
             label: "Actual",
@@ -115,21 +113,19 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
         responsive: true,
         maintainAspectRatio: false,
         plugins: {
-          legend: { display: false }, // Hide legend inside chart
-          title: {
-            display: false // Hide title inside chart
-          },
-          datalabels: { display: false } // If you use datalabels plugin, disable it
+          legend: { display: false },
+          title: { display: false },
+          datalabels: { display: false }
         },
         scales: {
           x: {
             grid: { display: false, drawBorder: false },
-            ticks: { display: false } // Hide x-axis labels
+            ticks: { display: false }
           },
           y: {
             beginAtZero: true,
             grid: { color: "#e1e8ff", drawBorder: true },
-            ticks: { display: true } // Hide y-axis numbers
+            ticks: { display: true }
           }
         }
       }

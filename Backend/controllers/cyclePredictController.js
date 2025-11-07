@@ -1,6 +1,7 @@
 const Prediction = require("../models/Prediction");
 const { spawn } = require("child_process");
 
+
 exports.getOrCreatePrediction = async (req, res) => {
   const { year, cycle } = req.body;
   const formName = "KK Profiling"; // or get from req if needed
@@ -16,11 +17,15 @@ exports.getOrCreatePrediction = async (req, res) => {
 
   // 2. If not found, generate new prediction
   // (your existing AI logic here)
+  console.log("Generating prediction for", { year, cycle });
   const py = spawn("python", ["ai/cycle_predict.py"]);
   let output = "";
   py.stdin.write(JSON.stringify({ year, cycle }));
   py.stdin.end();
-  py.stdout.on("data", (data) => { output += data.toString(); });
+  py.stdout.on("data", (data) => { 
+    output += data.toString(); 
+    console.log("Python output:", data.toString());
+  });
   py.on("close", async () => {
     try {
       const result = JSON.parse(output);
@@ -38,4 +43,14 @@ exports.getOrCreatePrediction = async (req, res) => {
       res.status(500).json({ error: "Prediction failed" });
     }
   });
+};
+
+// Get all predictions
+exports.getAllPredictions = async (req, res) => {
+  try {
+    const predictions = await Prediction.find();
+    res.json(predictions);
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch predictions" });
+  }
 };

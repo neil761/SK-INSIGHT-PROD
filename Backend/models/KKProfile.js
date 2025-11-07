@@ -17,7 +17,10 @@ const kkProfileSchema = new mongoose.Schema({
   province: String,
   municipality: String,
   barangay: String,
-  purok: String,
+  purok: {
+    type: String,
+    enum: ["Purok 1", "Purok 2", "Purok 3", "Purok 4", "Purok 5", "Purok 6", "Purok 7", "Purok 8", "Purok 9", "Purok 10"],
+  },
 
   email: String,
   contactNumber: String,
@@ -84,6 +87,7 @@ const kkProfileSchema = new mongoose.Schema({
   },
   isDeleted: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
+  isRead: { type: Boolean, default: false },
 });
 
 module.exports = mongoose.model("KKProfile", kkProfileSchema);

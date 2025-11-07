@@ -124,7 +124,7 @@
 
   <div class="card">
     <label for="contact">Contact Number:</label>
-    <input type="text" id="contact" name="contact" placeholder="Your Answer">
+    <input type="text" id="contact" name="contact" placeholder="Your Answer" maxlength="11">
   </div>
 
   <div class="card">
@@ -158,7 +158,7 @@
 
   <div class="card">
     <label for="fathercontact">Father's Contact Number:</label>
-    <input type="text" id="fathercontact" name="fathercontact" placeholder="Your Answer">
+    <input type="text" id="fathercontact" name="fathercontact" placeholder="Your Answer" maxlength="11">
   </div>
 
   <div class="card">
@@ -168,14 +168,14 @@
 
   <div class="card">
     <label for="mothercontact">Mother's Contact Number:</label>
-    <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer">
+    <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer" maxlength="11">
   </div>
 
   <!-- Siblings Section -->
   <div class="card">
     <div class="card-header">
-      <h3>Names of Brother/s and Sister/s</h3>
-      <button type="button" id="addSiblingBtn">+ Add Sibling</button>
+      <h3>Siblings</h3>
+      <button type="button" id="addSiblingBtn">+Add</button>
     </div>
 
     <table id="siblingsTable">
@@ -192,8 +192,10 @@
   </div>
 
   <div class="card">
+    <h3>Fees & Other Expenses</h3> <!-- Added title -->
     <div class="expense-header">
-      <button type="button" id="addExpenseBtn">+ Add Expense</button>
+      <h3>Expenses</h3>
+      <button type="button" id="addExpenseBtn">+Add</button>
     </div>
 
     <table id="expensesTable">

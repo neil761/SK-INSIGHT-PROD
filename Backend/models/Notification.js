@@ -1,13 +1,10 @@
 const mongoose = require("mongoose");
 
 const notificationSchema = new mongoose.Schema({
-  type: String,
+  type: { type: String, enum: ["educational-assistance", "kk-profile", "lgbtq-profile"], required: true },
   event: String,
   message: String,
-  referenceId: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "EducationalAssistance", // <-- CORRECT: references EducationalAssistance
-  },
+  referenceId: { type: mongoose.Schema.Types.ObjectId, refPath: "type" }, // dynamic reference
   cycleId: { type: mongoose.Schema.Types.ObjectId, ref: "FormCycle" },
   createdAt: { type: Date, default: Date.now },
   read: { type: Boolean, default: false },
