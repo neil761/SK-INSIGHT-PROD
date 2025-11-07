@@ -5,6 +5,7 @@ const LGBTQProfile = require("../models/LGBTQProfile");
 const ExcelJS = require("exceljs");
 const fs = require("fs");
 const path = require("path");
+const Notification = require("../models/Notification"); // <-- Import Notification model
 
 // Helper to get demographics from LGBTQProfile only
 async function getDemographics(profile) {
@@ -73,6 +74,22 @@ exports.submitLGBTQProfile = async (req, res) => {
     });
 
     await newProfile.save();
+
+    // Notify admins about the new submission
+    await Notification.create({
+      type: "lgbtq-profile",
+      event: "newSubmission",
+      message: `New LGBTQ Profile submission from user ${userId}`,
+      referenceId: newProfile._id,
+      cycleId: formStatus.cycleId,
+      createdAt: new Date(),
+      read: false,
+    });
+
+    // Notify real-time via Socket.io if available
+    if (req.app.get("io")) {
+      req.app.get("io").emit("lgbtq-profile:newSubmission", { id: newProfile._id });
+    }
 
     // Populate user for birthday/age display (not saved in LGBTQProfile)
     const populatedProfile = await LGBTQProfile.findById(newProfile._id)
@@ -213,8 +230,17 @@ exports.getProfileById = async (req, res) => {
       .populate("user", "username email birthday age");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
-    const demographics = await getDemographics(profile);
+    // Mark as read if admin and not already read
+    if (req.user && req.user.role === "admin" && !profile.isRead) {
+      profile.isRead = true;
+      await profile.save();
+      if (req.app.get("io")) {
+        req.app.get("io").emit("lgbtq-profile:read", { id: profile._id });
+      }
+    }
 
+    // ...existing code...
+    const demographics = await getDemographics(profile);
     const displayData = {
       residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
       age: demographics.age || "N/A", // from User
@@ -288,6 +314,13 @@ exports.deleteProfileById = async (req, res) => {
     profile.isDeleted = true;
     profile.deletedAt = new Date();
     await profile.save();
+
+    // New code starts here
+    await Notification.deleteMany({ referenceId: profile._id });
+    if (req.app.get("io")) {
+      req.app.get("io").emit("lgbtq-profile:deleted", { id: profile._id });
+    }
+    // New code ends here
 
     res.json({ message: "Profile moved to recycle bin" });
   } catch (err) {

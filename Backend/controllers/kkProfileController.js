@@ -8,8 +8,7 @@ const path = require("path");
 const fs = require("fs");
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
-
-// Helper to get the present (open) cycle
+const Notification = require("../models/Notification");
 async function getPresentCycle(formName) {
   console.log("getPresentCycle called with formName:", formName);
   const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
@@ -128,9 +127,7 @@ exports.submitKKProfile = async (req, res) => {
           ? req.body.attendanceCount
           : undefined,
       reasonDidNotAttend:
-        req.body.attendedKKAssembly === "false" || req.body.attendedKKAssembly === false
-          ? req.body.reasonDidNotAttend
-          : undefined,
+        attendedKKAssembly === false ? req.body.reasonDidNotAttend : undefined,
 
       // ✅ Save uploaded images if present
       profileImage: req.files?.profileImage ? req.files.profileImage[0].path : null, // Cloudinary URL
@@ -141,6 +138,32 @@ exports.submitKKProfile = async (req, res) => {
     });
 
     await newProfile.save();
+
+    // New code to populate profile and emit socket event
+    const populatedProfile = await KKProfile.findById(newProfile._id)
+      .populate("user", "username email birthday age")
+      .populate("formCycle");
+    req.app.get("io").emit("kk-profile:newSubmission", populatedProfile);
+
+    await Notification.create({
+      type: "kk-profile",
+      event: "newSubmission",
+      message: `New KK Profile submission from user ${userId}`,
+      referenceId: newProfile._id,
+      cycleId: formCycle._id,
+      createdAt: new Date(),
+      read: false,
+    });
+
+    // Emit socket event for real-time updates
+    if (req.app.get("io")) {
+      req.app.get("io").emit("kk-profile:newSubmission", {
+        id: newProfile._id,
+        userId,
+        cycleId: formCycle._id
+      });
+    }
+
     res.status(201).json({ message: "Profile submitted successfully" });
 
   } catch (error) {
@@ -173,6 +196,19 @@ exports.getProfileById = async (req, res) => {
     const profile = await KKProfile.findById(req.params.id)
       .populate("user", "username email birthday age");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
+
+    // Mark as read if admin and not already read
+    if (req.user && req.user.role === "admin" && !profile.isRead) {
+      profile.isRead = true;
+      await profile.save();
+
+      // Emit socket event for real-time notification removal
+      if (req.app.get("io")) {
+        req.app.get("io").emit("kk-profile:read", {
+          id: profile._id
+        });
+      }
+    }
 
     res.json(profile);
   } catch (err) {
@@ -210,129 +246,19 @@ exports.deleteProfileById = async (req, res) => {
     profile.deletedAt = new Date();
     await profile.save();
 
-    res.json({ message: "Profile moved to recycle bin" });
+    // Remove related notifications
+    await Notification.deleteMany({ referenceId: profile._id });
+
+    // Emit socket event for real-time update
+    if (req.app.get("io")) {
+      req.app.get("io").emit("kk-profile:deleted", { id: profile._id });
+    }
+
+    res.json({ message: "Profile moved to recycle bin." });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
 };
-
-// GET /api/kkprofiling/export?cycleId=<formCycleId>
-// exports.exportProfilesToExcel = async (req, res) => {
-//   try {
-//     const { year, cycle } = req.query;
-
-//     // Find the cycle
-//     const cycleDoc = await FormCycle.findOne({
-//       formName: "KK Profiling",
-//       year: Number(year),
-//       cycleNumber: Number(cycle),
-//     });
-
-//     if (!cycleDoc) {
-//       return res.status(404).json({ error: "Specified cycle not found" });
-//     }
-
-//     const profiles = await KKProfile.find({
-//       formCycle: cycleDoc._id,
-//     }).populate("user", "username email birthday age");
-
-//     if (!profiles.length) {
-//       return res.status(404).json({ error: "No profiling found for this cycle" });
-//     }
-
-//     // Define columns
-//     const columns = [
-//       { header: "Username", key: "username", width: 20 },
-//       { header: "Email", key: "email", width: 30 },
-//       { header: "Lastname", key: "lastname", width: 18 },
-//       { header: "Firstname", key: "firstname", width: 18 },
-//       { header: "Middlename", key: "middlename", width: 18 },
-//       { header: "Suffix", key: "suffix", width: 10 },
-//       { header: "Birthday", key: "birthday", width: 15 },
-//       { header: "Age", key: "age", width: 8 },
-//       { header: "Gender", key: "gender", width: 10 },
-//       { header: "Region", key: "region", width: 15 },
-//       { header: "Province", key: "province", width: 15 },
-//       { header: "Municipality", key: "municipality", width: 15 },
-//       { header: "Barangay", key: "barangay", width: 15 },
-//       { header: "Purok", key: "purok", width: 10 },
-//       { header: "Email", key: "email", width: 25 },
-//       { header: "Contact Number", key: "contactNumber", width: 15 },
-//       { header: "Civil Status", key: "civilStatus", width: 15 },
-//       { header: "Youth Age Group", key: "youthAgeGroup", width: 15 },
-//       { header: "Youth Classification", key: "youthClassification", width: 18 },
-//       { header: "Educational Background", key: "educationalBackground", width: 20 },
-//       { header: "Work Status", key: "workStatus", width: 15 },
-//       { header: "Registered SK Voter", key: "registeredSKVoter", width: 15 },
-//       { header: "Registered National Voter", key: "registeredNationalVoter", width: 20 },
-//       { header: "Voted Last SK Election", key: "votedLastSKElection", width: 20 },
-//       { header: "Attended KK Assembly", key: "attendedKKAssembly", width: 20 },
-//       { header: "Attendance Count", key: "attendanceCount", width: 18 },
-//       { header: "Reason Did Not Attend", key: "reasonDidNotAttend", width: 25 },
-//       { header: "Profile Image", key: "profileImage", width: 30 },
-//       { header: "Submitted At", key: "createdAt", width: 22 },
-//     ];
-
-//     const workbook = new ExcelJS.Workbook();
-//     const worksheet = workbook.addWorksheet("KK Profiling");
-//     worksheet.columns = columns;
-
-//     // Add header row
-//     worksheet.addRow(columns.map(col => col.header));
-//     worksheet.getRow(1).font = { bold: true };
-//     worksheet.getRow(1).alignment = { vertical: "middle", horizontal: "center" };
-
-//     // Add data rows
-//     profiles.forEach(profile => {
-//       worksheet.addRow([
-//         profile.user?.username || "",
-//         profile.user?.email || "",
-//         profile.lastname || "",
-//         profile.firstname || "",
-//         profile.middlename || "",
-//         profile.suffix || "",
-//         profile.user?.birthday ? new Date(profile.user.birthday).toLocaleDateString() : "",
-//         profile.user?.age || "",
-//         profile.gender || "",
-//         profile.region || "",
-//         profile.province || "",
-//         profile.municipality || "",
-//         profile.barangay || "",
-//         profile.purok || "",
-//         profile.email || "",
-//         profile.contactNumber || "",
-//         profile.civilStatus || "",
-//         profile.youthAgeGroup || "",
-//         profile.youthClassification || "",
-//         profile.educationalBackground || "",
-//         profile.workStatus || "",
-//         profile.registeredSKVoter || "",
-//         profile.registeredNationalVoter || "",
-//         profile.votedLastSKElection || "",
-//         profile.attendedKKAssembly || "",
-//         profile.attendanceCount || "",
-//         profile.reasonDidNotAttend || "",
-//         profile.profileImage || "",
-//         profile.createdAt ? profile.createdAt.toISOString() : "",
-//       ]);
-//     });
-
-//     res.setHeader(
-//       "Content-Type",
-//       "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-//     );
-//     res.setHeader(
-//       "Content-Disposition",
-//       `attachment; filename=kk_profiles_${year}_cycle${cycle}.xlsx`
-//     );
-
-//     await workbook.xlsx.write(res);
-//     res.end();
-//   } catch (error) {
-//     console.error("Export error:", error);
-//     res.status(500).json({ message: "Failed to export profiles" });
-//   }
-// };
 
 // GET /api/kkprofiling/me
 exports.getMyProfile = async (req, res) => {
@@ -640,13 +566,21 @@ exports.getDeletedProfiles = async (req, res) => {
   }
 };
 
+// Permanent delete controller
 exports.permanentlyDeleteProfileById = async (req, res) => {
   try {
-    const profile = await KKProfile.findById(req.params.id);
-    if (!profile || !profile.isDeleted) return res.status(404).json({ error: "Profile not found or not deleted" });
+    const profile = await KKProfile.findByIdAndDelete(req.params.id);
+    if (!profile) return res.status(404).json({ error: "Profile not found" });
 
-    await profile.deleteOne();
-    res.json({ message: "Profile permanently deleted" });
+    // Remove related notifications
+    await Notification.deleteMany({ referenceId: profile._id });
+
+    // Emit socket event for real-time update
+    if (req.app.get("io")) {
+      req.app.get("io").emit("kk-profile:deleted", { id: profile._id });
+    }
+
+    res.json({ message: "Profile permanently deleted." });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
   }
@@ -730,23 +664,14 @@ exports.exportKKProfilesExcelTemplate = async (req, res) => {
       // Youth classification logic
       let youthClassification = "N/A";
       if (profile.youthClassification === "In School Youth") {
-        youthClassification = "ISY";
-      } else if (profile.youthClassification === "Out of School Youth") {
-        youthClassification = "OSY";
-      } else if (profile.youthClassification === "Working Youth") {
-        youthClassification = "WY";
-      } else if (profile.youthClassification === "Youth with Specific Needs") {
-        const specificNeeds = [];
-        if (profile.specificNeedType?.includes("Person w/Disability")) specificNeeds.push("PWD");
-        if (profile.specificNeedType?.includes("Children in Conflict w/Law")) specificNeeds.push("CC");
-        if (profile.specificNeedType?.includes("Indigenous People")) specificNeeds.push("IP");
-        youthClassification = `YSP${specificNeeds.length ? " - " + specificNeeds.join("/") : ""}`;
-      }
-
-      // Youth age group
-      const youthAgeGroup = profile.youthAgeGroup || "N/A";
-
-      // Email address, contact number, and purok
+          youthClassification = "ISY";
+        } else if (profile.youthClassification === "Out of School Youth") {
+          youthClassification = "OSY";
+        } else if (profile.youthClassification === "Working Youth") {
+          youthClassification = "WY";
+        } else if (profile.youthClassification === "Youth with Specific Needs") {
+          youthClassification = "YSN";
+        }
       const email = profile.email || "N/A";
       const contactNumber = profile.contactNumber || "N/A";
       const purok = profile.purok ? `PUROK ${profile.purok}` : "PUROK N/A"; // Add "PUROK" prefix
@@ -778,7 +703,7 @@ exports.exportKKProfilesExcelTemplate = async (req, res) => {
       worksheet.getCell(`J${rowNum}`).value = gender;                // Gender
       worksheet.getCell(`K${rowNum}`).value = civilStatus;           // Civil Status
       worksheet.getCell(`L${rowNum}`).value = youthClassification;   // Youth Classification
-      worksheet.getCell(`M${rowNum}`).value = youthAgeGroup;         // Youth Age Group
+      worksheet.getCell(`M${rowNum}`).value = profile.youthAgeGroup  // Youth Age Group
       worksheet.getCell(`N${rowNum}`).value = email;                 // Email Address
       worksheet.getCell(`O${rowNum}`).value = contactNumber;         // Contact Number
       worksheet.getCell(`P${rowNum}`).value = purok;                 // Purok

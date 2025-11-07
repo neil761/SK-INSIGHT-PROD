@@ -36,16 +36,19 @@
     <a href="./KK-Profile.html" class="flex items-center space-x-2">
       <i class="Kk fas fa-id-badge"></i>
       <span class="kk">KK Profile</span>
+      <span id="sidebarNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
     </a>
     <div class="dashh">
       <a href="./LGBTQ-Profile.html" class="flex items-center space-x-2">
         <i class="fas fa-rainbow"></i>
         <span class="dash">LGBTQ Profile</span>
+        <span id="sidebarLGBTQNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
       </a>
     </div>
     <a href="./Educational-Assistance-admin.html" class="flex items-center space-x-2">
       <i class="fas fa-graduation-cap"></i>
-      <span class="educ">Educational Assistance</span>
+      <span class="educ">Educational</span>
+      <span id="sidebarEducNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
     </a>
     <a href="./Announcement-admin.html" class="flex items-center space-x-2">
       <i class="fas fa-bell"></i>
@@ -148,6 +151,19 @@
           <div id="pagination" class="pagination-container"></div>
       </div>
   </div>
+  <!-- Notification Bell -->
+<div class="notification-bell" id="notifBell" >
+  <i class="fas fa-bell" id="bell1" style="font-size: 1.7em; color: #0A2C59;"></i>
+  <span id="notifBadge" class="notif-badge" style="display:none;">0</span>
+</div>
+<div class="notification-dropdown" id="notifDropdown" style="display:none;">
+  <div class="notif-tabs">
+    <button class="notif-tab active" data-tab="new">New</button>
+    <button class="notif-tab" data-tab="unread">Unread</button>
+  </div>
+  <div class="notif-list" id="notifListNew"></div>
+  <div class="notif-list" id="notifListUnread" style="display:none;"></div>
+</div>
   
 <script src="/Frontend/js/lgbtqprofile.js"></script>
 <script src="/Frontend/js/lightbox.js"></script>
@@ -196,5 +212,6 @@
     }
   });
 </script>
+<script src="/Frontend/js/admin/sidebar-notif-badge.js"></script>
 </body>
 </html>

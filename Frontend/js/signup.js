@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', () => {
-    console.log('Signup.js loaded');
 
     const signupForm = document.getElementById('signupForm');
     const passwordField = document.getElementById('passwordField');
@@ -22,8 +21,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // Submit Form
     signupForm.addEventListener('submit', async (e) => {
         e.preventDefault();
-        console.log('Form submitted. Preparing FormData...');
-
         const formData = new FormData(signupForm);
 
         // Show loading alert
@@ -44,15 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
             Swal.close(); // Close loading alert
 
-            console.log('Fetch completed. Status:', response.status);
 
             const responseText = await response.text();
-            console.log('Response Text:', responseText);
 
             let data;
             try {
                 data = JSON.parse(responseText);
-                console.log('Parsed Data:', data);
             } catch (error) {
                 console.error('Invalid JSON response:', responseText);
                 Swal.fire({

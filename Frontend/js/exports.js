@@ -370,6 +370,24 @@ document.addEventListener("DOMContentLoaded", () => {
             : "A new cycle has been opened. Submissions are now allowed.",
           confirmButtonColor: "#0A2C59"
         });
+
+        // --- Trigger prediction for just opened cycle ---
+        if (!openCycle && formName === "KK Profiling") {
+          const newYear = year;
+          const newCycleNumber = yearCycleCount + 1;
+          await fetch("http://localhost:5000/api/cycle-predict", {
+            method: "POST",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              year: newYear,
+              cycle: newCycleNumber
+            })
+          });
+        }
+
       } else {
         const data = await res.json().catch(() => ({}));
         Swal.fire({

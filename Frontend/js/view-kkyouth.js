@@ -86,7 +86,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (hamburger && mobileMenu) {
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
-      console.log("hamburger clicked");
       mobileMenu.classList.toggle('active');
     });
     document.addEventListener('click', function(e) {
@@ -105,7 +104,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const mobileMenu = document.getElementById('navbarMobileMenu');
 
   if (hamburger && mobileMenu) {
-    console.log('✅ Navbar loaded');
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
       mobileMenu.classList.toggle('active');
@@ -185,14 +183,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const kkProfileNavBtnMobile = document.getElementById('kkProfileNavBtnMobile');
 
   if (kkProfileNavBtn) {
-    console.log("✅ Desktop KK Profile button found");
     kkProfileNavBtn.addEventListener('click', handleKKProfileNavClick);
   } else {
     console.warn("⚠️ Desktop KK Profile button NOT found");
   }
 
   if (kkProfileNavBtnMobile) {
-    console.log("✅ Mobile KK Profile button found");
     kkProfileNavBtnMobile.addEventListener('click', handleKKProfileNavClick);
   } else {
     console.warn("⚠️ Mobile KK Profile button NOT found");
@@ -638,7 +634,6 @@ document.addEventListener('DOMContentLoaded', async function() {
   if (hamburger && mobileMenu) {
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
-      console.log("hamburger clicked");
       mobileMenu.classList.toggle('active');
     });
     document.addEventListener('click', function(e) {
