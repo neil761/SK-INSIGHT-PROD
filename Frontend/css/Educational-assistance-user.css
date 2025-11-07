@@ -1062,3 +1062,30 @@ textarea:focus {
 #navbarMobileMenu.active {
     display: block; /* Show when active */
 }
+
+.sibling-card,
+.expense-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.sibling-field,
+.expense-field {
+  margin-bottom: 5px;
+}
+
+.sibling-field label,
+.expense-field label {
+  display: block;
+  font-weight: bold;
+}
+
+.sibling-field input,
+.expense-field input {
+  width: 100%;
+  padding: 5px;
+  margin-top: 2px;
+}

@@ -1,4 +1,110 @@
 document.addEventListener('DOMContentLoaded', async function () {
+  const siblingsContainer = document.getElementById('siblingsTableBody');
+  const expensesContainer = document.getElementById('expensesTableBody');
+
+  // Hamburger Menu Functionality
+  const navbarHamburger = document.getElementById('navbarHamburger');
+  const navbarMobileMenu = document.getElementById('navbarMobileMenu');
+
+  navbarHamburger.addEventListener('click', function () {
+    navbarMobileMenu.classList.toggle('active'); // Toggle the active class
+  });
+
+  // Close the mobile menu when clicking outside
+  document.addEventListener('click', function (e) {
+    if (!navbarMobileMenu.contains(e.target) && !navbarHamburger.contains(e.target)) {
+      navbarMobileMenu.classList.remove('active'); // Remove the active class
+    }
+  });
+
+  function updateLayout() {
+    const isMobile = window.innerWidth <= 480; // Detect mobile devices
+
+    // Toggle <thead> visibility based on screen size
+    const siblingsTableHead = document.querySelector('#siblingsTable thead');
+    const expensesTableHead = document.querySelector('#expensesTable thead');
+
+    if (siblingsTableHead) siblingsTableHead.style.display = isMobile ? 'none' : ''; // Hide or show <thead>
+    if (expensesTableHead) expensesTableHead.style.display = isMobile ? 'none' : ''; // Hide or show <thead>
+
+    // Update siblings layout
+    const siblings = Array.from(siblingsContainer.children);
+    siblingsContainer.innerHTML = ''; // Clear container
+    siblings.forEach((sibling) => {
+      const siblingElement = document.createElement(isMobile ? 'div' : 'tr');
+      if (isMobile) {
+        siblingElement.classList.add('sibling-card');
+        siblingElement.innerHTML = `
+          <div class="sibling-field">
+            <label>Name:</label>
+            <input type="text" class="sibling-name" required value="${sibling.querySelector('.sibling-name')?.value || ''}">
+          </div>
+          <div class="sibling-field">
+            <label>Gender:</label>
+            <select class="sibling-gender" required>
+              <option value="">Select</option>
+              <option value="Male" ${sibling.querySelector('.sibling-gender')?.value === 'Male' ? 'selected' : ''}>Male</option>
+              <option value="Female" ${sibling.querySelector('.sibling-gender')?.value === 'Female' ? 'selected' : ''}>Female</option>
+            </select>
+          </div>
+          <div class="sibling-field">
+            <label>Age:</label>
+            <input type="number" class="sibling-age" min="0" required value="${sibling.querySelector('.sibling-age')?.value || ''}">
+          </div>
+          <button type="button" class="removeSiblingBtn">Remove</button>
+        `;
+      } else {
+        siblingElement.innerHTML = `
+          <td><input type="text" class="sibling-name" required value="${sibling.querySelector('.sibling-name')?.value || ''}"></td>
+          <td>
+            <select class="sibling-gender" required>
+              <option value="">Select</option>
+              <option value="Male" ${sibling.querySelector('.sibling-gender')?.value === 'Male' ? 'selected' : ''}>Male</option>
+              <option value="Female" ${sibling.querySelector('.sibling-gender')?.value === 'Female' ? 'selected' : ''}>Female</option>
+            </select>
+          </td>
+          <td><input type="number" class="sibling-age" min="0" required value="${sibling.querySelector('.sibling-age')?.value || ''}"></td>
+          <td><button type="button" class="removeSiblingBtn">Remove</button></td>
+        `;
+      }
+      siblingsContainer.appendChild(siblingElement);
+    });
+
+    // Update expenses layout
+    const expenses = Array.from(expensesContainer.children);
+    expensesContainer.innerHTML = ''; // Clear container
+    expenses.forEach((expense) => {
+      const expenseElement = document.createElement(isMobile ? 'div' : 'tr');
+      if (isMobile) {
+        expenseElement.classList.add('expense-card');
+        expenseElement.innerHTML = `
+          <div class="expense-field">
+            <label>Fees and Other Expenses:</label>
+            <input type="text" class="expense-name" required value="${expense.querySelector('.expense-name')?.value || ''}">
+          </div>
+          <div class="expense-field">
+            <label>Expected Cost:</label>
+            <input type="number" class="expense-cost" min="0" required value="${expense.querySelector('.expense-cost')?.value || ''}">
+          </div>
+          <button type="button" class="removeExpenseBtn">Remove</button>
+        `;
+      } else {
+        expenseElement.innerHTML = `
+          <td><input type="text" class="expense-name" required value="${expense.querySelector('.expense-name')?.value || ''}"></td>
+          <td><input type="number" class="expense-cost" min="0" required value="${expense.querySelector('.expense-cost')?.value || ''}"></td>
+          <td><button type="button" class="removeExpenseBtn">Remove</button></td>
+        `;
+      }
+      expensesContainer.appendChild(expenseElement);
+    });
+  }
+
+  // Add event listener for window resize
+  window.addEventListener('resize', updateLayout);
+
+  // Initial layout update
+  updateLayout();
+
   async function fetchUserDetails() {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) {
@@ -180,443 +286,129 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   });
 
-  // Siblings: Add Row
-  document.getElementById('addSiblingBtn').addEventListener('click', function() {
-    const tbody = document.getElementById('siblingsTableBody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="text" class="sibling-name" required></td>
-      <td>
-        <select class="sibling-gender" required>
-          <option value="">Select</option>
-          <option value="Male">Male</option>
-          <option value="Female">Female</option>
-        </select>
-      </td>
-      <td><input type="number" class="sibling-age" min="0" required></td>
-      <td><button type="button" class="removeSiblingBtn">Remove</button></td>
-    `;
-    tbody.appendChild(tr);
-    saveSiblings(); // save after adding
+  // Siblings: Add Row/Card
+  document.getElementById('addSiblingBtn').addEventListener('click', function () {
+    const siblingElement = document.createElement(window.innerWidth <= 768 ? 'div' : 'tr');
+    if (window.innerWidth <= 768) {
+      siblingElement.classList.add('sibling-card');
+      siblingElement.innerHTML = `
+        <div class="sibling-field">
+          <label>Name:</label>
+          <input type="text" class="sibling-name" required>
+        </div>
+        <div class="sibling-field">
+          <label>Gender:</label>
+          <select class="sibling-gender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div class="sibling-field">
+          <label>Age:</label>
+          <input type="number" class="sibling-age" min="0" required>
+        </div>
+        <button type="button" class="removeSiblingBtn">Remove</button>
+      `;
+    } else {
+      siblingElement.innerHTML = `
+        <td><input type="text" class="sibling-name" required></td>
+        <td>
+          <select class="sibling-gender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </td>
+        <td><input type="number" class="sibling-age" min="0" required></td>
+        <td><button type="button" class="removeSiblingBtn">Remove</button></td>
+      `;
+    }
+    siblingsContainer.appendChild(siblingElement);
   });
 
-  // Siblings: Remove Row
-  document.getElementById('siblingsTableBody').addEventListener('click', function(e) {
+  // Add expense
+  document.getElementById('addExpenseBtn').addEventListener('click', function () {
+    const expenseElement = document.createElement(window.innerWidth <= 768 ? 'div' : 'tr');
+    if (window.innerWidth <= 768) {
+      expenseElement.classList.add('expense-card');
+      expenseElement.innerHTML = `
+        <div class="expense-field">
+          <label>Fees and Other Expenses:</label>
+          <input type="text" class="expense-name" required>
+        </div>
+        <div class="expense-field">
+          <label>Expected Cost:</label>
+          <input type="number" class="expense-cost" min="0" required>
+        </div>
+        <button type="button" class="removeExpenseBtn">Remove</button>
+      `;
+    } else {
+      expenseElement.innerHTML = `
+        <td><input type="text" class="expense-name" required></td>
+        <td><input type="number" class="expense-cost" min="0" required></td>
+        <td><button type="button" class="removeExpenseBtn">Remove</button></td>
+      `;
+    }
+    expensesContainer.appendChild(expenseElement);
+  });
+
+  // Remove Row/Card for Siblings and Expenses
+  document.getElementById('siblingsTableBody').addEventListener('click', function (e) {
     if (e.target.classList.contains('removeSiblingBtn')) {
-      e.target.closest('tr').remove();
-      saveSiblings(); // save after removing
+      e.target.closest(window.innerWidth <= 768 ? '.sibling-card' : 'tr').remove(); // Remove the card or row
+      saveSiblings(); // Save siblings after removing
     }
   });
 
-  // Save siblings on any change in siblings table (delegated)
-  document.getElementById('siblingsTableBody').addEventListener('input', function() {
+  document.getElementById('expensesTableBody').addEventListener('click', function (e) {
+    if (e.target.classList.contains('removeExpenseBtn')) {
+      e.target.closest(window.innerWidth <= 768 ? '.expense-card' : 'tr').remove(); // Remove the card or row
+      saveExpenses(); // Save expenses after removing
+    }
+  });
+
+  // Save siblings and expenses on any change in their containers (delegated)
+  document.getElementById('siblingsTableBody').addEventListener('input', function () {
     saveSiblings();
   });
 
-  // Expenses: Add Row
-  document.getElementById('addExpenseBtn').addEventListener('click', function() {
-    const tbody = document.getElementById('expensesTableBody');
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="text" class="expense-item" required></td>
-      <td><input type="number" class="expense-cost" min="0" required></td>
-      <td><button type="button" class="removeExpenseBtn">Remove</button></td>
-    `;
-    tbody.appendChild(tr);
-    saveExpenses(); // save after adding
-  });
-
-  // Expenses: Remove Row
-  document.getElementById('expensesTableBody').addEventListener('click', function(e) {
-    if (e.target.classList.contains('removeExpenseBtn')) {
-      e.target.closest('tr').remove();
-      saveExpenses(); // save after removing
-    }
-  });
-
-  // Save expenses on any change in expenses table (delegated)
-  document.getElementById('expensesTableBody').addEventListener('input', function() {
+  document.getElementById('expensesTableBody').addEventListener('input', function () {
     saveExpenses();
   });
 
-  // Restore siblings/expenses from sessionStorage on load
-  (function restoreDynamicTables() {
-    const savedSiblings = JSON.parse(sessionStorage.getItem('educ_siblings') || '[]');
-    if (Array.isArray(savedSiblings) && savedSiblings.length) {
-      const tbody = document.getElementById('siblingsTableBody');
-      tbody.innerHTML = '';
-      savedSiblings.forEach(s => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><input type="text" class="sibling-name" required value="${escapeHtml(s.name || '')}"></td>
-          <td>
-            <select class="sibling-gender" required>
-              <option value="">Select</option>
-              <option value="Male" ${s.gender === 'Male' ? 'selected' : ''}>Male</option>
-              <option value="Female" ${s.gender === 'Female' ? 'selected' : ''}>Female</option>
-            </select>
-          </td>
-          <td><input type="number" class="sibling-age" min="0" required value="${s.age ?? ''}"></td>
-          <td><button type="button" class="removeSiblingBtn">Remove</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    const savedExpenses = JSON.parse(sessionStorage.getItem('educ_expenses') || '[]');
-    if (Array.isArray(savedExpenses) && savedExpenses.length) {
-      const tbody = document.getElementById('expensesTableBody');
-      tbody.innerHTML = '';
-      savedExpenses.forEach(ex => {
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td><input type="text" class="expense-item" required value="${escapeHtml(ex.item || '')}"></td>
-          <td><input type="number" class="expense-cost" min="0" required value="${ex.expectedCost ?? ''}"></td>
-          <td><button type="button" class="removeExpenseBtn">Remove</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-  })();
-
-  // helper: save siblings to sessionStorage
+  // Helper: Save siblings to sessionStorage
   function saveSiblings() {
-    const arr = [];
-    document.querySelectorAll('#siblingsTableBody tr').forEach(row => {
-      const nameEl = row.querySelector('.sibling-name');
-      const genderEl = row.querySelector('.sibling-gender');
-      const ageEl = row.querySelector('.sibling-age');
-      if (!nameEl || !genderEl || !ageEl) return;
-      arr.push({
-        name: nameEl.value,
-        gender: genderEl.value,
-        age: ageEl.value ? Number(ageEl.value) : ''
-      });
+    const siblings = [];
+    document.querySelectorAll('#siblingsTableBody .sibling-card, #siblingsTableBody tr').forEach((element) => {
+      const nameEl = element.querySelector('.sibling-name');
+      const genderEl = element.querySelector('.sibling-gender');
+      const ageEl = element.querySelector('.sibling-age');
+      if (nameEl && genderEl && ageEl) {
+        siblings.push({
+          name: nameEl.value,
+          gender: genderEl.value,
+          age: ageEl.value ? Number(ageEl.value) : '',
+        });
+      }
     });
-    sessionStorage.setItem('educ_siblings', JSON.stringify(arr));
+    sessionStorage.setItem('educ_siblings', JSON.stringify(siblings));
   }
 
-  // helper: save expenses to sessionStorage
+  // Helper: Save expenses to sessionStorage
   function saveExpenses() {
-    const arr = [];
-    document.querySelectorAll('#expensesTableBody tr').forEach(row => {
-      const itemEl = row.querySelector('.expense-item');
-      const costEl = row.querySelector('.expense-cost');
-      if (!itemEl || !costEl) return;
-      arr.push({
-        item: itemEl.value,
-        expectedCost: costEl.value ? Number(costEl.value) : ''
-      });
-    });
-    sessionStorage.setItem('educ_expenses', JSON.stringify(arr));
-  }
-
-  // small utility to escape values when inserting into HTML
-  function escapeHtml(str) {
-    return String(str)
-      .replace(/&/g, '&amp;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#39;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-  }
-
-  // Eye icon click listeners
-  document.getElementById('viewVoter').addEventListener('click', function() {
-    showImagePreview('voter');
-  });
-  document.getElementById('viewCOE').addEventListener('click', function() {
-    showImagePreview('coeImage');
-  });
-  document.getElementById('viewFront').addEventListener('click', function() {
-    showImagePreview('frontImage');
-  });
-  document.getElementById('viewBack').addEventListener('click', function() {
-    showImagePreview('backImage');
-  });
-
-  // Navbar: Mobile menu toggle
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-
-  hamburger.addEventListener('click', function() {
-    mobileMenu.classList.toggle('active'); // Assuming 'active' class shows the menu
-  });
-
-  // Helper function to truncate file names
-  function truncateFileName(fileName, maxLength = 6) {
-    if (fileName.length <= maxLength) {
-      return fileName;
-    }
-    
-    // Always show first 6 characters + "..." for files longer than 6 characters
-    return fileName.substring(0, maxLength) + "...";
-  }
-
-  function handleFileInput(inputId, labelId, fileNameId, viewId, deleteId) {
-    const input = document.getElementById(inputId);
-    const label = document.getElementById(labelId);
-    const fileNameSpan = document.getElementById(fileNameId);
-    const viewIcon = document.getElementById(viewId);
-    const deleteIcon = document.getElementById(deleteId);
-
-    function updateIcons() {
-      const hasFile = input && input.files && input.files.length > 0;
-      
-      if (viewIcon) {
-        // Restore proper eye icon when file is present
-        if (hasFile) {
-          viewIcon.classList.remove('fa-eye-slash', 'disabled');
-          viewIcon.classList.add('fa-eye');
-          viewIcon.style.pointerEvents = 'auto';
-          viewIcon.style.opacity = '1';
-        } else {
-          viewIcon.classList.remove('fa-eye');
-          viewIcon.classList.add('fa-eye-slash', 'disabled');
-          viewIcon.style.pointerEvents = 'none';
-          viewIcon.style.opacity = '0.5';
-        }
-      }
-      
-      if (deleteIcon) {
-        deleteIcon.classList.toggle('disabled', !hasFile);
-        deleteIcon.style.pointerEvents = hasFile ? 'auto' : 'none';
-        deleteIcon.style.opacity = hasFile ? '1' : '0.5';
-      }
-    }
-
-    if (input && label && fileNameSpan) {
-      input.addEventListener('change', function() {
-        if (input.files && input.files.length > 0) {
-          const file = input.files[0];
-          const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-          
-          // Check file size
-          if (file.size > maxSize) {
-            Swal.fire({
-              icon: 'error',
-              title: 'File Too Large',
-              text: `File size (${(file.size / (1024 * 1024)).toFixed(2)}MB) exceeds the maximum limit of 5MB. Please choose a smaller file.`,
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#0A2C59'
-            });
-            
-            // Clear the input
-            input.value = '';
-            label.style.display = 'inline-flex';
-            fileNameSpan.textContent = '';
-            fileNameSpan.title = '';
-            fileNameSpan.style.display = 'none';
-            updateIcons();
-            return;
-          }
-          
-          // Check file type (optional - only allow image files)
-          if (!file.type.startsWith('image/')) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Invalid File Type',
-              text: 'Please select an image file (JPG, PNG, GIF, etc.).',
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#0A2C59'
-            });
-            
-            // Clear the input
-            input.value = '';
-            label.style.display = 'inline-flex';
-            fileNameSpan.textContent = '';
-            fileNameSpan.title = '';
-            fileNameSpan.style.display = 'none';
-            updateIcons();
-            return;
-          }
-          
-          // File is valid, proceed with normal handling
-          label.style.display = 'none';
-          const originalFileName = file.name;
-          const truncatedFileName = truncateFileName(originalFileName);
-          fileNameSpan.textContent = truncatedFileName;
-          fileNameSpan.title = originalFileName; // Show full name on hover
-          fileNameSpan.style.display = 'inline-block';
-        } else {
-          label.style.display = 'inline-flex';
-          fileNameSpan.textContent = '';
-          fileNameSpan.title = '';
-          fileNameSpan.style.display = 'none';
-        }
-        updateIcons();
-      });
-      updateIcons(); // Initial state
-    }
-  }
-
-  // --- ADD: showImagePreview helper (uses existing modal) ---
-  function showImagePreview(inputId) {
-    const input = document.getElementById(inputId);
-    let src = '';
-
-    // Prefer selected file (local preview)
-    if (input && input.files && input.files.length > 0) {
-      src = URL.createObjectURL(input.files[0]);
-    } else {
-      // fallback: try data-url attributes or hidden URL inputs (server-provided URLs)
-      if (input && input.dataset && input.dataset.url) src = input.dataset.url;
-      const hidden = document.getElementById(`${inputId}Url`);
-      if (!src && hidden && hidden.value) src = hidden.value;
-    }
-
-    if (!src) {
-      Swal.fire("No file selected", "Please upload an image first.", "info");
-      return;
-    }
-
-    // Use existing modal from HTML
-    const modal = document.getElementById('imagePreviewModal');
-    const imgEl = document.getElementById('previewImg');
-    const closeBtn = document.getElementById('closePreviewBtn');
-
-    if (!modal || !imgEl || !closeBtn) {
-      console.error('Modal elements not found');
-      return;
-    }
-
-    // Set up close button event listener (only once)
-    if (!closeBtn.hasAttribute('data-listener-added')) {
-      closeBtn.addEventListener('click', () => {
-        modal.style.display = 'none';
-        if (imgEl.dataset.objectUrl === 'true') {
-          URL.revokeObjectURL(imgEl.src);
-        }
-        imgEl.src = '';
-        delete imgEl.dataset.objectUrl;
-      });
-      closeBtn.setAttribute('data-listener-added', 'true');
-    }
-
-    // Set up modal click-to-close (only once)
-    if (!modal.hasAttribute('data-listener-added')) {
-      modal.addEventListener('click', (e) => {
-        if (e.target === modal) {
-          closeBtn.click();
-        }
-      });
-      modal.setAttribute('data-listener-added', 'true');
-    }
-
-    // Set image source and show modal
-    if (imgEl) {
-      // revoke previous object URL if any
-      if (imgEl.dataset.objectUrl === 'true' && imgEl.src) {
-        try { URL.revokeObjectURL(imgEl.src); } catch (e) {}
-      }
-      imgEl.src = src;
-      // determine if src is a blob/object URL
-      imgEl.dataset.objectUrl = src.startsWith('blob:') ? 'true' : 'false';
-    }
-
-    modal.style.display = 'flex';
-  }
-  // --- END added helper ---
-
-  // Sedula delete
-  document.getElementById('deleteVoter').addEventListener('click', function() {
-    handleFileDelete('voter', 'voterLabel', 'voterFileName');
-  });
-  // COE delete
-  document.getElementById('deleteCOE').addEventListener('click', function() {
-    handleFileDelete('coeImage', 'coeLabel', 'coeFileName');
-  });
-  // Front Image delete
-  document.getElementById('deleteFront').addEventListener('click', function() {
-    handleFileDelete('frontImage', 'frontLabel', 'frontFileName');
-  });
-  // Back Image delete
-  document.getElementById('deleteBack').addEventListener('click', function() {
-    handleFileDelete('backImage', 'backLabel', 'backFileName');
-  });
-
-  // Call for each file input
-  handleFileInput('voter', 'voterLabel', 'voterFileName', 'viewVoter', 'deleteVoter');
-  handleFileInput('coeImage', 'coeLabel', 'coeFileName', 'viewCOE', 'deleteCOE');
-  handleFileInput('frontImage', 'frontLabel', 'frontFileName', 'viewFront', 'deleteFront');
-  handleFileInput('backImage', 'backLabel', 'backFileName', 'viewBack', 'deleteBack');
-
-  // Set age when birthday is loaded from backend
-  const ageInput = document.getElementById('age');
-  if (birthdayInput && ageInput) {
-    // When birthday is fetched from backend
-    if (birthdayInput.value) {
-      ageInput.value = calculateAge(birthdayInput.value);
-    }
-    // When user changes birthday manually
-    birthdayInput.addEventListener('change', function() {
-      ageInput.value = calculateAge(birthdayInput.value);
-    });
-  }
-
-  // Close preview button
-  // document.getElementById('closePreviewBtn').addEventListener('click', function() {
-  //   document.getElementById('imagePreviewModal').style.display = 'none';
-  // });
-
-  // Get user data from localStorage or sessionStorage
-  // let userData = JSON.parse(localStorage.getItem('user')) || JSON.parse(sessionStorage.getItem('user')) || {};
-  // const emailInput = document.getElementById('email');
-  // if (emailInput && userData.email) {
-  //   emailInput.value = userData.email; // Set the email input value
-  //   emailInput.readOnly = true; // Optional: make it not editable
-  // }
-
-  // Restore form data from localStorage if available
-const savedFormData = JSON.parse(sessionStorage.getItem('educationalAssistanceFormData') || '{}');
-if (form && savedFormData) {
-  Array.from(form.elements).forEach(el => {
-    if (el.name && savedFormData[el.name] !== undefined) {
-      if (el.type === "checkbox" || el.type === "radio") {
-        el.checked = savedFormData[el.name] === true;
-      } 
-      // ✅ Skip file inputs
-      else if (el.type === "file") {
-        // do nothing for file input
-      } 
-      else {
-        el.value = savedFormData[el.name];
-      }
-    }
-  });
-}
-
-
-  // Save form data to localStorage on input change
-  form.addEventListener('input', function() {
-    const dataToSave = {};
-    Array.from(form.elements).forEach(el => {
-      if (el.name) {
-        if (el.type === "checkbox" || el.type === "radio") {
-          dataToSave[el.name] = el.checked;
-        } else {
-          dataToSave[el.name] = el.value;
-        }
+    const expenses = [];
+    document.querySelectorAll('#expensesTableBody .expense-card, #expensesTableBody tr').forEach((element) => {
+      const nameEl = element.querySelector('.expense-name');
+      const costEl = element.querySelector('.expense-cost');
+      if (nameEl && costEl) {
+        expenses.push({
+          name: nameEl.value,
+          cost: costEl.value ? Number(costEl.value) : '',
+        });
       }
     });
-    sessionStorage.setItem('educationalAssistanceFormData', JSON.stringify(dataToSave));
-  });
-
-  // Clear saved data on successful submit
-  form.addEventListener('submit', function() {
-    sessionStorage.removeItem('educationalAssistanceFormData');
-  });
-
-  // ensure "Type of Benefiting" defaults to "Applicant" so user doesn't have to input it
-  const typeEl = document.getElementById('typeOfBenefiting')
-    || document.getElementById('typeOfBenefitting')
-    || document.getElementById('benefitType')
-    || document.getElementById('benefittype'); // fallback to existing id
-
-  if (typeEl) {
-    if (!typeEl.value) typeEl.value = 'Educational Assistance';
-    // keep it submitted but prevent accidental change (do not disable if it's a select)
-    if (typeEl.tagName === 'INPUT') typeEl.readOnly = true;
+    sessionStorage.setItem('educ_expenses', JSON.stringify(expenses));
   }
 });
 
@@ -827,7 +619,7 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No profile found`,
+        title: `No Application found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
         confirmButtonText: "Go to form"
       }).then(() => {
@@ -852,63 +644,3 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
   document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
 });
-
-// remove the stray removal at file bottom (do not clear saved data on load)
-// localStorage.removeItem('educationalAssistanceFormData');
-
-function handleFileDelete(inputId, labelId, fileNameId) {
-  const input = document.getElementById(inputId);
-  const label = document.getElementById(labelId);
-  const fileNameSpan = document.getElementById(fileNameId);
-
-  // Clear file input (allowed only to set to empty string)
-  if (input) {
-    try { input.value = ''; } catch (e) { /* ignore */ }
-  }
-
-  // Restore add/plus label and hide filename
-  if (label) label.style.display = 'inline-flex';
-  if (fileNameSpan) {
-    fileNameSpan.textContent = '';
-    fileNameSpan.title = '';
-    fileNameSpan.style.display = 'none';
-  }
-
-  // Reset view icon and delete icon states for known IDs
-  const viewMap = {
-    voter: 'viewVoter',
-    coeImage: 'viewCOE',
-    frontImage: 'viewFront',
-    backImage: 'viewBack'
-  };
-  const deleteMap = {
-    voter: 'deleteVoter',
-    coeImage: 'deleteCOE',
-    frontImage: 'deleteFront',
-    backImage: 'deleteBack'
-  };
-
-  const viewIcon = document.getElementById(viewMap[inputId] || `view${capitalize(inputId)}`);
-  const deleteIcon = document.getElementById(deleteMap[inputId] || `delete${capitalize(inputId)}`);
-
-  if (viewIcon) {
-    viewIcon.classList.remove('fa-eye');
-    viewIcon.classList.add('fa-eye-slash', 'disabled');
-    viewIcon.style.pointerEvents = 'none';
-    viewIcon.style.opacity = '0.5';
-  }
-  if (deleteIcon) {
-    deleteIcon.classList.add('disabled');
-    deleteIcon.style.pointerEvents = 'none';
-    deleteIcon.style.opacity = '0.5';
-  }
-
-  // clear any server URL holder if present
-  const hiddenUrl = document.getElementById(`${inputId}Url`);
-  if (hiddenUrl) hiddenUrl.value = '';
-}
-
-function capitalize(str) {
-  if (!str) return '';
-  return str.charAt(0).toUpperCase() + str.slice(1);
-}
