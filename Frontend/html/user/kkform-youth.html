@@ -48,7 +48,7 @@
       </div>
       <div class="kk-card">
         <label for="youthClassification" class="kk-label">Youth Classification</label>
-        <select id="youthClassification" name="youthClassification" class="kk-input">
+        <select id="youthClassification" name="youthClassification" class="kk-input" required>
           <option value="">Select classification</option>
           <option value="In School Youth">In School Youth</option>
           <option value="Out of School Youth">Out of School Youth</option>
@@ -58,7 +58,7 @@
 
         <div id="specificNeedsGroup" style="display: none; margin-top: 12px;">
           <label for="specificNeedType" class="kk-label">If Youth with Specific Needs, specify:</label>
-          <select id="specificNeedType" name="specificNeedType" class="kk-input">
+          <select id="specificNeedType" name="specificNeedType" class="kk-input" >
             <option value="">Select Specific Need</option>
             <option value="Person w/Disability">Person w/Disability</option>
             <option value="Children in Conflict w/Law">Children in Conflict w/Law</option>
@@ -130,7 +130,7 @@
         <!-- These two groups are now inside the same kk-card container -->
         <div id="attendanceCountGroup" style="display: none; margin-top: 12px;">
           <label class="kk-label" for="attendanceCount">How many times?</label>
-          <select class="kk-input" id="attendanceCount" name="attendanceCount">
+          <select class="kk-input" id="attendanceCount" name="attendanceCount" required>
             <option value="">Select</option>
             <option value="1-2 times">1-2 times</option>
             <option value="3-4 times">3-4 times</option>
@@ -139,7 +139,7 @@
         </div>
         <div id="reasonGroup" style="display: none; margin-top: 12px;">
           <label class="kk-label" for="reasonDidNotAttend">Why didn't you attend?</label>
-          <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend">
+          <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend" >
             <option value="">Select</option>
             <option value="There was no KK Assembly">There was no KK Assembly</option>
             <option value="Not interested">Not interested</option>

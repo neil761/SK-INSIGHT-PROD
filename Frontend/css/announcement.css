@@ -222,7 +222,7 @@ body {
   z-index: 2000;
   padding: 18px 12px;
   border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(20,61,119,0.18);
+  box-shadow: 0 8px 32px rgba(20, 61, 119, 0.18);
   border: 1px solid #e3eaf3;
 }
 
@@ -294,41 +294,73 @@ body {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.10);
-  padding: 20px;
-  overflow-x: auto;
-  overflow-y: auto;
-
-  /* 👇 Force container to fit 8 rows */
-  height: calc(70px * 8 + 60px) !important;
-  max-height: calc(70px * 8 + 60px) !important;
-  min-height: calc(70px * 8 + 60px) !important;
+  padding: 0; /* Remove padding to align the table properly */
+  overflow: hidden; /* Prevent overflow outside the container */
 }
-
 
 /* Table Styling */
 .announcement-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 1rem;
-    table-layout: fixed; /* Add this to ensure equal column widths */
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed; /* Ensure equal column widths */
 }
 
-.announcement-table th, 
+.announcement-table thead {
+  position: sticky;
+  top: 0; /* Stick the header to the top */
+  background-color: #0A2C59; /* Header background color */
+  color: #fff; /* Header text color */
+  z-index: 1; /* Ensure the header stays above the body content */
+}
+
+.announcement-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.announcement-table tbody {
+  display: block;
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.announcement-table tbody.no-scroll {
+  max-height: none; /* Remove height restriction */
+  overflow-y: visible; /* Disable scrolling */
+}
+
+.announcement-table tr {
+  display: table; /* Ensure rows behave like table rows */
+  width: 100%; /* Ensure rows span the full width */
+}
+
 .announcement-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    vertical-align: middle;
-    word-wrap: break-word;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+
+/* Scrollbar Styling */
+.announcement-table tbody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-table tbody::-webkit-scrollbar-thumb {
+  background-color: #0A2C59;
+  border-radius: 4px;
+}
+
+.announcement-table tbody::-webkit-scrollbar-track {
+  background-color: #e2e8f0;
 }
 
 /* Equal height for announcement table rows */
 .announcement-table tr {
   height: 70px; /* Adjust as needed */
   vertical-align: middle;
-}
-.announcement-table tr:hover {
-  background-color: #f5f8ff;
 }
 
 /* Pinned announcement styling */
@@ -578,7 +610,7 @@ body {
     }
 
     .announcement-heading-container h2 {
-        font-size: 2rem;
+        font-size: 1.5rem;
     }
 
     .announcement-container {
@@ -647,10 +679,14 @@ body {
 
 /* Responsive: Stack announcement cards and buttons on small screens */
 @media (max-width: 600px) {
+  .main-content{
+    justify-content: flex-start;
+    margin-top: 30%;
+  }
   .announcement-heading-container {
     width: 88%;
-    padding: 10px;
-    margin: 120px auto 10px auto;
+    padding: 1%;
+    margin: 1vh auto 10px auto;
   }
 
   .announcement-container {
@@ -663,9 +699,9 @@ body {
     width: 100%;
     margin-bottom: 15px;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 16px;
-    background: #fff;
+    background: #dde9f2;
     display: block;
   }
 
@@ -686,6 +722,7 @@ body {
 
   .announcement-card .card-header .title span {
     font-size: 0.95rem;
+    font-weight: bold;
   }
   .announcement-card .card-header .title i {
     font-size: 0.95rem;
@@ -695,7 +732,9 @@ body {
     padding: 0.2rem 0.5rem;
   }
   .announcement-card .card-meta {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    margin-top: 8%;
+    
   }
   .announcement-card .card-meta .meta-row i {
     font-size: 0.9rem;
@@ -884,4 +923,133 @@ body {
   .footer-bottom p {
     font-size: 12px;
   }
+}
+
+.verification-strip {
+  position: fixed;
+  top: calc(1rem + 70px); /* 1rem navbar offset + navbar height */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 900px;
+  background: linear-gradient(135deg, #0A2C59 0%, #143d77 100%, #1e4e9e 50%);
+  color: #fff;
+  text-align: center;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(10, 44, 89, 0.20), 0 2px 8px rgba(10, 44, 89, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 1100;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  animation: slideDown 0.4s ease-out;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.verification-strip:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 30px rgba(10, 44, 89, 0.25), 0 4px 12px rgba(10, 44, 89, 0.18);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.verification-strip a {
+  color: #ffd700;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 215, 0, 0.15);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.verification-strip a:hover {
+  color: #fff;
+  background: rgba(255, 215, 0, 0.25);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.verification-strip i {
+  color: #ffd700;
+  font-size: 20px;
+  margin-right: 4px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Mobile responsive verification strip */
+@media (max-width: 600px) {
+  .verification-strip {
+    font-size: 14px;
+    padding: 10px 15px;
+    gap: 8px;
+    width: 92%;
+    max-width: 95vw;
+    top: calc(1rem + 56px); /* adjust if navbar is shorter on mobile */
+    border-radius: 10px;
+  }
+  
+  .verification-strip i {
+    font-size: 18px;
+    margin-right: 3px;
+  }
+  
+  .verification-strip a {
+    font-size: 13px;
+    padding: 3px 8px;
+  }
+}
+.disabled {
+  pointer-events: none; /* Prevent clicks */
+  opacity: 0.5; /* Make the button look disabled */
+  cursor: not-allowed; /* Change cursor to indicate disabled state */
+}
+
+.announcement-card .card-header .title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Space between title and status badge */
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0A2C59;
+}
+
+.announcement-card .card-header .title .status-badge {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 500;
+  background: #e0f2fe;
+  color: #0369a1;
+  margin-left: auto; /* Align badge to the right */
 }

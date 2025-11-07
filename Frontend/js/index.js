@@ -310,3 +310,53 @@ if (educAssistanceNavBtnMobile) {
   educAssistanceNavBtnMobile.addEventListener('click', handleEducAssistanceNavClick);
 }
 });
+
+document.addEventListener('DOMContentLoaded', function () {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const verificationStrip = document.getElementById('verification-strip');
+
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => response.json())
+      .then(user => {
+        if (!user.isVerified) {
+          // Show verification strip for unverified accounts
+          if (verificationStrip) {
+            verificationStrip.style.display = 'flex';
+          }
+
+          // Disable navigation buttons
+          const navSelectors = [
+            '#kkProfileNavBtnDesktop',
+            '#kkProfileNavBtnMobile',
+            '#lgbtqProfileNavBtnDesktop',
+            '#lgbtqProfileNavBtnMobile',
+            '#educAssistanceNavBtnDesktop',
+            '#educAssistanceNavBtnMobile',
+            '.announcement-btn'
+          ];
+          navSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+              btn.classList.add('disabled');
+              btn.setAttribute('tabindex', '-1');
+              btn.setAttribute('aria-disabled', 'true');
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+            });
+          });
+        }
+      })
+      .catch(() => {
+        console.error('Failed to fetch user verification status.');
+      });
+  }
+});
