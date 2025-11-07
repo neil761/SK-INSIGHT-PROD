@@ -1,23 +1,73 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
 
   // Handle mobile menu toggle
   if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
+    hamburger.addEventListener('click', function (e) {
       e.stopPropagation();
       mobileMenu.classList.toggle('active');
     });
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
       if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
         mobileMenu.classList.remove('active');
       }
     });
   }
 
-  // Show login strip if not logged in
+  // Check user verification status
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
+  let isVerified = false;
+
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => response.json())
+      .then(user => {
+        isVerified = user.isVerified || false;
+
+        if (!isVerified) {
+          // Show verification strip
+          const verificationStrip = document.getElementById('verification-strip');
+          if (verificationStrip) {
+            verificationStrip.style.display = 'flex';
+          }
+          document.body.classList.add('has-verification-strip');
+
+          // Disable navigation buttons for forms and announcements
+          const navSelectors = [
+            '#kkProfileNavBtnDesktop',
+            '#kkProfileNavBtnMobile',
+            '#lgbtqProfileNavBtnDesktop',
+            '#lgbtqProfileNavBtnMobile',
+            '#educAssistanceNavBtnDesktop',
+            '#educAssistanceNavBtnMobile',
+            '.announcement-btn'
+          ];
+          navSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+              btn.classList.add('disabled');
+              btn.setAttribute('tabindex', '-1');
+              btn.setAttribute('aria-disabled', 'true');
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+            });
+          });
+        }
+      })
+      .catch(() => {
+        console.error('Failed to fetch user verification status.');
+      });
+  } else {
+    // If no token, show login strip
     const loginStrip = document.getElementById('login-strip');
     if (loginStrip) {
       loginStrip.style.display = 'flex';
@@ -26,20 +76,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Disable all navbar buttons for non-logged-in users
     const navSelectors = [
-      '.navbar-center a',           // All main nav links
-      '.navbar-right a',            // User profile, logout, etc.
-      '.navbar-mobile-menu a',      // Mobile nav links
-      '.announcement-btn',          // Announcement button (if it has this class or id)
-      '#userProfileBtn',            // User profile button (if it has this id)
-      '.prof',                      // Profile nav buttons
-      '.nav-btn'                    // Mobile nav buttons
+      '.navbar-center a',
+      '.navbar-right a',
+      '.navbar-mobile-menu a',
+      '.announcement-btn',
+      '#userProfileBtn',
+      '.prof',
+      '.nav-btn'
     ];
     navSelectors.forEach(selector => {
       document.querySelectorAll(selector).forEach(btn => {
         btn.classList.add('disabled');
         btn.setAttribute('tabindex', '-1');
         btn.setAttribute('aria-disabled', 'true');
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('click', function (e) {
           e.preventDefault();
           Swal.fire({
             icon: 'warning',

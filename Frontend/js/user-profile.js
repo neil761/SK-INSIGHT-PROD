@@ -659,3 +659,56 @@ function clearUserLockout(email) {
 }
 
 
+document.addEventListener("DOMContentLoaded", async () => {
+  const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  const verificationStrip = document.getElementById("verification-strip");
+
+  let user = null; // Keep user data for verification status
+
+  // Fetch User Info
+  try {
+    const res = await fetch("http://localhost:5000/api/users/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) return;
+
+    user = await res.json();
+
+    // Show verification strip if user is not verified
+    if (!user.isVerified) {
+      if (verificationStrip) {
+        verificationStrip.style.display = "flex";
+      }
+
+      // Disable navigation buttons
+      const navSelectors = [
+        "#kkProfileNavBtnDesktop",
+        "#kkProfileNavBtnMobile",
+        "#lgbtqProfileNavBtnDesktop",
+        "#lgbtqProfileNavBtnMobile",
+        "#educAssistanceNavBtnDesktop",
+        "#educAssistanceNavBtnMobile",
+        ".announcement-btn",
+      ];
+      navSelectors.forEach((selector) => {
+        document.querySelectorAll(selector).forEach((btn) => {
+          btn.classList.add("disabled");
+          btn.setAttribute("tabindex", "-1");
+          btn.setAttribute("aria-disabled", "true");
+          btn.style.pointerEvents = "none"; // Disable pointer events
+          btn.addEventListener("click", function (e) {
+            e.preventDefault();
+            Swal.fire({
+              icon: "warning",
+              title: "Account Verification Required",
+              text: "Please verify your account to access this feature.",
+              confirmButtonText: "OK",
+            });
+          });
+        });
+      });
+    }
+  } catch (err) {
+    console.error("Failed to fetch user profile:", err);
+  }
+});

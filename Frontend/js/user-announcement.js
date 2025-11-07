@@ -185,17 +185,43 @@ document.addEventListener("DOMContentLoaded", () => {
             ${a.isPinned ? '<i class="fa-solid fa-location-pin" style="color: #d4af37; margin-right: 8px;"></i>' : ''}
             <i class="fa-solid fa-bullhorn"></i>
             <span>${a.title}</span>
+            <span class="status-badge ${status.toLowerCase()}">${status}</span>
           </div>
-          <span class="status-badge ${status.toLowerCase()}">${status}</span>
         </div>
         <div class="card-meta">
           <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${a.eventDate ? formatDateTime(a.eventDate) : '-'}</div>
           <div class="meta-row"><i class="fa-regular fa-clock"></i> Posted: ${a.createdAt ? formatDateTime(a.createdAt) : '-'}</div>
         </div>
-        <div class="card-actions">
-          <button class="view-btn" data-id="${a._id}"><i class="fas fa-eye"></i> View</button>
-        </div>
       `;
+
+      // Add click event listener to the card
+      card.addEventListener('click', async () => {
+        if (!validateTokenAndRedirect("announcement details")) {
+          return;
+        }
+
+        try {
+          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+
+          const res = await fetch(`http://localhost:5000/api/announcements/${a._id}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+
+          if (!res.ok) throw new Error("Announcement not found");
+          const { announcement } = await res.json();
+
+          modalTitle.textContent = announcement.title;
+          modalEventDate.textContent = formatDateTime(announcement.eventDate);
+          modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
+          modalDescription.textContent = announcement.content;
+
+          modal.classList.add("active");
+        } catch (err) {
+          console.error("Error fetching announcement:", err);
+          alert("Failed to load announcement details");
+        }
+      });
+
       cardsContainer.appendChild(card);
     });
 
@@ -579,4 +605,71 @@ document.addEventListener('DOMContentLoaded', function() {
   // Educational Assistance
   document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
   document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const verificationStrip = document.getElementById('verification-strip');
+
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => response.json())
+      .then(user => {
+        if (!user.isVerified) {
+          // Show verification strip for unverified accounts
+          if (verificationStrip) {
+            verificationStrip.style.display = 'flex';
+          }
+
+          // Disable navigation buttons
+          const navSelectors = [
+            '#kkProfileNavBtnDesktop',
+            '#kkProfileNavBtnMobile',
+            '#lgbtqProfileNavBtnDesktop',
+            '#lgbtqProfileNavBtnMobile',
+            '#educAssistanceNavBtnDesktop',
+            '#educAssistanceNavBtnMobile',
+            '.announcement-btn'
+          ];
+          navSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+              btn.classList.add('disabled');
+              btn.setAttribute('tabindex', '-1');
+              btn.setAttribute('aria-disabled', 'true');
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+            });
+          });
+        }
+      })
+      .catch(() => {
+        console.error('Failed to fetch user verification status.');
+      });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  const announcementTableBody = document.querySelector(".announcement-table tbody");
+
+  if (announcementTableBody) {
+    const rows = announcementTableBody.querySelectorAll("tr");
+    if (rows.length <= 5) {
+      // If there are 5 or fewer announcements, remove scrolling
+      announcementTableBody.style.maxHeight = "none";
+      announcementTableBody.style.overflowY = "visible";
+    } else {
+      // If there are more than 5 announcements, enable scrolling
+      announcementTableBody.style.maxHeight = "400px"; // Adjust height as needed
+      announcementTableBody.style.overflowY = "auto";
+    }
+  }
 });
