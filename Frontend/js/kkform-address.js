@@ -55,6 +55,20 @@ document.addEventListener('DOMContentLoaded', function() {
     window.location.href = 'kkform-youth.html';
   });
 
+  // Place this at the end of your HTML or in a JS file
+document.addEventListener('DOMContentLoaded', function() {
+  const hamburger = document.getElementById('navbarHamburger');
+  const mobileMenu = document.getElementById('navbarMobileMenu');
+  hamburger.addEventListener('click', function() {
+    mobileMenu.classList.toggle('active');
+  });
+  document.addEventListener('click', function(e) {
+    if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
+      mobileMenu.classList.remove('active');
+    }
+  });
+});
+
   // KK Profile Navigation
   function handleKKProfileNavClick(event) {
     event.preventDefault();
@@ -84,7 +98,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes, view my response",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }
@@ -108,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
           confirmButtonText: "Yes",
           cancelButtonText: "No"
         }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkconfirmation.html";
+          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
         });
         return;
       }

@@ -1058,39 +1058,29 @@ textarea:focus {
     display: block; /* Show when active */
 }
 
-/* X icon for remove buttons on mobile */
-@media (max-width: 768px) {
-  #addSiblingBtn, #addExpenseBtn
-  {
-    font-size: 0.5rem;
-  }
-  .removeSiblingBtn,
-  .removeExpenseBtn {
-    font-size: 1.3rem;
-    padding: 4px 10px;
-    border-radius: 50%;
-    width: 32px;
-    height: 32px;
-    background: #e74c3c;
-    color: #fff;
-    position: relative;
-    text-indent: -9999px; /* Hide text */
-  }
-  .removeSiblingBtn::after,
-  .removeExpenseBtn::after {
-    content: "×";
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    text-indent: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #fff;
-  }
+.sibling-card,
+.expense-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
 }
 
+.sibling-field,
+.expense-field {
+  margin-bottom: 5px;
+}
+
+.sibling-field label,
+.expense-field label {
+  display: block;
+  font-weight: bold;
+}
+
+.sibling-field input,
+.expense-field input {
+  width: 100%;
+  padding: 5px;
+  margin-top: 2px;
+}
