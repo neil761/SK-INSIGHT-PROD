@@ -537,7 +537,7 @@ tbody tr:hover {
   background: #08305e;
 }
 
-  .delete-btn, .action-btn {
+.modal-delete-btn{
   display: inline-flex;
   align-items: center;
   gap: 6px;

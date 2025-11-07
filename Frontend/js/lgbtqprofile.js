@@ -195,7 +195,6 @@ document.addEventListener("DOMContentLoaded", () => {
       let url = "http://localhost:5000/api/lgbtqprofiling";
       const queryObj = {};
 
-      // If filtering by year, cycle, or classification
       if (params.year) queryObj.year = params.year;
       if (params.cycle && params.year) queryObj.cycle = params.cycle;
       if (params.lgbtqClassification) queryObj.lgbtqClassification = params.lgbtqClassification;
@@ -203,7 +202,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
       const query = new URLSearchParams(queryObj).toString();
       if (query) url += `?${query}`;
-
 
       const res = await fetch(url, {
         headers: {
@@ -213,7 +211,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
-      // Filter out deleted profiles (same as KK profiling)
+
       const visibleProfiles = data.filter(p => !p.isDeleted);
       allProfiles = visibleProfiles;
       renderProfiles(visibleProfiles);
@@ -244,7 +242,6 @@ document.addEventListener("DOMContentLoaded", () => {
         ? new Date(p.displayData.birthday).toLocaleDateString()
         : "N/A";
       const age = p.displayData?.age ?? "N/A";
-      // Build name: Last Name, First Name M.
       let formattedName = "N/A";
       if (p.lastname || p.firstname || p.middlename) {
         const last = p.lastname ? p.lastname.trim() : "";
@@ -259,7 +256,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const row = document.createElement("tr");
       row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id);
+      row.setAttribute('data-id', p._id); // Ensure this is set correctly
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
         <td>${formattedName}</td>
@@ -290,6 +287,10 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         );
         const profile = await res.json();
+        if (!profile || !profile._id) {
+          Swal.fire("Error", profile.error || "Profile not found.", "error");
+          return;
+        }
         showProfileModal(profile);
 
         // After modal is opened and profile is fetched:
@@ -304,6 +305,330 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
+        if (!id) {
+          Swal.fire("Error", "Profile ID is missing. Please refresh the page.", "error");
+          return;
+        }
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to delete this form?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#0A2C59",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+          });
+          if (res.ok) {
+            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
+            fetchProfiles(); // Refresh table
+          }
+        }
+      });
+    });
+  }
+
+  // Add this function for pagination controls:
+  function renderPagination(totalProfiles, totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    // Previous button
+    const prevBtn = document.createElement("button");
+    prevBtn.className = "pagination-btn";
+    prevBtn.textContent = "Prev";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(prevBtn);
+
+    // Page numbers (show max 5 pages at a time)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+      pageBtn.textContent = i;
+      pageBtn.onclick = () => {
+        currentPage = i;
+        renderProfiles(allProfiles);
+      };
+      pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "pagination-btn";
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(nextBtn);
+  }
+
+  // 🔹 Render profiles
+  function renderProfiles(profiles) {
+    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
+    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
+    const endIdx = startIdx + PROFILES_PER_PAGE;
+    const pageProfiles = profiles.slice(startIdx, endIdx);
+
+    tableBody.innerHTML = "";
+    if (!pageProfiles.length) {
+      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
+      renderPagination(profiles.length, totalPages);
+      return;
+    }
+
+    pageProfiles.forEach((p, i) => {
+      const birthday = p.displayData?.birthday
+        ? new Date(p.displayData.birthday).toLocaleDateString()
+        : "N/A";
+      const age = p.displayData?.age ?? "N/A";
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
+      const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id); // Ensure this is set correctly
+      row.innerHTML = `
+        <td>${startIdx + i + 1}</td>
+        <td>${formattedName}</td>
+        <td>${age}</td>
+        <td>${birthday}</td>
+        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
+        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
+        <td>
+          <button class="view-btn" data-id="${p._id}" style="color: white;">
+            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    renderPagination(profiles.length, totalPages);
+
+    // Attach modal openers
+    document.querySelectorAll(".view-btn").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const res = await fetch(
+          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+            },
+          }
+        );
+        const profile = await res.json();
+        if (!profile || !profile._id) {
+          Swal.fire("Error", profile.error || "Profile not found.", "error");
+          return;
+        }
+        showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
+      })
+    );
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        if (!id) {
+          Swal.fire("Error", "Profile ID is missing. Please refresh the page.", "error");
+          return;
+        }
+        const result = await Swal.fire({
+          title: "Are you sure?",
+          text: "Do you really want to delete this form?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#0A2C59",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+          });
+          if (res.ok) {
+            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
+            fetchProfiles(); // Refresh table
+          }
+        }
+      });
+    });
+  }
+
+  // Add this function for pagination controls:
+  function renderPagination(totalProfiles, totalPages) {
+    const pagination = document.getElementById("pagination");
+    pagination.innerHTML = "";
+
+    if (totalPages <= 1) return;
+
+    // Previous button
+    const prevBtn = document.createElement("button");
+    prevBtn.className = "pagination-btn";
+    prevBtn.textContent = "Prev";
+    prevBtn.disabled = currentPage === 1;
+    prevBtn.onclick = () => {
+      if (currentPage > 1) {
+        currentPage--;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(prevBtn);
+
+    // Page numbers (show max 5 pages at a time)
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+    for (let i = startPage; i <= endPage; i++) {
+      const pageBtn = document.createElement("button");
+      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+      pageBtn.textContent = i;
+      pageBtn.onclick = () => {
+        currentPage = i;
+        renderProfiles(allProfiles);
+      };
+      pagination.appendChild(pageBtn);
+    }
+
+    // Next button
+    const nextBtn = document.createElement("button");
+    nextBtn.className = "pagination-btn";
+    nextBtn.textContent = "Next";
+    nextBtn.disabled = currentPage === totalPages;
+    nextBtn.onclick = () => {
+      if (currentPage < totalPages) {
+        currentPage++;
+        renderProfiles(allProfiles);
+      }
+    };
+    pagination.appendChild(nextBtn);
+  }
+
+  // 🔹 Render profiles
+  function renderProfiles(profiles) {
+    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
+    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
+    const endIdx = startIdx + PROFILES_PER_PAGE;
+    const pageProfiles = profiles.slice(startIdx, endIdx);
+
+    tableBody.innerHTML = "";
+    if (!pageProfiles.length) {
+      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
+      renderPagination(profiles.length, totalPages);
+      return;
+    }
+
+    pageProfiles.forEach((p, i) => {
+      const birthday = p.displayData?.birthday
+        ? new Date(p.displayData.birthday).toLocaleDateString()
+        : "N/A";
+      const age = p.displayData?.age ?? "N/A";
+      let formattedName = "N/A";
+      if (p.lastname || p.firstname || p.middlename) {
+        const last = p.lastname ? p.lastname.trim() : "";
+        const first = p.firstname ? p.firstname.trim() : "";
+        const middle = p.middlename && p.middlename.trim() !== ""
+          ? p.middlename.trim()[0].toUpperCase() + "."
+          : "";
+        formattedName = [last, first].filter(Boolean).join(", ");
+        if (middle) formattedName += " " + middle;
+      } else if (p.displayData?.residentName) {
+        formattedName = p.displayData.residentName;
+      }
+      const row = document.createElement("tr");
+      row.className = p.isRead ? 'row-read' : 'row-unread';
+      row.setAttribute('data-id', p._id); // Ensure this is set correctly
+      row.innerHTML = `
+        <td>${startIdx + i + 1}</td>
+        <td>${formattedName}</td>
+        <td>${age}</td>
+        <td>${birthday}</td>
+        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
+        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
+        <td>
+          <button class="view-btn" data-id="${p._id}" style="color: white;">
+            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
+          </button>
+        </td>
+      `;
+      tableBody.appendChild(row);
+    });
+
+    renderPagination(profiles.length, totalPages);
+
+    // Attach modal openers
+    document.querySelectorAll(".view-btn").forEach((btn) =>
+      btn.addEventListener("click", async () => {
+        const res = await fetch(
+          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          {
+            headers: {
+              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+            },
+          }
+        );
+        const profile = await res.json();
+        if (!profile || !profile._id) {
+          Swal.fire("Error", profile.error || "Profile not found.", "error");
+          return;
+        }
+        showProfileModal(profile);
+
+        // After modal is opened and profile is fetched:
+        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
+        if (row) {
+          row.classList.remove('row-unread');
+          row.classList.add('row-read');
+        }
+      })
+    );
+
+    document.querySelectorAll(".delete-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const id = btn.dataset.id;
+        if (!id) {
+          Swal.fire("Error", "Profile ID is missing. Please refresh the page.", "error");
+          return;
+        }
         const result = await Swal.fire({
           title: "Are you sure?",
           text: "Do you really want to delete this form?",
@@ -443,6 +768,10 @@ document.addEventListener("DOMContentLoaded", () => {
           }
         );
         const profile = await res.json();
+        if (!profile || !profile._id) {
+          Swal.fire("Error", profile.error || "Profile not found.", "error");
+          return;
+        }
         showProfileModal(profile);
 
         // After modal is opened and profile is fetched:
@@ -457,618 +786,10 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".delete-btn").forEach(btn => {
       btn.addEventListener("click", async () => {
         const id = btn.dataset.id;
-        const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "Do you really want to delete this form?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#0A2C59",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        });
-        if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-          });
-          if (res.ok) {
-            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
-            fetchProfiles(); // Refresh table
-          }
+        if (!id) {
+          Swal.fire("Error", "Profile ID is missing. Please refresh the page.", "error");
+          return;
         }
-      });
-    });
-  }
-
-  // Add this function for pagination controls:
-  function renderPagination(totalProfiles, totalPages) {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    if (totalPages <= 1) return;
-
-    // Previous button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "pagination-btn";
-    prevBtn.textContent = "Prev";
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(prevBtn);
-
-    // Page numbers (show max 5 pages at a time)
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-    for (let i = startPage; i <= endPage; i++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
-      pageBtn.textContent = i;
-      pageBtn.onclick = () => {
-        currentPage = i;
-        renderProfiles(allProfiles);
-      };
-      pagination.appendChild(pageBtn);
-    }
-
-    // Next button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "pagination-btn";
-    nextBtn.textContent = "Next";
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(nextBtn);
-  }
-
-  // 🔹 Render profiles
-  function renderProfiles(profiles) {
-    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
-    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
-    const endIdx = startIdx + PROFILES_PER_PAGE;
-    const pageProfiles = profiles.slice(startIdx, endIdx);
-
-    tableBody.innerHTML = "";
-    if (!pageProfiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
-      renderPagination(profiles.length, totalPages);
-      return;
-    }
-
-    pageProfiles.forEach((p, i) => {
-      const birthday = p.displayData?.birthday
-        ? new Date(p.displayData.birthday).toLocaleDateString()
-        : "N/A";
-      const age = p.displayData?.age ?? "N/A";
-      // Build name: Last Name, First Name M.
-      let formattedName = "N/A";
-      if (p.lastname || p.firstname || p.middlename) {
-        const last = p.lastname ? p.lastname.trim() : "";
-        const first = p.firstname ? p.firstname.trim() : "";
-        const middle = p.middlename && p.middlename.trim() !== ""
-          ? p.middlename.trim()[0].toUpperCase() + "."
-          : "";
-        formattedName = [last, first].filter(Boolean).join(", ");
-        if (middle) formattedName += " " + middle;
-      } else if (p.displayData?.residentName) {
-        formattedName = p.displayData.residentName;
-      }
-      const row = document.createElement("tr");
-      row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id);
-      row.innerHTML = `
-        <td>${startIdx + i + 1}</td>
-        <td>${formattedName}</td>
-        <td>${age}</td>
-        <td>${birthday}</td>
-        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
-        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td>
-          <button class="view-btn" data-id="${p._id}" style="color: white;">
-            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-
-    renderPagination(profiles.length, totalPages);
-
-    // Attach modal openers
-    document.querySelectorAll(".view-btn").forEach((btn) =>
-      btn.addEventListener("click", async () => {
-        const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-            },
-          }
-        );
-        const profile = await res.json();
-        showProfileModal(profile);
-
-        // After modal is opened and profile is fetched:
-        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
-        if (row) {
-          row.classList.remove('row-unread');
-          row.classList.add('row-read');
-        }
-      })
-    );
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const id = btn.dataset.id;
-        const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "Do you really want to delete this form?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#0A2C59",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        });
-        if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-          });
-          if (res.ok) {
-            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
-            fetchProfiles(); // Refresh table
-          }
-        }
-      });
-    });
-  }
-
-  // Add this function for pagination controls:
-  function renderPagination(totalProfiles, totalPages) {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    if (totalPages <= 1) return;
-
-    // Previous button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "pagination-btn";
-    prevBtn.textContent = "Prev";
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(prevBtn);
-
-    // Page numbers (show max 5 pages at a time)
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-    for (let i = startPage; i <= endPage; i++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
-      pageBtn.textContent = i;
-      pageBtn.onclick = () => {
-        currentPage = i;
-        renderProfiles(allProfiles);
-      };
-      pagination.appendChild(pageBtn);
-    }
-
-    // Next button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "pagination-btn";
-    nextBtn.textContent = "Next";
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(nextBtn);
-  }
-
-  // 🔹 Render profiles
-  function renderProfiles(profiles) {
-    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
-    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
-    const endIdx = startIdx + PROFILES_PER_PAGE;
-    const pageProfiles = profiles.slice(startIdx, endIdx);
-
-    tableBody.innerHTML = "";
-    if (!pageProfiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
-      renderPagination(profiles.length, totalPages);
-      return;
-    }
-
-    pageProfiles.forEach((p, i) => {
-      const birthday = p.displayData?.birthday
-        ? new Date(p.displayData.birthday).toLocaleDateString()
-        : "N/A";
-      const age = p.displayData?.age ?? "N/A";
-      // Build name: Last Name, First Name M.
-      let formattedName = "N/A";
-      if (p.lastname || p.firstname || p.middlename) {
-        const last = p.lastname ? p.lastname.trim() : "";
-        const first = p.firstname ? p.firstname.trim() : "";
-        const middle = p.middlename && p.middlename.trim() !== ""
-          ? p.middlename.trim()[0].toUpperCase() + "."
-          : "";
-        formattedName = [last, first].filter(Boolean).join(", ");
-        if (middle) formattedName += " " + middle;
-      } else if (p.displayData?.residentName) {
-        formattedName = p.displayData.residentName;
-      }
-      const row = document.createElement("tr");
-      row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id);
-      row.innerHTML = `
-        <td>${startIdx + i + 1}</td>
-        <td>${formattedName}</td>
-        <td>${age}</td>
-        <td>${birthday}</td>
-        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
-        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td>
-          <button class="view-btn" data-id="${p._id}" style="color: white;">
-            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-
-    renderPagination(profiles.length, totalPages);
-
-    // Attach modal openers
-    document.querySelectorAll(".view-btn").forEach((btn) =>
-      btn.addEventListener("click", async () => {
-        const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-            },
-          }
-        );
-        const profile = await res.json();
-        showProfileModal(profile);
-
-        // After modal is opened and profile is fetched:
-        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
-        if (row) {
-          row.classList.remove('row-unread');
-          row.classList.add('row-read');
-        }
-      })
-    );
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const id = btn.dataset.id;
-        const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "Do you really want to delete this form?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#0A2C59",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        });
-        if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-          });
-          if (res.ok) {
-            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
-            fetchProfiles(); // Refresh table
-          }
-        }
-      });
-    });
-  }
-
-  // Add this function for pagination controls:
-  function renderPagination(totalProfiles, totalPages) {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    if (totalPages <= 1) return;
-
-    // Previous button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "pagination-btn";
-    prevBtn.textContent = "Prev";
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(prevBtn);
-
-    // Page numbers (show max 5 pages at a time)
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-    for (let i = startPage; i <= endPage; i++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
-      pageBtn.textContent = i;
-      pageBtn.onclick = () => {
-        currentPage = i;
-        renderProfiles(allProfiles);
-      };
-      pagination.appendChild(pageBtn);
-    }
-
-    // Next button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "pagination-btn";
-    nextBtn.textContent = "Next";
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(nextBtn);
-  }
-
-  // 🔹 Render profiles
-  function renderProfiles(profiles) {
-    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
-    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
-    const endIdx = startIdx + PROFILES_PER_PAGE;
-    const pageProfiles = profiles.slice(startIdx, endIdx);
-
-    tableBody.innerHTML = "";
-    if (!pageProfiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
-      renderPagination(profiles.length, totalPages);
-      return;
-    }
-
-    pageProfiles.forEach((p, i) => {
-      const birthday = p.displayData?.birthday
-        ? new Date(p.displayData.birthday).toLocaleDateString()
-        : "N/A";
-      const age = p.displayData?.age ?? "N/A";
-      // Build name: Last Name, First Name M.
-      let formattedName = "N/A";
-      if (p.lastname || p.firstname || p.middlename) {
-        const last = p.lastname ? p.lastname.trim() : "";
-        const first = p.firstname ? p.firstname.trim() : "";
-        const middle = p.middlename && p.middlename.trim() !== ""
-          ? p.middlename.trim()[0].toUpperCase() + "."
-          : "";
-        formattedName = [last, first].filter(Boolean).join(", ");
-        if (middle) formattedName += " " + middle;
-      } else if (p.displayData?.residentName) {
-        formattedName = p.displayData.residentName;
-      }
-      const row = document.createElement("tr");
-      row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id);
-      row.innerHTML = `
-        <td>${startIdx + i + 1}</td>
-        <td>${formattedName}</td>
-        <td>${age}</td>
-        <td>${birthday}</td>
-        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
-        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td>
-          <button class="view-btn" data-id="${p._id}" style="color: white;">
-            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-
-    renderPagination(profiles.length, totalPages);
-
-    // Attach modal openers
-    document.querySelectorAll(".view-btn").forEach((btn) =>
-      btn.addEventListener("click", async () => {
-        const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-            },
-          }
-        );
-        const profile = await res.json();
-        showProfileModal(profile);
-
-        // After modal is opened and profile is fetched:
-        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
-        if (row) {
-          row.classList.remove('row-unread');
-          row.classList.add('row-read');
-        }
-      })
-    );
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const id = btn.dataset.id;
-        const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "Do you really want to delete this form?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#0A2C59",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        });
-        if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-          });
-          if (res.ok) {
-            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
-            fetchProfiles(); // Refresh table
-          }
-        }
-      });
-    });
-  }
-
-  // Add this function for pagination controls:
-  function renderPagination(totalProfiles, totalPages) {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    if (totalPages <= 1) return;
-
-    // Previous button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "pagination-btn";
-    prevBtn.textContent = "Prev";
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(prevBtn);
-
-    // Page numbers (show max 5 pages at a time)
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-    for (let i = startPage; i <= endPage; i++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
-      pageBtn.textContent = i;
-      pageBtn.onclick = () => {
-        currentPage = i;
-        renderProfiles(allProfiles);
-      };
-      pagination.appendChild(pageBtn);
-    }
-
-    // Next button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "pagination-btn";
-    nextBtn.textContent = "Next";
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(nextBtn);
-  }
-
-  // 🔹 Render profiles
-  function renderProfiles(profiles) {
-    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
-    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
-    const endIdx = startIdx + PROFILES_PER_PAGE;
-    const pageProfiles = profiles.slice(startIdx, endIdx);
-
-    tableBody.innerHTML = "";
-    if (!pageProfiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
-      renderPagination(profiles.length, totalPages);
-      return;
-    }
-
-    pageProfiles.forEach((p, i) => {
-      const birthday = p.displayData?.birthday
-        ? new Date(p.displayData.birthday).toLocaleDateString()
-        : "N/A";
-      const age = p.displayData?.age ?? "N/A";
-      // Build name: Last Name, First Name M.
-      let formattedName = "N/A";
-      if (p.lastname || p.firstname || p.middlename) {
-        const last = p.lastname ? p.lastname.trim() : "";
-        const first = p.firstname ? p.firstname.trim() : "";
-        const middle = p.middlename && p.middlename.trim() !== ""
-          ? p.middlename.trim()[0].toUpperCase() + "."
-          : "";
-        formattedName = [last, first].filter(Boolean).join(", ");
-        if (middle) formattedName += " " + middle;
-      } else if (p.displayData?.residentName) {
-        formattedName = p.displayData.residentName;
-      }
-      const row = document.createElement("tr");
-      row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id);
-      row.innerHTML = `
-        <td>${startIdx + i + 1}</td>
-        <td>${formattedName}</td>
-        <td>${age}</td>
-        <td>${birthday}</td>
-        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
-        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td>
-          <button class="view-btn" data-id="${p._id}" style="color: white;">
-            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-
-    renderPagination(profiles.length, totalPages);
-
-    // Attach modal openers
-    document.querySelectorAll(".view-btn").forEach((btn) =>
-      btn.addEventListener("click", async () => {
-        const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-            },
-          }
-        );
-        const profile = await res.json();
-        showProfileModal(profile);
-
-        // After modal is opened and profile is fetched:
-        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
-        if (row) {
-          row.classList.remove('row-unread');
-          row.classList.add('row-read');
-        }
-      })
-    );
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const id = btn.dataset.id;
         const result = await Swal.fire({
           title: "Are you sure?",
           text: "Do you really want to delete this form?",
@@ -1145,6 +866,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // 🔹 Show modal
   function showProfileModal(p) {
+    if (!p || !p._id) {
+      Swal.fire("Error", "Profile data is incomplete. Please refresh the page.", "error");
+      return;
+    }
     const modal = document.getElementById("profileModal");
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
@@ -1247,16 +972,20 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     details.innerHTML += `
-    <div class="profile-details-row">
-      <button id="deleteProfileBtn" class="delete-btn" >
-        Delete Profile
-      </button>
-    </div>
-  `;
+  <div class="profile-details-row">
+    <button id="deleteProfileBtn" class="modal-delete-btn" data-id="${p._id}">
+      Delete Profile
+    </button>
+  </div>
+`;
 
-    // Add delete button functionality
+    // Modal delete logic (use p._id directly, not dataset.id)
     const deleteBtn = document.getElementById("deleteProfileBtn");
     deleteBtn.addEventListener("click", async () => {
+      if (!p._id) {
+        Swal.fire("Error", "Profile ID is missing. Please refresh the page.", "error");
+        return;
+      }
       const result = await Swal.fire({
         title: "Are you sure?",
         text: "Do you really want to delete this profile?",
@@ -1381,7 +1110,10 @@ socket.on("educational-assistance:newSubmission", () => {
 
   socket.on("educational-assistance:statusChanged", () => {
     updateNotifBadge();
+    
   });
+
+  
 });
 
 
@@ -1486,7 +1218,6 @@ async function updateNotifBadge() {
     const badge = document.getElementById('notifBadge');
     const sidebarBadge = document.getElementById('sidebarLGBTQNotifBadge');
     // Debug log
-    console.log("LGBTQ notif count:", count, badge, sidebarBadge);
     if (badge && sidebarBadge) {
       if (count > 0) {
         badge.textContent = count;
@@ -1508,23 +1239,6 @@ async function updateNotifBadge() {
 }
 
 // --- Real-time update with socket.io ---
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
-
-socket.on("lgbtq-profile:newSubmission", () => {
-  updateLGBTQNotifBadge();
-  fetchNotifications();
-  fetchProfiles({});
-});
-socket.on("lgbtq-profile:read", () => {
-  updateLGBTQNotifBadge();
-  fetchNotifications();
-  fetchProfiles({});
-});
-socket.on("lgbtq-profile:deleted", () => {
-  updateLGBTQNotifBadge();
-  fetchNotifications();
-  fetchProfiles({});
-});
 
 // Real-time badge update function
 async function updateLGBTQNotifBadge() {

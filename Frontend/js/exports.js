@@ -524,6 +524,15 @@ document.addEventListener("DOMContentLoaded", () => {
             method: "PUT",
             headers: { Authorization: `Bearer ${token}` }
           });
+          const data = await res.json();
+          if (!res.ok && res.status === 409) {
+            Swal.fire({
+              icon: "error",
+              title: "Restoration Failed",
+              text: data.error
+            });
+            return;
+          }
           if (res.ok) {
             Swal.fire("Restored!", "Profile has been restored.", "success");
             fetchDeletedProfiles();

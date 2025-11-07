@@ -345,14 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchAnnouncements();
   });
 
-  // Handle connection errors
-  socket.on("connect_error", (error) => {
-    console.log("WebSocket connection error:", error);
-  });
 
-  socket.on("disconnect", (reason) => {
-    console.log("WebSocket disconnected:", reason);
-  });
 });
 
 
@@ -364,7 +357,6 @@ document.addEventListener('DOMContentLoaded', function() {
   const mobileMenu = document.getElementById('navbarMobileMenu');
 
   if (hamburger && mobileMenu) {
-    console.log('✅ Navbar loaded');
     hamburger.addEventListener('click', function(e) {
       e.stopPropagation();
       mobileMenu.classList.toggle('active');
