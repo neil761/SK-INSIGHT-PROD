@@ -175,7 +175,6 @@
 
         if (!res.ok) throw new Error(`Error ${res.status}`);
         const data = await res.json();
-        console.log("Fetched profiles from API:", data); // Add this line
         // Filter out deleted profiles
         const visibleProfiles = data.filter(p => !p.isDeleted);
         allProfiles = visibleProfiles;
@@ -192,7 +191,6 @@
 
     // 🔹 Render profiles into table
     function renderProfiles(profiles) {
-      console.log("Rendering profiles:", profiles); // Add this line
       tableBody.innerHTML = "";
       if (!profiles.length) {
         tableBody.innerHTML = `<tr><td colspan="8">No profiles found</td></tr>`;
@@ -405,12 +403,12 @@
           </div>
         </div>
         <div class="profile-details-row">
-          <button id="deleteProfileBtn" class="delete-btn">Delete Profile</button>
+          <button id="deleteProfileBtn" class="modal-delete-btn" data-id="${p._id}">Delete Profile</button>
         </div>
       </div>
     `;
 
-    // Add delete button functionality
+    // Use p._id directly for modal delete
     const deleteBtn = document.getElementById("deleteProfileBtn");
     deleteBtn.addEventListener("click", async () => {
       const result = await Swal.fire({
@@ -802,9 +800,6 @@
     updateNotifBadge();
     const socket = io("http://localhost:5000", { transports: ["websocket"] });
 
-    socket.on("connect", () => {
-      console.log("Socket connected! Socket ID:", socket.id);
-    });
 
     // Move socket event handlers inside DOMContentLoaded
     socket.on("kk-profile:newSubmission", () => {

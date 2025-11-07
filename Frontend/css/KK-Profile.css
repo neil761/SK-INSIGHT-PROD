@@ -1015,6 +1015,19 @@ body.modal-open .sidebar * {
     font-size: 12px;
     vertical-align: middle;
 }
+.modal-delete-btn{
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 15px;
+  background: #b80c0c;
+  color: white;
+  border: none;
+  border-radius: 7px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
 
 
 #bell1{
