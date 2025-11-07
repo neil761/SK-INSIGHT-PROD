@@ -51,11 +51,18 @@ exports.submitApplication = async (req, res) => {
     }
 
     // Parse arrays if they're strings
-    if (typeof req.body.siblings === "string") {
+    if (typeof req.body.siblings === 'string') {
       req.body.siblings = JSON.parse(req.body.siblings);
     }
-    if (typeof req.body.expenses === "string") {
+    if (typeof req.body.expenses === 'string') {
       req.body.expenses = JSON.parse(req.body.expenses);
+    }
+
+    if (!Array.isArray(req.body.siblings)) {
+      req.body.siblings = [];
+    }
+    if (!Array.isArray(req.body.expenses)) {
+      req.body.expenses = [];
     }
 
     // Always use 'user' (not 'userId') and ensure it's set
