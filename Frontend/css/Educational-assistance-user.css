@@ -133,6 +133,11 @@ body {
     color: #143d77;
 }
 
+.allow{
+  margin-top: 3%;
+  color: red;
+}
+
     /* Responsive behavior */
     @media (max-width: 1048px) {
         .navbar-center {

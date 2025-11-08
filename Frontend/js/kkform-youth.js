@@ -1,4 +1,3 @@
-
 document.addEventListener('DOMContentLoaded', function() {
   // if (!validateTokenAndRedirect("KK Youth Form")) {
   //   return;
@@ -69,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function() {
     saveStep3(); // Save state when changed
   });
 
-  // Separate preview containers
+  // Separate profile and signature image preview containers
   const profileImagePreview = document.getElementById('profileImagePreview');
   const signatureImagePreview = document.getElementById('signatureImagePreview');
   const profileImage = document.getElementById('profileImage');
@@ -116,10 +115,30 @@ document.addEventListener('DOMContentLoaded', function() {
   // Profile image preview
   profileImage.addEventListener('change', (e) => {
     const file = e.target.files[0];
+    const allowedTypes = ['image/png', 'image/jpeg']; // ✅ ALLOWED TYPES
+    const previewContainer = document.getElementById('profileImagePreview');
+
     if (file) {
+      // ✅ VALIDATE TYPE FIRST
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid File Type',
+          text: 'Only PNG and JPG files are allowed.',
+          confirmButtonColor: '#0A2C59'
+        });
+
+        // 🔹 Clear input + preview
+        e.target.value = '';
+        previewContainer.innerHTML = '';
+        return; // Stop further processing
+      }
+
+      // ✅ Proceed if valid
       const reader = new FileReader();
       reader.onload = (e) => {
         renderProfileImage(e.target.result);
+
         // Save to localStorage
         const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
         current.profileImage = e.target.result;
@@ -127,12 +146,24 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       reader.readAsDataURL(file);
     } else {
-      profileImagePreview.innerHTML = '';
+      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
     }
   });
 
   function renderProfileImage(base64Image) {
-    profileImagePreview.innerHTML = `
+    // ✅ Check MIME
+    const allowed = base64Image.startsWith('data:image/png') ||
+                    base64Image.startsWith('data:image/jpeg');
+
+    if (!allowed) {
+      // ❌ Not allowed → remove
+      localStorage.removeItem('kkProfileStep3');
+      document.getElementById('profileImagePreview').innerHTML = '';
+      return;
+    }
+
+    const previewContainer = document.getElementById('profileImagePreview');
+    previewContainer.innerHTML = `
       <div style="position: relative; display: inline-block; max-width: 220px;">
         <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewProfileImage">
         <button id="removeProfileImageBtn" style="
@@ -150,8 +181,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
-      profileImagePreview.innerHTML = "";
-      profileImage.value = "";
+      previewContainer.innerHTML = "";
+      document.getElementById('profileImage').value = "";
       const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
       localStorage.setItem('kkProfileStep3', JSON.stringify(current));
@@ -170,10 +201,30 @@ document.addEventListener('DOMContentLoaded', function() {
   // Signature image preview
   signatureImage.addEventListener('change', (e) => {
     const file = e.target.files[0];
+    const allowedTypes = ['image/png', 'image/jpeg']; // ✅ ALLOWED TYPES
+    const previewContainer = document.getElementById('signatureImagePreview');
+
     if (file) {
+      // ✅ VALIDATE TYPE FIRST
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid File Type',
+          text: 'Only PNG and JPG files are allowed.',
+          confirmButtonColor: '#0A2C59'
+        });
+
+        // 🔹 Clear input + preview
+        e.target.value = '';
+        previewContainer.innerHTML = '';
+        return; // Stop further processing
+      }
+
+      // ✅ Proceed if valid
       const reader = new FileReader();
       reader.onload = (e) => {
         renderSignatureImage(e.target.result);
+
         // Save to localStorage
         const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
         current.signatureImage = e.target.result;
@@ -181,12 +232,24 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       reader.readAsDataURL(file);
     } else {
-      signatureImagePreview.innerHTML = '';
+      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
     }
   });
 
   function renderSignatureImage(base64Image) {
-    signatureImagePreview.innerHTML = `
+    // ✅ Check MIME
+    const allowed = base64Image.startsWith('data:image/png') ||
+                    base64Image.startsWith('data:image/jpeg');
+
+    if (!allowed) {
+      // ❌ Not allowed → remove
+      localStorage.removeItem('kkProfileStep3');
+      document.getElementById('signatureImagePreview').innerHTML = '';
+      return;
+    }
+
+    const previewContainer = document.getElementById('signatureImagePreview');
+    previewContainer.innerHTML = `
       <div style="position: relative; display: inline-block; max-width: 220px;">
         <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewSignatureImage">
         <button id="removeSignatureImageBtn" style="
@@ -204,11 +267,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
-      signatureImagePreview.innerHTML = "";
-      signatureImage.value = "";
-      const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
-      delete current.signatureImage;
-      localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      previewContainer.innerHTML = "";
+      document.getElementById('signatureImage').value = "";
     });
     // View feature
     document.getElementById('viewSignatureImage').addEventListener('click', function() {
@@ -878,25 +938,53 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('profileImage').click();
   });
 
-  document.getElementById('profileImage').addEventListener('change', function() {
+  document.getElementById('profileImage').addEventListener('change', function () {
     const file = this.files[0];
+    const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
+    const previewContainer = document.getElementById('profileImagePreview');
+
     if (file) {
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid File Type',
+          text: 'Only PNG and JPG files are allowed.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#0A2C59',
+        });
+
+        // Automatically remove invalid file
+        this.value = ''; // Clear the file input
+        previewContainer.innerHTML = ''; // Clear the preview
+        return; // Stop further processing
+      }
+
+      // File is valid, show the preview
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         renderProfileImage(e.target.result);
-        // Save to localStorage
-        const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
-        current.profileImage = e.target.result;
-        localStorage.setItem('kkProfileStep3', JSON.stringify(current));
       };
       reader.readAsDataURL(file);
     } else {
-      profileImagePreview.innerHTML = '';
+      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
     }
   });
 
   function renderProfileImage(base64Image) {
-    profileImagePreview.innerHTML = `
+    // ✅ Check MIME
+    const allowed = base64Image.startsWith('data:image/png') ||
+                    base64Image.startsWith('data:image/jpeg');
+
+    if (!allowed) {
+      // ❌ Not allowed → remove
+      localStorage.removeItem('kkProfileStep3');
+      document.getElementById('profileImagePreview').innerHTML = '';
+      return;
+    }
+
+    const previewContainer = document.getElementById('profileImagePreview');
+    previewContainer.innerHTML = `
       <div style="position: relative; display: inline-block; max-width: 220px;">
         <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewProfileImage">
         <button id="removeProfileImageBtn" style="
@@ -914,8 +1002,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
-      profileImagePreview.innerHTML = "";
-      profileImage.value = "";
+      previewContainer.innerHTML = "";
+      document.getElementById('profileImage').value = "";
       const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
       localStorage.setItem('kkProfileStep3', JSON.stringify(current));
@@ -932,11 +1020,31 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Signature image
-  document.getElementById('signatureImage').addEventListener('change', function() {
+  document.getElementById('signatureImage').addEventListener('change', function () {
     const file = this.files[0];
+    const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
+    const previewContainer = document.getElementById('signatureImagePreview');
+
     if (file) {
+      // Validate file type
+      if (!allowedTypes.includes(file.type)) {
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid File Type',
+          text: 'Only PNG and JPG files are allowed.',
+          confirmButtonText: 'OK',
+          confirmButtonColor: '#0A2C59',
+        });
+
+        // Automatically remove invalid file
+        this.value = ''; // Clear the file input
+        previewContainer.innerHTML = ''; // Clear the preview
+        return; // Stop further processing
+      }
+
+      // File is valid, show the preview
       const reader = new FileReader();
-      reader.onload = function(e) {
+      reader.onload = function (e) {
         renderSignatureImage(e.target.result);
         // Save to localStorage
         const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
@@ -945,12 +1053,24 @@ document.addEventListener('DOMContentLoaded', function() {
       };
       reader.readAsDataURL(file);
     } else {
-      signatureImagePreview.innerHTML = '';
+      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
     }
   });
 
   function renderSignatureImage(base64Image) {
-    signatureImagePreview.innerHTML = `
+    // ✅ Check MIME
+    const allowed = base64Image.startsWith('data:image/png') ||
+                    base64Image.startsWith('data:image/jpeg');
+
+    if (!allowed) {
+      // ❌ Not allowed → remove
+      localStorage.removeItem('kkProfileStep3');
+      document.getElementById('signatureImagePreview').innerHTML = '';
+      return;
+    }
+
+    const previewContainer = document.getElementById('signatureImagePreview');
+    previewContainer.innerHTML = `
       <div style="position: relative; display: inline-block; max-width: 220px;">
         <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewSignatureImage">
         <button id="removeSignatureImageBtn" style="
@@ -968,11 +1088,8 @@ document.addEventListener('DOMContentLoaded', function() {
       </div>
     `;
     document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
-      signatureImagePreview.innerHTML = "";
-      signatureImage.value = "";
-      const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
-      delete current.signatureImage;
-      localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      previewContainer.innerHTML = "";
+      document.getElementById('signatureImage').value = "";
     });
     // View feature
     document.getElementById('viewSignatureImage').addEventListener('click', function() {

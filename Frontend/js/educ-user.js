@@ -423,7 +423,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     function updateIcons() {
       const hasFile = input && input.files && input.files.length > 0;
-      
+
       if (viewIcon) {
         // Restore proper eye icon when file is present
         if (hasFile) {
@@ -438,7 +438,7 @@ document.addEventListener('DOMContentLoaded', async function () {
           viewIcon.style.opacity = '0.5';
         }
       }
-      
+
       if (deleteIcon) {
         deleteIcon.classList.toggle('disabled', !hasFile);
         deleteIcon.style.pointerEvents = hasFile ? 'auto' : 'none';
@@ -447,11 +447,32 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     if (input && label && fileNameSpan) {
-      input.addEventListener('change', function() {
+      input.addEventListener('change', function () {
         if (input.files && input.files.length > 0) {
           const file = input.files[0];
           const maxSize = 5 * 1024 * 1024; // 5MB in bytes
-          
+          const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
+
+          // Check file type
+          if (!allowedTypes.includes(file.type)) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Invalid File Type',
+              text: 'Only PNG and JPG files are allowed.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#0A2C59'
+            });
+
+            // Clear the input
+            input.value = '';
+            label.style.display = 'inline-flex';
+            fileNameSpan.textContent = '';
+            fileNameSpan.title = '';
+            fileNameSpan.style.display = 'none';
+            updateIcons();
+            return;
+          }
+
           // Check file size
           if (file.size > maxSize) {
             Swal.fire({
@@ -461,7 +482,7 @@ document.addEventListener('DOMContentLoaded', async function () {
               confirmButtonText: 'OK',
               confirmButtonColor: '#0A2C59'
             });
-            
+
             // Clear the input
             input.value = '';
             label.style.display = 'inline-flex';
@@ -471,27 +492,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             updateIcons();
             return;
           }
-          
-          // Check file type (optional - only allow image files)
-          if (!file.type.startsWith('image/')) {
-            Swal.fire({
-              icon: 'error',
-              title: 'Invalid File Type',
-              text: 'Please select an image file (JPG, PNG, GIF, etc.).',
-              confirmButtonText: 'OK',
-              confirmButtonColor: '#0A2C59'
-            });
-            
-            // Clear the input
-            input.value = '';
-            label.style.display = 'inline-flex';
-            fileNameSpan.textContent = '';
-            fileNameSpan.title = '';
-            fileNameSpan.style.display = 'none';
-            updateIcons();
-            return;
-          }
-          
+
           // File is valid, proceed with normal handling
           label.style.display = 'none';
           const originalFileName = file.name;
