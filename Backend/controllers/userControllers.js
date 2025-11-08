@@ -190,13 +190,13 @@ exports.sendVerificationOtp = asyncHandler(async (req, res) => {
   const transporter = nodemailer.createTransport({
     service: "gmail",
     auth: {
-      user: process.env.GMAIL_USER, // ✅ match your .env
-      pass: process.env.GMAIL_PASS,
+      user: process.env.GMAIL_VERIFY_EMAIL, // ✅ match your .env
+      pass: process.env.GMAIL_VERIFY_PASS,
     },
   });
 
   await transporter.sendMail({
-    from: `"SK Insight" <${process.env.GMAIL_USER}>`,
+    from: `"SK Insight" <${process.env.GMAIL_VERIFY_EMAIL}>`,
     to: user.email,
     subject: "Your OTP Code",
     html: `
