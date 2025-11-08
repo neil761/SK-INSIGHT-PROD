@@ -46,6 +46,22 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Show confirmation dialog
+    const confirmation = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to submit this form?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, submit",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#0A2C59",
+      cancelButtonColor: "#d33",
+    });
+
+    if (!confirmation.isConfirmed) {
+      return; // Stop submission if user cancels
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
 
@@ -56,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allowEscapeKey: false,
       didOpen: () => {
         Swal.showLoading();
-      }
+      },
     });
 
     try {
@@ -70,12 +86,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json().catch(() => ({}));
       Swal.close();
 
-      if (res.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
+      if (res.status === 403 && (data?.error?.includes("age") || data?.error?.includes("eligible"))) {
         Swal.fire({
           icon: "error",
           title: "Not Eligible",
           text: data?.error || "You are not eligible to submit this form due to age restrictions.",
-          confirmButtonColor: "#0A2C59"
+          confirmButtonColor: "#0A2C59",
         });
         return;
       }
@@ -439,6 +455,79 @@ document.addEventListener("DOMContentLoaded", () => {
   // Educational Assistance
   document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
   document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
+
+  /* ✅ IMAGE PREVIEW + VALIDATION + REMOVE */
+  function handleImageInputChange(inputId, previewContainerId, previewImgId, allowedTypes = ['image/png', 'image/jpeg']) {
+    const input = document.getElementById(inputId);
+    const previewContainer = document.getElementById(previewContainerId);
+    const previewImg = document.getElementById(previewImgId);
+
+    if (input && previewContainer && previewImg) {
+      input.addEventListener('change', function (e) {
+        const file = e.target.files[0];
+        if (file) {
+          // Validate file type
+          if (!allowedTypes.includes(file.type)) {
+            Swal.fire({
+              icon: 'error',
+              title: 'Invalid File Type',
+              text: 'Only PNG and JPG files are allowed.',
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#0A2C59',
+            });
+
+            // Automatically remove invalid file
+            input.value = ''; // Clear the file input
+            previewImg.src = ''; // Clear the preview image
+            previewContainer.style.display = 'none'; // Hide the preview container
+            return; // Stop further processing
+          }
+
+          // File is valid, show the preview
+          const reader = new FileReader();
+          reader.onload = function (evt) {
+            previewImg.src = evt.target.result; // Set the preview image source
+            previewContainer.style.display = 'block'; // Show the preview container
+          };
+          reader.readAsDataURL(file);
+        } else {
+          // No file selected, hide the preview
+          previewImg.src = ''; // Clear the preview image
+          previewContainer.style.display = 'none'; // Hide the preview container
+        }
+      });
+    }
+  }
+
+  function handleImageRemove(inputId, previewContainerId, previewImgId) {
+    const input = document.getElementById(inputId);
+    const previewContainer = document.getElementById(previewContainerId);
+    const previewImg = document.getElementById(previewImgId);
+
+    if (input && previewContainer && previewImg) {
+      const removeBtn = document.getElementById(`remove${inputId}`);
+      if (removeBtn) {
+        removeBtn.addEventListener('click', function () {
+          input.value = ''; // Clear the file input
+          previewImg.src = ''; // Clear the preview image
+          previewContainer.style.display = 'none'; // Hide the preview container
+        });
+      }
+    }
+  }
+
+  // Apply the logic to all relevant image inputs in the LGBTQ+ form
+  handleImageInputChange('idImageFront', 'imagePreviewContainerFront', 'imagePreviewFront');
+  handleImageRemove('idImageFront', 'imagePreviewContainerFront', 'imagePreviewFront');
+
+  handleImageInputChange('idImageBack', 'imagePreviewContainerBack', 'imagePreviewBack');
+  handleImageRemove('idImageBack', 'imagePreviewContainerBack', 'imagePreviewBack');
+
+  handleImageInputChange('profileImage', 'imagePreviewContainerProfile', 'imagePreviewProfile');
+  handleImageRemove('profileImage', 'imagePreviewContainerProfile', 'imagePreviewProfile');
+
+  handleImageInputChange('signatureImage', 'imagePreviewContainerSignature', 'imagePreviewSignature');
+  handleImageRemove('signatureImage', 'imagePreviewContainerSignature', 'imagePreviewSignature');
 });
 
 // ✅ Image preview + remove logic
@@ -477,47 +566,89 @@ document.getElementById('idImageFront').addEventListener('change', function(e) {
   const file = e.target.files[0];
   const previewContainer = document.getElementById('imagePreviewContainerFront');
   const previewImg = document.getElementById('imagePreviewFront');
+
   if (file) {
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Only PNG and JPG files are allowed.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59',
+      });
+
+      // Automatically remove invalid file
+      e.target.value = ''; // Clear the file input
+      previewImg.src = ''; // Clear the preview image
+      previewContainer.style.display = 'none'; // Hide the preview container
+      return; // Stop further processing
+    }
+
+    // File is valid, show the preview
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = function (evt) {
       previewImg.src = evt.target.result;
       previewContainer.style.display = 'block';
     };
     reader.readAsDataURL(file);
   } else {
+    // No file selected, hide the preview
     previewImg.src = '';
     previewContainer.style.display = 'none';
   }
 });
 
 // Remove front image
-document.getElementById('removeImageBtnFront').addEventListener('click', function() {
-  document.getElementById('idImageFront').value = '';
-  document.getElementById('imagePreviewFront').src = '';
-  document.getElementById('imagePreviewContainerFront').style.display = 'none';
+document.getElementById('removeImageBtnFront').addEventListener('click', function () {
+  document.getElementById('idImageFront').value = ''; // Clear the file input
+  document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
+  document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
 });
 
 // Back ID image preview
-document.getElementById('idImageBack').addEventListener('change', function(e) {
+document.getElementById('idImageBack').addEventListener('change', function (e) {
   const file = e.target.files[0];
   const previewContainer = document.getElementById('imagePreviewContainerBack');
   const previewImg = document.getElementById('imagePreviewBack');
+
   if (file) {
+    // Validate file type
+    const allowedTypes = ['image/png', 'image/jpeg'];
+    if (!allowedTypes.includes(file.type)) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid File Type',
+        text: 'Only PNG and JPG files are allowed.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59',
+      });
+
+      // Automatically remove invalid file
+      e.target.value = ''; // Clear the file input
+      previewImg.src = ''; // Clear the preview image
+      previewContainer.style.display = 'none'; // Hide the preview container
+      return; // Stop further processing
+    }
+
+    // File is valid, show the preview
     const reader = new FileReader();
-    reader.onload = function(evt) {
+    reader.onload = function (evt) {
       previewImg.src = evt.target.result;
       previewContainer.style.display = 'block';
     };
     reader.readAsDataURL(file);
   } else {
+    // No file selected, hide the preview
     previewImg.src = '';
     previewContainer.style.display = 'none';
   }
 });
 
 // Remove back image
-document.getElementById('removeImageBtnBack').addEventListener('click', function() {
-  document.getElementById('idImageBack').value = '';
-  document.getElementById('imagePreviewBack').src = '';
-  document.getElementById('imagePreviewContainerBack').style.display = 'none';
+document.getElementById('removeImageBtnBack').addEventListener('click', function () {
+  document.getElementById('idImageBack').value = ''; // Clear the file input
+  document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
+  document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
 });
