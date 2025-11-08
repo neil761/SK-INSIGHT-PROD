@@ -4,6 +4,7 @@
 
 document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.querySelector(".announcement-table tbody");
+  const tableHead = document.querySelector(".announcement-table thead tr");
   const modal = document.getElementById("announcementModal");
   const modalTitle = modal.querySelector(".modal-header h3");
   const modalEventDate = modal.querySelector(".event-date");
@@ -34,9 +35,23 @@ document.addEventListener("DOMContentLoaded", () => {
       tabBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTab = btn.dataset.tab;
+      updateTableHeader();
       renderTabAnnouncements();
     });
   });
+
+  function updateTableHeader() {
+    if (!tableHead) return;
+    // Change the second column header based on tab
+    const ths = tableHead.querySelectorAll("th");
+    if (ths.length >= 2) {
+      if (currentTab === "foryou") {
+        ths[1].textContent = "Created At";
+      } else {
+        ths[1].textContent = "Event Date";
+      }
+    }
+  }
 
   async function fetchGeneralAndExpired() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
@@ -94,32 +109,40 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderAnnouncementsTable(announcements) {
     tableBody.innerHTML = "";
 
-    const now = new Date();
     let displayAnnouncements = announcements;
+    const now = new Date();
+
     if (currentTab === 'general') {
       displayAnnouncements = announcements.filter(a => {
         const exp = new Date(a.expiresAt);
         return exp >= now;
       });
+      // Sort by nearest eventDate (soonest first)
+      displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
     }
-    if (currentTab === 'expired') {
+    else if (currentTab === 'expired') {
       displayAnnouncements = announcements.filter(a => {
         const exp = new Date(a.expiresAt);
         return exp < now;
       });
+      // Sort so latest expired (most recent expiresAt) is on top
+      displayAnnouncements.sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt));
     }
-    // For "foryou" tab, show all
-
-    displayAnnouncements.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return new Date(a.expiresAt) - new Date(b.expiresAt);
-    });
+    else if (currentTab === 'foryou') {
+      displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
 
     const limitedAnnouncements = displayAnnouncements.slice(0, 8);
 
     limitedAnnouncements.forEach(a => {
-      const status = getAnnouncementStatus(a.expiresAt);
+      let status, dateCol;
+      if (currentTab === 'foryou') {
+        status = "No Expiry";
+        dateCol = a.createdAt ? formatDateTime(a.createdAt) : "-";
+      } else {
+        status = getAnnouncementStatus(a.expiresAt);
+        dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
+      }
       const tr = document.createElement("tr");
       if (a.isPinned) {
         tr.classList.add("pinned-row");
@@ -132,8 +155,8 @@ document.addEventListener("DOMContentLoaded", () => {
             ${a.title}
           </div>
         </td>
-        <td>${a.eventDate ? formatDateTime(a.eventDate) : "-"}</td>
-        <td><span class="status-badge ${status.toLowerCase()}">${status}</span></td>
+        <td>${dateCol}</td>
+        <td><span class="status-badge ${status.toLowerCase().replace(/\s/g, '')}">${status}</span></td>
         <td>
           <button class="view-btn" data-id="${a._id}">
             <i class="fas fa-eye"></i>
@@ -155,32 +178,38 @@ document.addEventListener("DOMContentLoaded", () => {
     cardsContainer.innerHTML = "";
     if (tableBody) tableBody.innerHTML = "";
 
-    const now = new Date();
     let displayAnnouncements = announcements;
+    const now = new Date();
+
     if (currentTab === 'general') {
       displayAnnouncements = (announcements || []).filter(a => {
         const exp = new Date(a.expiresAt);
         return exp >= now;
       });
+      displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
     }
-    if (currentTab === 'expired') {
+    else if (currentTab === 'expired') {
       displayAnnouncements = (announcements || []).filter(a => {
         const exp = new Date(a.expiresAt);
         return exp < now;
       });
+      displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
     }
-    // For "foryou" tab, show all
-
-    displayAnnouncements.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return new Date(a.expiresAt) - new Date(b.expiresAt);
-    });
+    else if (currentTab === 'foryou') {
+      displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
 
     const limitedAnnouncements = displayAnnouncements.slice(0, 8);
 
     limitedAnnouncements.forEach(a => {
-      const status = getAnnouncementStatus(a.expiresAt);
+      let status, dateCol;
+      if (currentTab === 'foryou') {
+        status = "No Expiry";
+        dateCol = a.createdAt ? formatDateTime(a.createdAt) : "-";
+      } else {
+        status = getAnnouncementStatus(a.expiresAt);
+        dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
+      }
       const card = document.createElement('div');
       card.className = 'announcement-card';
       card.innerHTML = `
@@ -189,11 +218,11 @@ document.addEventListener("DOMContentLoaded", () => {
             ${a.isPinned ? '<i class="fa-solid fa-location-pin" style="color: #d4af37; margin-right: 8px;"></i>' : ''}
             <i class="fa-solid fa-bullhorn"></i>
             <span>${a.title}</span>
-            <span class="status-badge ${status.toLowerCase()}">${status}</span>
+            <span class="status-badge ${status.toLowerCase().replace(/\s/g, '')}">${status}</span>
           </div>
         </div>
         <div class="card-meta">
-          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${a.eventDate ? formatDateTime(a.eventDate) : '-'}</div>
+          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>
           <div class="meta-row"><i class="fa-regular fa-clock"></i> Posted: ${a.createdAt ? formatDateTime(a.createdAt) : '-'}</div>
         </div>
       `;
@@ -210,7 +239,13 @@ document.addEventListener("DOMContentLoaded", () => {
           if (!res.ok) throw new Error("Announcement not found");
           const { announcement } = await res.json();
           modalTitle.textContent = announcement.title;
-          modalEventDate.textContent = formatDateTime(announcement.eventDate);
+          // For "foryou" tab, hide event date in modal
+          if (currentTab === 'foryou') {
+            modalEventDate.style.display = "none";
+          } else {
+            modalEventDate.style.display = "";
+            modalEventDate.textContent = formatDateTime(announcement.eventDate);
+          }
           modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
           modalDescription.textContent = announcement.content;
           modal.classList.add("active");
@@ -228,19 +263,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (tableEl) tableEl.style.display = 'none';
   }
 
-  window.addEventListener('resize', () => {
-    if (!lastAnnouncements) return;
-    const tableEl = document.querySelector('.announcement-table');
-    if (window.matchMedia('(max-width: 600px)').matches) {
-      if (cardsContainer) cardsContainer.style.display = 'block';
-      if (tableEl) tableEl.style.display = 'none';
-    } else {
-      if (cardsContainer) cardsContainer.style.display = 'none';
-      if (tableEl) tableEl.style.display = '';
-    }
-    renderAnnouncementsResponsive(lastAnnouncements);
-  });
-
+  // Modal view for table (desktop)
   document.addEventListener("click", async (e) => {
     if (e.target.closest(".view-btn")) {
       if (!validateTokenAndRedirect("announcement details")) {
@@ -255,7 +278,13 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!res.ok) throw new Error("Announcement not found");
         const { announcement } = await res.json();
         modalTitle.textContent = announcement.title;
-        modalEventDate.textContent = formatDateTime(announcement.eventDate);
+        // For "foryou" tab, hide event date in modal
+        if (currentTab === 'foryou') {
+          modalEventDate.style.display = "none";
+        } else {
+          modalEventDate.style.display = "";
+          modalEventDate.textContent = formatDateTime(announcement.eventDate);
+        }
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
         modalDescription.textContent = announcement.content;
         modal.classList.add("active");
@@ -292,7 +321,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return exp >= now ? "Upcoming" : "Expired";
   }
 
-  // Initial load: show general tab
+  // Initial load: show general tab and update header
+  updateTableHeader();
   renderTabAnnouncements();
 
   // WebSocket updates (optional, keep your logic here)
@@ -611,7 +641,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const rows = announcementTableBody.querySelectorAll("tr");
     if (rows.length <= 5) {
       // If there are 5 or fewer announcements, remove scrolling
-      announcementTableBody.style.maxHeight = "none";
+      announcementTableBody.style.display = 'block';
       announcementTableBody.style.overflowY = "visible";
     } else {
       // If there are more than 5 announcements, enable scrolling
