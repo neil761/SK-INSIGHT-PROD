@@ -9,6 +9,7 @@ const fs = require("fs");
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const Notification = require("../models/Notification");
+const Announcement = require("../models/Announcement"); // Add at top if not present
 async function getPresentCycle(formName) {
   console.log("getPresentCycle called with formName:", formName);
   const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
@@ -239,7 +240,7 @@ exports.updateProfileById = async (req, res) => {
 // DELETE /api/kkprofiling/:id
 exports.deleteProfileById = async (req, res) => {
   try {
-    const profile = await KKProfile.findById(req.params.id);
+    const profile = await KKProfile.findById(req.params.id).populate("user");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
     // Soft delete: set isDeleted and deletedAt
@@ -254,6 +255,21 @@ exports.deleteProfileById = async (req, res) => {
     if (req.app.get("io")) {
       req.app.get("io").emit("kk-profile:deleted", { id: profile._id });
     }
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "KK Profiling Form Deleted",
+      content: `The admin has observed that your KK Profiling form has inaccuracies. As a result, your KK Profiling form for this cycle has been deleted and moved to the recycle bin. You may submit a new form if the cycle is still open, please make sure all information is accurate.`,
+      category: "KK Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile moved to recycle bin." });
   } catch (err) {
@@ -567,6 +583,21 @@ exports.restoreProfileById = async (req, res) => {
     profile.isDeleted = false;
     profile.deletedAt = null;
     await profile.save();
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "KK Profiling Form Restored",
+      content: `Your KK Profiling form for this cycle has been restored.`,
+      category: "KK Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile restored" });
   } catch (err) {

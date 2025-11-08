@@ -2,26 +2,6 @@
 // ANNOUNCEMENT SECTION
 // =========================
 
-// Token validation helper function
-// function validateTokenAndRedirect(featureName = "this feature") {
-//   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-//   if (!token) {
-//     Swal.fire({
-//       icon: 'warning',
-//       title: 'Authentication Required',
-//       text: `You need to log in first to access ${featureName}.`,
-//       confirmButtonText: 'Go to Login',
-//       confirmButtonColor: '#0A2C59',
-//       allowOutsideClick: false,
-//       allowEscapeKey: false,
-//     }).then(() => {
-//       window.location.href = '/Frontend/html/user/login.html';
-//     });
-//     return false;
-//   }
-//   return true;
-// }
-
 document.addEventListener("DOMContentLoaded", () => {
   const tableBody = document.querySelector(".announcement-table tbody");
   const modal = document.getElementById("announcementModal");
@@ -31,58 +11,75 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalDescription = modal.querySelector(".description-box");
   const closeModalBtn = modal.querySelector(".close-modal");
 
-  // Create or select a cards container for mobile view
   let cardsContainer = document.querySelector(".announcement-cards");
   if (!cardsContainer) {
     cardsContainer = document.createElement("div");
     cardsContainer.className = "announcement-cards";
-    // Insert before the table for layout consistency
     const tableEl = document.querySelector(".announcement-table");
     if (tableEl && tableEl.parentNode) {
       tableEl.parentNode.insertBefore(cardsContainer, tableEl);
     }
   }
 
-  // Keep last loaded announcements to support responsive re-rendering
   let lastAnnouncements = [];
+  let generalAnnouncements = [];
+  let expiredAnnouncements = [];
+  let forYouAnnouncements = [];
 
-  // Fetch announcements
-  async function fetchAnnouncements() {
-    // Check token first
-    // if (!validateTokenAndRedirect("announcements")) {
-    //   return;
-    // }
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  let currentTab = 'general';
 
-    try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      renderTabAnnouncements();
+    });
+  });
 
-      const res = await fetch("http://localhost:5000/api/announcements", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!res.ok) {
-        console.error("Fetch failed:", res.status, await res.text());
-        throw new Error("Failed to fetch announcements");
-      }
-
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Failed to fetch announcements");
-      }
-
-      lastAnnouncements = data.announcements || [];
-      renderAnnouncementsResponsive(lastAnnouncements);
-    } catch (err) {
-      console.error("Error fetching announcements:", err);
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="4" style="text-align:center">Error loading announcements</td>
-        </tr>
-      `;
-    }
+  async function fetchGeneralAndExpired() {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const res = await fetch("http://localhost:5000/api/announcements", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const all = data.announcements || [];
+    // Only general announcements (recipient: null)
+    generalAnnouncements = all.filter(a => a.isActive === true && a.recipient === null);
+    expiredAnnouncements = all.filter(a => a.isActive === false && a.recipient === null);
   }
 
-  // Responsive renderer: choose cards (mobile) or table (desktop)
+  async function fetchForYou() {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const res = await fetch("http://localhost:5000/api/announcements/myannouncements", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    forYouAnnouncements = data.announcements || [];
+    // Log for debugging
+    console.log("For You Announcements:", forYouAnnouncements);
+  }
+
+  async function renderTabAnnouncements() {
+    if (currentTab === 'general' || currentTab === 'expired') {
+      await fetchGeneralAndExpired();
+    }
+    if (currentTab === 'foryou') {
+      await fetchForYou();
+    }
+    let announcements = [];
+    if (currentTab === 'general') {
+      announcements = generalAnnouncements;
+    } else if (currentTab === 'foryou') {
+      announcements = forYouAnnouncements;
+    } else if (currentTab === 'expired') {
+      announcements = expiredAnnouncements;
+    }
+    lastAnnouncements = announcements;
+    renderAnnouncementsResponsive(announcements);
+  }
+
   function renderAnnouncementsResponsive(announcements) {
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
     if (isMobile) {
@@ -94,37 +91,39 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Render announcements into table (desktop)
   function renderAnnouncementsTable(announcements) {
     tableBody.innerHTML = "";
 
     const now = new Date();
-    const upcomingAnnouncements = announcements.filter(a => {
-      const ev = new Date(a.eventDate);
-      return ev >= now;
-    });
+    let displayAnnouncements = announcements;
+    if (currentTab === 'general') {
+      displayAnnouncements = announcements.filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp >= now;
+      });
+    }
+    if (currentTab === 'expired') {
+      displayAnnouncements = announcements.filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp < now;
+      });
+    }
+    // For "foryou" tab, show all
 
-    // Sort: pinned announcements first, then by event date
-    upcomingAnnouncements.sort((a, b) => {
-      // If one is pinned and the other isn't, pinned comes first
+    displayAnnouncements.sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      
-      // If both are pinned or both are not pinned, sort by event date
-      return new Date(a.eventDate) - new Date(b.eventDate);
+      return new Date(a.expiresAt) - new Date(b.expiresAt);
     });
-    
-    const limitedAnnouncements = upcomingAnnouncements.slice(0, 8);
+
+    const limitedAnnouncements = displayAnnouncements.slice(0, 8);
 
     limitedAnnouncements.forEach(a => {
-      const status = getAnnouncementStatus(a.eventDate);
+      const status = getAnnouncementStatus(a.expiresAt);
       const tr = document.createElement("tr");
-      
-      // Add pinned class for styling
       if (a.isPinned) {
         tr.classList.add("pinned-row");
       }
-      
       tr.innerHTML = `
         <td>
           <div class="announcement-title">
@@ -146,37 +145,42 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = limitedAnnouncements.length; i < 8; i++) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-      `;
+      tr.innerHTML = ``;
       tableBody.appendChild(tr);
     }
   }
 
-  // Render announcements as cards (mobile)
   function renderAnnouncementsCards(announcements) {
-    // Ensure container exists
     if (!cardsContainer) return;
     cardsContainer.innerHTML = "";
-
-    // Hide the table body content when in mobile cards mode
     if (tableBody) tableBody.innerHTML = "";
 
     const now = new Date();
-    const upcomingAnnouncements = (announcements || []).filter(a => {
-      const ev = new Date(a.eventDate);
-      return ev >= now;
-    });
+    let displayAnnouncements = announcements;
+    if (currentTab === 'general') {
+      displayAnnouncements = (announcements || []).filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp >= now;
+      });
+    }
+    if (currentTab === 'expired') {
+      displayAnnouncements = (announcements || []).filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp < now;
+      });
+    }
+    // For "foryou" tab, show all
 
-    upcomingAnnouncements.sort((a, b) => {
+    displayAnnouncements.sort((a, b) => {
       if (a.isPinned && !b.isPinned) return -1;
       if (!a.isPinned && b.isPinned) return 1;
-      return new Date(a.eventDate) - new Date(b.eventDate);
+      return new Date(a.expiresAt) - new Date(b.expiresAt);
     });
 
-    const limitedAnnouncements = upcomingAnnouncements.slice(0, 8);
+    const limitedAnnouncements = displayAnnouncements.slice(0, 8);
 
     limitedAnnouncements.forEach(a => {
-      const status = getAnnouncementStatus(a.eventDate);
+      const status = getAnnouncementStatus(a.expiresAt);
       const card = document.createElement('div');
       card.className = 'announcement-card';
       card.innerHTML = `
@@ -194,27 +198,21 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       `;
 
-      // Add click event listener to the card
       card.addEventListener('click', async () => {
         if (!validateTokenAndRedirect("announcement details")) {
           return;
         }
-
         try {
           const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
           const res = await fetch(`http://localhost:5000/api/announcements/${a._id}`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
-
           if (!res.ok) throw new Error("Announcement not found");
           const { announcement } = await res.json();
-
           modalTitle.textContent = announcement.title;
           modalEventDate.textContent = formatDateTime(announcement.eventDate);
           modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
           modalDescription.textContent = announcement.content;
-
           modal.classList.add("active");
         } catch (err) {
           console.error("Error fetching announcement:", err);
@@ -225,16 +223,13 @@ document.addEventListener("DOMContentLoaded", () => {
       cardsContainer.appendChild(card);
     });
 
-    // Show cards container and hide table on mobile
     cardsContainer.style.display = 'block';
     const tableEl = document.querySelector('.announcement-table');
     if (tableEl) tableEl.style.display = 'none';
   }
 
-  // Handle resize to re-render appropriately
   window.addEventListener('resize', () => {
     if (!lastAnnouncements) return;
-    // Toggle visibility styles back when moving to desktop
     const tableEl = document.querySelector('.announcement-table');
     if (window.matchMedia('(max-width: 600px)').matches) {
       if (cardsContainer) cardsContainer.style.display = 'block';
@@ -246,29 +241,23 @@ document.addEventListener("DOMContentLoaded", () => {
     renderAnnouncementsResponsive(lastAnnouncements);
   });
 
-  // View modal handler
   document.addEventListener("click", async (e) => {
     if (e.target.closest(".view-btn")) {
       if (!validateTokenAndRedirect("announcement details")) {
         return;
       }
-      
       const id = e.target.closest(".view-btn").dataset.id;
       try {
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
         const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
-
         if (!res.ok) throw new Error("Announcement not found");
         const { announcement } = await res.json();
-
         modalTitle.textContent = announcement.title;
         modalEventDate.textContent = formatDateTime(announcement.eventDate);
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
         modalDescription.textContent = announcement.content;
-
         modal.classList.add("active");
       } catch (err) {
         console.error("Error fetching announcement:", err);
@@ -277,7 +266,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Close modal
   closeModalBtn.addEventListener("click", () => {
     modal.classList.remove("active");
   });
@@ -285,7 +273,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === modal) modal.classList.remove("active");
   });
 
-  // Helper functions
   function formatDateTime(dt) {
     if (!dt) return "";
     return new Date(dt).toLocaleString("en-US", {
@@ -298,56 +285,24 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function getAnnouncementStatus(eventDate) {
-    if (!eventDate) return "Unknown";
+  function getAnnouncementStatus(expiresAt) {
+    if (!expiresAt) return "Unknown";
     const now = new Date();
-    const ev = new Date(eventDate);
-    return ev >= now ? "Upcoming" : "Expired";
+    const exp = new Date(expiresAt);
+    return exp >= now ? "Upcoming" : "Expired";
   }
 
-  // Load announcements on page load
-  fetchAnnouncements();
+  // Initial load: show general tab
+  renderTabAnnouncements();
 
-  // =========================
-  // REALTIME UPDATES WITH WEBSOCKET
-  // =========================
-  // Connect to WebSocket server
+  // WebSocket updates (optional, keep your logic here)
   const socket = io("http://localhost:5000", { transports: ["websocket"] });
-
-  // Listen for announcement updates
-  socket.on("announcement:created", (data) => {
-
-    // Refresh announcements to show the new one
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:updated", (data) => {
-
-    // Refresh announcements to show the updated one
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:deleted", (data) => {
-
-    // Refresh announcements to remove the deleted one
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:pinned", (data) => {
-
-    // Refresh announcements to show pin status
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:unpinned", (data) => {
-
-    // Refresh announcements to show pin status
-    fetchAnnouncements();
-  });
-
-
+  socket.on("announcement:created", renderTabAnnouncements);
+  socket.on("announcement:updated", renderTabAnnouncements);
+  socket.on("announcement:deleted", renderTabAnnouncements);
+  socket.on("announcement:pinned", renderTabAnnouncements);
+  socket.on("announcement:unpinned", renderTabAnnouncements);
 });
-
 
 // =========================
 // NAVBAR & KK PROFILING SECTION

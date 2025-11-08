@@ -189,15 +189,24 @@
       return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
-    // 🔹 Render profiles into table
+    const PROFILES_PER_PAGE = 30;
+    let currentPage = 1;
+
+    // Replace your renderProfiles function with this paginated version:
     function renderProfiles(profiles) {
+      const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
+      const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
+      const endIdx = startIdx + PROFILES_PER_PAGE;
+      const pageProfiles = profiles.slice(startIdx, endIdx);
+
       tableBody.innerHTML = "";
-      if (!profiles.length) {
+      if (!pageProfiles.length) {
         tableBody.innerHTML = `<tr><td colspan="8">No profiles found</td></tr>`;
+        renderPagination(profiles.length, totalPages);
         return;
       }
 
-      profiles.forEach((p, i) => {
+      pageProfiles.forEach((p, i) => {
         const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
         const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
         const middlename = p.middlename && p.middlename.trim() !== ""
@@ -218,7 +227,7 @@
         row.className = p.isRead ? 'row-read' : 'row-unread';
         row.setAttribute('data-id', p._id); // Set data-id attribute
         row.innerHTML = `
-          <td>${i + 1}</td>
+          <td>${startIdx + i + 1}</td>
           <td>${fullName}</td>
           <td>${gender}</td>
           <td>${age}</td>
@@ -233,6 +242,8 @@
         `;
         tableBody.appendChild(row);
       });
+
+      renderPagination(profiles.length, totalPages);
 
       // Attach modal openers
       document.querySelectorAll(".view-btn").forEach((btn) =>
@@ -275,6 +286,56 @@
           }
         });
       });
+    }
+
+    // Add this function for pagination controls:
+    function renderPagination(totalProfiles, totalPages) {
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+
+      if (totalPages <= 1) return;
+
+      // Previous button
+      const prevBtn = document.createElement("button");
+      prevBtn.className = "pagination-btn";
+      prevBtn.textContent = "Prev";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderProfiles(allProfiles);
+        }
+      };
+      pagination.appendChild(prevBtn);
+
+      // Page numbers (show max 5 pages at a time)
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, startPage + 4);
+      if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement("button");
+        pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+          currentPage = i;
+          renderProfiles(allProfiles);
+        };
+        pagination.appendChild(pageBtn);
+      }
+
+      // Next button
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "pagination-btn";
+      nextBtn.textContent = "Next";
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderProfiles(allProfiles);
+        }
+      };
+      pagination.appendChild(nextBtn);
     }
 
     let currentProfileId = null; // Track the current profile ID

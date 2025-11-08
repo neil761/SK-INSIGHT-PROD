@@ -6,6 +6,7 @@ const ExcelJS = require("exceljs");
 const fs = require("fs");
 const path = require("path");
 const Notification = require("../models/Notification"); // <-- Import Notification model
+const Announcement = require("../models/Announcement"); // Add at top if not present
 const mongoose = require("mongoose");
 // ...existing imports...
 // Helper to get demographics from LGBTQProfile only
@@ -330,19 +331,33 @@ exports.updateProfileById = async (req, res) => {
 // Delete a profile
 exports.deleteProfileById = async (req, res) => {
   try {
-    const profile = await LGBTQProfile.findById(req.params.id);
+    const profile = await LGBTQProfile.findById(req.params.id).populate("user");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
     profile.isDeleted = true;
     profile.deletedAt = new Date();
     await profile.save();
 
-    // New code starts here
+    // Remove related notifications
     await Notification.deleteMany({ referenceId: profile._id });
     if (req.app.get("io")) {
       req.app.get("io").emit("lgbtq-profile:deleted", { id: profile._id });
     }
-    // New code ends here
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "LGBTQ Profiling Form Deleted",
+      content: `The admin has observed that your LGBTQ Profiling form has inaccuracies. As a result, your LGBTQ Profiling form for this cycle has been deleted and moved to the recycle bin. You may submit a new form if the cycle is still open, please make sure all information is accurate.`,
+      category: "LGBTQ Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile moved to recycle bin" });
   } catch (err) {
@@ -353,7 +368,7 @@ exports.deleteProfileById = async (req, res) => {
 // Restore a deleted profile
 exports.restoreProfileById = async (req, res) => {
   try {
-    const profile = await LGBTQProfile.findById(req.params.id);
+    const profile = await LGBTQProfile.findById(req.params.id).populate("user");
     if (!profile || !profile.isDeleted) {
       return res.status(404).json({ error: "Profile not found or not deleted" });
     }
@@ -374,6 +389,21 @@ exports.restoreProfileById = async (req, res) => {
     profile.isDeleted = false;
     profile.deletedAt = null;
     await profile.save();
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "LGBTQ Profiling Form Restored",
+      content: `Your LGBTQ Profiling form for this cycle has been restored.`,
+      category: "LGBTQ Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile restored" });
   } catch (err) {
