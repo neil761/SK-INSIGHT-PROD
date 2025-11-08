@@ -244,11 +244,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Function to render siblings as cards or table rows
   function renderSiblings() {
     const siblings = JSON.parse(sessionStorage.getItem('educ_siblings') || '[]');
-    siblingsContainer.innerHTML = ''; // Clear existing siblings
-
+    const siblingsContainer = document.getElementById('siblingsTableBody');
     const isMobile = window.innerWidth <= 480; // Detect mobile devices
 
-    siblings.forEach((sibling) => {
+    siblingsContainer.innerHTML = ''; // Clear existing siblings
+
+    siblings.forEach((sibling, index) => {
       if (isMobile) {
         // Render as cards for mobile
         const siblingCard = document.createElement('div');
@@ -259,6 +260,10 @@ document.addEventListener('DOMContentLoaded', async function () {
             <input type="text" class="sibling-name" required value="${escapeHtml(sibling.name || '')}">
           </div>
           <div class="sibling-field">
+            <label>Age:</label>
+            <input type="number" class="sibling-age" min="0" required value="${sibling.age || ''}">
+          </div>
+          <div class="sibling-field">
             <label>Gender:</label>
             <select class="sibling-gender" required>
               <option value="">Select</option>
@@ -266,11 +271,7 @@ document.addEventListener('DOMContentLoaded', async function () {
               <option value="Female" ${sibling.gender === 'Female' ? 'selected' : ''}>Female</option>
             </select>
           </div>
-          <div class="sibling-field">
-            <label>Age:</label>
-            <input type="number" class="sibling-age" min="0" required value="${sibling.age || ''}">
-          </div>
-          <button type="button" class="removeSiblingBtn">Remove</button>
+          <button type="button" class="removeSiblingBtn" data-index="${index}">Remove</button>
         `;
         siblingsContainer.appendChild(siblingCard);
       } else {
@@ -278,6 +279,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         const siblingRow = document.createElement('tr');
         siblingRow.innerHTML = `
           <td><input type="text" class="sibling-name" required value="${escapeHtml(sibling.name || '')}"></td>
+          <td><input type="number" class="sibling-age" min="0" required value="${sibling.age || ''}"></td>
           <td>
             <select class="sibling-gender" required>
               <option value="">Select</option>
@@ -285,11 +287,20 @@ document.addEventListener('DOMContentLoaded', async function () {
               <option value="Female" ${sibling.gender === 'Female' ? 'selected' : ''}>Female</option>
             </select>
           </td>
-          <td><input type="number" class="sibling-age" min="0" required value="${sibling.age || ''}"></td>
-          <td><button type="button" class="removeSiblingBtn">Remove</button></td>
+          <td><button type="button" class="removeSiblingBtn" data-index="${index}">Remove</button></td>
         `;
         siblingsContainer.appendChild(siblingRow);
       }
+    });
+
+    // Add event listeners for "Remove" buttons
+    document.querySelectorAll('.removeSiblingBtn').forEach((button) => {
+      button.addEventListener('click', function () {
+        const index = this.getAttribute('data-index');
+        siblings.splice(index, 1); // Remove the sibling from the array
+        sessionStorage.setItem('educ_siblings', JSON.stringify(siblings)); // Save updated siblings to sessionStorage
+        renderSiblings(); // Re-render siblings
+      });
     });
 
     // Show or hide the table header based on screen size
@@ -300,11 +311,12 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Function to render expenses as cards or table rows
   function renderExpenses() {
     const expenses = JSON.parse(sessionStorage.getItem('educ_expenses') || '[]');
-    expensesContainer.innerHTML = ''; // Clear existing expenses
-
+    const expensesContainer = document.getElementById('expensesTableBody');
     const isMobile = window.innerWidth <= 480; // Detect mobile devices
 
-    expenses.forEach((expense) => {
+    expensesContainer.innerHTML = ''; // Clear existing expenses
+
+    expenses.forEach((expense, index) => {
       if (isMobile) {
         // Render as cards for mobile
         const expenseCard = document.createElement('div');
@@ -318,7 +330,7 @@ document.addEventListener('DOMContentLoaded', async function () {
             <label>Expected Cost:</label>
             <input type="number" class="expense-cost" min="0" required value="${expense.expectedCost || ''}">
           </div>
-          <button type="button" class="removeExpenseBtn">Remove</button>
+          <button type="button" class="removeExpenseBtn" data-index="${index}">Remove</button>
         `;
         expensesContainer.appendChild(expenseCard);
       } else {
@@ -327,10 +339,20 @@ document.addEventListener('DOMContentLoaded', async function () {
         expenseRow.innerHTML = `
           <td><input type="text" class="expense-item" required value="${escapeHtml(expense.item || '')}"></td>
           <td><input type="number" class="expense-cost" min="0" required value="${expense.expectedCost || ''}"></td>
-          <td><button type="button" class="removeExpenseBtn">Remove</button></td>
+          <td><button type="button" class="removeExpenseBtn" data-index="${index}">Remove</button></td>
         `;
         expensesContainer.appendChild(expenseRow);
       }
+    });
+
+    // Add event listeners for "Remove" buttons
+    document.querySelectorAll('.removeExpenseBtn').forEach((button) => {
+      button.addEventListener('click', function () {
+        const index = this.getAttribute('data-index');
+        expenses.splice(index, 1); // Remove the expense from the array
+        sessionStorage.setItem('educ_expenses', JSON.stringify(expenses)); // Save updated expenses to sessionStorage
+        renderExpenses(); // Re-render expenses
+      });
     });
 
     // Show or hide the table header based on screen size
@@ -657,6 +679,117 @@ if (form && savedFormData) {
     // keep it submitted but prevent accidental change (do not disable if it's a select)
     if (typeEl.tagName === 'INPUT') typeEl.readOnly = true;
   }
+
+  document.getElementById('addSiblingBtn').addEventListener('click', function () {
+    const siblingsContainer = document.getElementById('siblingsTableBody');
+    const isMobile = window.innerWidth <= 480; // Detect mobile devices
+
+    if (isMobile) {
+      // Create a sibling card for mobile devices
+      const siblingCard = document.createElement('div');
+      siblingCard.classList.add('sibling-card');
+      siblingCard.innerHTML = `
+        <div class="sibling-field">
+          <label>Name:</label>
+          <input type="text" class="sibling-name" required>
+        </div>
+        <div class="sibling-field">
+          <label>Age:</label>
+          <input type="number" class="sibling-age" min="0" required>
+        </div>
+        <div class="sibling-field">
+          <label>Gender:</label>
+          <select class="sibling-gender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <button type="button" class="removeSiblingBtn">Remove</button>
+      `;
+
+      // Add event listener for the "Remove" button
+      siblingCard.querySelector('.removeSiblingBtn').addEventListener('click', function () {
+        siblingCard.remove();
+        saveSiblings(); // Save siblings after removing
+      });
+
+      siblingsContainer.appendChild(siblingCard);
+    } else {
+      // Create a sibling row for larger screens
+      const siblingRow = document.createElement('tr');
+      siblingRow.innerHTML = `
+        <td><input type="text" class="sibling-name" required></td>
+        <td><input type="number" class="sibling-age" min="0" required></td>
+        <td>
+          <select class="sibling-gender" required>
+            <option value="">Select</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </td>
+        <td><button type="button" class="removeSiblingBtn">Remove</button></td>
+      `;
+
+      // Add event listener for the "Remove" button
+      siblingRow.querySelector('.removeSiblingBtn').addEventListener('click', function () {
+        siblingRow.remove();
+        saveSiblings(); // Save siblings after removing
+      });
+
+      siblingsContainer.appendChild(siblingRow);
+    }
+
+    saveSiblings(); // Save siblings after adding
+  });
+
+  document.getElementById('addExpenseBtn').addEventListener('click', function () {
+    const expensesContainer = document.getElementById('expensesTableBody');
+    const isMobile = window.innerWidth <= 480; // Detect mobile devices
+
+    if (isMobile) {
+      // Create an expense card for mobile devices
+      const expenseCard = document.createElement('div');
+      expenseCard.classList.add('expense-card');
+      expenseCard.innerHTML = `
+        <div class="expense-field">
+          <label>Fees and Other Expenses:</label>
+          <input type="text" class="expense-item" required>
+        </div>
+        <div class="expense-field">
+          <label>Expected Cost:</label>
+          <input type="number" class="expense-cost" min="0" required>
+        </div>
+        <button type="button" class="removeExpenseBtn">Remove</button>
+      `;
+
+      // Add event listener for the "Remove" button
+      expenseCard.querySelector('.removeExpenseBtn').addEventListener('click', function () {
+        expenseCard.remove();
+        saveExpenses(); // Save expenses after removing
+      });
+
+      expensesContainer.appendChild(expenseCard);
+    } else {
+      // Create an expense row for larger screens
+      const expenseRow = document.createElement('tr');
+      expenseRow.innerHTML = `
+        <td><input type="text" class="expense-item" required></td>
+        <td><input type="number" class="expense-cost" min="0" required></td>
+        <td><button type="button" class="removeExpenseBtn">Remove</button></td>
+      `;
+
+      // Add event listener for the "Remove" button
+      expenseRow.querySelector('.removeExpenseBtn').addEventListener('click', function () {
+        expenseRow.remove();
+        saveExpenses(); // Save expenses after removing
+      });
+
+      expensesContainer.appendChild(expenseRow);
+    }
+
+    saveExpenses(); // Save expenses after adding
+  });
 });
 
 // KK Profile Navigation

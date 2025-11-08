@@ -45,7 +45,7 @@
 
   <div class="container">
     <!-- Intro Card -->
-    <div class="card intro">
+    <div class="card-intro">
       <h2>LGBTQIA+ Profiling</h2>
       <p><strong>TO THE RESPONDENT:</strong></p>
       <p>
@@ -61,23 +61,23 @@
     <!-- ✅ Added novalidate -->
     <form id="lgbtqForm" enctype="multipart/form-data" novalidate>
       <div class="card">
-        <label for="lastName">Last Name:</label>
+        <label class="label" for="lastName">Last Name:</label>
         <input type="text" id="lastName" name="lastname" placeholder="Your Answer" required>
       </div>
       <div class="card">
-        <label for="firstName">First Name:</label>
+        <label class="label"  for="firstName">First Name:</label>
         <input type="text" id="firstName" name="firstname" placeholder="Your Answer" required>
       </div>
       <div class="card">
-        <label for="middleName">Middle Name:</label>
+        <label class="label"  for="middleName">Middle Name:</label>
         <input type="text" id="middleName" name="middlename" placeholder="Your Answer" required>
       </div>
       <div class="card">
-        <label for="birthday">Birthday:</label>
+        <label class="label"  for="birthday">Birthday:</label>
         <input type="date" id="birthday" name="birthday" required>
       </div>
       <div class="card">
-        <label for="sex">Sex Assigned at Birth:</label>
+        <label class="label"  for="sex">Sex Assigned at Birth:</label>
         <select id="sex" name="sexAssignedAtBirth" required>
           <option value="">Select Sex Assigned at Birth</option>
           <option value="Male">Male</option>
@@ -85,7 +85,7 @@
         </select>
       </div>
       <div class="card">
-        <label for="identity">LGBTQIA+ Classification:</label>
+        <label class="label"  for="identity">LGBTQIA+ Classification:</label>
         <select id="identity" name="lgbtqClassification" required>
           <option value="">Select your Gender Identity</option>
           <option value="Lesbian">Lesbian</option>
@@ -101,7 +101,7 @@
       <!-- Front ID Image Upload -->
       <div class="kk-upload-row">
         <div class="lcard kk-upload-col">
-          <label for="idImageFront">Upload Valid ID Image (Front):</label>
+          <label class="label"  for="idImageFront">Upload Valid ID Image (Front):</label>
           <input type="file" id="idImageFront" name="idImageFront" accept="image/*" required>
           <div id="imagePreviewContainerFront" class="image-preview-container">
             <button type="button" id="removeImageBtnFront" class="remove-image-btn" title="Remove image">&times;</button>
@@ -111,7 +111,7 @@
 
       <!-- Back ID Image Upload -->
         <div class="lcard kk-upload-col">
-          <label for="idImageBack">Upload Valid ID Image (Back):</label>
+          <label class="label" for="idImageBack">Upload Valid ID Image (Back):</label>
           <input type="file" id="idImageBack" name="idImageBack" accept="image/*" required>
           <div id="imagePreviewContainerBack" class="image-preview-container">
             <button type="button" id="removeImageBtnBack" class="remove-image-btn" title="Remove image">&times;</button>

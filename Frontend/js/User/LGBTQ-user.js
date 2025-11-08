@@ -46,6 +46,22 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    // Show confirmation dialog
+    const confirmation = await Swal.fire({
+      title: "Are you sure?",
+      text: "Do you want to submit this form?",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "Yes, submit",
+      cancelButtonText: "Cancel",
+      confirmButtonColor: "#0A2C59",
+      cancelButtonColor: "#d33",
+    });
+
+    if (!confirmation.isConfirmed) {
+      return; // Stop submission if user cancels
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
 
@@ -56,7 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allowEscapeKey: false,
       didOpen: () => {
         Swal.showLoading();
-      }
+      },
     });
 
     try {
@@ -70,12 +86,12 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await res.json().catch(() => ({}));
       Swal.close();
 
-      if (res.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
+      if (res.status === 403 && (data?.error?.includes("age") || data?.error?.includes("eligible"))) {
         Swal.fire({
           icon: "error",
           title: "Not Eligible",
           text: data?.error || "You are not eligible to submit this form due to age restrictions.",
-          confirmButtonColor: "#0A2C59"
+          confirmButtonColor: "#0A2C59",
         });
         return;
       }
