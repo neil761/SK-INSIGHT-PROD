@@ -136,13 +136,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.querySelectorAll('#expensesTableBody .expense-card, #expensesTableBody tr').forEach(row => {
       const itemEl = row.querySelector('.expense-item');
       const costEl = row.querySelector('.expense-cost');
-      if (itemEl && costEl) {
+      if (itemEl && costEl && itemEl.value.trim() && costEl.value.trim()) {
         expenses.push({
           item: itemEl.value.trim(),
           expectedCost: Number(costEl.value.trim()),
         });
       }
     });
+
+    if (expenses.length === 0) {
+      return Swal.fire({
+        icon: 'warning',
+        title: 'Missing Expenses',
+        text: 'Please provide at least one fee or expense.',
+      });
+    }
+
     formData.append('expenses', JSON.stringify(expenses));
 
     // Append file inputs (requirements)
@@ -856,9 +865,15 @@ function handleKKProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "kkform-personal.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "kkform-personal.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -929,9 +944,15 @@ function handleLGBTQProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "lgbtqform.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "lgbtqform.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -1002,9 +1023,15 @@ function handleEducAssistanceNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "Educational-assistance-user.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "Educational-assistance-user.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }

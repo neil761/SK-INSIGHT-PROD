@@ -51,23 +51,38 @@ document.addEventListener('DOMContentLoaded', function() {
       contactNumber: form.contactNumber.value.trim(),
       civilStatus: form.civilStatus.value
     };
+
+    // Validate contact number length
+    if (data.contactNumber.length !== 11) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Invalid Contact Number',
+        text: 'Contact number must be exactly 11 digits.',
+      });
+      return;
+    }
+
     localStorage.setItem('kkProfileStep2', JSON.stringify(data));
     window.location.href = 'kkform-youth.html';
   });
 
   // Place this at the end of your HTML or in a JS file
-document.addEventListener('DOMContentLoaded', function() {
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  hamburger.addEventListener('click', function() {
-    mobileMenu.classList.toggle('active');
+  document.addEventListener('DOMContentLoaded', function () {
+    const hamburger = document.getElementById('navbarHamburger');
+    const mobileMenu = document.getElementById('navbarMobileMenu');
+
+    // Toggle mobile menu visibility on hamburger click
+    hamburger.addEventListener('click', function () {
+      mobileMenu.classList.toggle('active');
+    });
+
+    // Close the mobile menu when clicking outside
+    document.addEventListener('click', function (e) {
+      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
+        mobileMenu.classList.remove('active');
+      }
+    });
   });
-  document.addEventListener('click', function(e) {
-    if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-      mobileMenu.classList.remove('active');
-    }
-  });
-});
 
   // KK Profile Navigation
   function handleKKProfileNavClick(event) {
@@ -128,16 +143,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "kkform-personal.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "kkform-personal.html");
   }
@@ -201,16 +222,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "lgbtqform.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "lgbtqform.html");
   }
@@ -274,16 +301,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No Application foun`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "Educational-assistance-user.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }

@@ -477,11 +477,22 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       Swal.close();
       if (response.ok) {
-        await Swal.fire("Submitted!", "Form submitted successfully!", "success");
+        await Swal.fire({
+          title: "Submitted!",
+          text: "Form submitted successfully!",
+          icon: "success",
+          showConfirmButton: true, // Show the OK button
+          confirmButtonText: "OK", // Text for the button
+          allowOutsideClick: false, // Prevent closing by clicking outside
+        }).then(() => {
+          // Redirect to the confirmation page when OK is clicked
+          window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
+        });
+
+        // Remove localStorage data
         localStorage.removeItem('kkProfileStep1');
         localStorage.removeItem('kkProfileStep2');
         localStorage.removeItem('kkProfileStep3');
-        window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
       } else if (response.status === 409) {
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
         return;
@@ -588,16 +599,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "kkform-personal.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "kkform-personal.html");
   }
@@ -661,16 +678,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "lgbtqform.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "lgbtqform.html");
   }
@@ -734,16 +757,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No Application found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "Educational-assistance-user.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }
@@ -890,11 +919,22 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       Swal.close();
       if (response.ok) {
-        await Swal.fire("Submitted!", "Form submitted successfully!", "success");
+        await Swal.fire({
+          title: "Submitted!",
+          text: "Form submitted successfully!",
+          icon: "success",
+          showConfirmButton: true, // Show the OK button
+          confirmButtonText: "OK", // Text for the button
+          allowOutsideClick: false, // Prevent closing by clicking outside
+        }).then(() => {
+          // Redirect to the confirmation page when OK is clicked
+          window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
+        });
+
+        // Remove localStorage data
         localStorage.removeItem('kkProfileStep1');
         localStorage.removeItem('kkProfileStep2');
         localStorage.removeItem('kkProfileStep3');
-        window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
       } else if (response.status === 409) {
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
         return;
@@ -1140,7 +1180,7 @@ document.addEventListener('DOMContentLoaded', function() {
       const age = today.getFullYear() - birthday.getFullYear();
       const monthDiff = today.getMonth() - birthday.getMonth();
       const dayDiff = today.getDate() - birthday.getDate();
-
+ 
       // Adjust age if the birthday hasn't occurred yet this year
       if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
         age--;

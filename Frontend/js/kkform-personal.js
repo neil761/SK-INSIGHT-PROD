@@ -1,8 +1,9 @@
-document.addEventListener('DOMContentLoaded', async function() {
+document.addEventListener('DOMContentLoaded', async function () {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
   const ageInput = document.getElementById('age');
   const birthdayInput = document.getElementById('birthday');
+  const registeredNationalVoter = document.getElementById('registeredNationalVoter'); // Your select element
 
   function calculateAge(birthday) {
     if (!birthday) return '';
@@ -16,21 +17,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     return age;
   }
 
-  try {
-    const res = await fetch('http://localhost:5000/api/users/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (res.ok) {
-      const user = await res.json();
-      if (birthdayInput && user.birthday) {
-        birthdayInput.value = user.birthday.split('T')[0]; // format as yyyy-mm-dd
-        birthdayInput.readOnly = true; // make it non-editable
-        if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
-      }
-    }
-  } catch (err) {
-    console.error('Failed to fetch birthday:', err);
-  }
+
 
   const form = document.getElementById('personalForm');
   const saved = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
@@ -42,17 +29,15 @@ document.addEventListener('DOMContentLoaded', async function() {
   document.getElementById('gender').value = saved.gender || '';
   if (birthdayInput && !birthdayInput.value) {
     birthdayInput.value = saved.birthday || '';
-    if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+    if (ageInput) {
+      const age = calculateAge(birthdayInput.value);
+      ageInput.value = age;
+    }
   }
 
-  // If birthday is editable, update age on change
-  if (birthdayInput && !birthdayInput.readOnly) {
-    birthdayInput.addEventListener('change', function() {
-      if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
-    });
-  }
 
-  form.addEventListener('submit', function(e) {
+
+  form.addEventListener('submit', function (e) {
     e.preventDefault();
     const data = {
       lastname: form.lastname.value.trim(),
@@ -144,9 +129,15 @@ function handleKKProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "kkform-personal.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "kkform-personal.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -217,9 +208,15 @@ function handleLGBTQProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "lgbtqform.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "lgbtqform.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -288,11 +285,17 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No Application found`,
+        title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "Educational-assistance-user.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "Educational-assistance-user.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
