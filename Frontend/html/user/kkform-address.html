@@ -11,7 +11,7 @@
 </head>
 <body>
   <div class="navbar">
-     <div class="navbar-left">
+    <div class="navbar-left">
       <a href="./index.html">
         <img src="../../assets/logo.png" alt="Logo" class="logo"/>
       </a>
@@ -27,16 +27,16 @@
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell" style="color: #fff;"></i></a>
-      <a class="bell" href="../user/userProfile.html"><i class="fa-solid fa-user" style="color: #fff;"></i></a>
+      <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
     </div>
   </div>
   <div class="navbar-mobile-menu" id="navbarMobileMenu">
-    <!-- Mobile Navbar -->
-    <a href="./kkform-personal.html" id="kkProfileNavBtnMobile" class="nav-btn">KK Profile</a>
-    <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile" class="nav-btn">LGBTQ+ Profile</a>
-    <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
-  </div>
+      <!-- Mobile Navbar -->
+      <a href="./kkform-personal.html" id="kkProfileNavBtnMobile" class="nav-btn">KK Profile</a>
+      <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile" class="nav-btn">LGBTQ+ Profile</a>
+      <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
+    </div>
   <div class="kk-container">
     <div class="card intro">
       <h2>KK Profiling</h2>
@@ -57,14 +57,27 @@
           <option value="4">Purok 4</option>
           <option value="5">Purok 5</option>
           <option value="6">Purok 6</option>
-          <option value="7">Purok 7</option>
+          <option value="7.1">Purok 7.1</option>
+          <option value="7.2">Purok 7.2</option>
           <option value="8">Purok 8</option>
           <option value="9">Purok 9</option>
-          <option value="10">Purok 10</option>
         </select>
       </div>
       <div class="kk-card"><label class="kk-label" for="email">Email:</label><input class="kk-input" type="email" id="email" name="email" readonly></div>
-      <div class="kk-card"><label class="kk-label" for="contactNumber">Contact Number:</label><input class="kk-input" type="tel" id="contactNumber" name="contactNumber" maxlength="11" required></div>
+      <div class="kk-card">
+        <label class="kk-label" for="contactNumber">Contact Number:</label>
+        <input 
+          class="kk-input" 
+          type="tel" 
+          id="contactNumber" 
+          name="contactNumber" 
+          minlength="11" 
+          maxlength="11" 
+          required 
+          pattern="\d{11}" 
+          title="Contact number must be exactly 11 digits."
+        />
+      </div>
       <div class="kk-card">
         <label class="kk-label" for="civilStatus">Civil Status:</label>
         <select class="kk-input" id="civilStatus" name="civilStatus" required>
