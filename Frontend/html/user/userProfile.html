@@ -11,6 +11,7 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   </head>
   <body>
     <!-- Navbar -->
@@ -45,6 +46,67 @@
     
 
     <div class="profile-container">
+      <!-- Settings Icon -->
+<span id="settingsIcon" class="settings-icon" title="Settings">
+  <i class="fa-solid fa-gear"></i>
+</span>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="settings-modal">
+  <div class="settings-modal-content">
+    <span class="close-settings">&times;</span>
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-tab="password">Change Password</button>
+      <button class="settings-tab" data-tab="email">Change Email</button>
+    </div>
+    <div class="settings-tab-content" id="settingsTabPassword">
+      <form id="changePasswordForm">
+        <label>Current Password</label>
+        <input type="password" id="currentPassword" required>
+        <label>New Password</label>
+        <input type="password" id="newPassword" required>
+        <label>Confirm New Password</label>
+        <input type="password" id="confirmNewPassword" required>
+        <button type="submit" class="settings-action-btn">Change Password</button>
+      </form>
+    </div>
+    <div class="settings-tab-content" id="settingsTabEmail" style="display:none;">
+      <!-- Unverified users see ONLY this section -->
+      <div id="unverifiedEmailSection" style="display:none;">
+        <label for="unverifiedNewEmailInput">New Email Address</label>
+        <input type="email" id="unverifiedNewEmailInput" placeholder="Enter new email" />
+        <button id="unverifiedChangeEmailBtn" class="settings-action-btn">Confirm</button>
+      </div>
+      <!-- Verified users see the OTP/change email form -->
+      <form id="changeEmailForm">
+        <label>Current Verified Email</label>
+        <input type="text" id="currentEmail" readonly>
+        <button type="button" id="sendEmailOtpBtn" class="settings-action-btn">Send OTP</button>
+        <div id="emailOtpSection" style="display:none;">
+          <label>Enter OTP</label>
+          <div id="emailOtpInputs" style="display:flex;justify-content:center;gap:8px;">
+            <input type="text" maxlength="1" class="otp-input" />
+            <input type="text" maxlength="1" class="otp-input" />
+            <input type="text" maxlength="1" class="otp-input" />
+            <input type="text" maxlength="1" class="otp-input" />
+            <input type="text" maxlength="1" class="otp-input" />
+            <input type="text" maxlength="1" class="otp-input" />
+          </div>
+          <div id="emailOtpTimer" style="margin-top:8px;color:#0A2C59;font-size:0.95rem;text-align:center;"></div>
+          <button type="button" id="verifyEmailOtpBtn" class="settings-action-btn">Verify OTP</button>
+          <div id="resendOtpLink" style="display:none;margin-top:8px;text-align:center;">
+            <a href="#" style="color:#0A2C59;text-decoration:underline;font-size:0.95rem;">Resend OTP</a>
+          </div>
+        </div>
+        <div id="newEmailSection" style="display:none;">
+          <label>New Email</label>
+          <input type="email" id="newEmailInput">
+          <button type="submit" class="settings-action-btn">Change Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
       <img id="profile-img" alt="User" />
       <h3></h3>
       <p></p>
@@ -81,14 +143,6 @@
       <div class="field">
         <label>Purok</label>
         <input type="text" id="purok" readonly />
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="text" id="email" readonly />
-      </div>
-      <div class="field">
-        <label>Verification Status</label>
-        <input type="text" id="verificationStatus" readonly />
       </div>
       <div class="buttons">
         <button class="verify-btn">Verify Account</button>
@@ -136,8 +190,7 @@
           <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile" class="nav-btn">LGBTQ+ Profile</a>
           <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
         </div>
-
           <script src="../../js/token-validation.js"></script>
-  <script src="../../js/user-profile.js"></script>
+ <script type="module" src="../../js/user-profile.js"></script>
   </body>
 </html>

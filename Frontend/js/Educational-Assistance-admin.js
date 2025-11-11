@@ -664,27 +664,36 @@ let applicants = [];
         // Submit rejection handler
         submitRejectionBtn.onclick = async () => {
           const selectedReason = rejectionReasonSelect.value;
-          const customMessage = rejectionReasonInput.value;
+          const customMessage = rejectionReasonInput.value.trim();
 
-          if (!selectedReason) {
-            rejectionModal.style.display = "none";
-            modal.style.display = "none";
-            await Swal.fire('Error', 'Please select a rejection reason', 'error');
-            rejectionModal.style.display = "flex";
+          if (!selectedReason && !customMessage) {
+            await Swal.fire('Error', 'Please select or specify a rejection reason.', 'error');
             return;
+          }
+
+          // Capitalize the first letter of the selected 
+          // reason
+          let formattedReason = selectedReason
+            ? selectedReason.charAt(0).toUpperCase() + selectedReason.slice(1)
+            : "";
+
+          // Capitalize the first letter of the custom message
+          let formattedMessage = customMessage
+            ? customMessage.charAt(0).toUpperCase() + customMessage.slice(1)
+            : "";
+
+          // Combine for final rejectionReason
+          let rejectionReason = formattedReason;
+          if (formattedMessage) {
+            rejectionReason += formattedReason ? `:\n${formattedMessage}` : formattedMessage;
           }
 
           rejectionModal.style.display = "none";
           modal.style.display = "none";
 
-          // --- SHOW LOADING MODAL (highlighted for reuse) ---
+          // Show loading modal
           const loadingModal = document.getElementById("loadingModal");
           loadingModal.style.display = "flex";
-          // --- END LOADING MODAL ---
-
-          const rejectionReason = customMessage 
-            ? `${selectedReason} - ${customMessage}`
-            : selectedReason;
 
           try {
             const res = await fetch(`http://localhost:5000/api/educational-assistance/${app._id}/status`, {
@@ -699,11 +708,12 @@ let applicants = [];
               })
             });
 
-            // --- HIDE LOADING MODAL (highlighted for reuse) ---
             loadingModal.style.display = "none";
-            // --- END LOADING MODAL ---
 
-            if (!res.ok) throw new Error('Failed to reject');
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error || 'Failed to reject');
+            }
 
             await Swal.fire({
               icon: 'success',
@@ -719,7 +729,7 @@ let applicants = [];
             await Swal.fire({
               icon: 'error',
               title: 'Rejection Failed',
-              text: 'Failed to reject the application. Please try again.',
+              text: err.message || 'Failed to reject the application. Please try again.',
               confirmButtonColor: '#0A2C59'
             });
             rejectionModal.style.display = "flex";

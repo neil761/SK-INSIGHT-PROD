@@ -10,7 +10,104 @@ body {
   color: #0a1a3a;
   padding-top: 5rem;
 }
+.settings-icon {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  font-size: 1.3rem;
+  color: #0A2C59;
+  cursor: pointer;
+  transition: color 0.2s;
+  z-index: 10;
+}
+.settings-icon:hover { color: #FED600; }
 
+.settings-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(10,44,89,0.08);
+  align-items: center;
+  justify-content: center;
+}
+.settings-modal.active { display: flex; }
+
+.settings-modal-content {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(10,44,89,0.12);
+  padding: 28px 24px 18px 24px;
+  min-width: 320px;
+  max-width: 98vw;
+  position: relative;
+}
+
+.close-settings {
+  position: absolute;
+  top: 12px; right: 18px;
+  font-size: 1.5rem;
+  color: #0A2C59;
+  cursor: pointer;
+}
+
+.settings-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.settings-tab {
+  flex: 1;
+  padding: 8px 0;
+  background: #f8faff;
+  border: none;
+  border-radius: 8px 8px 0 0;
+  font-weight: 600;
+  color: #0A2C59;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+.settings-tab.active {
+  background: #0A2C59;
+  color: #fff;
+}
+
+.settings-tab-content {
+  margin-top: 0;
+}
+.settings-tab-content label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #0A2C59;
+}
+.settings-tab-content input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  border: 1px solid #e1e8ff;
+  background: #f8faff;
+  font-size: 1rem;
+}
+.settings-action-btn {
+  width: 100%;
+  padding: 10px;
+  background: #0A2C59;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background 0.18s;
+}
+
+
+.swal2-container {
+  z-index: 3000 !important;
+}
+.settings-action-btn:hover { background: #FED600; color: #0A2C59; }
 /* Navbar */
   .navbar {
     position: fixed;
@@ -181,6 +278,16 @@ body {
     align-items: center;
     margin-top: 0;
   }
+
+  .settings-modal-content {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(10,44,89,0.12);
+  padding: 28px 24px 18px 24px;
+  min-width: 320px;
+  max-width: 80vw;
+  position: relative;
+}
 }
 
 .navbar-mobile-menu {
@@ -305,7 +412,7 @@ body {
 .verify-btn {
   background: #fff;
   color: #0A2C59;
-  border: 1px solid #ccc;
+  border: 1px solid #1d33a1 !important;
 }
 
 .verify-btn:hover {
@@ -620,4 +727,21 @@ body {
   pointer-events: none; /* Prevent clicks */
   opacity: 0.5; /* Make the button look disabled */
   cursor: not-allowed; /* Change cursor to indicate disabled state */
+}
+
+.otp-input {
+  width: 40px;
+  font-size: 2rem;
+  text-align: center;
+  border-radius: 8px;
+  border: 1px solid #0A2C59;
+  background: #f7faff;
+  box-shadow: 0 2px 8px rgba(7,176,242,0.07);
+}
+#emailOtpInputs {
+  max-width: 280px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
 }

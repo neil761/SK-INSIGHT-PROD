@@ -5,6 +5,7 @@ const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 const upload = require('../middleware/idUploadMiddleware');
 const path = require('path');
 const fs = require('fs');
+const { changePassword, sendChangeEmailOtp, changeEmail } = require("../controllers/userControllers");
 
 router.post(
   "/smart/register",
@@ -34,5 +35,11 @@ router.get('/profile-image/:filename', (req, res) => {
     res.sendFile(imagePath);
   });
 });
+
+router.post("/change-password", protect, changePassword);
+router.post("/change-email/send-otp", protect, sendChangeEmailOtp);
+router.post("/change-email/verify-otp", protect, userCtrl.verifyChangeEmailOtp); // <-- new
+router.post("/change-email", protect, changeEmail);
+router.post("/change-email/unverified", protect, userCtrl.changeEmailUnverified);
 
 module.exports = router;

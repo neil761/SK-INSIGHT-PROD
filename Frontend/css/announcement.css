@@ -1077,3 +1077,12 @@ body {
 .tab-btn:hover:not(.active) {
   background: #d1e1f5;
 }
+
+.announcement-row-rejected, .announcement-card-rejected {
+  border-left: 6px solid #e74d3c47 !important;
+  background: #fff5f5 !important;
+}
+.announcement-row-approved, .announcement-card-approved {
+  border-left: 6px solid #52dc8c42 !important;
+  background: #f5fff7 !important;
+}

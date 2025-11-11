@@ -20,7 +20,19 @@ const userSchema = new mongoose.Schema({
   otpCode: String,
   otpExpires: Date,
   otpAttempts: { type: Number, default: 0 },
-  otpLockedUntil: Date,
+  otpLockedUntil: Date, // for general OTP (verification, password reset)
+
+
+  emailChangeOtp: String,
+  emailChangeOtpExpires: Date,
+  emailChangeOtpAttempts: { type: Number, default: 0 },
+  emailChangeOtpLockedUntil: Date,
+  emailChangeOtpVerified: Boolean,
+  emailChangeOtpSendCount: { type: Number, default: 0 },
+  emailChangeOtpSendWindowStart: { type: Number },
+
+  emailVerificationOtpSendCount: { type: Number, default: 0 },
+  emailVerificationOtpSendWindowStart: { type: Number },
 
   verifiedAddress: {
     type: String,

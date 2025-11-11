@@ -79,6 +79,9 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
     predictedData = sorted.map(item => item.predicted);
     actualData = sorted.map(item => item.actual);
 
+    // compute threshold = highest actual value (reference)
+    const maxActual = actualData.length ? Math.max(...actualData) : 0;
+
     // Chart.js grouped vertical bar chart
     const canvas = document.getElementById("predictionChart");
     if (!canvas) return;
@@ -86,6 +89,64 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
     if (window.predictionChart && typeof window.predictionChart.destroy === "function") {
       window.predictionChart.destroy();
     }
+
+    // Plugin to draw threshold line + label
+    const thresholdPlugin = {
+      id: 'thresholdPlugin',
+      afterDatasetsDraw(chart, args, options) {
+        const value = options?.value;
+        if (value === undefined || value === null) return;
+        const { ctx, chartArea: { left, right }, scales: { y } } = chart;
+        const yPixel = y.getPixelForValue(value);
+
+        ctx.save();
+        // dashed line
+        ctx.beginPath();
+        ctx.setLineDash([6, 6]);
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = options.color || 'rgba(10,44,89,0.18)';
+        ctx.moveTo(left, yPixel);
+        ctx.lineTo(right, yPixel);
+        ctx.stroke();
+
+        // label box
+        const label = options.label || `Dominant actual: ${value}`;
+        ctx.font = '600 12px Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
+        const textWidth = ctx.measureText(label).width;
+        const padding = 8;
+        const rectW = textWidth + padding * 2;
+        const rectH = 22;
+        const rectX = right - rectW - 8;
+        let rectY = yPixel - rectH - 6;
+        // clamp rect inside chart area
+        const topLimit = 6;
+        if (rectY < topLimit) rectY = topLimit;
+
+        // white backdrop for readability
+        ctx.fillStyle = options.background || 'rgba(255,255,255,0.95)';
+        roundRect(ctx, rectX, rectY, rectW, rectH, 6, true, true);
+        // label text
+        ctx.fillStyle = options.textColor || '#071A40';
+        ctx.fillText(label, rectX + padding, rectY + rectH - 7);
+
+        ctx.restore();
+      }
+    };
+
+    // helper for rounded rect
+    function roundRect(ctx, x, y, w, h, r, fill, stroke) {
+      if (typeof r === 'undefined') r = 5;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      if (fill) ctx.fill();
+      if (stroke) ctx.stroke();
+    }
+
     window.predictionChart = new Chart(ctx, {
       type: "bar",
       data: {
@@ -115,7 +176,15 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
         plugins: {
           legend: { display: false },
           title: { display: false },
-          datalabels: { display: false }
+          datalabels: { display: false },
+          // pass threshold options here
+          thresholdPlugin: {
+            value: maxActual,
+            label: `Dominant actual: ${maxActual}`,
+            color: 'rgba(7,176,242,0.9)',
+            background: 'rgba(255,255,255,0.98)',
+            textColor: '#071A40'
+          }
         },
         scales: {
           x: {
@@ -128,7 +197,8 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
             ticks: { display: true }
           }
         }
-      }
+      },
+      plugins: [thresholdPlugin]
     });
 
     // --- External info rendering ---
@@ -136,8 +206,12 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
     // Numbers on the side
     const sideElem = document.querySelector(".prediction-side");
     if (sideElem) {
-      sideElem.innerHTML = chartLabels.map((label, idx) => `
-        <div class="prediction-value-row">
+      sideElem.innerHTML = chartLabels.map((label, idx) => {
+        // mark rows that match the threshold (dominant) or below
+        const isDominant = actualData[idx] === maxActual && maxActual > 0;
+        const rowClass = isDominant ? 'dominant' : 'below-threshold';
+        return `
+        <div class="prediction-value-row ${rowClass}">
           <span class="prediction-label">${label}</span>
           <span class="prediction-value actual">
             <span class="legend-dot actual"></span> ${actualData[idx]}
@@ -146,7 +220,8 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
             <span class="legend-dot predicted"></span> ${predictedData[idx]}
           </span>
         </div>
-      `).join("");
+      `;
+      }).join("");
     }
 
     // Labels below the chart
@@ -163,7 +238,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
       `).join("");
     }
 
-    // Legend at the bottom
+    // Legend at the bottom (add threshold indicator)
     const legendElem = document.querySelector(".prediction-legend");
     if (legendElem) {
       legendElem.innerHTML = `
@@ -172,6 +247,9 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
         </div>
         <div class="legend-item">
           <span class="legend-dot predicted"></span> Predicted
+        </div>
+        <div class="legend-item">
+          <span class="legend-threshold" style="display:inline-block;width:14px;height:2px;background:rgba(7,176,242,0.9);margin-right:8px;border-radius:2px;"></span> Dominant actual (${maxActual})
         </div>
       `;
     }
@@ -182,13 +260,15 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
       // Arrange info in two columns, two rows
       let html = '';
       for (let i = 0; i < chartLabels.length; i++) {
+        const isDominant = actualData[i] === maxActual && maxActual > 0;
+        const leftBorder = isDominant ? 'style="border-left-color: rgba(7,176,242,0.65);"' : '';
         html += `
-          <div class="prediction-info-item">
+          <div class="prediction-info-item" ${leftBorder}>
             <span>${chartLabels[i]}</span>
-            <span class="legend-dot actual"></span>
-            <span class="actual">${actualData[i]}</span>
-            <span class="legend-dot predicted"></span>
-            <span class="predicted">${predictedData[i]}</span>
+            <div style="display:flex;gap:8px;align-items:center;">
+              <span class="legend-dot actual"></span><span class="actual">${actualData[i]}</span>
+              <span class="legend-dot predicted"></span><span class="predicted">${predictedData[i]}</span>
+            </div>
           </div>
         `;
       }

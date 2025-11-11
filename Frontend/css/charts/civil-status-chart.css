@@ -1,0 +1,84 @@
+
+.civil-status-card {
+  grid-column: 2 / 3;
+  grid-row: 1 / 2;
+  min-width: 100%;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+}
+
+.civil-status-summary {
+  width: 100%;
+  background: #f8faff;
+  border-radius: 10px;
+  padding: 0.4rem 0.4rem 1rem 1.2rem;
+  margin-bottom: 0.5rem;
+  box-shadow: 3px 3px 4px rgba(10,44,89,0.04);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.civil-status-summary-row {
+  font-weight: 600;
+  margin-bottom: 0.15rem;
+  display: flex;
+  justify-content: center;
+    margin-left: -12px;
+    padding: 0.4rem 0.6rem;
+    border-radius: 8px;
+
+    background: #fef9e7;
+    font-weight: 600;
+    color: #FED600;
+    font-size: 0.8rem;
+}
+
+
+.civil-status-percentages {
+  margin-top: 0.3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.civil-status-percentages span {
+  font-size: 0.8rem;
+  color: #333;
+}
+
+.civil-status-legend {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* two columns */
+  gap: 0.5rem 1.2rem;
+  justify-items: start;
+  margin-top: 0.7rem;
+  margin-bottom: 0.8rem;
+}
+
+.civil-status-legend .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: #0A2C59;
+}
+
+.civil-status-legend .legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+#civilStatusDonut {
+  max-width: 160px;
+  max-height: 160px;
+  width: 100% !important;
+  height: auto !important;
+  display: block;
+  margin-bottom: 1.3rem;
+  margin-top: 1rem;
+}

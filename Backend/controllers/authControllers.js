@@ -3,8 +3,7 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
 const crypto = require("crypto");
-const sendEmail = require("../utils/sendEmail");
-const otpTransporter = require("../utils/mailer");
+const mailer = require("../utils/mailer");
 
 const getResetPasswordEmail = require("../utils/templates/resetPasswordEmail");
 
@@ -109,16 +108,100 @@ exports.forgotPassword = async (req, res) => {
   user.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes expiry
   await user.save();
 
-  // Email content
+  // Hostinger HTML template (copied from verify email in userControllers.js)
   const html = `
-    <h2>SK Insight Password Reset OTP</h2>
-    <p>Your OTP code is: <b>${otpCode}</b></p>
-    <p>This code will expire in 10 minutes.</p>
-    <p>If you did not request this, please ignore this email.</p>
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+      <meta charset="UTF-8">
+      <title>SK Insight Password Reset OTP</title>
+      <style>
+        body {
+          font-family: 'Segoe UI', sans-serif;
+          background-color: #f4f7fc;
+          margin: 0;
+          padding: 0;
+        }
+        .container {
+          max-width: 600px;
+          margin: 30px auto;
+          background: #ffffff;
+          border-radius: 10px;
+          padding: 0;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+          text-align: center;
+          overflow: hidden;
+        }
+        .header {
+          background: #0A2C59;
+          color: #fff;
+          padding: 32px 0 16px 0;
+          border-top-left-radius: 10px;
+          border-top-right-radius: 10px;
+        }
+        .logo {
+          max-width: 120px;
+          margin-bottom: 12px;
+        }
+        h2 {
+          color: #fff;
+          margin-bottom: 10px;
+          font-size: 2rem;
+          font-weight: 700;
+        }
+        .content {
+          padding: 32px 40px 24px 40px;
+        }
+        .otp {
+          font-size: 32px;
+          font-weight: bold;
+          letter-spacing: 8px;
+          color: #0A2C59;
+          margin: 24px 0;
+          background: #eaf3fb;
+          border-radius: 8px;
+          display: inline-block;
+          padding: 12px 32px;
+          box-shadow: 0 2px 8px rgba(7,176,242,0.07);
+        }
+        p {
+          color: #333;
+          font-size: 16px;
+          margin-bottom: 10px;
+        }
+        .footer {
+          background: #0A2C59;
+          color: #fff;
+          font-size: 13px;
+          padding: 18px 0;
+          border-bottom-left-radius: 10px;
+          border-bottom-right-radius: 10px;
+          margin-top: 0;
+        }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <img class="logo" src="https://res.cloudinary.com/dnmawrba8/image/upload/v1754197673/logo_no_bg_ycz1nn.png" alt="SK Insight Logo" />
+          <h2>Password Reset OTP</h2>
+        </div>
+        <div class="content">
+          <p>Use the following code to reset your password. It is valid for 10 minutes.</p>
+          <div class="otp">${otpCode}</div>
+          <p>If you didn’t request this, please ignore this email.</p>
+        </div>
+        <div class="footer">
+          &copy; ${new Date().getFullYear()} SK Insight. All rights reserved.
+        </div>
+      </div>
+    </body>
+    </html>
   `;
 
   try {
-    await otpTransporter.sendMail({
+    await mailer.sendMail({
+      from: `"SK Insight" <${process.env.HOSTINGER_SMTP_USER}>`,
       to: user.email,
       subject: "SK Insight Password Reset OTP",
       html,

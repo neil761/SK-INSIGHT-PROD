@@ -6,7 +6,7 @@ const FormStatus = require("../models/FormStatus");
 const ExcelJS = require('exceljs'); // Make sure to install: npm install exceljs
 const path = require("path");
 const fs = require("fs");
-
+    const Announcement = require("../models/Announcement");
 async function getPresentCycle(formName) {
   const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
     "cycleId"
@@ -418,17 +418,15 @@ exports.updateApplicationStatus = async (req, res) => {
 
     // Only send email if recipient exists
     if (status === "rejected" && app.user && app.user.email) {
-      console.log("Sending rejection email to:", app.user.email);
-      await sendRejectionEmail({
-        to: app.user.email,
-        username: app.user.username,
-        rejectionReason: app.rejectionReason,
-      });
-    } else if (status === "rejected") {
-      console.log(
-        "No valid recipient email found for rejection email. User:",
-        app.user
-      );
+      try {
+        await sendRejectionEmail({
+          to: app.user.email,
+          username: app.user.username,
+          rejectionReason: app.rejectionReason,
+        });
+      } catch (emailErr) {
+        console.error("Failed to send rejection email:", emailErr);
+      }
     }
 
     // --- EMIT SOCKET EVENT FOR REAL-TIME BADGE UPDATE ---
@@ -437,6 +435,37 @@ exports.updateApplicationStatus = async (req, res) => {
         id: app._id,
         status: app.status,
       });
+    }
+
+    // --- CREATE ANNOUNCEMENT FOR THE USER ---
+    if (["approved", "rejected"].includes(status) && app.user && app.user._id) {
+      let title, content;
+      if (status === "approved") {
+        title = "Educational Assistance Application Approved";
+        content = "Congratulations! Your Educational Assistance application has been approved.";
+      } else if (status === "rejected") {
+        title = "Educational Assistance Application Rejected";
+        content = `We regret to inform you that your Educational Assistance application has been rejected. Reason:\n${app.rejectionReason || "No reason provided."}`;
+      }
+      try {
+        // Set expiresAt to 3 days from now (like KK/LGBTQ), or null if you want permanent
+        const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+        await Announcement.create({
+          title,
+          content,
+          category: "Educational Assistance",
+          eventDate: new Date(),
+          expiresAt, // <-- set expiry like KK/LGBTQ
+          createdBy: req.user.id,
+          recipient: app.user._id,
+          isPinned: false,
+          isActive: true,
+          viewedBy: [],
+        });
+      } catch (annErr) {
+        console.error("Failed to create announcement:", annErr);
+        // Don't throw, just log
+      }
     }
 
     res.json({ message: "Status updated successfully", application: app });

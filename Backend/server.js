@@ -58,6 +58,8 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
     console.log("MongoDB connected");
+    const seedForms = require("./seed");
+    seedForms();
     server.listen(PORT, "0.0.0.0", () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -184,3 +186,5 @@ app.use('/uploads/id', express.static(path.join(__dirname, 'uploads/id')));
 app.use('/uploads/signatures', express.static(path.join(__dirname, 'uploads/signatures')));
 
 console.log('Server started');
+
+

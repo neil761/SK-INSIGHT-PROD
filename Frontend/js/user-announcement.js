@@ -147,6 +147,15 @@ document.addEventListener("DOMContentLoaded", () => {
       if (a.isPinned) {
         tr.classList.add("pinned-row");
       }
+      // Add status hue for For You tab
+if (currentTab === 'foryou') {
+  const title = (a.title || "").toLowerCase();
+  if (title.includes("rejected") || title.includes("deleted")) {
+    tr.classList.add("announcement-row-rejected");
+  } else if (title.includes("approved") || title.includes("restored")) {
+    tr.classList.add("announcement-row-approved");
+  }
+}
       tr.innerHTML = `
         <td>
           <div class="announcement-title">
@@ -212,6 +221,15 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const card = document.createElement('div');
       card.className = 'announcement-card';
+      // Add status hue for For You tab
+if (currentTab === 'foryou') {
+  const title = (a.title || "").toLowerCase();
+  if (title.includes("rejected") || title.includes("deleted")) {
+    card.classList.add("announcement-card-rejected");
+  } else if (title.includes("approved") || title.includes("restored")) {
+    card.classList.add("announcement-card-approved");
+  }
+}
       card.innerHTML = `
         <div class="card-header">
           <div class="title">

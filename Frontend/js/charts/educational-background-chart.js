@@ -59,6 +59,10 @@ export function renderEducationalBackgroundBar(year, cycle) {
       // Remove any Chart.js-generated HTML legend from previous renders
       document.querySelectorAll('.chartjs-legend, ul.chartjs-legend, div.chartjs-legend').forEach(el => el.remove());
 
+      // Find the highest value for Y axis
+      const maxValue = Math.max(...sortedCounts, 0);
+      const yMax = maxValue > 0 ? Math.ceil((maxValue + 50) / 10) * 10 : 50;
+
       // Destroy any existing chart instance before re-rendering
       if (window.educationalBackgroundChart) window.educationalBackgroundChart.destroy();
 
@@ -107,7 +111,7 @@ export function renderEducationalBackgroundBar(year, cycle) {
             },
             y: {
               beginAtZero: true,
-              max: total > 0 ? total : undefined,
+              max: yMax,
               ticks: { color: "#0A2C59", font: { weight: "bold", size: 11 } },
               grid: { borderDash: [4, 4] }
             }
