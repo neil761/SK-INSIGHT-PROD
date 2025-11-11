@@ -178,7 +178,7 @@ body {
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
   .navbar{
-    padding: 4% 3% !important;
+    padding: 4% 4.5% !important;
   }
     .card-intro{  
     padding: 20px !important; 

@@ -279,7 +279,7 @@ body {
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
   .navbar {
-    padding: 4% 3%;
+    padding: 4% 4.8%;
   }
   
   .navbar img {
@@ -292,7 +292,7 @@ body {
   }
   
   .navbar-hamburger {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     margin-right: 5px;
     display: flex;
     align-items: center;
@@ -306,7 +306,7 @@ body {
   }
   
   .navbar-right {
-    gap: 5px;
+    gap: 8.5px;
     font-size: 1.1rem;
     display: flex;
     align-items: center;
@@ -1226,7 +1226,7 @@ select.form-control:focus {
   }
 
   .kk-btn {
-    width: 45%; /* Each button occupies half of the card */
+    width: 50%; /* Each button occupies half of the card */
     font-size: 0.9rem; /* Adjust font size for mobile */
     padding: 10px 20px; /* Add padding for better touch targets */
   }
@@ -1246,7 +1246,7 @@ select.form-control:focus {
     gap: 16px; 
   }
   .notif{
-    font-size: 1.4rem;
+    font-size: 1.25rem;
   }
 }
 

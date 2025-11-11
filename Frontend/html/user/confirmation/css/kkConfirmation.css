@@ -87,7 +87,7 @@ body {
 .navbar-right {
   display: flex;
   gap: 8px;
-  font-size: 1.1rem;
+  font-size: 20px;
 }
 
 .navbar-right a {
@@ -316,7 +316,7 @@ body {
   }
   
   .navbar-right {
-    gap: 5px;
+    gap: 6px;
     font-size: 18px;
     display: flex;
     align-items: center;

@@ -186,11 +186,10 @@ body {
       }
       
       .bell {
-        font-size: 1.1rem;
-        margin-right: 3px;
-        margin-top: 0;
-        display: flex;
-        align-items: center;
+    font-size: 1.1rem;
+    margin-right: 3px;
+    display: flex;
+    align-items: center;
       }
       
       .navbar-right {

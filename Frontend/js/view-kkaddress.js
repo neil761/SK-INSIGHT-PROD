@@ -109,16 +109,22 @@ document.addEventListener("DOMContentLoaded", async function () {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "../../kkform-personal.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "../../kkform-personal.html");
   }
@@ -191,16 +197,22 @@ document.addEventListener("DOMContentLoaded", async function () {
 
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "../../lgbtqform.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     } catch (err) {
       console.error(err);
       window.location.href = "../../lgbtqform.html";
@@ -275,16 +287,22 @@ document.addEventListener("DOMContentLoaded", async function () {
 
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No Application found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "../../Educational-assistance-user.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     } catch (err) {
       console.error(err);
       window.location.href = "../../Educational-assistance-user.html";
