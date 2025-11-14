@@ -143,6 +143,31 @@ body {
   font-style: 2rem;
 }
 
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
 @media (max-width: 600px) {
     .navbar-left .title {
         font-size: 1rem;
@@ -168,6 +193,14 @@ body {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar {
     padding: 10px 15px;
   }
@@ -207,6 +240,68 @@ body {
     display: flex;
     align-items: center;
     margin-top: 0;
+  }
+  
+    .announcement-heading-container {
+        width: 90%;
+        padding: 15px;
+        margin-top: 13%;
+    }
+
+    .announcement-heading-container h2 {
+        font-size: 1.5rem;
+    }
+
+    .announcement-container {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .announcement-table {
+        table-layout: auto; /* Allow table to adjust on mobile */
+    }
+    
+    .announcement-table th:nth-child(1),
+    .announcement-table td:nth-child(1) {
+        width: 30%;
+    }
+
+    .announcement-table th:nth-child(2),
+    .announcement-table td:nth-child(2) {
+        width: 25%;
+    }
+
+    .announcement-table th:nth-child(3),
+    .announcement-table td:nth-child(3) {
+        width: 25%;
+    }
+
+    .announcement-table th:nth-child(4),
+    .announcement-table td:nth-child(4) {
+        width: 20%;
+    }
+
+    .announcement-table th, 
+    .announcement-table td {
+        font-size: 14px;
+        padding: 10px 5px;
+    }
+
+    .announcement-table a {
+        font-size: 13px;
+    }
+  
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-left,
+  .footer-middle,
+  .footer-right {
+    width: 100%;
   }
 }
 
@@ -259,7 +354,7 @@ body {
 .announcement-heading-container {
     max-width: 1100px;
     width: 45%;
-    margin: 120px auto 20px auto; 
+    margin: 10% auto 20px auto; 
     padding: 20px 25px;
     /* background: #fff;  */
     color: #000;
@@ -603,58 +698,17 @@ body {
     }
 }
 
-@media (max-width: 768px) {
-    .announcement-heading-container {
-        width: 90%;
-        padding: 15px;
-    }
-
-    .announcement-heading-container h2 {
-        font-size: 1.5rem;
-    }
-
-    .announcement-container {
-        width: 90%;
-        padding: 15px;
-    }
-
-    .announcement-table {
-        table-layout: auto; /* Allow table to adjust on mobile */
-    }
-    
-    .announcement-table th:nth-child(1),
-    .announcement-table td:nth-child(1) {
-        width: 30%;
-    }
-
-    .announcement-table th:nth-child(2),
-    .announcement-table td:nth-child(2) {
-        width: 25%;
-    }
-
-    .announcement-table th:nth-child(3),
-    .announcement-table td:nth-child(3) {
-        width: 25%;
-    }
-
-    .announcement-table th:nth-child(4),
-    .announcement-table td:nth-child(4) {
-        width: 20%;
-    }
-
-    .announcement-table th, 
-    .announcement-table td {
-        font-size: 14px;
-        padding: 10px 5px;
-    }
-
-    .announcement-table a {
-        font-size: 13px;
-    }
-}
 
 /* Hide event date column on very small screens (480px and below) */
 @media (max-width: 480px) {
+  .announcement-tabs{
+    gap: 5% !important;
+    margin: 0 10px 0 10px;
+  }
+  .tab-btn{
+    padding: 5% 10% !important;
+    font-size: 0.9rem !important;
+  }
     .announcement-table th:nth-child(2),
     .announcement-table td:nth-child(2) {
         display: none; /* Hide event date column */
@@ -675,6 +729,32 @@ body {
     .announcement-table td:nth-child(4) {
         width: 20%; /* Actions column */
     }
+    
+  .footer {
+    padding: 30px 20px 15px;
+  }
+
+  .footer-left h3 {
+    font-size: 18px;
+  }
+
+  .footer-left p {
+    font-size: 14px;
+  }
+
+  .footer-middle h4,
+  .footer-right h4 {
+    font-size: 15px;
+  }
+
+  .footer-middle ul li a,
+  .footer-right ul li a {
+    font-size: 14px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
+  }
 }
 
 /* Responsive: Stack announcement cards and buttons on small screens */
@@ -881,49 +961,6 @@ body {
   color: #cfd9e8;
 }
 
-/* Responsive Footer */
-@media (max-width: 768px) {
-  .footer-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 20px;
-  }
-
-  .footer-left,
-  .footer-middle,
-  .footer-right {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .footer {
-    padding: 30px 20px 15px;
-  }
-
-  .footer-left h3 {
-    font-size: 18px;
-  }
-
-  .footer-left p {
-    font-size: 14px;
-  }
-
-  .footer-middle h4,
-  .footer-right h4 {
-    font-size: 15px;
-  }
-
-  .footer-middle ul li a,
-  .footer-right ul li a {
-    font-size: 14px;
-  }
-
-  .footer-bottom p {
-    font-size: 12px;
-  }
-}
 
 .verification-strip {
   position: fixed;
@@ -1086,3 +1123,19 @@ body {
   border-left: 6px solid #52dc8c42 !important;
   background: #f5fff7 !important;
 }
+
+/* Read / Unread visual states */
+.announcement-notread {
+  /* Unread items are slightly highlighted to draw attention */
+  background-color: #fff8e1; /* light golden */
+}
+.announcement-read {
+  /* Read items are neutral / light */
+  background-color: #ffffff;
+}
+
+/* Make sure table rows and cards both use these states */
+.announcement-card.announcement-notread { background-color: #d8dbe4; }
+.announcement-card.announcement-read { background-color: #ffffff; }
+.announcement-table tr.announcement-notread { background-color: #d8dbe4; }
+.announcement-table tr.announcement-read { background-color: #ffffff; }

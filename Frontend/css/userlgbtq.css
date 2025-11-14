@@ -153,6 +153,46 @@ body {
   color: red;
 }
 
+.cancel{
+    min-width: 10%;
+    min-height: 10%;
+    padding: 1.7% 5% !important;
+    background-color: #777777;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
 /* Responsive behavior */
 @media (max-width: 1048px) {
     .navbar-center {
@@ -177,6 +217,14 @@ body {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar{
     padding: 4% 4.5% !important;
   }
@@ -184,9 +232,14 @@ body {
     padding: 20px !important; 
     width: 90%;
   }
+  .cancel{
+    min-width: 18%;
+    min-height: 10%;
+    padding: 2% 5% !important;
+    font-size: 1rem;
+  }
   .card {
     width: 90%;
-    padding: 20px !important;
     margin: 0 auto 16px auto !important;
   }
   
@@ -357,6 +410,34 @@ body {
   transition: border 0.2s, box-shadow 0.2s;
 }
 
+/* Image preview containers: ensure tall images fit the viewport */
+.image-preview-container {
+  position: relative;
+  display: none; /* hidden when empty; shown when populated by JS */
+}
+.image-preview-container img {
+  max-width: 100%;
+  max-height: 60vh; /* keep tall images from exceeding viewport height */
+  width: auto;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+  object-fit: contain; /* show whole image without cropping */
+  border-radius: 8px;
+}
+
+.image-preview-container .remove-image-btn {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  background: rgba(255,255,255,0.9);
+  border: none;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
 .card input[type="text"]:focus,
 .card input[type="date"]:focus,
 .card input[type="file"]:focus,
@@ -425,7 +506,7 @@ body {
 .kk-btn-group {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  /* gap: 10px; */
   width: 100%;
   background: transparent;
   border: none;
@@ -551,6 +632,12 @@ body {
   font-size: 0.8rem;
   color: red;
 }
+
+.cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 3% 8% !important;
+}
   
     .notif{
       margin-top: 1%;
@@ -637,7 +724,7 @@ body {
         width: 0.1vw !important;
         min-height: 5vh !important;
         font-size: 0.9rem;
-        padding: 10px 20px;
+        padding: 3% 5% !important;
     }
     .kk-intro h2 {
         font-size: 24px;

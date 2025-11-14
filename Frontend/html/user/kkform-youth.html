@@ -27,7 +27,10 @@
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
       <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
     </div>
   </div>
@@ -150,12 +153,14 @@
       <div class="kk-upload-row">
         <div class="kk-card kk-upload-col">
           <label class="kk-label">Profile Image (ID):</label>
+          <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
           <button type="button" id="customUploadBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Image</button>
           <div id="profileImagePreview" class="kk-upload-preview"></div>
           <input type="file" id="profileImage" accept="image/*" style="display:none;">
         </div>
         <div class="kk-card kk-upload-col">
           <label class="kk-label">Signature Image:</label>
+          <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
           <button type="button" id="customSignatureBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Signature</button>
           <div id="signatureImagePreview" class="kk-upload-preview"></div>
           <input type="file" id="signatureImage" accept="image/*" style="display:none;">
@@ -207,6 +212,7 @@
       </div>
     </footer>
   <script src="../../js/token-validation.js"></script>
+    <script src="../../js/notification-badge.js" defer></script>
   <script src="../../js/kkform-youth.js"></script>
 </body>
 </html>

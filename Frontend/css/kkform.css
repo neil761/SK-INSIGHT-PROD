@@ -195,10 +195,43 @@ body {
 }
 
 .image-preview img {
-  width: 100%;
-  max-width: 220px;
+  width: 180px;
+  height: 120px;
+  max-width: 180px;
+  max-height: 120px;
   border-radius: 10px;
   margin-top: 10px;
+  object-fit: cover; /* crop to fill the fixed box */
+  display: block;
+}
+.allow{
+  margin-top: 3%;
+  color: red;
+}
+
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 /* ✅ RESPONSIVE FIXES */
@@ -248,7 +281,7 @@ body {
     padding: 10px 6px;
   }
 
-  .kk-btn {
+  .kk-btn, .kk-btnss {
     width: 100%;
     font-size: 0.9rem !important;
     padding: 10px 0;
@@ -649,10 +682,28 @@ select.form-control:focus {
     margin-bottom: 0;
 }
 
-.kk-btn, .kk-next-btn {
+.kk-btn, .kk-next-btn, .kk-btnss  {
     min-width: 90px;
     min-height: 38px;
     background: #143d77;
+    color: #fff;
+    font-size: 13px;
+    padding: 8px 0 8px 0;
+    border-radius: 7px;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(20,61,119,0.08);
+    cursor: pointer;
+    outline: none;
+    display: inline-block;
+    margin-left: 0;
+    margin-bottom: 0;
+}
+.kk-btnss  {
+    min-width: 90px;
+    min-height: 38px;
+    background: #777777;
     color: #fff;
     font-size: 13px;
     padding: 8px 0 8px 0;
@@ -762,7 +813,7 @@ select.form-control:focus {
         font-size: 15px;
         padding: 10px 6px;
     }
-    .kk-btn {
+    .kk-btn, .kk-btnss  {
         width: 100%;
         font-size: 0.9rem !important;
         padding: 10px 0;
@@ -906,9 +957,13 @@ select.form-control:focus {
 }
 .kk-upload-preview img {
   margin-top: 12px;
+  width: 180px;
+  height: 120px;
   max-width: 180px;
+  max-height: 120px;
   border-radius: 10px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  object-fit: cover;
 }
 
 /* Footer */
@@ -991,6 +1046,14 @@ select.form-control:focus {
 
 /* Responsive Footer */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .card, .card.intro, .kk-card, .kk-upload-col {
     padding: 20px;
     width: 90%;
@@ -1049,18 +1112,18 @@ select.form-control:focus {
 
   /* Make buttons smaller on mobile */
   .kk-btn,
-  .kk-next-btn {
+  .kk-next-btn, .kk-btnss  {
     width: 0.1vw !important;
     min-height: 5vh !important;
     font-size: 0.9rem !important;
     padding: 6px 12px !important;
   }
 
-  .kk-btn.kk-submit-btn {
+  .kk-btn.kk-submit-btn, .kk-btnss {
     width: 42vw !important;
   }
 
-  .kk-btn {
+  .kk-btn, .kk-btnss  {
     padding: 6px 15px !important;
   }
 }
@@ -1123,7 +1186,7 @@ select.form-control:focus {
     padding: 10px 14px; /* Adjust padding for inputs */
   }
 
-  .kk-btn {
+  .kk-btn, .kk-btnss  {
     font-size: 0.85rem; /* Smaller font for buttons */
     padding: 8px 0; /* Adjust button padding */
   }
@@ -1148,7 +1211,7 @@ select.form-control:focus {
     padding: 8px 6px; /* Adjust padding for inputs */
   }
 
-  .kk-btn {
+  .kk-btn, .kk-btnss  {
     font-size: 0.8rem; /* Smaller font for buttons */
     padding: 8px 0; /* Adjust button padding */
   }
@@ -1200,7 +1263,7 @@ select.form-control:focus {
     margin-top: 20px; /* Add some space above the button group */
   }
 
-  .kk-btn {
+  .kk-btn, .kk-btnss  {
     width: auto; /* Ensure buttons don't stretch unnecessarily */
     font-size: 0.9rem; /* Adjust font size for mobile */
     padding: 10px 20px; /* Add padding for better touch targets */
@@ -1225,7 +1288,7 @@ select.form-control:focus {
     width: 100%; /* Ensure the button group occupies full width */
   }
 
-  .kk-btn {
+  .kk-btn, .kk-btnss  {
     width: 50%; /* Each button occupies half of the card */
     font-size: 0.9rem; /* Adjust font size for mobile */
     padding: 10px 20px; /* Add padding for better touch targets */

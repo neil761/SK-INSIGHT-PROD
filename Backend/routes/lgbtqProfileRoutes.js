@@ -21,6 +21,17 @@ router.post(
 
 router.get("/me/profile", protect, ctrl.getMyProfile);
 
+// Update my profile (user-level) - allow multipart so users can replace id images
+router.put(
+  "/me",
+  protect,
+  uploadLGBTQIdImage.fields([
+    { name: "idImageFront", maxCount: 1 },
+    { name: "idImageBack", maxCount: 1 }
+  ]),
+  ctrl.updateMyProfile
+);
+
 // Route to get front ID image by filename
 router.get("/id-image/front/:filename", protect, (req, res) => {
   const filePath = path.join(__dirname, "../uploads/lgbtq_id_images", req.params.filename);
