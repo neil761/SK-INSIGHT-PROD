@@ -79,6 +79,67 @@ document.addEventListener("DOMContentLoaded", function () {
         }
       }
 
+      // Show verification-strip banner when user is NOT verified
+      const verificationStrip = document.getElementById('verification-strip');
+      if (verificationStrip) {
+        if (user && !user.isVerified) {
+          // make it visible (uses flex layout in CSS)
+          verificationStrip.style.display = 'flex';
+
+          // Wire the Verify Now link to open the verification modal or trigger verify flow
+          const verifyNowLink = verificationStrip.querySelector('a');
+          if (verifyNowLink) {
+            verifyNowLink.addEventListener('click', function (ev) {
+              ev.preventDefault();
+              // Open settings modal to the email/verify tab if present
+              const settingsModal = document.getElementById('settingsModal');
+              if (settingsModal) {
+                settingsModal.classList.add('active');
+                // show email tab
+                const emailTab = document.querySelector('.settings-tab[data-tab="email"]');
+                if (emailTab) emailTab.click();
+              }
+              // Also trigger the modular verification flow (if available)
+              try {
+                const verifyBtn = document.querySelector('.verify-btn');
+                if (verifyBtn) verifyBtn.click();
+              } catch (e) {
+                // ignore
+              }
+            });
+          }
+        } else {
+          verificationStrip.style.display = 'none';
+        }
+      }
+
+      // Disable navigation buttons when account is not verified
+      (function toggleNavDisabledForUnverified() {
+        const navIds = [
+          'kkProfileNavBtnDesktop',
+          'lgbtqProfileNavBtnDesktop',
+          'educAssistanceNavBtnDesktop',
+          'kkProfileNavBtnMobile',
+          'lgbtqProfileNavBtnMobile',
+          'educAssistanceNavBtnMobile'
+        ];
+        const shouldDisable = user && !user.isVerified;
+        navIds.forEach(id => {
+          const el = document.getElementById(id);
+          if (!el) return;
+          if (shouldDisable) {
+            el.classList.add('disabled');
+            el.setAttribute('aria-disabled', 'true');
+            // For anchors, prevent navigation via href by setting role/button
+            el.style.pointerEvents = 'auto'; // keep pointer to allow click handler to show warning
+          } else {
+            el.classList.remove('disabled');
+            el.removeAttribute('aria-disabled');
+            el.style.pointerEvents = '';
+          }
+        });
+      })();
+
       // Birthday input (from User)
       const birthdayInput = document.getElementById("birthday");
       if (birthdayInput && user.birthday) {
