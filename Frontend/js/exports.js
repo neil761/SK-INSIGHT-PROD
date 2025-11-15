@@ -445,30 +445,38 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // New helper: fetch and render form history
   async function fetchFormHistory(formName, targetElId) {
-    const token = sessionStorage.getItem("token");
+    // guard: if target element not present, skip silently
+    const ul = document.getElementById(targetElId);
+    if (!ul) return;
+
+    const token = sessionStorage.getItem("token") || "";
     try {
       const res = await fetch(`http://localhost:5000/api/formcycle/history?formName=${encodeURIComponent(formName)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) {
-        document.getElementById(targetElId).innerHTML = `<li class="muted">No history</li>`;
+        ul.innerHTML = `<li class="muted">No history</li>`;
         return;
       }
       const events = await res.json();
-      const ul = document.getElementById(targetElId);
       ul.innerHTML = "";
       if (!Array.isArray(events) || events.length === 0) {
         ul.innerHTML = `<li class="muted">No history available</li>`;
         return;
       }
+      // build content safely
+      const frag = document.createDocumentFragment();
       for (const ev of events) {
         const d = new Date(ev.at);
         const timeStr = d.toLocaleString();
         const actor = ev.actorName ? `by ${ev.actorName}` : "";
-        ul.innerHTML += `<li><strong>${ev.action.toUpperCase()}</strong> — Cycle ${ev.cycleNumber} (${ev.year}) — ${timeStr} ${actor}</li>`;
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${ev.action.toUpperCase()}</strong> — Cycle ${ev.cycleNumber} (${ev.year}) — ${timeStr} ${actor}`;
+        frag.appendChild(li);
       }
+      ul.appendChild(frag);
     } catch (err) {
-      document.getElementById(targetElId).innerHTML = `<li class="muted">Failed to load history</li>`;
+      ul.innerHTML = `<li class="muted">Failed to load history</li>`;
     }
   }
 
@@ -740,9 +748,6 @@ document.addEventListener("DOMContentLoaded", () => {
     const closeHistoryBtn = document.getElementById("closeHistoryModal");
     const filterEl = document.getElementById("historyFilter");
     const searchEl = document.getElementById("historySearch");
-
-    // debug token visibility (remove later)
-    console.debug('history modal token:', sessionStorage.getItem('token'));
 
     if (formHistoryBtn) {
       formHistoryBtn.addEventListener("click", () => {
