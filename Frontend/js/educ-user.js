@@ -82,6 +82,18 @@ document.addEventListener('DOMContentLoaded', async function () {
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
+    // Ask user for confirmation before running validations and submitting
+    const confirmResult = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Are you sure you want to submit your application? Please confirm that all information is correct.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Yes, submit',
+      cancelButtonText: 'Cancel',
+      confirmButtonColor: '#0A2C59'
+    });
+    if (!confirmResult.isConfirmed) return; // user cancelled
+
     // Client-side validation (add/remove fields as required by your backend)
     const requiredIds = ['surname', 'firstName', 'birthday', 'contact', 'year'];
     for (const id of requiredIds) {
@@ -91,7 +103,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
     }
 
-    // Ensure typeOfBenefiting is present and default to Applicant
+  // Ensure typeOfBenefiting is present and default to Applicant
     const typeEl = document.getElementById('typeOfBenefiting') || document.getElementById('benefittype');
     const typeValue = typeEl && typeEl.value ? typeEl.value : 'Applicant';
 
@@ -106,15 +118,35 @@ document.addEventListener('DOMContentLoaded', async function () {
     formData.append('civilStatus', document.getElementById('civilstatus')?.value || '');
     formData.append('religion', document.getElementById('religion')?.value || '');
     formData.append('email', document.getElementById('email')?.value || '');
-    formData.append('contactNumber', Number(document.getElementById('contact')?.value || 0));
+    // Validate contact numbers: accept typical separators (spaces/dashes) by normalizing to digits
+    const contactRaw = document.getElementById('contact')?.value || '';
+    const fatherRaw = document.getElementById('fathercontact')?.value || '';
+    const motherRaw = document.getElementById('mothercontact')?.value || '';
+    const normalize = s => (s || '').toString().replace(/\D/g, ''); // strip non-digits
+    const contactDigits = normalize(contactRaw);
+    const fatherDigits = normalize(fatherRaw);
+    const motherDigits = normalize(motherRaw);
+
+    if (contactDigits.length !== 11) {
+      return Swal.fire({ icon: 'warning', title: 'Invalid Contact', text: 'Please enter an 11-digit contact number for Applicant. You can include spaces or dashes and they will be accepted.' });
+    }
+    if (fatherDigits && fatherDigits.length !== 11) {
+      return Swal.fire({ icon: 'warning', title: 'Invalid Father Contact', text: 'Please enter an 11-digit contact number for Father, or leave it empty.' });
+    }
+    if (motherDigits && motherDigits.length !== 11) {
+      return Swal.fire({ icon: 'warning', title: 'Invalid Mother Contact', text: 'Please enter an 11-digit contact number for Mother, or leave it empty.' });
+    }
+
+    // Append normalized contact numbers as strings (preserve leading zeroes)
+    formData.append('contactNumber', contactDigits);
     formData.append('school', document.getElementById('schoolname')?.value || '');
     formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
     formData.append('year', document.getElementById('year')?.value || '');
     formData.append('typeOfBenefit', typeValue); // <-- use this name
     formData.append('fatherName', document.getElementById('fathername')?.value || '');
-    formData.append('fatherPhone', document.getElementById('fathercontact')?.value || '');
+  formData.append('fatherPhone', fatherDigits || '');
     formData.append('motherName', document.getElementById('mothername')?.value || '');
-    formData.append('motherPhone', document.getElementById('mothercontact')?.value || '');
+  formData.append('motherPhone', motherDigits || '');
 
     // siblings & expenses as before
     const siblings = [];

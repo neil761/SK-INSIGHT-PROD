@@ -4,8 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <title>LGBTQIA+ PROFILING</title>
-    <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
-  <link rel="stylesheet" href="../../css/userlgbtq.css" />
+    <link rel="icon" href="../../../../assets/logo.png" type="image/x-icon">
+  <link rel="stylesheet" href="../../../../css/userlgbtq.css" />
   <link
     rel="stylesheet"
     href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
@@ -16,10 +16,10 @@
   <!-- ✅ Navbar -->
   <div class="navbar">
     <div class="navbar-left">
-      <a href="./index.html">
-        <img src="../../assets/logo.png" alt="Logo" class="logo"/>
+      <a href="../../index.html">
+        <img src="../../../../assets/logo.png" alt="Logo" class="logo"/>
       </a>
-      <a href="./index.html" class="title">SK-PBW</a>
+      <a href="../../index.html" class="title">SK-PBW</a>
     </div>
     
     <div class="navbar-center">
@@ -32,11 +32,11 @@
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../user/announcement.html">
+      <a class="notif" href="../../announcement.html">
           <i class="fa-solid fa-bell bell"></i>
           <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
         </a>
-      <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
+      <a href="../../userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
     </div>
   </div>
   <div class="navbar-mobile-menu" id="navbarMobileMenu">
@@ -77,7 +77,7 @@
       </div>
       <div class="card">
         <label class="label"  for="birthday">Birthday:</label>
-        <input type="date" id="birthday" name="birthday" required>
+        <input type="date" id="birthday" name="birthday" required disabled>
       </div>
       <div class="card">
         <label class="label"  for="sex">Sex Assigned at Birth:</label>
@@ -105,7 +105,7 @@
       <div class="kk-upload-row">
         <div class="lcard kk-upload-col">
           <label class="label"  for="idImageFront">Upload Valid ID Image (Front):</label>
-    <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
+          <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
           <input type="file" id="idImageFront" name="idImageFront" accept="image/*" required>
           <div id="imagePreviewContainerFront" class="image-preview-container">
             <button type="button" id="removeImageBtnFront" class="remove-image-btn" title="Remove image">&times;</button>
@@ -116,7 +116,7 @@
       <!-- Back ID Image Upload -->
         <div class="lcard kk-upload-col">
           <label class="label" for="idImageBack">Upload Valid ID Image (Back):</label>
-    <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
+          <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
           <input type="file" id="idImageBack" name="idImageBack" accept="image/*" required>
           <div id="imagePreviewContainerBack" class="image-preview-container">
             <button type="button" id="removeImageBtnBack" class="remove-image-btn" title="Remove image">&times;</button>
@@ -127,13 +127,16 @@
       
       <div class="card kk-card-invisible">
         <div class="kk-btn-group">
+          <a class="cancel" href="lgbtqconfirmation.html">Cancel</a>
           <button type="submit" id="submitBtn" class="submit-btn">
-            Submit
+            Done
           </button>
         </div>
       </div>
     </form>
   </div>
+
+  <script src="../../../../js/notification-badge.js" defer></script>
 
         <!-- Footer -->
     <footer class="footer">
@@ -167,9 +170,9 @@
       </div>
     </footer>
   <!-- ✅ Scripts -->
-  <script src="../../js/token-validation.js"></script>
-    <script src="../../js/notification-badge.js" defer></script>
-  <script src="../../js/User/LGBTQ-user.js"></script>
+  <script src="../../../../js/token-validation.js"></script>
+    <script src="../../../../js/notification-badge.js" defer></script>
+  <script src="../../../../js/editLg.js"></script>
  
 </body>
 </html>

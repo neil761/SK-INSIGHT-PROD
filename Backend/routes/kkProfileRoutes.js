@@ -292,7 +292,17 @@ router.get('/export-template', protect, authorizeRoles('admin'), ctrl.exportKKPr
 
 // Admin or Owner can manage a specific profile
 router.get("/:id", protect, authorizeRoles("admin"), ctrl.getProfileById);
-router.put("/:id", protect, ctrl.updateProfileById);
+// Allow image uploads on update as well (PUT with multipart/form-data)
+router.put(
+  "/:id",
+  protect,
+  upload.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "idImage", maxCount: 1 },
+    { name: "signatureImage", maxCount: 1 },
+  ]),
+  ctrl.updateProfileById
+);
 router.delete("/:id", protect, authorizeRoles("admin"), ctrl.deleteProfileById);
 router.put("/:id/restore", protect, authorizeRoles("admin"), ctrl.restoreProfileById);
 router.delete("/:id/permanent", protect, authorizeRoles("admin"), ctrl.permanentlyDeleteProfileById);

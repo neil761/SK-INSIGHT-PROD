@@ -8,6 +8,7 @@ const path = require("path");
 const Notification = require("../models/Notification"); // <-- Import Notification model
 const Announcement = require("../models/Announcement"); // Add at top if not present
 const mongoose = require("mongoose");
+const cloudinary = require("../config/cloudinaryConfig");
 // ...existing imports...
 // Helper to get demographics from LGBTQProfile only
 async function getDemographics(profile) {
@@ -296,6 +297,16 @@ exports.getMyProfile = async (req, res) => {
 
     // Defensive: ensure .toObject exists
     const enriched = await attachKKInfo(profile);
+    // Also include demographics (birthday, age) from populated user for convenience
+    try {
+      const demographics = await getDemographics(profile);
+      enriched.demographics = demographics;
+      // expose top-level birthday & age for callers that expect them
+      if (demographics && demographics.birthday) enriched.birthday = demographics.birthday;
+      if (demographics && demographics.age !== undefined) enriched.age = demographics.age;
+    } catch (e) {
+      console.warn('Failed to attach demographics to enriched profile', e);
+    }
     res.status(200).json(enriched);
   } catch (error) {
     console.error("getMyProfile error:", error); // <-- Add this for debugging
@@ -325,6 +336,95 @@ exports.updateProfileById = async (req, res) => {
     res.json({ message: "Profile updated", profile });
   } catch (err) {
     res.status(500).json({ error: "Server error" });
+  }
+};
+
+// Update my own profile (user-level) — accepts multipart for idImageFront/idImageBack
+exports.updateMyProfile = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) return res.status(401).json({ error: 'Unauthorized' });
+
+    const profile = await LGBTQProfile.findOne({ user: req.user.id, isDeleted: false });
+    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+
+    // Update simple fields if provided
+    const updatable = ['lastname', 'firstname', 'middlename', 'sexAssignedAtBirth', 'lgbtqClassification'];
+    updatable.forEach((k) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, k) && req.body[k] !== undefined) {
+        profile[k] = req.body[k];
+      }
+    });
+
+    // Helper to extract Cloudinary public_id from stored url
+    function extractPublicId(url) {
+      try {
+        if (!url || typeof url !== 'string') return null;
+        const parts = url.split('/upload/');
+        if (parts.length < 2) return null;
+        let after = parts[1];
+        // remove version prefix if present (v1234567/)
+        after = after.replace(/^v\d+\//, '');
+        // remove extension
+        after = after.replace(/\.[a-zA-Z0-9]+$/, '');
+        return after;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Handle _removed flag (may be JSON string or object)
+    if (req.body && req.body._removed) {
+      let removed = req.body._removed;
+      if (typeof removed === 'string') {
+        try { removed = JSON.parse(removed); } catch (e) { /* keep string */ }
+      }
+      if (removed && (removed.front || removed.idImageFront)) {
+        // delete existing cloudinary resource if present
+        if (profile.idImageFront) {
+          const pid = extractPublicId(profile.idImageFront);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy front failed', e); }
+          }
+        }
+        profile.idImageFront = null;
+      }
+      if (removed && (removed.back || removed.idImageBack)) {
+        if (profile.idImageBack) {
+          const pid = extractPublicId(profile.idImageBack);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy back failed', e); }
+          }
+        }
+        profile.idImageBack = null;
+      }
+    }
+
+    // If new files uploaded, replace stored paths
+    if (req.files && req.files.idImageFront && req.files.idImageFront[0]) {
+      // delete old image first if exists
+      if (profile.idImageFront) {
+        const oldPid = extractPublicId(profile.idImageFront);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old front failed', e); }
+        }
+      }
+      profile.idImageFront = req.files.idImageFront[0].path;
+    }
+    if (req.files && req.files.idImageBack && req.files.idImageBack[0]) {
+      if (profile.idImageBack) {
+        const oldPid = extractPublicId(profile.idImageBack);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old back failed', e); }
+        }
+      }
+      profile.idImageBack = req.files.idImageBack[0].path;
+    }
+
+    await profile.save();
+    return res.json({ message: 'Profile updated', profile });
+  } catch (err) {
+    console.error('updateMyProfile error:', err);
+    return res.status(500).json({ error: 'Server error' });
   }
 };
 

@@ -6,10 +6,24 @@
   }
   
   body {
-    background: #eaf2fb;
+    background: #D1E1F5;
     color: #0a1a3a;
     padding-top: 5rem;
   }
+
+/* subtle fixed mask under navbar so content appears to "enter a tunnel" when scrolling */
+body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* match the visual height of the navbar */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #eaf2fb 80%, transparent 100%);
+  z-index: 900; /* below navbar (1000) but above page content */
+}
   
 /* Navbar */
   .navbar {
@@ -27,7 +41,8 @@
     padding: 15px 30px;
     border-radius: 15px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    z-index: 1000;
+  /* increase z-index so navbar always appears above page cards (match kkform.css values) */
+  z-index: 1000;
 }
 
 .navbar img {
@@ -119,6 +134,33 @@
   cursor: pointer;
   margin-right: 10px;
 }
+
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+
 @media (max-width: 1048px) {
   .navbar-center {
     display: none;
@@ -130,8 +172,16 @@
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar {
-    padding: 10px 15px;
+    padding: 4% 4.8%;
   }
   
   .navbar img {
@@ -182,6 +232,9 @@
     border-radius: 2vh;
     margin: 5% auto; 
     padding: 3%;
+    /* ensure the card doesn't create a stacking context above the fixed navbar */
+    position: relative;
+    z-index: 0;
   }
   
   /* Image */

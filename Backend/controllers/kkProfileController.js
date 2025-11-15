@@ -226,6 +226,28 @@ exports.getProfileById = async (req, res) => {
 };
 
 // PUT /api/kkprofiling/:id
+const cloudinary = require('../config/cloudinaryConfig');
+
+// Helper: derive Cloudinary public_id from a full Cloudinary URL
+function publicIdFromUrl(url) {
+  try {
+    if (!url) return null;
+    const u = new URL(url);
+    // path after /upload/
+    const parts = u.pathname.split('/upload/');
+    if (parts.length < 2) return null;
+    let after = parts[1];
+    // remove possible version prefix v123456/
+    after = after.replace(/^v[0-9]+\//, '');
+    // remove file extension
+    const lastDot = after.lastIndexOf('.');
+    if (lastDot !== -1) after = after.substring(0, lastDot);
+    return after;
+  } catch (e) {
+    return null;
+  }
+}
+
 exports.updateProfileById = async (req, res) => {
   try {
     const profile = await KKProfile.findById(req.params.id);
@@ -235,11 +257,139 @@ exports.updateProfileById = async (req, res) => {
       return res.status(403).json({ error: "Not authorized" });
     }
 
-    Object.assign(profile, req.body);
-    await profile.save();
+    // If new files were uploaded via multer (CloudinaryStorage), replace the stored URLs
+    try {
+      if (req.files && req.files.profileImage && req.files.profileImage[0]) {
+        // delete old image from Cloudinary if possible
+        const oldUrl = profile.profileImage;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy old profile image', e); }
+        }
+        // multer-storage-cloudinary exposes path (the secure URL)
+        profile.profileImage = req.files.profileImage[0].path;
+      }
+
+      if (req.files && req.files.signatureImage && req.files.signatureImage[0]) {
+        const oldSigUrl = profile.signatureImagePath;
+        const oldSigPublicId = publicIdFromUrl(oldSigUrl);
+        if (oldSigPublicId) {
+          try { await cloudinary.uploader.destroy(oldSigPublicId); } catch (e) { console.warn('Failed to destroy old signature image', e); }
+        }
+        profile.signatureImagePath = req.files.signatureImage[0].path;
+      }
+
+      if (req.files && req.files.idImage && req.files.idImage[0]) {
+        // optional id image replacement
+        const oldIdUrl = profile.idImagePath;
+        const oldIdPublicId = publicIdFromUrl(oldIdUrl);
+        if (oldIdPublicId) {
+          try { await cloudinary.uploader.destroy(oldIdPublicId); } catch (e) { console.warn('Failed to destroy old id image', e); }
+        }
+        profile.idImagePath = req.files.idImage[0].path;
+      }
+    } catch (e) {
+      console.warn('File processing during update failed', e);
+    }
+
+    // Apply other body updates (coerce types as needed)
+    // Merge req.body into profile (careful not to overwrite image fields already set above)
+    let body = Object.assign({}, req.body);
+
+    // If client sent _removed flags (as JSON string when using FormData), parse them
+    let removedFlags = null;
+    if (body._removed) {
+      try {
+        removedFlags = typeof body._removed === 'string' ? JSON.parse(body._removed) : body._removed;
+      } catch (e) {
+        // ignore parse error, but keep the raw value
+        removedFlags = body._removed;
+      }
+    }
+
+    // If client asked to remove images without replacement, delete old Cloudinary resources and clear fields
+    try {
+      if (removedFlags && removedFlags.profileImage) {
+        const oldUrl = profile.profileImage;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy removed profile image', e); }
+        }
+        profile.profileImage = null;
+      }
+      if (removedFlags && removedFlags.signatureImage) {
+        const oldUrl = profile.signatureImagePath;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy removed signature image', e); }
+        }
+        profile.signatureImagePath = null;
+      }
+      if (removedFlags && removedFlags.idImage) {
+        const oldUrl = profile.idImagePath;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy removed id image', e); }
+        }
+        profile.idImagePath = null;
+      }
+    } catch (e) {
+      console.warn('Error handling removed flags', e);
+    }
+
+    // Remove any image fields from body if present (we already handled files above)
+    delete body.profileImage;
+    delete body.signatureImagePath;
+    delete body.signatureImage;
+    delete body.idImagePath;
+    delete body.idImage;
+    delete body._removed;
+
+    // Basic coercion for common form values sent via FormData (strings -> booleans/numbers/dates)
+    const parseBool = v => {
+      if (v === true || v === false) return v;
+      if (!v && v !== 0) return v;
+      const s = String(v).trim().toLowerCase();
+      if (s === 'true' || s === 'yes') return true;
+      if (s === 'false' || s === 'no') return false;
+      return v;
+    };
+    const parseNumber = v => {
+      if (v === null || v === undefined || v === '') return v;
+      const n = Number(v);
+      return isNaN(n) ? v : n;
+    };
+
+    if ('attendedKKAssembly' in body) body.attendedKKAssembly = parseBool(body.attendedKKAssembly);
+    if ('registeredSKVoter' in body) body.registeredSKVoter = parseBool(body.registeredSKVoter);
+    if ('registeredNationalVoter' in body) body.registeredNationalVoter = parseBool(body.registeredNationalVoter);
+    if ('votedLastSKElection' in body) body.votedLastSKElection = parseBool(body.votedLastSKElection);
+    if ('attendanceCount' in body) body.attendanceCount = parseNumber(body.attendanceCount);
+    if ('birthday' in body && body.birthday) {
+      // convert YYYY-MM-DD or ISO strings to Date
+      const bd = new Date(body.birthday);
+      if (!isNaN(bd)) body.birthday = bd;
+    }
+
+    // Remove empty strings to avoid enum/validation collisions
+    Object.keys(body).forEach(k => {
+      if (body[k] === '') delete body[k];
+    });
+
+    // Merge sanitized body into profile
+    Object.assign(profile, body);
+
+    try {
+      await profile.save();
+    } catch (saveErr) {
+      console.error('Failed to save updated profile:', saveErr);
+      // give more context in development; do not expose stack in production
+      return res.status(400).json({ error: saveErr.message || 'Validation error', details: saveErr.errors || null });
+    }
 
     res.json({ message: "Profile updated", profile });
   } catch (err) {
+    console.error('Update profile error', err);
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -339,9 +489,14 @@ exports.getProfileImage = async (req, res) => {
       return res.status(404).json({ error: "No image found" });
     }
 
-    res.status(200).json({
-      imageUrl: `${req.protocol}://${req.get("host")}/${profile.profileImage}`,
-    });
+    // If the stored profileImage is already a full URL (e.g., Cloudinary secure URL),
+    // return it directly. Otherwise, build a server-prefixed URL for local files.
+    let imageUrl = profile.profileImage;
+    if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
+      imageUrl = `${req.protocol}://${req.get("host")}/${imageUrl}`;
+    }
+
+    res.status(200).json({ imageUrl });
   } catch (error) {
     res.status(500).json({ error: "Error fetching image" });
   }

@@ -7,6 +7,7 @@ const ExcelJS = require('exceljs'); // Make sure to install: npm install exceljs
 const path = require("path");
 const fs = require("fs");
     const Announcement = require("../models/Announcement");
+const cloudinary = require("../config/cloudinaryConfig");
 async function getPresentCycle(formName) {
   const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
     "cycleId"
@@ -150,7 +151,7 @@ exports.getMyApplication = async (req, res) => {
     const application = await EducationalAssistance.findOne({
       user: userId,
       formCycle: formStatus?.cycleId,
-    }).populate("user", "username email");
+    }).populate("user", "username email birthday");
 
     if (!application) {
       return res
@@ -162,6 +163,141 @@ exports.getMyApplication = async (req, res) => {
   } catch (err) {
     console.error("Get my application error:", err);
     res.status(500).json({ error: "Failed to fetch application" });
+  }
+};
+
+// User: update my application (accepts multipart fields frontImage/backImage/coeImage/voter)
+exports.updateMyApplication = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    const formStatus = await FormStatus.findOne({ formName: 'Educational Assistance' });
+    if (!formStatus || !formStatus.cycleId) return res.status(404).json({ error: 'Form cycle not found' });
+
+    const application = await EducationalAssistance.findOne({ user: userId, formCycle: formStatus.cycleId });
+    if (!application) return res.status(404).json({ error: 'Application not found' });
+
+    // Update simple fields if provided in body
+    const updatable = [
+      'surname','firstname','middlename','suffix','birthday','placeOfBirth','age','gender','civilstatus','religion','email','contact','schoolname','schooladdress','year','benefittype','fathername','fathercontact','mothername','mothercontact'
+    ];
+    updatable.forEach(k => {
+      if (Object.prototype.hasOwnProperty.call(req.body, k) && req.body[k] !== undefined) {
+        application[k] = req.body[k];
+      }
+    });
+
+    // Parse siblings/expenses if provided as JSON strings
+    if (req.body.siblings) {
+      try { application.siblings = typeof req.body.siblings === 'string' ? JSON.parse(req.body.siblings) : req.body.siblings; } catch (e) { /* ignore parse errors */ }
+    }
+    if (req.body.expenses) {
+      try { application.expenses = typeof req.body.expenses === 'string' ? JSON.parse(req.body.expenses) : req.body.expenses; } catch (e) { /* ignore parse errors */ }
+    }
+
+    // Helper to extract Cloudinary public_id from stored url
+    function extractPublicId(url) {
+      try {
+        if (!url || typeof url !== 'string') return null;
+        const parts = url.split('/upload/');
+        if (parts.length < 2) return null;
+        let after = parts[1];
+        after = after.replace(/^v\d+\//, '');
+        after = after.replace(/\.[a-zA-Z0-9]+$/, '');
+        return after;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Handle removal flags (may be JSON string)
+    if (req.body && req.body._removed) {
+      let removed = req.body._removed;
+      if (typeof removed === 'string') {
+        try { removed = JSON.parse(removed); } catch (e) { /* keep as-is */ }
+      }
+      if (removed && (removed.front || removed.frontImage)) {
+        if (application.frontImage) {
+          const pid = extractPublicId(application.frontImage);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy front failed', e); }
+          }
+        }
+        application.frontImage = null;
+      }
+      if (removed && (removed.back || removed.backImage)) {
+        if (application.backImage) {
+          const pid = extractPublicId(application.backImage);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy back failed', e); }
+          }
+        }
+        application.backImage = null;
+      }
+      if (removed && (removed.coe || removed.coeImage)) {
+        if (application.coeImage) {
+          const pid = extractPublicId(application.coeImage);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy coe failed', e); }
+          }
+        }
+        application.coeImage = null;
+      }
+      if (removed && (removed.voter || removed.voterImage)) {
+        if (application.voter) {
+          const pid = extractPublicId(application.voter);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy voter failed', e); }
+          }
+        }
+        application.voter = null;
+      }
+    }
+
+    // Replace with newly uploaded files (delete old first)
+    if (req.files && req.files.frontImage && req.files.frontImage[0]) {
+      if (application.frontImage) {
+        const oldPid = extractPublicId(application.frontImage);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old front failed', e); }
+        }
+      }
+      application.frontImage = req.files.frontImage[0].path;
+    }
+    if (req.files && req.files.backImage && req.files.backImage[0]) {
+      if (application.backImage) {
+        const oldPid = extractPublicId(application.backImage);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old back failed', e); }
+        }
+      }
+      application.backImage = req.files.backImage[0].path;
+    }
+    if (req.files && req.files.coeImage && req.files.coeImage[0]) {
+      if (application.coeImage) {
+        const oldPid = extractPublicId(application.coeImage);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old coe failed', e); }
+        }
+      }
+      application.coeImage = req.files.coeImage[0].path;
+    }
+    if (req.files && req.files.voter && req.files.voter[0]) {
+      if (application.voter) {
+        const oldPid = extractPublicId(application.voter);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old voter failed', e); }
+        }
+      }
+      application.voter = req.files.voter[0].path;
+    }
+
+    await application.save();
+    return res.json({ message: 'Application updated', application });
+  } catch (err) {
+    console.error('updateMyApplication error:', err);
+    return res.status(500).json({ error: 'Server error while updating application' });
   }
 };
 

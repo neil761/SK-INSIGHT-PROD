@@ -35,6 +35,53 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('workStatus').value = saved.workStatus || '';
   document.getElementById('registeredSKVoter').value = saved.registeredSKVoter || '';
   document.getElementById('registeredNationalVoter').value = saved.registeredNationalVoter || '';
+  // If user's age from step1 indicates minor (<=17), default national voter to 'No'
+  try {
+    const registeredNationalVoterEl = document.getElementById('registeredNationalVoter');
+    const step1 = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
+    let computedAge = null;
+    if (step1.age && !isNaN(Number(step1.age))) {
+      computedAge = Number(step1.age);
+    } else if (step1.birthday) {
+      const bd = new Date(step1.birthday);
+      if (!isNaN(bd.getTime())) {
+        const today = new Date();
+        computedAge = today.getFullYear() - bd.getFullYear();
+        const m = today.getMonth() - bd.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) computedAge--;
+      }
+    }
+
+    if (computedAge !== null && computedAge <= 17 && registeredNationalVoterEl) {
+      // set value and prevent user interaction while keeping element enabled so it is submitted
+      registeredNationalVoterEl.value = 'No';
+      // prevent changes but keep it enabled so form submission includes the value
+      const preventChange = (ev) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        // ensure the value stays 'No'
+        registeredNationalVoterEl.value = 'No';
+        // blur to avoid keyboard focus
+        try { registeredNationalVoterEl.blur(); } catch (e) {}
+        return false;
+      };
+      registeredNationalVoterEl.dataset.readonlyMinor = 'true';
+      registeredNationalVoterEl.addEventListener('change', preventChange, { passive: false });
+      registeredNationalVoterEl.addEventListener('keydown', preventChange, { passive: false });
+      registeredNationalVoterEl.addEventListener('mousedown', preventChange, { passive: false });
+      registeredNationalVoterEl.addEventListener('focus', () => registeredNationalVoterEl.blur());
+
+      // persist to step3 immediately
+      try { saveStep3(); } catch (e) { 
+        const cur = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        cur.registeredNationalVoter = 'No';
+        localStorage.setItem('kkProfileStep3', JSON.stringify(cur));
+      }
+    }
+  } catch (err) {
+    // If anything fails, don't block the form — silently ignore
+    console.warn('Could not apply minor voter default:', err);
+  }
   document.getElementById('votedLastSKElection').value = saved.votedLastSKElection || '';
   document.getElementById('attendedKKAssembly').value = saved.attendedKKAssembly || '';
   document.getElementById('attendanceCount').value = saved.attendanceCount || '';
@@ -52,18 +99,26 @@ document.addEventListener('DOMContentLoaded', function() {
     saved.specificNeedType
   ) {
     specificNeedsGroup.style.display = 'block';
+    if (specificNeedType) specificNeedType.required = true;
   } else {
     specificNeedsGroup.style.display = 'none';
-    document.getElementById('specificNeedType').value = '';
+    if (specificNeedType) {
+      specificNeedType.required = false;
+      specificNeedType.value = '';
+    }
   }
 
   // Show/hide dropdown for Youth with Specific Needs on change
   youthClassification.addEventListener('change', function () {
     if (this.value === 'Youth with Specific Needs') {
       specificNeedsGroup.style.display = 'block';
+      if (specificNeedType) specificNeedType.required = true;
     } else {
       specificNeedsGroup.style.display = 'none';
-      document.getElementById('specificNeedType').value = '';
+      if (specificNeedType) {
+        specificNeedType.required = false;
+        specificNeedType.value = '';
+      }
     }
     saveStep3(); // Save state when changed
   });
@@ -91,24 +146,44 @@ document.addEventListener('DOMContentLoaded', function() {
   if (saved.attendedKKAssembly === 'Yes') {
     attendanceCountGroup.style.display = 'block';
     reasonGroup.style.display = 'none';
+    const attEl = document.getElementById('attendanceCount'); if (attEl) attEl.required = true;
+    const reasonEl = document.getElementById('reasonDidNotAttend'); if (reasonEl) reasonEl.required = false;
   } else if (saved.attendedKKAssembly === 'No') {
     attendanceCountGroup.style.display = 'none';
     reasonGroup.style.display = 'block';
+    const attEl2 = document.getElementById('attendanceCount'); if (attEl2) attEl2.required = false;
+    const reasonEl2 = document.getElementById('reasonDidNotAttend'); if (reasonEl2) reasonEl2.required = true;
   } else {
     attendanceCountGroup.style.display = 'none';
     reasonGroup.style.display = 'none';
+    const attEl3 = document.getElementById('attendanceCount'); if (attEl3) attEl3.required = false;
+    const reasonEl3 = document.getElementById('reasonDidNotAttend'); if (reasonEl3) reasonEl3.required = false;
   }
 
   attendedKKAssembly.addEventListener('change', function () {
     if (this.value === 'Yes') {
       attendanceCountGroup.style.display = 'block';
       reasonGroup.style.display = 'none';
+      // mark attendanceCount required
+      const attEl = document.getElementById('attendanceCount');
+      if (attEl) attEl.required = true;
+      const reasonEl = document.getElementById('reasonDidNotAttend');
+      if (reasonEl) reasonEl.required = false;
     } else if (this.value === 'No') {
       attendanceCountGroup.style.display = 'none';
       reasonGroup.style.display = 'block';
+      // mark reason required
+      const attEl = document.getElementById('attendanceCount');
+      if (attEl) attEl.required = false;
+      const reasonEl = document.getElementById('reasonDidNotAttend');
+      if (reasonEl) reasonEl.required = true;
     } else {
       attendanceCountGroup.style.display = 'none';
       reasonGroup.style.display = 'none';
+      const attEl = document.getElementById('attendanceCount');
+      if (attEl) attEl.required = false;
+      const reasonEl = document.getElementById('reasonDidNotAttend');
+      if (reasonEl) reasonEl.required = false;
     }
   });
 
@@ -418,6 +493,34 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!hasSignature) {
       await Swal.fire("Missing Signature", "Please upload a signature image before submitting.", "warning");
       return;
+    }
+
+    // Additional validation rules:
+    // - If youthClassification is 'Youth with Specific Needs', require specificNeedType
+    // - If attendedKKAssembly is true (Yes), require attendanceCount
+    // - If attendedKKAssembly is false (No), require reasonDidNotAttend
+    try {
+      const yc = step3.youthClassification || '';
+      const specific = step3.specificNeedType || '';
+      if (yc === 'Youth with Specific Needs' && (!specific || String(specific).trim() === '')) {
+        await Swal.fire('Missing Field', 'Please specify the type of specific need.', 'warning');
+        return;
+      }
+
+      if (step3.attendedKKAssembly === true) {
+        if (!step3.attendanceCount || String(step3.attendanceCount).trim() === '') {
+          await Swal.fire('Missing Field', 'Please indicate how many times you attended the KK Assembly.', 'warning');
+          return;
+        }
+      }
+      if (step3.attendedKKAssembly === false) {
+        if (!step3.reasonDidNotAttend || String(step3.reasonDidNotAttend).trim() === '') {
+          await Swal.fire('Missing Field', 'Please indicate the reason why you did not attend the KK Assembly.', 'warning');
+          return;
+        }
+      }
+    } catch (e) {
+      // ignore validation errors and allow server-side checks to handle them
     }
 
     const formData = new FormData();

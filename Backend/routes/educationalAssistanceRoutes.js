@@ -18,6 +18,19 @@ router.post(
 );
 router.get("/me", protect, ctrl.getMyApplication);
 
+// User: update my application (allows replacing/removing uploaded images)
+router.put(
+  "/me",
+  protect,
+  uploadEducational.fields([
+    { name: "frontImage", maxCount: 1 },
+    { name: "backImage", maxCount: 1 },
+    { name: "coeImage", maxCount: 1 },
+    { name: "voter", maxCount: 1 },
+  ]),
+  ctrl.updateMyApplication
+);
+
 // ===== Admin Routes =====
 router.get("/", protect, authorizeRoles("admin"), ctrl.getAllApplications);
 router.get(

@@ -341,13 +341,12 @@ body {
 
     /* Form Inputs */
     input[type="text"],
-    input[type="tel"],
-    input[type="number"],
-    input[type="date"],
-    input[type="email"],
-    input[type="password"],
-    select,
-    textarea {
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
     width: 100%;
     padding: 10px 14px;
     border: 1px solid #bcd4ec;
@@ -366,6 +365,21 @@ textarea:focus {
     border-color: #1e4e9e;
     outline: none;
     box-shadow: 0 0 0 2px #eaf3fa;
+}
+
+.cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 1.7% 5% !important;
+    background-color: #777777;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-right: 15px;
 }
 
     /* Submit Button */
@@ -669,15 +683,21 @@ textarea:focus {
         font-size: 14px;
       }
       
-      .submit-btn-container {
-        padding-right: 20px;
-      }
     }
     
     /* Mobile Medium (321px - 480px) */
     @media (max-width: 480px) and (min-width: 321px) {
       body {
         font-size: 13px;
+      }
+
+      .cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 3% 5% !important;
+      }
+      .submit-btn-container{
+        padding-right: 0 !important;
       }
       
       .card, .cardintro {
@@ -738,7 +758,7 @@ textarea:focus {
       }
       
       .submit-btn-container {
-        padding-right: 15px;
+        gap: 41%;
       }
     }
     
@@ -746,6 +766,12 @@ textarea:focus {
     @media (max-width: 320px) {
       body {
         font-size: 12px;
+      }
+      
+      .cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 3% 5% !important;
       }
       
       .card, .cardintro {
@@ -807,7 +833,10 @@ textarea:focus {
       }
       
       .submit-btn-container {
-        padding-right: 15px;
+        display: flex;
+        justify-content: end;
+        align-items: end;
+        padding-right: 0 !important;
       }
     }
 
@@ -827,7 +856,6 @@ textarea:focus {
       max-width: 900px;
       margin: 0 auto 25px auto;
       text-align: right;
-      padding-right: 30px;
       box-sizing: border-box;
     }
     .submit-btn {
@@ -856,13 +884,19 @@ textarea:focus {
       justify-content: center;
       align-items: center;
       z-index: 1000;
+      overflow: auto; /* ensure modal can scroll internally if needed, but image will be constrained */
     }
 
     #imagePreviewModal img {
-      max-width: 90%;
-      max-height: 90%;
+      /* Always fit within the viewport to avoid page scroll — prefer viewport-relative limits */
+      max-width: min(800px, 95vw);
+      max-height: 90vh;
+      width: auto;
+      height: auto;
       border-radius: 10px;
       object-fit: contain;
+      display: block;
+      margin: 0 auto;
     }
 
     /* Mobile and Tablet Responsive Styles for Image Preview */
@@ -873,12 +907,13 @@ textarea:focus {
       }
       
       #imagePreviewModal img {
-        max-width: 95%;
-        max-height: 85%;
+        max-width: 95vw;
+        max-height: 90vh;
         width: auto;
         height: auto;
         display: block;
         margin: 0 auto;
+        object-fit: contain;
       }
     }
 
@@ -888,9 +923,10 @@ textarea:focus {
       }
       
       #imagePreviewModal img {
-        max-width: 98%;
-        max-height: 80%;
+        max-width: 98vw;
+        max-height: 80vh;
         border-radius: 8px;
+        object-fit: contain;
       }
     }
 
@@ -900,10 +936,22 @@ textarea:focus {
       }
       
       #imagePreviewModal img {
-        max-width: 100%;
-        max-height: 75%;
+        max-width: 100vw;
+        max-height: 75vh;
         border-radius: 6px;
+        object-fit: contain;
       }
+
+/* Provide a small utility class for consistent inline thumbnails used elsewhere */
+.thumbnail-fixed {
+  width: 180px;
+  height: 120px;
+  max-width: 180px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
     }
 
     /* Close Preview Button */

@@ -14,6 +14,19 @@ body {
   flex-direction: column;
   padding-top: 6rem;   /* space for fixed navbar */
 }
+/* subtle fixed mask under navbar so content appears to "enter a tunnel" when scrolling */
+body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* match the visual height of the navbar */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #D1E1F5 80%, transparent 100%);
+  z-index: 900; /* below navbar (1000) but above page content */
+}
 
 /* Navbar */
   .navbar {
@@ -160,7 +173,7 @@ body {
   margin-bottom: 20px;
 }
 
-.btn {
+.views, .edit {
   padding: 10px 20px;
   border: 1px solid #000;
   border-radius: 6px;
@@ -271,6 +284,29 @@ body {
 .footer-bottom p {
   font-size: 14px;
   color: #cfd9e8;
+}/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 /* Responsive behavior */
@@ -293,6 +329,14 @@ body {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar {
     padding: 10px 15px;
   }
@@ -332,6 +376,14 @@ body {
     display: flex;
     align-items: center;
     margin-top: 0;
+  }
+  .card{
+    width: 90%;
+  }
+  .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
@@ -398,6 +450,11 @@ body {
 }
 
 @media (max-width: 480px) {
+  
+  .views, .edit {
+    padding: 5% 3%;
+    font-size: 0.7rem;
+  }
   .footer {
     padding: 30px 20px 15px;
     margin-top: 80px;

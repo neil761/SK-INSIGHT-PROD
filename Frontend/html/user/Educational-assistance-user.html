@@ -31,7 +31,10 @@
         <span class="navbar-hamburger" id="navbarHamburger">
           <i class="fa-solid fa-bars"></i>
         </span>
-      <a class="notif" href="./announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
       <a class="notif" href="../user/userProfile.html"><i class="fa-solid fa-user bell"></i></a>
       </div>
     </div>
@@ -124,7 +127,7 @@
 
   <div class="card">
     <label class="label"  for="contact">Contact Number:</label>
-    <input type="text" id="contact" name="contact" placeholder="Your Answer" maxlength="11">
+    <input type="tel" id="contact" name="contact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
   </div>
 
   <div class="card">
@@ -158,7 +161,7 @@
 
   <div class="card">
     <label class="label"  for="fathercontact">Father's Contact Number:</label>
-    <input type="text" id="fathercontact" name="fathercontact" placeholder="Your Answer" maxlength="11">
+    <input type="tel" id="fathercontact" name="fathercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
   </div>
 
   <div class="card">
@@ -168,7 +171,7 @@
 
   <div class="card">
     <label class="label"  for="mothercontact">Mother's Contact Number:</label>
-    <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer" maxlength="11">
+    <input type="tel" id="mothercontact" name="mothercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
   </div>
 
   <!-- Siblings Section -->
@@ -318,6 +321,7 @@
       </div>
     </footer>
   <script src="../../js/token-validation.js"></script>
+    <script src="../../js/notification-badge.js" defer></script>
   <script src="../../js/educ-user.js"></script>
 </body>
 </html>

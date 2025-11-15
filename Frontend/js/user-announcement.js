@@ -2,7 +2,7 @@
 // ANNOUNCEMENT SECTION
 // =========================
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const tableBody = document.querySelector(".announcement-table tbody");
   const tableHead = document.querySelector(".announcement-table thead tr");
   const modal = document.getElementById("announcementModal");
@@ -26,6 +26,22 @@ document.addEventListener("DOMContentLoaded", () => {
   let generalAnnouncements = [];
   let expiredAnnouncements = [];
   let forYouAnnouncements = [];
+  let currentUserId = null;
+
+  async function loadCurrentUserId() {
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      if (!token) return;
+      const res = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      // API may return { user: {...} } or the user object directly
+      const userObj = (data && data.user) ? data.user : data;
+      currentUserId = (userObj && (userObj._id || userObj.id)) || null;
+    } catch (err) {
+      console.warn('Failed to load current user id', err);
+    }
+  }
 
   const tabBtns = document.querySelectorAll('.tab-btn');
   let currentTab = 'general';
@@ -76,6 +92,29 @@ document.addEventListener("DOMContentLoaded", () => {
     console.log("For You Announcements:", forYouAnnouncements);
   }
 
+  // Mark an announcement as viewed for the current user (server will push user id into viewedBy)
+  async function markAnnouncementViewed(id) {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token || !id) return;
+      const res = await fetch(`http://localhost:5000/api/announcements/${id}/view`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        // non-fatal: server may already have it marked or endpoint may be protected
+        console.warn("Failed to mark announcement viewed", res.status);
+      }
+      // refresh announcements UI and the badge (if the badge script exposes the helper)
+      try { await renderTabAnnouncements(); } catch (e) { /* ignore */ }
+      if (window.updateNotificationBadge) {
+        try { window.updateNotificationBadge(); } catch (e) { /* ignore */ }
+      }
+    } catch (err) {
+      console.warn("markAnnouncementViewed error", err);
+    }
+  }
+
   async function renderTabAnnouncements() {
     if (currentTab === 'general' || currentTab === 'expired') {
       await fetchGeneralAndExpired();
@@ -119,6 +158,10 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       // Sort by nearest eventDate (soonest first)
       displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+      // ensure pinned announcements appear first while keeping relative order
+      const pinned = displayAnnouncements.filter(x => x.isPinned);
+      const unpinned = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinned.concat(unpinned);
     }
     else if (currentTab === 'expired') {
       displayAnnouncements = announcements.filter(a => {
@@ -130,6 +173,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     else if (currentTab === 'foryou') {
       displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // pinned on top
+      const pinnedFY = displayAnnouncements.filter(x => x.isPinned);
+      const unpinnedFY = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinnedFY.concat(unpinnedFY);
     }
 
     const limitedAnnouncements = displayAnnouncements.slice(0, 8);
@@ -143,10 +190,18 @@ document.addEventListener("DOMContentLoaded", () => {
         status = getAnnouncementStatus(a.expiresAt);
         dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
       }
-      const tr = document.createElement("tr");
+        const tr = document.createElement("tr");
       if (a.isPinned) {
         tr.classList.add("pinned-row");
       }
+        // read/unread visual state
+        try {
+          const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          const isRead = currentUserId ? viewedBy.includes(String(currentUserId)) : false;
+          tr.classList.add(isRead ? 'announcement-read' : 'announcement-notread');
+        } catch (e) {
+          // ignore
+        }
       // Add status hue for For You tab
 if (currentTab === 'foryou') {
   const title = (a.title || "").toLowerCase();
@@ -196,6 +251,10 @@ if (currentTab === 'foryou') {
         return exp >= now;
       });
       displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+      // pinned first
+      const pinned = displayAnnouncements.filter(x => x.isPinned);
+      const unpinned = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinned.concat(unpinned);
     }
     else if (currentTab === 'expired') {
       displayAnnouncements = (announcements || []).filter(a => {
@@ -206,6 +265,10 @@ if (currentTab === 'foryou') {
     }
     else if (currentTab === 'foryou') {
       displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // pinned first
+      const pinnedFY = displayAnnouncements.filter(x => x.isPinned);
+      const unpinnedFY = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinnedFY.concat(unpinnedFY);
     }
 
     const limitedAnnouncements = displayAnnouncements.slice(0, 8);
@@ -220,7 +283,14 @@ if (currentTab === 'foryou') {
         dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
       }
       const card = document.createElement('div');
-      card.className = 'announcement-card';
+      // read/unread visual state for cards
+      try {
+        const viewedBy2 = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+        const isReadCard = currentUserId ? viewedBy2.includes(String(currentUserId)) : false;
+        card.className = 'announcement-card ' + (isReadCard ? 'announcement-read' : 'announcement-notread');
+      } catch (e) {
+        card.className = 'announcement-card';
+      }
       // Add status hue for For You tab
 if (currentTab === 'foryou') {
   const title = (a.title || "").toLowerCase();
@@ -267,6 +337,8 @@ if (currentTab === 'foryou') {
           modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
           modalDescription.textContent = announcement.content;
           modal.classList.add("active");
+          // mark as viewed on the server and refresh badge/UI
+          try { await markAnnouncementViewed(a._id); } catch (e) { /* ignore */ }
         } catch (err) {
           console.error("Error fetching announcement:", err);
           alert("Failed to load announcement details");
@@ -306,6 +378,8 @@ if (currentTab === 'foryou') {
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
         modalDescription.textContent = announcement.content;
         modal.classList.add("active");
+  // mark as viewed on the server and refresh badge/UI
+  try { await markAnnouncementViewed(id); } catch (e) { /* ignore */ }
       } catch (err) {
         console.error("Error fetching announcement:", err);
         alert("Failed to load announcement details");
@@ -340,8 +414,9 @@ if (currentTab === 'foryou') {
   }
 
   // Initial load: show general tab and update header
+  await loadCurrentUserId();
   updateTableHeader();
-  renderTabAnnouncements();
+  await renderTabAnnouncements();
 
   // WebSocket updates (optional, keep your logic here)
   const socket = io("http://localhost:5000", { transports: ["websocket"] });
