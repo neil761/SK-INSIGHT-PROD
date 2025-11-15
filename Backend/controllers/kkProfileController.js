@@ -11,15 +11,22 @@ const Docxtemplater = require("docxtemplater");
 const Notification = require("../models/Notification");
 const Announcement = require("../models/Announcement"); // Add at top if not present
 async function getPresentCycle(formName) {
-  console.log("getPresentCycle called with formName:", formName);
-  const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
-    "cycleId"
-  );
-  console.log("FormStatus found:", status ? status._id : null);
-  if (!status || !status.cycleId) {
-    throw new Error("No active form cycle");
+  // Prefer an explicitly open cycle (FormStatus.isOpen === true)
+  const openStatus = await FormStatus.findOne({ formName, isOpen: true }).populate("cycleId");
+  if (openStatus && openStatus.cycleId) return openStatus.cycleId;
+
+  // If no open status, fallback to any FormStatus entry (may be closed)
+  const anyStatus = await FormStatus.findOne({ formName }).populate("cycleId");
+  if (anyStatus && anyStatus.cycleId) {
+    // If there is no other open cycle (we already checked), treat this cycle as present
+    return anyStatus.cycleId;
   }
-  return status.cycleId;
+
+  // Final fallback: return latest FormCycle record for the form (by year, cycleNumber)
+  const latestCycle = await FormCycle.findOne({ formName }).sort({ year: -1, cycleNumber: -1 });
+  if (latestCycle) return latestCycle;
+
+  throw new Error("No active form cycle");
 }
 
 // POST /api/kkprofiling

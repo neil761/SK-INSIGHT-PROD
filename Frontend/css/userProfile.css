@@ -38,14 +38,14 @@ body {
   border-radius: 14px;
   box-shadow: 0 8px 32px rgba(10,44,89,0.12);
   padding: 28px 24px 18px 24px;
-  min-width: 320px;
+  min-width: 220px;
   max-width: 98vw;
   position: relative;
 }
 
 .close-settings {
   position: absolute;
-  top: 12px; right: 18px;
+  top: 5px; right: 10px;
   font-size: 1.5rem;
   color: #0A2C59;
   cursor: pointer;
@@ -318,7 +318,7 @@ body {
   border-radius: 14px;
   box-shadow: 0 8px 32px rgba(10,44,89,0.12);
   padding: 28px 24px 18px 24px;
-  min-width: 320px;
+  min-width: 220px;
   max-width: 80vw;
   position: relative;
 }

@@ -172,49 +172,29 @@ exports.sendVerificationOtp = async (req, res) => {
   const WINDOW_MS = 2 * 60 * 1000;
   const now = Date.now();
 
-  // --- If window is active and limit reached, block ---
-  if (
-    user.emailVerificationOtpSendWindowStart &&
-    now - user.emailVerificationOtpSendWindowStart < WINDOW_MS &&
-    user.emailVerificationOtpSendCount >= MAX_SENDS
-  ) {
-    const secondsLeft = Math.ceil((user.emailVerificationOtpSendWindowStart + WINDOW_MS - now) / 1000);
-
-    // Emit lockout event to frontend
-    const io = req.app.get('io');
-    io.to(user.email).emit('otpLockout', {
-      email: user.email,
-      lockoutUntil: user.emailVerificationOtpSendWindowStart + WINDOW_MS,
-      secondsLeft
-    });
-
-    return res.status(429).json({
-      message: `Too many OTP requests. Please wait ${secondsLeft} seconds.`,
-      secondsLeft,
-    });
+  // --- Improved logging for OTP send count ---
+  if (!user.emailVerificationOtpLastSent || now - user.emailVerificationOtpLastSent >= WINDOW_MS) {
+    user.emailVerificationOtpSendCount = 1;
+    console.log(`[VERIFICATION OTP LOG] Count reset to 1 (last sent: ${user.emailVerificationOtpLastSent}, now: ${now})`);
+  } else {
+    user.emailVerificationOtpSendCount = (user.emailVerificationOtpSendCount || 0) + 1;
+    console.log(`[VERIFICATION OTP LOG] Count incremented to ${user.emailVerificationOtpSendCount} (last sent: ${user.emailVerificationOtpLastSent}, now: ${now})`);
   }
 
-  // --- If window expired, reset ---
-  if (user.emailVerificationOtpSendWindowStart && now - user.emailVerificationOtpSendWindowStart >= WINDOW_MS) {
-    user.emailVerificationOtpSendWindowStart = undefined;
-    user.emailVerificationOtpSendCount = 0;
-  }
-
-  // --- Increment send count ---
-  user.emailVerificationOtpSendCount = (user.emailVerificationOtpSendCount || 0) + 1;
-
-  // --- If this is the third request, start the window and block ---
+  // Restrict if count exceeds MAX_SENDS
   if (user.emailVerificationOtpSendCount > MAX_SENDS) {
-    user.emailVerificationOtpSendWindowStart = now;
-    const secondsLeft = Math.ceil(WINDOW_MS / 1000);
+    user.emailVerificationOtpLastSent = now; // update last sent for lockout
     await user.save();
+    console.log(`[VERIFICATION OTP LOG] Restriction triggered at count ${user.emailVerificationOtpSendCount} (last sent: ${user.emailVerificationOtpLastSent}, now: ${now})`);
     return res.status(429).json({
-      message: `Too many OTP requests. Please wait ${secondsLeft} seconds.`,
-      secondsLeft,
+      message: `Too many OTP requests. Please wait 2 minutes.`,
+      secondsLeft: Math.ceil(WINDOW_MS / 1000),
     });
   }
 
-  // --- If first or second request, allow and do NOT start window ---
+  // Save last sent timestamp
+  user.emailVerificationOtpLastSent = now;
+
   // Generate OTP
   const otp = Math.floor(100000 + Math.random() * 900000).toString();
   user.otpCode = otp;
@@ -266,12 +246,13 @@ exports.sendVerificationOtp = async (req, res) => {
     `,
   });
 
+  console.log(`[VERIFICATION OTP LOG] OTP sent, count is now ${user.emailVerificationOtpSendCount} (last sent: ${user.emailVerificationOtpLastSent}, now: ${now})`);
   res.json({ message: "OTP sent to your email." });
 };
 
 
 
-  exports.verifyEmailOtp = asyncHandler(async (req, res) => {
+exports.verifyEmailOtp = asyncHandler(async (req, res) => {
     const { email, otp } = req.body;
 
     const user = await User.findOne({ email });
@@ -486,44 +467,32 @@ exports.sendChangeEmailOtp = async (req, res) => {
 
     const MAX_SENDS = 2;
     const LOCKOUT_MS = 2 * 60 * 1000; // 2 minutes
-
     const now = Date.now();
 
-    // --- If window is active and limit reached, block ---
-    if (
-      user.emailChangeOtpSendWindowStart &&
-      now - user.emailChangeOtpSendWindowStart < LOCKOUT_MS &&
-      user.emailChangeOtpSendCount >= MAX_SENDS
-    ) {
-      const secondsLeft = Math.ceil((user.emailChangeOtpSendWindowStart + LOCKOUT_MS - now) / 1000);
-      return res.status(429).json({
-        message: `Too many OTP requests. Please wait ${secondsLeft} seconds.`,
-        secondsLeft
-      });
+    // --- Improved logic: reset count if last send was >= 2 minutes ago ---
+    if (!user.emailChangeOtpLastSent || now - user.emailChangeOtpLastSent >= LOCKOUT_MS) {
+      user.emailChangeOtpSendCount = 1;
+      console.log(`[OTP LOG] Count reset to 1 (last sent: ${user.emailChangeOtpLastSent}, now: ${now})`);
+    } else {
+      user.emailChangeOtpSendCount = (user.emailChangeOtpSendCount || 0) + 1;
+      console.log(`[OTP LOG] Count incremented to ${user.emailChangeOtpSendCount} (last sent: ${user.emailChangeOtpLastSent}, now: ${now})`);
     }
 
-    // --- If window expired, reset ---
-    if (user.emailChangeOtpSendWindowStart && now - user.emailChangeOtpSendWindowStart >= LOCKOUT_MS) {
-      user.emailChangeOtpSendWindowStart = undefined;
-      user.emailChangeOtpSendCount = 0;
-    }
-
-    // --- Increment send count ---
-    user.emailChangeOtpSendCount = (user.emailChangeOtpSendCount || 0) + 1;
-
-    // --- If this is the third request, start the window and block ---
+    // --- Restrict if count exceeds MAX_SENDS ---
     if (user.emailChangeOtpSendCount > MAX_SENDS) {
-      user.emailChangeOtpSendWindowStart = now;
-      const secondsLeft = Math.ceil(LOCKOUT_MS / 1000);
+      user.emailChangeOtpLastSent = now; // update last sent for lockout
       await user.save();
+      console.log(`[OTP LOG] Restriction triggered at count ${user.emailChangeOtpSendCount} (last sent: ${user.emailChangeOtpLastSent}, now: ${now})`);
       return res.status(429).json({
-        message: `Too many OTP requests. Please wait ${secondsLeft} seconds.`,
-        secondsLeft
+        message: `Too many OTP requests. Please wait 2 minutes.`,
+        secondsLeft: Math.ceil(LOCKOUT_MS / 1000),
       });
     }
 
-    // --- If first or second request, allow and do NOT start window ---
-    // generate OTP
+    // --- Save last sent timestamp ---
+    user.emailChangeOtpLastSent = now;
+
+    // --- Generate OTP and send email ---
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     user.emailChangeOtp = otp;
     user.emailChangeOtpExpires = Date.now() + 10 * 60 * 1000;

@@ -1,0 +1,121 @@
+/* Modal container and content */
+#verifyEmailModal.settings-modal {
+  display: none;
+  position: fixed;
+  z-index: 2000;
+  left: 0; top: 0; width: 100vw; height: 100vh;
+  background: rgba(10,44,89,0.08);
+  align-items: center;
+  justify-content: center;
+}
+#verifyEmailModal.settings-modal.active { display: flex; }
+
+#verifyEmailModal .settings-modal-content {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(10,44,89,0.12);
+  padding: 28px 24px 18px 24px;
+  min-width: 220px;
+  max-width: 98vw;
+  position: relative;
+}
+
+/* Close button */
+#verifyEmailModal .close-verify-email {
+  position: absolute;
+  top: 5px; right: 10px;
+  font-size: 1.5rem;
+  color: #0A2C59;
+  cursor: pointer;
+}
+
+/* Headings */
+#verifyEmailModal h2 {
+  color: #0A2C59;
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+/* Labels and input fields */
+#verifyEmailModal label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 500;
+  color: #0A2C59;
+}
+#verifyEmailModal input[type="email"] {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 12px;
+  border-radius: 7px;
+  border: 1px solid #e1e8ff;
+  background: #f8faff;
+  font-size: 1rem;
+}
+
+/* OTP Inputs */
+#verifyEmailModal .otp-input {
+  width: 40px;
+  font-size: 1.5rem; /* match the JS-created inputs */
+  text-align: center;
+  border-radius: 8px;
+  border: 1px solid #0A2C59;
+  background: #f7faff;
+  box-shadow: 0 2px 8px rgba(7,176,242,0.07);
+  height: 48px;
+  line-height: 48px;
+}
+
+/* Buttons */
+#verifyEmailModal .settings-action-btn {
+  width: 100%;
+  padding: 10px;
+  background: #0A2C59;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: background 0.18s;
+}
+#verifyEmailModal .settings-action-btn:hover {
+  background: #FED600;
+  color: #0A2C59;
+}
+
+/* Resend link and info */
+#verifyEmailModal #verifyResendWrapper {
+  margin-top: 8px;
+  text-align: center;
+}
+#verifyEmailModal #verifyResendOtp {
+  color: #0A2C59;
+  text-decoration: underline;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+#verifyEmailModal #verifyResendInfo {
+  color: #0A2C59;
+  font-size: 0.95rem;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+  #verifyEmailModal .settings-modal-content {
+    min-width: 220px;
+    max-width: 90vw;
+    padding: 18px 10px 12px 10px;
+  }
+  #verifyEmailModal h2 {
+    font-size: 1.1rem;
+  }
+  #verifyEmailModal .otp-input {
+    width: 32px;
+    font-size: 1.3rem;
+  }
+}

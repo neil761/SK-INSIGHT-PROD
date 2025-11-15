@@ -202,6 +202,11 @@ document.addEventListener("DOMContentLoaded", () => {
         // Always reset filter to "all" when opening the tab
         document.getElementById("deletedFilter").value = "all";
         fetchDeletedProfiles();
+      } else if (tab.dataset.tab === 'form') {
+        // fetch history for all forms
+        fetchFormHistory("KK Profiling", "formHistoryKK");
+        fetchFormHistory("LGBTQIA+ Profiling", "formHistoryLGBTQ");
+        fetchFormHistory("Educational Assistance", "formHistoryEduc");
       }
     });
   });
@@ -210,6 +215,10 @@ document.addEventListener("DOMContentLoaded", () => {
   if (document.querySelector('.settings-tab.active').dataset.tab === 'deleted') {
     document.getElementById("deletedFilter").value = "all";
     fetchDeletedProfiles();
+  } else if (document.querySelector('.settings-tab.active').dataset.tab === 'form') {
+    fetchFormHistory("KK Profiling", "formHistoryKK");
+    fetchFormHistory("LGBTQIA+ Profiling", "formHistoryLGBTQ");
+    fetchFormHistory("Educational Assistance", "formHistoryEduc");
   }
 
   // --- Form Cycle Status Logic ---
@@ -434,159 +443,334 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 
-  async function fetchDeletedProfiles() {
-    const token = sessionStorage.getItem("token");
-    const filter = document.getElementById("deletedFilter").value;
-    let profiles = [];
+  // New helper: fetch and render form history
+  async function fetchFormHistory(formName, targetElId) {
+    // guard: if target element not present, skip silently
+    const ul = document.getElementById(targetElId);
+    if (!ul) return;
 
-    if (filter === "kk") {
-      // Only KK deleted profiles
-      const resKK = await fetch("http://localhost:5000/api/kkprofiling/deleted", {
+    const token = sessionStorage.getItem("token") || "";
+    try {
+      const res = await fetch(`http://localhost:5000/api/formcycle/history?formName=${encodeURIComponent(formName)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
-      profiles = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
-    } else if (filter === "lgbtq") {
-      // Only LGBTQ deleted profiles
-      const resLGBTQ = await fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      profiles = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
-    } else {
-      // All deleted profiles (KK + LGBTQ)
-      const [resKK, resLGBTQ] = await Promise.all([
-        fetch("http://localhost:5000/api/kkprofiling/deleted", {
-          headers: { Authorization: `Bearer ${token}` }
-        }),
-        fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
-          headers: { Authorization: `Bearer ${token}` }
-        })
-      ]);
-      const kk = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
-      const lgbtq = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
-      profiles = [...kk, ...lgbtq];
-    }
-
-    // Sort by deletedAt descending
-    profiles.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
-
-    const tbody = document.querySelector("#deletedTable tbody");
-    tbody.innerHTML = "";
-    profiles.forEach((p, i) => {
-      // Build full name for KK and LGBTQ profiles
-      let fullName = "N/A";
-      if (p.type === "KK") {
-        // For KK: use firstname, middlename, surname
-        const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-        fullName = [p.firstname, mi, p.surname].filter(Boolean).join(" ");
-      } else if (p.type === "LGBTQ") {
-        // For LGBTQ: use firstname, middlename, lastname
-        const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
-        fullName = [p.firstname, mi, p.lastname].filter(Boolean).join(" ");
-      } else {
-        // Fallback to displayData or name
-        fullName = p.displayData?.residentName || p.name || "N/A";
+      if (!res.ok) {
+        ul.innerHTML = `<li class="muted">No history</li>`;
+        return;
       }
-      const deletedDate = p.deletedAt ? new Date(p.deletedAt).toLocaleDateString() : "—";
-      tbody.innerHTML += `
-        <tr>
-          <td>${i + 1}</td>
-          <td>${fullName}</td>
-          <td>${p.type}</td>
-          <td>${deletedDate}</td>
-          <td>
-            <button class="restore-btn" data-id="${p._id}" data-type="${p.type}">Restore</button>
-            <button class="permanent-delete-btn" data-id="${p._id}" data-type="${p.type}">Delete</button>
-          </td>
-        </tr>
-      `;
-    });
-
-    // Attach restore and permanent delete handlers
-    document.querySelectorAll(".restore-btn").forEach(btn => {
-      btn.onclick = async () => {
-        const id = btn.dataset.id;
-        const type = btn.dataset.type;
-        const endpoint = type === "KK"
-          ? `http://localhost:5000/api/kkprofiling/${id}/restore`
-          : `http://localhost:5000/api/lgbtqprofiling/${id}/restore`;
-        const result = await Swal.fire({
-          title: "Restore Profile?",
-          text: "Are you sure you want to restore this profile?",
-          icon: "question",
-          showCancelButton: true,
-          confirmButtonColor: "#07B0F2",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes",
-          cancelButtonText: "Cancel"
-        });
-        if (result.isConfirmed) {
-          const res = await fetch(endpoint, {
-            method: "PUT",
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          const data = await res.json();
-          if (!res.ok && res.status === 409) {
-            Swal.fire({
-              icon: "error",
-              title: "Restoration Failed",
-              text: data.error
-            });
-            return;
-          }
-          if (res.ok) {
-            Swal.fire("Restored!", "Profile has been restored.", "success");
-            fetchDeletedProfiles();
-          }
-        }
-      };
-    });
-
-    document.querySelectorAll(".permanent-delete-btn").forEach(btn => {
-      btn.onclick = async () => {
-        const id = btn.dataset.id;
-        const type = btn.dataset.type;
-        const endpoint = type === "KK"
-          ? `http://localhost:5000/api/kkprofiling/${id}/permanent`
-          : `http://localhost:5000/api/lgbtqprofiling/${id}/permanent`;
-        const result = await Swal.fire({
-          title: "Delete ?",
-          text: "This action cannot be undone. Are you sure?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#ef4444",
-          cancelButtonColor: "#0A2C59",
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        });
-        if (result.isConfirmed) {
-          const res = await fetch(endpoint, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (res.ok) {
-            Swal.fire("Deleted!", "Profile permanently deleted.", "success");
-            fetchDeletedProfiles();
-          }
-        }
-      };
-    });
+      const events = await res.json();
+      ul.innerHTML = "";
+      if (!Array.isArray(events) || events.length === 0) {
+        ul.innerHTML = `<li class="muted">No history available</li>`;
+        return;
+      }
+      // build content safely
+      const frag = document.createDocumentFragment();
+      for (const ev of events) {
+        const d = new Date(ev.at);
+        const timeStr = d.toLocaleString();
+        const actor = ev.actorName ? `by ${ev.actorName}` : "";
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${ev.action.toUpperCase()}</strong> — Cycle ${ev.cycleNumber} (${ev.year}) — ${timeStr} ${actor}`;
+        frag.appendChild(li);
+      }
+      ul.appendChild(frag);
+    } catch (err) {
+      ul.innerHTML = `<li class="muted">Failed to load history</li>`;
+    }
   }
 
-  // Filter dropdown change handler
-  document.getElementById("deletedFilter").addEventListener("change", fetchDeletedProfiles);
-});
-
-// --- SOCKET.IO ALERT FOR NEW EDUCATIONAL ASSISTANCE ---
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
-
-socket.on("educational-assistance:newSubmission", (data) => {
-  Swal.fire({
-    icon: 'info',
-    title: 'New Educational Assistance Application',
-    text: 'A new application has arrived!',
-    timer: 8000,
-    showConfirmButton: false,
-    toast: true,
-    position: 'top-end'
+  // Call history fetch when form tab is opened
+  document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      if (tab.dataset.tab === 'form') {
+        // fetch history for all forms
+        fetchFormHistory("KK Profiling", "formHistoryKK");
+        fetchFormHistory("LGBTQIA+ Profiling", "formHistoryLGBTQ");
+        fetchFormHistory("Educational Assistance", "formHistoryEduc");
+      }
+    });
   });
-});
+
+  // Also load history on initial page load if form tab active
+  if (document.querySelector('.settings-tab.active').dataset.tab === 'form') {
+    fetchFormHistory("KK Profiling", "formHistoryKK");
+    fetchFormHistory("LGBTQIA+ Profiling", "formHistoryLGBTQ");
+    fetchFormHistory("Educational Assistance", "formHistoryEduc");
+  }
+
+  // ---- SOCKET init (guarded) ----
+  // Initialize socket.io client pointing to backend and send JWT for auth
+  let socket = null;
+  if (typeof io !== "undefined") {
+    try {
+      // ensure this URL matches your backend (port 5000)
+      socket = io("http://localhost:5000", {
+        // send token to server if you validate sockets
+        auth: { token: sessionStorage.getItem("token") || "" },
+        transports: ["websocket", "polling"],
+        path: "/socket.io"
+      });
+      socket.on("connect_error", (err) => console.warn("socket connect_error:", err));
+    } catch (e) {
+      console.warn("socket.io init failed:", e);
+      socket = null;
+    }
+  } else {
+    console.warn("socket.io client not loaded. Make sure socket.io client script is included.");
+  }
+  
+  // --- HISTORY modal renderer (table view) ---
+  /* REPLACED fetchAndRenderHistoryModal with client-side filter/render approach.
+     Stores fetched cycles in window._historyData for fast client-side filtering/searching. */
+  async function fetchAndRenderHistoryModal() {
+    const token = sessionStorage.getItem("token");
+    const tbody = document.getElementById("historyTableBody");
+    const emptyEl = document.getElementById("historyEmptyModal");
+    if (!tbody || !emptyEl) return;
+
+    tbody.innerHTML = `<tr><td colspan="7" style="padding:18px; text-align:center; color:#6b7280;">Loading…</td></tr>`;
+    emptyEl.style.display = "none";
+
+    const endpoints = [
+      { key: "kk", form: "KK Profiling", url: "http://localhost:5000/api/formcycle/kk" },
+      { key: "lgbtq", form: "LGBTQIA+ Profiling", url: "http://localhost:5000/api/formcycle/lgbtq" },
+      { key: "educ", form: "Educational Assistance", url: "http://localhost:5000/api/formcycle/educ" }
+    ];
+
+    try {
+      const results = await Promise.all(endpoints.map(async e => {
+        const r = await fetch(e.url, { headers: { Authorization: `Bearer ${token}` } }).catch(err => ({ ok:false, _err: err }));
+        if (!r || !r.ok) return { key: e.key, form: e.form, cycles: [] };
+        const cycles = await r.json().catch(() => []);
+        return { key: e.key, form: e.form, cycles: Array.isArray(cycles) ? cycles : [] };
+      }));
+
+      // Flatten into a single array of cycle objects with form key
+      const allCycles = results.flatMap(r => (r.cycles || []).map(c => ({ key: r.key, form: r.form, cycle: c })));
+
+      // store globally for client-side filtering/search
+      window._historyData = allCycles;
+
+      // initialize filter UI and render default view (All)
+      setupHistoryControls();
+      renderHistoryTable(); // default: all
+    } catch (err) {
+      console.error("history modal fetch error:", err);
+      tbody.innerHTML = `<tr><td colspan="7" style="padding:16px; color:#ef4444;">Error loading history. See console for details.</td></tr>`;
+    }
+  }
+
+  /* Render a filtered + searched set of rows. */
+  function renderHistoryTable({ filter = "all", query = "" } = {}) {
+    const tbody = document.getElementById("historyTableBody");
+    const emptyEl = document.getElementById("historyEmptyModal");
+    if (!tbody || !emptyEl) return;
+
+    const data = Array.isArray(window._historyData) ? window._historyData.slice() : [];
+    // map filter key to form names
+    const keyToForm = { kk: "KK Profiling", lgbtq: "LGBTQIA+ Profiling", educ: "Educational Assistance" };
+
+    let rows = data;
+    if (filter !== "all") {
+      const formName = keyToForm[filter];
+      rows = rows.filter(r => r.form === formName);
+    }
+
+    // apply search query: match username (opened/closed), year, cycleNumber, or form
+    const q = (query || "").trim().toLowerCase();
+    if (q) {
+      rows = rows.filter(item => {
+        const c = item.cycle || {};
+        const history = Array.isArray(c.history) ? c.history : [];
+        const opened = history.find(h => h.action === "open") || {};
+        const closed = (history.slice().reverse().find(h => h.action === "close")) || {};
+        const openedBy = (opened.actorName || "").toLowerCase();
+        const closedBy = (closed.actorName || "").toLowerCase();
+        return (
+          (item.form || "").toLowerCase().includes(q) ||
+          String(c.year || "").includes(q) ||
+          String(c.cycleNumber || "").includes(q) ||
+          openedBy.includes(q) ||
+          closedBy.includes(q)
+        );
+      });
+    }
+
+    if (!rows.length) {
+      tbody.innerHTML = "";
+      emptyEl.style.display = "";
+      return;
+    }
+    emptyEl.style.display = "none";
+    // sort by latest touched timestamp (most recent history event) then fallback to year/cycle
+    rows.sort((a, b) => {
+      const latestDate = (item) => {
+        const hist = Array.isArray(item.cycle?.history) ? item.cycle.history : [];
+        if (!hist.length) return 0;
+        return Math.max(...hist.map(h => new Date(h.at).getTime()));
+      };
+      const da = latestDate(a);
+      const db = latestDate(b);
+      if (db !== da) return db - da; // newest first
+      // fallback: year desc, cycleNumber desc
+      if ((b.cycle?.year ?? 0) !== (a.cycle?.year ?? 0)) return (b.cycle?.year ?? 0) - (a.cycle?.year ?? 0);
+      return (b.cycle?.cycleNumber ?? 0) - (a.cycle?.cycleNumber ?? 0);
+    });
+
+    const displayActor = raw => {
+      if (!raw) return "-";
+      if (typeof raw !== "string") return String(raw);
+      return raw.includes("@") ? raw.split("@")[0] : raw;
+    };
+
+    tbody.innerHTML = "";
+    for (const item of rows) {
+      const c = item.cycle || {};
+      const history = Array.isArray(c.history) ? c.history : [];
+      const openEv = history.find(h => h.action === "open") || null;
+      const closeEv = (() => { for (let i=history.length-1;i>=0;i--) if (history[i].action==="close") return history[i]; return null; })();
+
+      const openedTime = openEv ? (new Date(openEv.at).toLocaleString()) : "-";
+      const openedUser = openEv ? displayActor(openEv.actorName) : "-";
+      const closedTime = closeEv ? (new Date(closeEv.at).toLocaleString()) : "-";
+      const closedUser = closeEv ? displayActor(closeEv.actorName) : "-";
+
+      const formLabel = (() => {
+        // use the same circular icon style as the Form Configuration header
+        const iconClass = item.key === "kk" ? "fa-id-badge" : item.key === "lgbtq" ? "fa-rainbow" : "fa-graduation-cap";
+        // add a small colored icon (uses .icon-bg styles defined for form header)
+        return `<span class="icon-bg history-icon small ${item.key}"><i class="fas ${iconClass}"></i></span> ${item.form}`;
+      })();
+
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td title="${item.form}" style="padding:10px 12px;">${formLabel}</td>
+        <td style="padding:10px 12px;">${c.year ?? "-"}</td>
+        <td style="padding:10px 12px;">${c.cycleNumber ?? "-"}</td>
+        <td style="padding:10px 12px; white-space:nowrap;" title="${openedTime}">${openedTime}</td>
+        <td style="padding:10px 12px;" title="${openedUser}">${openedUser}</td>
+        <td style="padding:10px 12px; white-space:nowrap;" title="${closedTime}">${closedTime}</td>
+        <td style="padding:10px 12px;" title="${closedUser}">${closedUser}</td>
+      `;
+      tbody.appendChild(tr);
+    }
+  }
+
+  /* Wire filter/select/search UI once per modal open. */
+  function setupHistoryControls() {
+    const filterEl = document.getElementById("historyFilter");
+    const searchEl = document.getElementById("historySearch");
+    const reloadBtn = document.getElementById("historyReloadBtn");
+
+    function applyControls() {
+      const filter = filterEl?.value || "all";
+      const query = searchEl?.value || "";
+      renderHistoryTable({ filter, query });
+    }
+
+    if (filterEl) {
+      filterEl.onchange = applyControls;
+    }
+    if (searchEl) {
+      // search on Enter or blur for keyboard friendly behavior
+      searchEl.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") applyControls();
+      });
+      searchEl.addEventListener("blur", () => {
+        // optional: update on blur
+      });
+    }
+    if (reloadBtn) {
+      reloadBtn.onclick = () => fetchAndRenderHistoryModal();
+    }
+  }
+
+  if (socket) {
+    socket.on("formcycle:changed", data => {
+      // refresh modal if open
+      if (document.getElementById("historyModal")?.style.display === "flex") {
+        fetchAndRenderHistoryModal();
+      }
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'info',
+        title: `${data.formName} ${data.action === 'open' ? 'opened' : 'closed'} (Cycle ${data.cycleNumber})`,
+        showConfirmButton: false,
+        timer: 3500
+      });
+    });
+
+    socket.on("educational-assistance:newSubmission", (data) => {
+      Swal.fire({
+        icon: 'info',
+        title: 'New Educational Assistance Application',
+        text: 'A new application has arrived!',
+        timer: 8000,
+        showConfirmButton: false,
+        toast: true,
+        position: 'top-end'
+      });
+    });
+  }
+  
+  // refresh history when form tab opens and after toggles
+  document.querySelectorAll('.settings-tab').forEach(tab => {
+    tab.addEventListener('click', function() {
+      if (tab.dataset.tab === 'form') {
+        fetchFormHistory("KK Profiling", "formHistoryKK");
+        fetchFormHistory("LGBTQIA+ Profiling", "formHistoryLGBTQ");
+        fetchFormHistory("Educational Assistance", "formHistoryEduc");
+        // don't auto-open modal; if user has it open, refresh
+        if (document.getElementById("historyModal")?.style.display === "flex") fetchAndRenderHistoryModal();
+      }
+    });
+  });
+  
+  // call once if form tab active on load
+  if (document.querySelector('.settings-tab.active')?.dataset.tab === 'form') {
+    if (document.getElementById("historyModal")?.style.display === "flex") fetchAndRenderHistoryModal();
+   }
+  
+  // ensure we refresh the panel after a successful toggle
+  const originalToggleCycle = toggleCycle;
+  toggleCycle = async function(formName) {
+    await originalToggleCycle(formName);
+    // refresh modal if open
+    if (document.getElementById("historyModal")?.style.display === "flex") fetchAndRenderHistoryModal();
+  };
+
+  // --- ADD: wire history open/close inside DOMContentLoaded so elements exist ---
+  (function wireHistoryModalButtons() {
+    const formHistoryBtn = document.getElementById("formHistoryBtn");
+    const historyModalEl = document.getElementById("historyModal");
+    const closeHistoryBtn = document.getElementById("closeHistoryModal");
+    const filterEl = document.getElementById("historyFilter");
+    const searchEl = document.getElementById("historySearch");
+
+    if (formHistoryBtn) {
+      formHistoryBtn.addEventListener("click", () => {
+        if (historyModalEl) historyModalEl.style.display = "flex";
+        // reset controls for predictable UX
+        if (filterEl) filterEl.value = "all";
+        if (searchEl) searchEl.value = "";
+        // fetch & render fresh data
+        if (typeof fetchAndRenderHistoryModal === "function") fetchAndRenderHistoryModal();
+      });
+    }
+
+    if (closeHistoryBtn) {
+      closeHistoryBtn.addEventListener("click", () => {
+        if (historyModalEl) historyModalEl.style.display = "none";
+      });
+    }
+
+    // click outside to close
+    window.addEventListener("click", (e) => {
+      if (e.target === historyModalEl) {
+        historyModalEl.style.display = "none";
+      }
+    });
+  })();
+});  // document.addEventListener("DOMContentLoaded")
