@@ -30,10 +30,11 @@ const userSchema = new mongoose.Schema({
   emailChangeOtpVerified: Boolean,
   emailChangeOtpSendCount: { type: Number, default: 0 },
   emailChangeOtpSendWindowStart: { type: Number },
+  emailChangeOtpLastSent: { type: Number }, // or Date
 
   emailVerificationOtpSendCount: { type: Number, default: 0 },
   emailVerificationOtpSendWindowStart: { type: Number },
-
+  emailVerificationOtpLastSent: { type: Number }, // or Date
   verifiedAddress: {
     type: String,
     trim: true,

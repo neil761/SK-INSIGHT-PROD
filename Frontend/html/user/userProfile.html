@@ -6,6 +6,7 @@
     <title>USER PROFILE</title>
     <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="../../css/userProfile.css  " />
+    <link rel="stylesheet" href="../../css/verifyEmail.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
@@ -84,18 +85,13 @@
         <button type="button" id="sendEmailOtpBtn" class="settings-action-btn">Send OTP</button>
         <div id="emailOtpSection" style="display:none;">
           <label>Enter OTP</label>
-          <div id="emailOtpInputs" style="display:flex;justify-content:center;gap:8px;">
-            <input type="text" maxlength="1" class="otp-input" />
-            <input type="text" maxlength="1" class="otp-input" />
-            <input type="text" maxlength="1" class="otp-input" />
-            <input type="text" maxlength="1" class="otp-input" />
-            <input type="text" maxlength="1" class="otp-input" />
-            <input type="text" maxlength="1" class="otp-input" />
-          </div>
+          <!-- After: empty container, JS will fill -->
+          <div id="emailOtpInputs" style="display:flex;justify-content:center;gap:8px;"></div>
           <div id="emailOtpTimer" style="margin-top:8px;color:#0A2C59;font-size:0.95rem;text-align:center;"></div>
           <button type="button" id="verifyEmailOtpBtn" class="settings-action-btn">Verify OTP</button>
           <div id="resendOtpLink" style="display:none;margin-top:8px;text-align:center;">
-            <a href="#" style="color:#0A2C59;text-decoration:underline;font-size:0.95rem;">Resend OTP</a>
+            <a id="changeResendOtp" href="#" style="color:#0A2C59;text-decoration:underline;font-size:0.95rem;">Resend OTP</a>
+            <div id="changeResendInfo" style="display:none;margin-top:6px;color:#0A2C59;font-size:0.95rem;"></div>
           </div>
         </div>
         <div id="newEmailSection" style="display:none;">
@@ -190,6 +186,33 @@
           <a href="./lgbtqform.html" id="lgbtqProfileNavBtnMobile" class="nav-btn">LGBTQ+ Profile</a>
           <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
         </div>
+
+        <!-- Verify Email Modal -->
+<div id="verifyEmailModal" class="settings-modal">
+  <div class="settings-modal-content">
+    <span class="close-verify-email" style="cursor:pointer;position:absolute;top:16px;right:24px;font-size:1.5rem;">&times;</span>
+    <h2 style="margin-bottom:12px;">Verify Your Email</h2>
+    <div style="margin-bottom:8px;">
+      <label for="verifyEmailInput">Email Address</label>
+      <input id="verifyEmailInput" type="email" readonly style="width:100%;margin-bottom:8px;">
+    </div>
+    <button id="sendVerifyOtpBtn" class="settings-action-btn" style="margin-bottom:16px;">Send OTP</button>
+
+    <!-- added: OTP section markup expected by verify-email.js -->
+    <div id="verifyOtpSection" style="display:none;">
+      <div id="verifyOtpInputs" style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;"></div>
+
+      <!-- ADDED: timer shown above Verify button -->
+      <div id="verifyOtpTimer" style="margin-bottom:8px;color:#0A2C59;font-size:0.95rem;text-align:center;"></div>
+
+      <button id="verifyOtpBtn" class="settings-action-btn" style="margin-bottom:8px;">Verify Account</button>
+      <div id="verifyResendWrapper" style="text-align:center;margin-top:8px;">
+        <a id="verifyResendOtp" href="#" style="text-decoration:underline;color:#0A2C59;">Resend OTP</a>
+        <div id="verifyResendInfo" style="display:none;margin-top:6px;color:#0A2C59;font-size:0.95rem;"></div>
+      </div>
+    </div>
+  </div>
+</div>
           <script src="../../js/token-validation.js"></script>
  <script type="module" src="../../js/user-profile.js"></script>
   </body>

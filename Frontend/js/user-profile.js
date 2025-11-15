@@ -287,7 +287,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
   })();
 
+  // Move this to the top, before updateOtpSendButtons and before any usage:
+  const sendEmailOtpBtn = document.getElementById("sendEmailOtpBtn");
+
   function updateOtpSendButtons() {
+    sendEmailOtpBtn.disabled = false;
     const now = Date.now();
     if (otpLockoutUntil && now < otpLockoutUntil) {
       sendEmailOtpBtn.disabled = true;
@@ -539,10 +543,10 @@ if (logoutBtn) {
   });
 
   // --- Change Email ---
-  const sendEmailOtpBtn = document.getElementById("sendEmailOtpBtn");
   const emailOtpSection = document.getElementById("emailOtpSection");
   const verifyEmailOtpBtn = document.getElementById("verifyEmailOtpBtn");
   const newEmailSection = document.getElementById("newEmailSection");
+  const verifyResendInfo = document.getElementById("verifyResendInfo");
 
   let otpVerifiedForChange = false;
   let verifiedOtpValue = null;
@@ -554,7 +558,8 @@ if (logoutBtn) {
   let resendLockUntil = null;
   let resendTimerInterval = null;
   const resendWrapper = document.getElementById("resendOtpLink");
-  const resendAnchor = resendWrapper?.querySelector("a");
+  const resendAnchor = document.getElementById("changeResendOtp") || resendWrapper?.querySelector("a");
+  const changeResendInfo = document.getElementById("changeResendInfo");
 
   function setResendVisible(visible) {
     if (!resendWrapper) return;
@@ -651,6 +656,7 @@ if (logoutBtn) {
         data = { message: raw };
       }
       Swal.close();
+
       if (res.ok) {
         // Only reset UI on success
         Swal.fire({
@@ -692,30 +698,51 @@ if (logoutBtn) {
         if (resendAnchor) {
           resendAnchor.textContent = "Resend OTP";
           resendAnchor.style.pointerEvents = "";
+          resendAnchor.style.display = "";
         }
+        if (verifyResendInfo) verifyResendInfo.style.display = "none";
       } else {
+        // show info area; only permanently remove resend if server returns 429 (too many requests)
+        if (changeResendInfo) changeResendInfo.style.display = "";
+
+        if (res.status === 429) {
+          // backend lockout -> hide resend link and show message (same behavior as verify-email)
+          if (resendAnchor) resendAnchor.style.display = "none";
+          if (changeResendInfo) changeResendInfo.textContent = data.message || "Too many OTP requests. Please wait 2 minutes.";
+        } else {
+          if (resendAnchor) {
+            resendAnchor.style.display = "";
+            resendAnchor.style.pointerEvents = "";
+          }
+        }
+
         Swal.fire({
           icon: "error",
           title: "Send Failed",
           text: data.message || "Failed to send OTP.",
           confirmButtonColor: "#0A2C59"
         });
-        // Do NOT reset modal or reload here!
-        resendAnchor.textContent = "Resend OTP";
-        resendAnchor.style.pointerEvents = "";
       }
     } catch (err) {
       Swal.close();
+      // network error: keep resend visible so user can try again
+      if (changeResendInfo) changeResendInfo.style.display = "";
+      if (resendAnchor) {
+        resendAnchor.style.display = "";
+        resendAnchor.style.pointerEvents = "";
+      }
       Swal.fire({
         icon: "error",
         title: "Server Error",
         text: "Could not send OTP. Please try again.",
         confirmButtonColor: "#0A2C59"
       });
-      sendEmailOtpBtn.disabled = false;
-      // Do NOT reset modal or reload here!
+    } finally {
+      // ensure button re-enabled if not hidden
+      if (sendEmailOtpBtn && sendEmailOtpBtn.style.display !== "none") {
+        sendEmailOtpBtn.disabled = false;
+      }
     }
-    await checkOtpSendLockout();
   });
 
   // Verify OTP (new behaviour: verify then reveal new-email form)
@@ -815,8 +842,11 @@ if (logoutBtn) {
       return;
     }
 
-    // show timer and hide resend link while counting
-    if (resendWrapper) resendWrapper.style.display = "none";
+    // show timer but DO NOT permanently disable/hide the resend anchor here
+    if (resendWrapper && resendAnchor) {
+      // keep it visible; don't set pointerEvents to none so user can still click resend
+      resendWrapper.style.display = "";
+    }
     if (sendBtn) sendBtn.disabled = true;
 
     function update() {
@@ -825,7 +855,11 @@ if (logoutBtn) {
         clearInterval(otpTimerInterval);
         otpTimerInterval = null;
         if (timerEl) timerEl.textContent = "OTP expired. You can resend.";
-        if (resendWrapper) resendWrapper.style.display = "";
+        if (resendWrapper && resendAnchor) {
+          // allow clicking again after expiry
+          resendAnchor.style.pointerEvents = "";
+          resendAnchor.classList.remove('disabled');
+        }
         if (sendBtn) sendBtn.disabled = false;
         return;
       }
@@ -957,11 +991,14 @@ if (logoutBtn) {
   }
 
   if (resendAnchor) {
+    let hasResent = false; // Add this flag
     resendAnchor.addEventListener("click", async function (e) {
       e.preventDefault();
-      if (resendAnchor.style.pointerEvents === "none") return;
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      // prevent double-click while request is in-flight
+      if (hasResent) return;
+      hasResent = true;
       resendAnchor.textContent = "Sending...";
+      // temporarily block repeat clicks for this request
       resendAnchor.style.pointerEvents = "none";
       Swal.fire({
         title: "Sending OTP...",
@@ -978,54 +1015,63 @@ if (logoutBtn) {
         try { data = raw ? JSON.parse(raw) : {}; } catch (e) { data = { message: raw }; }
         Swal.close();
 
-        // Always check backend lockout after sending
-        await checkOtpSendLockout();
+        // show info area; only permanently remove resend if server returns 429 (too many requests)
+        if (changeResendInfo) changeResendInfo.style.display = "";
 
         if (res.status === 429) {
-          // Backend says lockout is active, show timer and keep button visible but disabled
-          const { secondsLeft = 120, message } = data;
+          // backend enforces lockout -> hide the link and show info (same UX as verify-email)
+          if (resendAnchor) resendAnchor.style.display = "none";
+          if (changeResendInfo) changeResendInfo.textContent = data.message || "Too many OTP requests. Please wait 2 minutes.";
+          // keep hasResent true so user can't try again
+        } else {
+          // allow further resends after this request completes
+          if (resendAnchor) {
+            resendAnchor.style.display = "";
+            resendAnchor.style.pointerEvents = "";
+          }
+          hasResent = false;
+        }
+
+        if (res.ok) {
           Swal.fire({
-            icon: "error",
-            title: "Too Many Attempts",
-            text: message || "Please wait before resending OTP.",
+            icon: "success",
+            title: "OTP Sent",
+            text: "Check your email for the OTP code.",
             confirmButtonColor: "#0A2C59"
           });
-          showResendTimer(secondsLeft);
-          return;
-        }
-        if (res.ok) {
-          Swal.fire({ icon: "success", title: "OTP Sent", text: "Check your email for the OTP code.", confirmButtonColor: "#0A2C59" });
           otpExpiresAt = Date.now() + 10 * 60 * 1000;
           startEmailOtpTimer();
           setupOtpInputs();
-          // After successful send, check backend lockout again
-          await checkOtpSendLockout();
-          // If backend says lockout is active, show timer
-          const userRes = await fetch("http://localhost:5000/api/users/me", {
-            headers: { Authorization: `Bearer ${token}` }
+        } else if (res.status !== 429) {
+          Swal.fire({
+            icon: "error",
+            title: "Send Failed",
+            text: data.message || "Failed to send OTP.",
+            confirmButtonColor: "#0A2C59"
           });
-          if (userRes.ok) {
-            const user = await userRes.json();
-            if (
-              user.emailChangeOtpSendWindowStart &&
-              user.emailChangeOtpSendCount >= 2 &&
-              Date.now() - user.emailChangeOtpSendWindowStart < 2 * 60 * 1000
-            ) {
-              const secondsLeft = Math.ceil((user.emailChangeOtpSendWindowStart + 2 * 60 * 1000 - Date.now()) / 1000);
-              showResendTimer(secondsLeft);
-            }
-          }
-        } else {
-          Swal.fire({ icon: "error", title: "Send Failed", text: data.message || "Failed to send OTP.", confirmButtonColor: "#0A2C59" });
-          resendAnchor.textContent = "Resend OTP";
-          resendAnchor.style.pointerEvents = "";
         }
       } catch (err) {
         Swal.close();
-        console.error("Resend OTP fetch error:", err);
-        Swal.fire({ icon: "error", title: "Server Error", text: "Could not send OTP. Please try again.", confirmButtonColor: "#0A2C59" });
-        resendAnchor.textContent = "Resend OTP";
-        resendAnchor.style.pointerEvents = "";
+        // network error: restore clickability so user can retry
+        if (changeResendInfo) changeResendInfo.style.display = "";
+        if (resendAnchor) {
+          resendAnchor.style.pointerEvents = "";
+        }
+        hasResent = false;
+        Swal.fire({
+          icon: "error",
+          title: "Server Error",
+          text: "Could not send OTP. Please try again.",
+          confirmButtonColor: "#0A2C59"
+        });
+      } finally {
+        // restore text/pointer unless backend hidden the control (429 case)
+        if (resendAnchor && resendAnchor.style.display !== "none") {
+          resendAnchor.textContent = "Resend OTP";
+          resendAnchor.style.pointerEvents = "";
+          resendAnchor.classList.remove('disabled');
+          if (changeResendInfo) changeResendInfo.style.display = "none";
+        }
       }
     });
   }
