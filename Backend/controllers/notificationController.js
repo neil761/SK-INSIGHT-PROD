@@ -2,10 +2,9 @@ const Notification = require("../models/Notification");
 const FormStatus = require("../models/FormStatus");
 
 async function getPresentCycle(formName) {
-  const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
-    "cycleId"
-  );
-  if (!status || !status.cycleId) throw new Error("No active form cycle");
+  // Allow "closed but present" cycle (not just open)
+  const status = await FormStatus.findOne({ formName }).sort({ isOpen: -1, updatedAt: -1 }).populate("cycleId");
+  if (!status || !status.cycleId) return null; // <-- Instead of throw, return null
   return status.cycleId;
 }
 
@@ -13,6 +12,7 @@ async function getPresentCycle(formName) {
 exports.getAllNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]); // <-- No cycle, just return empty array
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -34,6 +34,7 @@ exports.getAllNotifications = async (req, res) => {
 exports.getUnreadNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -101,6 +102,7 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json({ message: "No notifications to mark as read" });
     await Notification.updateMany(
       { type: "educational-assistance", cycleId: cycle._id, read: false },
       { $set: { read: true } }
@@ -118,6 +120,7 @@ exports.markAllAsRead = async (req, res) => {
 exports.getReadNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -141,6 +144,7 @@ const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 exports.getOverdueNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,

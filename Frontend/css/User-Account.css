@@ -482,10 +482,10 @@ h1, h2 {
   font-size: 20px !important;
 }
 
-.swal2-title {
-  border-bottom: 2px solid #0A2C59;
+.swal2-html-container{
+  padding: 0px!important;
+  border-radius: 28px!important;
 }
-
 /* Hover effect for close button */
 .user-modal-close:hover {
   color: #08305e !important;
@@ -505,6 +505,63 @@ h1, h2 {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Minimal modern-modal styles (match KK Profile modal theme) */
+.modern-modal {
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 12px 40px rgba(10,44,89,0.18);
+  max-width: 900px;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+}
+
+.modern-modal-header {
+  display:flex;
+  align-items:center;
+  gap:18px;
+}
+
+.modern-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  color: rgba(255,255,255,0.9);
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+}
+
+.modern-modal-body {
+  padding: 18px 22px;
+  background: #f8fafc;
+  color: #123;
+}
+
+/* Reuse view-btn style from KK Profile for the buttons inside modal */
+.view-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: #0A2C59;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  text-decoration: none;
+  font-weight:600;
+}
+.view-btn:hover { background:#08305e; }
+
+/* Ensure swal popup uses full width up to max */
+/* Remove default SweetAlert padding for modern-modal */
+.swal2-popup.modern-modal {
+  padding: 0 !important;
+  box-sizing: border-box;
+  border-radius: 30px !important;
 }
 
 

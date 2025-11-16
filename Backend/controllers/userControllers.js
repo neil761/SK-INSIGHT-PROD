@@ -7,6 +7,9 @@ const User = require("../models/User");
   const asyncHandler = require("express-async-handler");
   const fs = require("fs");
   const mailer = require("../utils/mailer");
+  const KKProfile = require("../models/KKProfile");
+const LGBTQProfile = require("../models/LGBTQProfile");
+const EducationalAssistance = require("../models/EducationalAssistance");
 
   function calculateAge(birthday) {
     const birthDate = new Date(birthday);
@@ -66,9 +69,28 @@ const User = require("../models/User");
       const user = await User.findById(req.params.id).select("-password");
       if (!user) return res.status(404).json({ error: "User not found" });
 
-      res.json(user);
+      // Try to find related form documents for this user (if models exist)
+      let kk = null, lgbtq = null, educ = null;
+      try {
+        kk = await KKProfile.findOne({ user: user._id }).select("_id");
+      } catch (e) { /* ignore if model/collection missing */ }
+      try {
+        lgbtq = await LGBTQProfile.findOne({ user: user._id }).select("_id");
+      } catch (e) { /* ignore if model/collection missing */ }
+      try {
+        educ = await EducationalAssistance.findOne({ user: user._id }).select("_id");
+      } catch (e) { /* ignore if model/collection missing */ }
+
+      return res.json({
+        user,
+        profiles: {
+          kkProfileId: kk ? kk._id : null,
+          lgbtqProfileId: lgbtq ? lgbtq._id : null,
+          educationalProfileId: educ ? educ._id : null
+        }
+      });
     } catch (err) {
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message || "Server error" });
     }
   };
 

@@ -9,11 +9,19 @@ const fs = require("fs");
     const Announcement = require("../models/Announcement");
 const cloudinary = require("../config/cloudinaryConfig");
 async function getPresentCycle(formName) {
-  const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
-    "cycleId"
-  );
-  if (!status || !status.cycleId) throw new Error("No active form cycle");
-  return status.cycleId;
+  // 1) Prefer an explicitly open cycle
+  const openStatus = await FormStatus.findOne({ formName, isOpen: true }).populate("cycleId");
+  if (openStatus && openStatus.cycleId) return openStatus.cycleId;
+
+  // 2) No open cycle — treat the most recent FormStatus (even if closed) as present
+  const anyStatus = await FormStatus.findOne({ formName }).sort({ updatedAt: -1 }).populate("cycleId");
+  if (anyStatus && anyStatus.cycleId) return anyStatus.cycleId;
+
+  // 3) Final fallback: return latest FormCycle document (by year, cycleNumber)
+  const latestCycle = await FormCycle.findOne({ formName }).sort({ year: -1, cycleNumber: -1 });
+  if (latestCycle) return latestCycle;
+
+  throw new Error("No active form cycle");
 }
 
 // Submit application
@@ -174,6 +182,11 @@ exports.updateMyApplication = async (req, res) => {
 
     const formStatus = await FormStatus.findOne({ formName: 'Educational Assistance' });
     if (!formStatus || !formStatus.cycleId) return res.status(404).json({ error: 'Form cycle not found' });
+
+    // NEW: prevent editing when the form is closed
+    if (!formStatus.isOpen) {
+      return res.status(403).json({ error: 'Form is currently closed. Editing submissions is not allowed.' });
+    }
 
     const application = await EducationalAssistance.findOne({ user: userId, formCycle: formStatus.cycleId });
     if (!application) return res.status(404).json({ error: 'Application not found' });
