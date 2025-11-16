@@ -22,77 +22,68 @@ async function verifyOtp(email, otp) {
 }
 
 export function setupVerifyEmail(user) {
+  // Elements
   const verifyBtn = document.querySelector('.verify-btn');
-  if (!verifyBtn) return;
+  const verifyEmailModal = document.getElementById("verifyEmailModal");
+  const closeBtn = verifyEmailModal.querySelector(".close-verify-email");
+  const verifyEmailInput = document.getElementById("verifyEmailInput");
+  const sendVerifyOtpBtn = document.getElementById("sendVerifyOtpBtn");
+  const verifyOtpSection = document.getElementById("verifyOtpSection");
+  const verifyOtpInputs = document.getElementById("verifyOtpInputs");
+  const verifyOtpBtn = document.getElementById("verifyOtpBtn");
+  const verifyResendOtp = document.getElementById("verifyResendOtp");
+  const verifyResendInfo = document.getElementById("verifyResendInfo");
+  const verifyOtpTimer = document.getElementById("verifyOtpTimer"); // ADDED
+  let hasResent = false;
 
-  async function checkVerificationOtpLockout(email) {
-    try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/me", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const user = await res.json();
-        if (
-          user.emailVerificationOtpSendWindowStart &&
-          user.emailVerificationOtpSendCount >= 2 &&
-          Date.now() - user.emailVerificationOtpSendWindowStart < 2 * 60 * 1000
-        ) {
-          window.verificationOtpLockoutUntil = user.emailVerificationOtpSendWindowStart + 2 * 60 * 1000;
-          localStorage.setItem('verificationOtpLockoutUntil', window.verificationOtpLockoutUntil); // <-- verification only
-          updateVerificationOtpButtons();
-          if (window.verificationOtpInterval) clearInterval(window.verificationOtpInterval);
-          window.verificationOtpInterval = setInterval(() => {
-            updateVerificationOtpButtons();
-            if (!window.verificationOtpLockoutUntil || Date.now() >= window.verificationOtpLockoutUntil) {
-              clearInterval(window.verificationOtpInterval);
-              window.verificationOtpInterval = null;
-              localStorage.removeItem('verificationOtpLockoutUntil');
-            }
-          }, 1000);
-        } else {
-          window.verificationOtpLockoutUntil = null;
-          updateVerificationOtpButtons();
-          if (window.verificationOtpInterval) {
-            clearInterval(window.verificationOtpInterval);
-            window.verificationOtpInterval = null;
-          }
+  // Timer state
+  let otpExpiresAt = null;
+  let otpTimerInterval = null;
+
+  function startVerifyOtpTimer() {
+    if (otpTimerInterval) clearInterval(otpTimerInterval);
+    if (!otpExpiresAt) {
+      if (verifyOtpTimer) verifyOtpTimer.textContent = "";
+      if (verifyResendOtp) {
+        // allow clicks when no timer
+        verifyResendOtp.style.pointerEvents = "";
+        verifyResendOtp.classList.remove('disabled');
+      }
+      hasResent = false; // allow resend if no active timer
+      return;
+    }
+
+    // keep resend visible during countdown but DO NOT permanently remove/disable it here
+    if (verifyResendOtp) {
+      // show it and update appearance if needed; do NOT prevent clicks here
+      verifyResendOtp.style.display = "";
+    }
+
+    function update() {
+      const msLeft = otpExpiresAt - Date.now();
+      if (msLeft <= 0) {
+        clearInterval(otpTimerInterval);
+        otpTimerInterval = null;
+        otpExpiresAt = null;
+        if (verifyOtpTimer) verifyOtpTimer.textContent = "OTP expired. You can resend.";
+        if (verifyResendOtp) {
+          verifyResendOtp.style.pointerEvents = "";
+          verifyResendOtp.classList.remove('disabled');
         }
+        hasResent = false; // allow resend after expiry
+        return;
       }
-    } catch (err) {
-      // ignore
+      const sec = Math.ceil(msLeft / 1000);
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      if (verifyOtpTimer) verifyOtpTimer.textContent = `OTP expires in ${m}:${s.toString().padStart(2,"0")}`;
     }
+    update();
+    otpTimerInterval = setInterval(update, 1000);
   }
 
-  function updateVerificationOtpButtons() {
-    const now = Date.now();
-    const verifyBtn = document.querySelector('.verify-btn');
-    const resendAnchor = document.getElementById('verificationResendOtp');
-    if (window.verificationOtpLockoutUntil && now < window.verificationOtpLockoutUntil) {
-      const left = Math.ceil((window.verificationOtpLockoutUntil - now) / 1000);
-      const m = Math.floor(left / 60);
-      const s = left % 60;
-      if (verifyBtn) {
-        verifyBtn.disabled = true;
-        verifyBtn.textContent = `Verify Account (${m}:${s.toString().padStart(2, "0")})`;
-      }
-      if (resendAnchor) {
-        resendAnchor.style.pointerEvents = "none";
-        resendAnchor.textContent = `Resend OTP (${m}:${s.toString().padStart(2, "0")})`;
-      }
-    } else {
-      if (verifyBtn) {
-        verifyBtn.disabled = false;
-        verifyBtn.textContent = "Verify Account";
-      }
-      if (resendAnchor) {
-        resendAnchor.style.pointerEvents = "";
-        resendAnchor.textContent = "Resend OTP";
-      }
-    }
-  }
-
-  verifyBtn.addEventListener('click', async function () {
+  // Open modal
+  verifyBtn.addEventListener("click", () => {
     if (user && user.isVerified) {
       Swal.fire({
         icon: 'info',
@@ -103,369 +94,223 @@ export function setupVerifyEmail(user) {
       });
       return;
     }
+    verifyEmailInput.value = user?.email || "";
+    verifyOtpSection.style.display = "none";
+    sendVerifyOtpBtn.style.display = "";
+    verifyResendOtp.style.display = "";
+    verifyResendInfo.style.display = "none";
+    if (verifyOtpTimer) verifyOtpTimer.textContent = "";
+    hasResent = false;
+    verifyEmailModal.classList.add("active");
+    setupOtpInputs();
+  });
 
-    // Step 1: Ask for email
-    const { value: email } = await Swal.fire({
-      title: 'Enter Your Email',
-      input: 'email',
-      inputLabel: 'Email Address',
-      inputPlaceholder: 'Enter your email address',
-      inputValue: user && user.email ? user.email : '',
-      inputAttributes: {
-        readonly: true
-      },
-      showCancelButton: true,
-      confirmButtonText: 'Send OTP',
-      cancelButtonText: 'Cancel',
-      inputValidator: (value) => {
-        if (!value) return 'Please enter your email address';
-      }
+  // Close modal
+  closeBtn.addEventListener("click", () => {
+    verifyEmailModal.classList.remove("active");
+    // clear timer when modal closed
+    if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
+    otpExpiresAt = null;
+    if (verifyOtpTimer) verifyOtpTimer.textContent = "";
+  });
+
+  // Send OTP
+  sendVerifyOtpBtn.addEventListener("click", async function () {
+    sendVerifyOtpBtn.disabled = true;
+    Swal.fire({
+      title: "Sending OTP...",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
     });
-
-    if (!email) return;
-
-    // Step 2: Send OTP to backend
-    let sendRes;
     try {
-      Swal.fire({
-        title: 'Sending OTP...',
-        allowOutsideClick: false,
-        didOpen: () => {
-          Swal.showLoading();
-        }
-      });
-
-      sendRes = await fetch('http://localhost:5000/api/users/verify/send', {
+      const res = await fetch('http://localhost:5000/api/users/verify/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
+        body: JSON.stringify({ email: verifyEmailInput.value })
       });
-      const sendData = await sendRes.json();
-
+      const data = await res.json();
       Swal.close();
+      if (res.ok) {
+        Swal.fire({
+          icon: "success",
+          title: "OTP Sent",
+          text: "Check your email for the OTP code.",
+          confirmButtonColor: "#0A2C59"
+        });
+        verifyOtpSection.style.display = "";
+        sendVerifyOtpBtn.style.display = "none";
+        setupOtpInputs();
 
-      if (sendRes.status === 429) {
-        Swal.fire('Too Many Requests', sendData.message || 'Please wait before resending OTP.', 'warning');
-        await checkVerificationOtpLockout(email);
-        return;
+        // start timer
+        otpExpiresAt = Date.now() + 10 * 60 * 1000;
+        startVerifyOtpTimer();
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Send Failed",
+          text: data.message || "Failed to send OTP.",
+          confirmButtonColor: "#0A2C59"
+        });
       }
-      if (!sendRes.ok) {
-        Swal.fire('Error', sendData.message || 'Failed to send OTP', 'error');
-        return;
-      }
-      Swal.fire('OTP Sent', 'Check your email for the OTP code.', 'success');
-      await checkVerificationOtpLockout(email);
-      showOtpModal(email); // <-- Use the function here
-      return;
     } catch (err) {
       Swal.close();
-      Swal.fire('Error', 'Failed to send OTP', 'error');
-      return;
+      Swal.fire({
+        icon: "error",
+        title: "Server Error",
+        text: "Could not send OTP. Please try again.",
+        confirmButtonColor: "#0A2C59"
+      });
     }
+    sendVerifyOtpBtn.disabled = false;
+  });
 
-    // Step 3: Ask for OTP
-    const { value: otp } = await Swal.fire({
-      title: 'Enter OTP',
-      html: `
-        <div style="display:flex;justify-content:center;gap:8px;">
-          ${Array.from({ length: 6 }).map((_, i) =>
-            `<input id="otp${i + 1}" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;border-radius:8px;border:1px solid #0A2C59;background:#f7faff;box-shadow:0 2px 8px rgba(7,176,242,0.07);" autofocus>`
-          ).join('')}
-        </div>
-        <div style="margin-top:12px;font-size:14px;color:#0A2C59;">
-          Check your email for the 6-digit code.<br>
-          <a id="verificationResendOtp" style="cursor:pointer; margin-top: 12px;">Resend OTP</a>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Verify',
-      cancelButtonText: 'Cancel',
-      focusConfirm: false,
-      customClass: {
-        popup: 'otp-modal-popup'
-      },
-      didOpen: () => {
-        for (let i = 1; i <= 6; i++) {
-          const input = document.getElementById(`otp${i}`);
-          input.addEventListener('input', function () {
-            if (this.value.length === 1 && i < 6) {
-              document.getElementById(`otp${i + 1}`).focus();
-            }
-          });
-          input.addEventListener('keydown', function (e) {
-            if (e.key === 'Backspace' && this.value === '' && i > 1) {
-              document.getElementById(`otp${i - 1}`).focus();
-            }
-          });
+  // Setup OTP inputs
+  function setupOtpInputs() {
+    verifyOtpInputs.innerHTML = "";
+    for (let i = 0; i < 6; i++) {
+      const input = document.createElement("input");
+      input.type = "text";
+      input.maxLength = 1;
+      input.className = "otp-input";
+      input.style.width = "40px";
+      input.style.fontSize = "1.5rem";
+      input.style.textAlign = "center";
+      input.inputMode = "numeric";
+      input.pattern = "[0-9]*";
+      input.addEventListener("input", function (e) {
+        if (this.value.length === 1 && i < 5) {
+          verifyOtpInputs.querySelectorAll(".otp-input")[i + 1].focus();
         }
-        document.getElementById('otp1').focus();
-
-        // Resend OTP logic
-        const resendLink = document.getElementById('verificationResendOtp');
-        if (resendLink) {
-          resendLink.addEventListener('click', async function (e) {
-            e.preventDefault();
-            resendLink.textContent = "Sending...";
-            resendLink.style.pointerEvents = "none";
-            Swal.showLoading();
-            try {
-              const res = await fetch('http://localhost:5000/api/users/verify/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-              });
-              const data = await res.json();
-              Swal.close();
-              if (res.status === 429) {
-                const secondsLeft = data.secondsLeft || 120;
-                let left = secondsLeft;
-                resendLink.style.pointerEvents = "none";
-                function updateResendCountdown() {
-                  const m = Math.floor(left / 60);
-                  const s = left % 60;
-                  resendLink.textContent = `Resend OTP (${m}:${s.toString().padStart(2, "0")})`;
-                  left--;
-                  if (left < 0) {
-                    clearInterval(window.verificationResendTimerInterval);
-                    resendLink.textContent = "Resend OTP";
-                    resendLink.style.pointerEvents = "";
-                  }
-                }
-                updateResendCountdown();
-                window.verificationResendTimerInterval = setInterval(updateResendCountdown, 1000);
-                await checkVerificationOtpLockout(email);
-                return;
-              }
-              if (res.ok) {
-                await Swal.fire('OTP Sent', 'Check your email for the OTP code.', 'success');
-                showOtpModal(email); // <-- Reopen modal
-              } else {
-                Swal.fire('Error', data.message || 'Failed to send OTP', 'error');
-                resendLink.textContent = "Resend OTP";
-                resendLink.style.pointerEvents = "";
-              }
-            } catch (err) {
-              Swal.fire('Error', 'Could not resend OTP. Please try again.', 'error');
-              resendLink.textContent = "Resend OTP";
-              resendLink.style.pointerEvents = "";
-            }
-          });
-        }
-
-        // Show timer if lockout is active
-        const now = Date.now();
-        const lockoutUntil = Number(localStorage.getItem('verificationOtpLockoutUntil'));
-        if (lockoutUntil && now < lockoutUntil) {
-          const resendLink = document.getElementById('verificationResendOtp');
-          if (resendLink) {
-            resendLink.style.pointerEvents = "none";
-            let left = Math.ceil((lockoutUntil - now) / 1000);
-            function updateResendCountdown() {
-              const m = Math.floor(left / 60);
-              const s = left % 60;
-              resendLink.textContent = `Resend OTP (${m}:${s.toString().padStart(2, "0")})`;
-              left--;
-              if (left < 0) {
-                clearInterval(window.verificationResendTimerInterval);
-                resendLink.textContent = "Resend OTP";
-                resendLink.style.pointerEvents = "";
-              }
-            }
-            updateResendCountdown();
-            window.verificationResendTimerInterval = setInterval(updateResendCountdown, 1000);
+        // Paste support
+        if (e.inputType === "insertFromPaste") {
+          const val = this.value;
+          if (/^\d{6}$/.test(val)) {
+            val.split("").forEach((digit, idx) => {
+              verifyOtpInputs.querySelectorAll(".otp-input")[idx].value = digit;
+            });
+            verifyOtpInputs.querySelectorAll(".otp-input")[5].focus();
           }
         }
-      },
-      preConfirm: async () => {
-        const otp = [
-          document.getElementById('otp1').value,
-          document.getElementById('otp2').value,
-          document.getElementById('otp3').value,
-          document.getElementById('otp4').value,
-          document.getElementById('otp5').value,
-          document.getElementById('otp6').value
-        ].join('');
-        if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-          Swal.showValidationMessage('Please enter the 6-digit OTP');
-          return false;
+      });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Backspace" && this.value === "" && i > 0) {
+          verifyOtpInputs.querySelectorAll(".otp-input")[i - 1].focus();
         }
-        const result = await verifyOtp(email, otp);
-        return result;
-      }
-    });
+      });
+      verifyOtpInputs.appendChild(input);
+    }
+    verifyOtpInputs.querySelector(".otp-input").focus();
+  }
 
-    if (!otp) return;
-
-    async function verifyOtp(email, otp) {
-      const verifyRes = await fetch('http://localhost:5000/api/users/verify/confirm', {
+  // Verify OTP
+  verifyOtpBtn.addEventListener("click", async function () {
+    const otp = Array.from(verifyOtpInputs.querySelectorAll(".otp-input"))
+      .map(input => input.value)
+      .join("");
+    if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
+      alert("Please enter the 6-digit OTP");
+      return;
+    }
+    verifyOtpBtn.disabled = true;
+    try {
+      const res = await fetch('http://localhost:5000/api/users/verify/confirm', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, otp })
+        body: JSON.stringify({ email: verifyEmailInput.value, otp })
       });
-
-      if (verifyRes.ok) {
-        await Swal.fire('Verified!', 'Your account has been verified.', 'success');
+      const data = await res.json();
+      if (res.ok) {
+        alert("Your account has been verified.");
+        verifyEmailModal.classList.remove("active");
+        // clear timer
+        if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
+        otpExpiresAt = null;
+        if (verifyOtpTimer) verifyOtpTimer.textContent = "";
         window.location.reload();
-        return true;
-      } else if (verifyRes.status === 429) {
-        const verifyData = await verifyRes.json();
-        const unlockAt = Date.now() + (verifyData.secondsLeft ? verifyData.secondsLeft * 1000 : 5 * 60 * 1000);
-        // Optionally show lockout modal here
-        return false;
       } else {
-        const verifyData = await verifyRes.json();
-        Swal.showValidationMessage(verifyData.message || 'Invalid or expired OTP');
-        return false;
+        alert(data.message || "Invalid or expired OTP");
       }
+    } catch (err) {
+      alert("Could not verify OTP. Please try again.");
     }
+    verifyOtpBtn.disabled = false;
+  });
 
-    if (otp) {
-      const isVerified = await verifyOtp(email, otp);
-      if (isVerified) {
-        Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
-          window.location.reload();
+  // Resend OTP (only once)
+  verifyResendOtp.addEventListener("click", async function (e) {
+    e.preventDefault();
+    if (hasResent) return;
+    hasResent = true;
+    verifyResendOtp.textContent = "Sending...";
+    verifyResendOtp.style.pointerEvents = "none";
+    Swal.fire({
+      title: "Sending OTP...",
+      allowOutsideClick: false,
+      didOpen: () => Swal.showLoading()
+    });
+    try {
+      const res = await fetch('http://localhost:5000/api/users/verify/send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: verifyEmailInput.value })
+      });
+      const data = await res.json();
+      Swal.close();
+
+      // show resend-info always, only permanently hide resend if backend says 429
+      verifyResendInfo.style.display = "";
+
+      if (res.status === 429) {
+        // backend signals too many requests -> remove resend button
+        verifyResendOtp.style.display = "none";
+        verifyResendInfo.textContent = data.message || "Too many requests. Please wait.";
+        // keep hasResent true (no further attempts)
+      } else {
+        // otherwise keep the resend control available
+        verifyResendOtp.style.display = "";
+        // allow clicking again after handling result
+        hasResent = false;
+      }
+
+      if (res.ok) {
+        Swal.fire({
+          icon: "success",
+          title: "OTP Sent",
+          text: "Check your email for the OTP code.",
+          confirmButtonColor: "#0A2C59"
         });
+        // restart timer on successful resend/send
+        otpExpiresAt = Date.now() + 10 * 60 * 1000;
+        startVerifyOtpTimer();
+        setupOtpInputs();
+      } else if (res.status !== 429) {
+        Swal.fire({
+          icon: "error",
+          title: "Send Failed",
+          text: data.message || "Failed to resend OTP.",
+          confirmButtonColor: "#0A2C59"
+        });
+      }
+    } catch (err) {
+      Swal.close();
+      // make resend clickable again on network/server error
+      verifyResendInfo.style.display = "";
+      verifyResendOtp.style.pointerEvents = "";
+      verifyResendOtp.textContent = "Resend OTP";
+      hasResent = false;
+      Swal.fire({
+        icon: "error",
+        title: "Server Error",
+        text: "Could not resend OTP. Please try again.",
+        confirmButtonColor: "#0A2C59"
+      });
+    } finally {
+      // Ensure the resend anchor text and pointer state are restored unless server hid it (429)
+      if (verifyResendOtp && verifyResendOtp.style.display !== "none") {
+        verifyResendOtp.textContent = "Resend OTP";
+        verifyResendOtp.style.pointerEvents = "";
+        verifyResendOtp.classList.remove('disabled');
       }
     }
   });
-
-  function showOtpModal(email) {
-    Swal.fire({
-      title: 'Enter OTP',
-      html: `
-        <div style="display:flex;justify-content:center;gap:8px;">
-          ${Array.from({ length: 6 }).map((_, i) =>
-            `<input id="otp${i + 1}" type="text" maxlength="1" style="width:40px;font-size:2rem;text-align:center;border-radius:8px;border:1px solid #0A2C59;background:#f7faff;box-shadow:0 2px 8px rgba(7,176,242,0.07);" autofocus>`
-          ).join('')}
-        </div>
-        <div style="margin-top:12px;font-size:14px;color:#0A2C59;">
-          Check your email for the 6-digit code.<br>
-          <a id="verificationResendOtp" style="cursor:pointer; margin-top: 12px;">Resend OTP</a>
-        </div>
-      `,
-      showCancelButton: true,
-      confirmButtonText: 'Verify',
-      cancelButtonText: 'Cancel',
-      focusConfirm: false,
-      customClass: {
-        popup: 'otp-modal-popup'
-      },
-      didOpen: () => {
-        for (let i = 1; i <= 6; i++) {
-          const input = document.getElementById(`otp${i}`);
-          input.addEventListener('input', function () {
-            if (this.value.length === 1 && i < 6) {
-              document.getElementById(`otp${i + 1}`).focus();
-            }
-          });
-          input.addEventListener('keydown', function (e) {
-            if (e.key === 'Backspace' && this.value === '' && i > 1) {
-              document.getElementById(`otp${i - 1}`).focus();
-            }
-          });
-        }
-        document.getElementById('otp1').focus();
-
-        // Resend OTP logic
-        const resendLink = document.getElementById('verificationResendOtp');
-        if (resendLink) {
-          resendLink.addEventListener('click', async function (e) {
-            e.preventDefault();
-            resendLink.textContent = "Sending...";
-            resendLink.style.pointerEvents = "none";
-            Swal.showLoading();
-            try {
-              const res = await fetch('http://localhost:5000/api/users/verify/send', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email })
-              });
-              const data = await res.json();
-              Swal.close();
-              if (res.status === 429) {
-                const secondsLeft = data.secondsLeft || 120;
-                let left = secondsLeft;
-                resendLink.style.pointerEvents = "none";
-                function updateResendCountdown() {
-                  const m = Math.floor(left / 60);
-                  const s = left % 60;
-                  resendLink.textContent = `Resend OTP (${m}:${s.toString().padStart(2, "0")})`;
-                  left--;
-                  if (left < 0) {
-                    clearInterval(window.verificationResendTimerInterval);
-                    resendLink.textContent = "Resend OTP";
-                    resendLink.style.pointerEvents = "";
-                  }
-                }
-                updateResendCountdown();
-                window.verificationResendTimerInterval = setInterval(updateResendCountdown, 1000);
-                await checkVerificationOtpLockout(email);
-                return;
-              }
-              if (res.ok) {
-                await Swal.fire('OTP Sent', 'Check your email for the OTP code.', 'success');
-                showOtpModal(email); // <-- Reopen modal
-              } else {
-                Swal.fire('Error', data.message || 'Failed to send OTP', 'error');
-                resendLink.textContent = "Resend OTP";
-                resendLink.style.pointerEvents = "";
-              }
-            } catch (err) {
-              Swal.fire('Error', 'Could not resend OTP. Please try again.', 'error');
-              resendLink.textContent = "Resend OTP";
-              resendLink.style.pointerEvents = "";
-            }
-          });
-        }
-
-        // Show timer if lockout is active
-        const now = Date.now();
-        const lockoutUntil = Number(localStorage.getItem('verificationOtpLockoutUntil'));
-        if (lockoutUntil && now < lockoutUntil) {
-          const resendLink = document.getElementById('verificationResendOtp');
-          if (resendLink) {
-            resendLink.style.pointerEvents = "none";
-            let left = Math.ceil((lockoutUntil - now) / 1000);
-            function updateResendCountdown() {
-              const m = Math.floor(left / 60);
-              const s = left % 60;
-              resendLink.textContent = `Resend OTP (${m}:${s.toString().padStart(2, "0")})`;
-              left--;
-              if (left < 0) {
-                clearInterval(window.verificationResendTimerInterval);
-                resendLink.textContent = "Resend OTP";
-                resendLink.style.pointerEvents = "";
-              }
-            }
-            updateResendCountdown();
-            window.verificationResendTimerInterval = setInterval(updateResendCountdown, 1000);
-          }
-        }
-      },
-      preConfirm: async () => {
-        const otp = [
-          document.getElementById('otp1').value,
-          document.getElementById('otp2').value,
-          document.getElementById('otp3').value,
-          document.getElementById('otp4').value,
-          document.getElementById('otp5').value,
-          document.getElementById('otp6').value
-        ].join('');
-        if (otp.length !== 6 || !/^\d{6}$/.test(otp)) {
-          Swal.showValidationMessage('Please enter the 6-digit OTP');
-          return false;
-        }
-        const result = await verifyOtp(email, otp);
-        return result;
-      }
-    }).then(async ({ value: otp }) => {
-      if (!otp) return;
-      const isVerified = await verifyOtp(email, otp);
-      if (isVerified) {
-        Swal.fire('Verified!', 'Your account has been verified.', 'success').then(() => {
-          window.location.reload();
-        });
-      }
-    });
-  }
 }

@@ -71,3 +71,29 @@ if (window.io) {
   // Optionally, emit a socket event for educational-assistance:newSubmission in your backend and listen here:
   socket.on("educational-assistance:newSubmission", () => updateSidebarNotifBadge());
 }
+
+(async function updateEducationalBadge() {
+  const badgeEl = document.getElementById('sidebarEducNotifBadge');
+  if (!badgeEl) return;
+  const token = sessionStorage.getItem('token') || '';
+  try {
+    const res = await fetch('http://localhost:5000/api/notifications/educational/pending/count', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      console.warn('Notif count fetch failed', res.status, await res.text().catch(()=>{}));
+      badgeEl.style.display = 'none';
+      return;
+    }
+    const data = await res.json().catch(() => null);
+    if (data && typeof data.count === 'number' && data.count > 0) {
+      badgeEl.textContent = data.count;
+      badgeEl.style.display = '';
+    } else {
+      badgeEl.style.display = 'none';
+    }
+  } catch (err) {
+    console.error('Failed to fetch educational notif count:', err);
+    badgeEl.style.display = 'none';
+  }
+})();

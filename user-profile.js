@@ -12,5 +12,4 @@ function handleOtpSubmit(event) {
         alert('Please enter an OTP');
         return;
     }
-    // ...other code...
 }

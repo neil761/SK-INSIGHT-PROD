@@ -114,3 +114,39 @@ exports.getLatestEducCycle = async (req, res) => {
     res.status(500).json({ error: "Failed to fetch latest Educational Assistance cycle" });
   }
 };
+
+// New: return flattened history for a form
+exports.getFormHistory = async (req, res) => {
+  try {
+    const { formName } = req.query;
+    if (!formName) return res.status(400).json({ error: "formName is required" });
+
+    // Find all cycles for form that have history
+    const cycles = await FormCycle.find({ formName }).select("cycleNumber year history").lean();
+
+    // Flatten events with cycle context
+    const events = [];
+    for (const c of cycles) {
+      if (Array.isArray(c.history)) {
+        for (const ev of c.history) {
+          events.push({
+            formName,
+            cycleNumber: c.cycleNumber,
+            year: c.year,
+            action: ev.action,
+            actorName: ev.actorName || null,
+            at: ev.at
+          });
+        }
+      }
+    }
+
+    // sort by date desc
+    events.sort((a, b) => new Date(b.at) - new Date(a.at));
+
+    res.json(events);
+  } catch (err) {
+    console.error("Get form history error:", err);
+    res.status(500).json({ error: "Failed to fetch form history" });
+  }
+};
