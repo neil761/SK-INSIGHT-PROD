@@ -136,16 +136,22 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   function renderAnnouncementsResponsive(announcements) {
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
+    const tableEl = document.querySelector('.announcement-table');
     if (isMobile) {
-      document.querySelector('.announcement-table')?.classList.add('hidden');
+      if (tableEl) tableEl.classList.add('hidden');
       renderAnnouncementsCards(announcements);
     } else {
-      document.querySelector('.announcement-table')?.classList.remove('hidden');
+      // show the table and hide cards container
+      if (tableEl) tableEl.classList.remove('hidden');
+      // ensure cards container is hidden before rendering table
+      if (cardsContainer) cardsContainer.style.display = 'none';
       renderAnnouncementsTable(announcements);
     }
   }
 
   function renderAnnouncementsTable(announcements) {
+    // hide cards container when rendering the table
+    if (cardsContainer) cardsContainer.style.display = 'none';
     tableBody.innerHTML = "";
 
     let displayAnnouncements = announcements;
@@ -234,6 +240,12 @@ if (currentTab === 'foryou') {
       const tr = document.createElement("tr");
       tr.innerHTML = ``;
       tableBody.appendChild(tr);
+    }
+    // make sure the table is visible (in case a previous code path hid it)
+    const tableEl = document.querySelector('.announcement-table');
+    if (tableEl) {
+      tableEl.classList.remove('hidden');
+      tableEl.style.display = '';
     }
   }
 
@@ -348,9 +360,10 @@ if (currentTab === 'foryou') {
       cardsContainer.appendChild(card);
     });
 
+    // show cards and hide the table using the "hidden" class
     cardsContainer.style.display = 'block';
     const tableEl = document.querySelector('.announcement-table');
-    if (tableEl) tableEl.style.display = 'none';
+    if (tableEl) tableEl.classList.add('hidden');
   }
 
   // Modal view for table (desktop)
@@ -425,8 +438,55 @@ if (currentTab === 'foryou') {
   socket.on("announcement:deleted", renderTabAnnouncements);
   socket.on("announcement:pinned", renderTabAnnouncements);
   socket.on("announcement:unpinned", renderTabAnnouncements);
-});
+  
+  // Listen for breakpoint changes (mobile <-> desktop) and re-render accordingly.
+  // Using matchMedia 'change' is more efficient than raw resize events.
+  (function setupBreakpointListener() {
+    try {
+      const mq = window.matchMedia('(max-width: 600px)');
+      const handleMqChange = (e) => {
+        try {
+          if (lastAnnouncements && lastAnnouncements.length) {
+            renderAnnouncementsResponsive(lastAnnouncements);
+          } else {
+            // If data not yet loaded, trigger a full render which will fetch data
+            renderTabAnnouncements();
+          }
+        } catch (err) {
+          console.warn('Error handling media query change, falling back to full render', err);
+          renderTabAnnouncements();
+        }
+      };
+      // Initial sync in case JS loaded after a size change
+      mq.matches ? renderAnnouncementsResponsive(lastAnnouncements) : renderAnnouncementsResponsive(lastAnnouncements);
+      if (typeof mq.addEventListener === 'function') {
+        mq.addEventListener('change', handleMqChange);
+      } else if (typeof mq.addListener === 'function') {
+        // Older browsers
+        mq.addListener(handleMqChange);
+      }
+    } catch (err) {
+      // If matchMedia is not supported, fallback to a debounced resize listener
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          try {
+            if (lastAnnouncements && lastAnnouncements.length) {
+              renderAnnouncementsResponsive(lastAnnouncements);
+            } else {
+              renderTabAnnouncements();
+            }
+          } catch (err2) {
+            console.warn('Resize fallback failed', err2);
+            renderTabAnnouncements();
+          }
+        }, 150);
+      });
+    }
+  })();
 
+});
 // =========================
 // NAVBAR & KK PROFILING SECTION
 // =========================

@@ -17,6 +17,21 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  // Hide edit button if the KK Profiling form is closed
+  (async function(){
+    try {
+      const res = await fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling');
+      const status = await res.json().catch(()=>null);
+      const latest = Array.isArray(status)? status[status.length-1] : status;
+      const isOpen = latest?.isOpen ?? false;
+      if (!isOpen) {
+        document.querySelectorAll('.kk-upload-row .edit').forEach(el => el.remove());
+      }
+    } catch (e) {
+      console.warn('Could not determine KK form status to hide edit button', e);
+    }
+  })();
+
   // ✅ Attach KK Profiling nav
   const kkProfileNavBtn = document.getElementById('kkProfileNavBtn');
   if (kkProfileNavBtn) kkProfileNavBtn.addEventListener('click', handleKKProfileNavClick);

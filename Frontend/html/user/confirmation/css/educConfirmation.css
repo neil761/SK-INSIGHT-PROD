@@ -83,7 +83,7 @@ body::before {
     cursor: pointer;
     margin-top: 0;
     margin-right: 5px;
-    font-size: 1rem;
+    font-size: 1.2rem;
     line-height: 1;
 }
 
@@ -103,8 +103,10 @@ body::before {
   font-size: 1.1rem;
 }
 
+
 .navbar-right a {
   text-decoration: none;
+  margin-top: 3%;
 }
 
 .nav-btn {
@@ -185,6 +187,9 @@ body::before {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .navbar-right a {
+  margin-top: 1%;
+}
   .notif-badge {
     top: -4px;
     right: -4px;
@@ -322,15 +327,15 @@ body::before {
 
 .views, .edit {
   padding: 10px 20px;
-  border: 1px solid #000;
+  border: 1px solid #0A2C59;
   border-radius: 6px;
-  background: #fff;
+  background: #0A2C59;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
-  color: #000000;
+  color: #ffffff;
 }
 
 .btn:hover {
@@ -450,9 +455,21 @@ body::before {
 }
 
 @media (max-width: 480px) {
+  .card-logo{
+  width: 60px;  
+  height: 60px;
+
+  }
+  .card h2{
+    font-size: 1rem;
+    margin-top: 5%;
+  }
   .views, .edit {
     padding: 5% 3%;
     font-size: 0.7rem;
+    margin-bottom: 5%;
+    background: #0A2C59;
+    color: white;
   }
   .footer {
     padding: 30px 20px 15px;
