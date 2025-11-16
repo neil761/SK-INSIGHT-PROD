@@ -20,7 +20,7 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 
   const form = document.getElementById('personalForm');
-  const saved = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
+  const saved = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
 
   document.getElementById('lastname').value = saved.lastname || '';
   document.getElementById('firstname').value = saved.firstname || '';
@@ -28,10 +28,37 @@ document.addEventListener('DOMContentLoaded', async function () {
   document.getElementById('suffix').value = saved.suffix || '';
   document.getElementById('gender').value = saved.gender || '';
   if (birthdayInput && !birthdayInput.value) {
+    // Prefer saved value in sessionStorage
     birthdayInput.value = saved.birthday || '';
-    if (ageInput) {
-      const age = calculateAge(birthdayInput.value);
-      ageInput.value = age;
+
+    // If no saved birthday and we have a token, fetch from server (/api/users/me)
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if ((!birthdayInput.value || birthdayInput.value === '') && token) {
+      fetch('http://localhost:5000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.json())
+      .then(user => {
+        if (user && (user.birthday || user.dateOfBirth)) {
+          // Accept either `birthday` or `dateOfBirth` field if backend uses different name
+          const raw = user.birthday || user.dateOfBirth;
+          const val = (typeof raw === 'string' && raw.includes('T')) ? raw.split('T')[0] : raw;
+          if (val && !birthdayInput.value) {
+            birthdayInput.value = val;
+            if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+          }
+        } else {
+          if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+        }
+      })
+      .catch(() => {
+        if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+      });
+    } else {
+      if (ageInput) {
+        const age = calculateAge(birthdayInput.value);
+        ageInput.value = age;
+      }
     }
   }
 
@@ -47,9 +74,29 @@ document.addEventListener('DOMContentLoaded', async function () {
       gender: form.gender.value,
       birthday: form.birthday.value
     };
-    localStorage.setItem('kkProfileStep1', JSON.stringify(data));
+    sessionStorage.setItem('kkProfileStep1', JSON.stringify(data));
     window.location.href = 'kkform-address.html';
   });
+
+  // Autosave on any input change so data persists across reloads (but cleared on tab close)
+  function saveStep1() {
+    try {
+      const data = {
+        lastname: form.lastname.value.trim(),
+        firstname: form.firstname.value.trim(),
+        middlename: form.middlename.value.trim(),
+        suffix: form.suffix.value.trim(),
+        gender: form.gender.value,
+        birthday: form.birthday.value
+      };
+      sessionStorage.setItem('kkProfileStep1', JSON.stringify(data));
+    } catch (e) {
+      // ignore storage errors
+    }
+  }
+
+  // Save as user types or changes fields
+  form.addEventListener('input', saveStep1);
 });
 
 // Place this at the end of your HTML or in a JS file
@@ -285,8 +332,8 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        title: `No Application found`,
+        text: `You don't have a application yet. Please fill out the form to create one.`,
         showCancelButton: true, // Show the "No" button
         confirmButtonText: "Go to form", // Text for the "Go to Form" button
         cancelButtonText: "No", // Text for the "No" button
