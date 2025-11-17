@@ -216,6 +216,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         body: formData
       });
 
+      // close the loading dialog and read response
       Swal.close();
 
       // Read response text for better diagnostics
@@ -248,9 +249,25 @@ document.addEventListener('DOMContentLoaded', async function () {
         return Swal.fire('Submission failed', message, 'error');
       }
 
-      Swal.fire('Success', 'Form submitted successfully!', 'success').then(() => {
-        form.reset();
-        window.location.href = "confirmation/html/educConfirmation.html";
+      // Show a richer success dialog with server message and option to view the application
+      const successMessage = (data && (data.message || data.msg)) || 'Your application has been submitted successfully.';
+      Swal.fire({
+        title: 'Application Submitted',
+        html: successMessage,
+        icon: 'success',
+        confirmButtonText: 'Done',
+        allowOutsideClick: false,
+        timer: 6000,
+        timerProgressBar: true,
+        confirmButtonColor: '#0A2C59'
+      }).then((result) => {
+        // clear saved draft and reset form
+        try { sessionStorage.removeItem('educationalAssistanceFormData'); } catch (e) {}
+        try { form.reset(); } catch (e) {}
+        // Redirect when user clicks confirm OR when timer expires
+        if (result.isConfirmed || result.dismiss === Swal.DismissReason.timer) {
+          window.location.href = "confirmation/html/educConfirmation.html";
+        }
       });
     } catch (error) {
       Swal.close();

@@ -220,15 +220,30 @@ export function setupVerifyEmail(user) {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Your account has been verified.");
-        verifyEmailModal.classList.remove("active");
-        // clear timer
-        if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
-        otpExpiresAt = null;
-        if (verifyOtpTimer) verifyOtpTimer.textContent = "";
-        window.location.reload();
+        // Use SweetAlert2 for a nicer verified dialog and redirect after timer
+        await Swal.fire({
+          title: 'Verified!',
+          text: data?.message || 'Your account has been verified.',
+          icon: 'success',
+          showCancelButton: false,
+          confirmButtonText: 'OK',
+          allowOutsideClick: false,
+          timer: 3000,
+          timerProgressBar: true,
+          confirmButtonColor: '#0A2C59'
+        }).then((result) => {
+          // close modal and cleanup
+          verifyEmailModal.classList.remove("active");
+          if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
+          otpExpiresAt = null;
+          if (verifyOtpTimer) verifyOtpTimer.textContent = "";
+          // If the user clicked OK or timer expired, reload to update verified state
+          if (result.isConfirmed || result.dismiss === Swal.DismissReason.timer) {
+            window.location.reload();
+          }
+        });
       } else {
-        alert(data.message || "Invalid or expired OTP");
+        Swal.fire({ icon: 'error', title: 'Verification Failed', text: data.message || 'Invalid or expired OTP', confirmButtonColor: '#0A2C59' });
       }
     } catch (err) {
       alert("Could not verify OTP. Please try again.");

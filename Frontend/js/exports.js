@@ -32,6 +32,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 })();
 
+  // small helper to escape HTML when injecting into table cells
+  function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // Initialize variables after auth check
   const modal = document.getElementById("exportModal");
   const closeModal = document.getElementById("closeModal");
@@ -219,6 +230,113 @@ document.addEventListener("DOMContentLoaded", () => {
     fetchFormHistory("KK Profiling", "formHistoryKK");
     fetchFormHistory("LGBTQIA+ Profiling", "formHistoryLGBTQ");
     fetchFormHistory("Educational Assistance", "formHistoryEduc");
+  }
+
+  // --- Recently Deleted: fetch + actions ---
+  async function fetchDeletedProfiles() {
+    const filter = document.getElementById('deletedFilter')?.value || 'all';
+    const tbody = document.querySelector('#deletedTable tbody');
+    if (!tbody) return;
+    tbody.innerHTML = `<tr><td colspan="5" style="padding:16px; text-align:center; color:#6b7280;">Loading…</td></tr>`;
+    const token = sessionStorage.getItem('token') || '';
+    try {
+      let results = [];
+      // helper to map key -> human type
+      const mapType = key => key === 'kk' ? 'KK Profiling' : key === 'lgbtq' ? 'LGBTQ Profiling' : 'Unknown';
+      if (filter === 'all' || filter === 'kk') {
+        const res = await fetch('http://localhost:5000/api/kkprofiling/deleted', { headers: { Authorization: `Bearer ${token}` } });
+        if (res.ok) {
+          const arr = await res.json().catch(() => []);
+          results = results.concat((arr || []).map(p => ({ id: p._id || p.id, name: `${p.lastname || ''}, ${p.firstname || ''}`.replace(/^,\s*/, ''), type: 'kk', deletedAt: p.deletedAt })));
+        }
+      }
+      if (filter === 'all' || filter === 'lgbtq') {
+        const res2 = await fetch('http://localhost:5000/api/lgbtqprofiling/deleted', { headers: { Authorization: `Bearer ${token}` } });
+        if (res2.ok) {
+          const arr2 = await res2.json().catch(() => []);
+          results = results.concat((arr2 || []).map(p => ({ id: p._id || p.id, name: `${p.lastname || ''}, ${p.firstname || ''}`.replace(/^,\s*/, ''), type: 'lgbtq', deletedAt: p.deletedAt })));
+        }
+      }
+
+      // render rows
+      if (!results.length) {
+        tbody.innerHTML = `<tr><td colspan="5" style="padding:18px; text-align:center; color:#666;">No deleted profiles found.</td></tr>`;
+        return;
+      }
+      // sort by deletedAt desc
+      results.sort((a,b) => (new Date(b.deletedAt || 0)) - (new Date(a.deletedAt || 0)));
+      const frag = document.createDocumentFragment();
+      results.forEach((r, idx) => {
+        const tr = document.createElement('tr');
+        const dateStr = r.deletedAt ? new Date(r.deletedAt).toLocaleString() : '-';
+        tr.innerHTML = `
+          <td style="padding:8px 12px;">${idx+1}</td>
+          <td style="padding:8px 12px;">${escapeHtml(r.name || '-')}</td>
+          <td style="padding:8px 12px;">${escapeHtml(mapType(r.type))}</td>
+          <td style="padding:8px 12px; white-space:nowrap;">${dateStr}</td>
+          <td style="padding:8px 12px;">
+            <button class="restore-btn" data-id="${r.id}" data-type="${r.type}" style="margin-right:8px;">Restore</button>
+            <button class="permanent-delete-btn" data-id="${r.id}" data-type="${r.type}">Delete Permanently</button>
+          </td>
+        `;
+        frag.appendChild(tr);
+      });
+      tbody.innerHTML = '';
+      tbody.appendChild(frag);
+
+      // wire buttons
+      tbody.querySelectorAll('.restore-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+        const id = btn.dataset.id; const type = btn.dataset.type;
+        await restoreDeletedProfile(type, id);
+        fetchDeletedProfiles();
+      }));
+      tbody.querySelectorAll('.permanent-delete-btn').forEach(btn => btn.addEventListener('click', async (e) => {
+        const id = btn.dataset.id; const type = btn.dataset.type;
+        await permanentlyDeleteProfile(type, id);
+        fetchDeletedProfiles();
+      }));
+    } catch (err) {
+      console.error('fetchDeletedProfiles error', err);
+      tbody.innerHTML = `<tr><td colspan="5" style="padding:18px; text-align:center; color:#ef4444;">Failed to load deleted profiles.</td></tr>`;
+    }
+  }
+
+  async function restoreDeletedProfile(type, id) {
+    const token = sessionStorage.getItem('token') || '';
+    const endpoints = { kk: `http://localhost:5000/api/kkprofiling/${id}/restore`, lgbtq: `http://localhost:5000/api/lgbtqprofiling/${id}/restore` };
+    if (!endpoints[type]) return Swal.fire({ icon:'error', title:'Unsupported', text:'Cannot restore this type.' });
+    try {
+      Swal.fire({ title:'Restoring...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      const res = await fetch(endpoints[type], { method:'PUT', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' } });
+      Swal.close();
+      const data = await res.json().catch(()=>({}));
+      if (res.ok) return Swal.fire({ icon:'success', title:'Restored', text: data.message || 'Profile restored.' });
+      return Swal.fire({ icon:'error', title:'Restore failed', text: data.error || data.message || 'Restore failed.' });
+    } catch (err) {
+      Swal.close();
+      console.error('restore error', err);
+      return Swal.fire({ icon:'error', title:'Restore failed', text: 'Network or server error.' });
+    }
+  }
+
+  async function permanentlyDeleteProfile(type, id) {
+    const token = sessionStorage.getItem('token') || '';
+    const endpoints = { kk: `http://localhost:5000/api/kkprofiling/${id}/permanent`, lgbtq: `http://localhost:5000/api/lgbtqprofiling/${id}/permanent` };
+    if (!endpoints[type]) return Swal.fire({ icon:'error', title:'Unsupported', text:'Cannot delete this type.' });
+    const confirm = await Swal.fire({ icon:'warning', title:'Delete permanently?', text:'This action cannot be undone.', showCancelButton:true, confirmButtonText:'Delete', confirmButtonColor:'#ef4444' });
+    if (!confirm.isConfirmed) return;
+    try {
+      Swal.fire({ title:'Deleting...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      const res = await fetch(endpoints[type], { method:'DELETE', headers:{ Authorization:`Bearer ${token}`, 'Content-Type':'application/json' } });
+      Swal.close();
+      const data = await res.json().catch(()=>({}));
+      if (res.ok) return Swal.fire({ icon:'success', title:'Deleted', text: data.message || 'Profile permanently deleted.' });
+      return Swal.fire({ icon:'error', title:'Delete failed', text: data.error || data.message || 'Delete failed.' });
+    } catch (err) {
+      Swal.close();
+      console.error('permanent delete error', err);
+      return Swal.fire({ icon:'error', title:'Delete failed', text: 'Network or server error.' });
+    }
   }
 
   // --- Form Cycle Status Logic ---
