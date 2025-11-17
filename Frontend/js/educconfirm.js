@@ -13,6 +13,20 @@ document.addEventListener('DOMContentLoaded', function() {
       mobileMenu.classList.remove('active');
     }
   });
+  // Hide edit button if the form cycle is closed
+  (async function(){
+    try {
+      const res = await fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance');
+      const status = await res.json().catch(()=>null);
+      const latest = Array.isArray(status)? status[status.length-1] : status;
+      const isOpen = latest?.isOpen ?? false;
+      if (!isOpen) {
+        document.querySelectorAll('.kk-upload-row .edit').forEach(el => el.remove());
+      }
+    } catch (e) {
+      console.warn('Could not determine form status to hide edit button', e);
+    }
+  })();
 });
 
 // KK Profile Navigation

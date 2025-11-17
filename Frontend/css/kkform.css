@@ -350,6 +350,171 @@ body {
     align-items: center;
     margin-top: 0;
   }
+  .kk-card {
+    width: 90%; /* Full width on mobile */
+    padding: 20px; /* Adjust padding for smaller screens */
+    margin: 0 auto 16px auto; /* Center alignment */
+  }
+  .kk-btn-group {
+    display: flex;
+    justify-content: center; /* Center the buttons horizontally */
+    align-items: center; /* Center the buttons vertically */
+    gap: 16px; /* Add spacing between buttons */
+    margin-top: 20px; /* Add some space above the button group */
+  }
+
+  .kk-btn, .kk-btnss  {
+    width: auto; /* Ensure buttons don't stretch unnecessarily */
+    font-size: 0.9rem; /* Adjust font size for mobile */
+    padding: 10px 20px; /* Add padding for better touch targets */
+  }
+  .kk-upload-row {
+    flex-direction: column;
+    gap: 16px;
+    align-items: center;
+    width: 100%;
+    max-width: 900px;
+    margin: 12px auto 25px auto;
+  }
+
+  .kk-upload-col {
+    width: 90%;
+    max-width: 900px;
+    padding: 20px;
+    margin: 0 auto;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+  }
+  /* Adjust font sizes for larger screens */
+  .kk-label, .kk-labels {
+    font-size: 0.9rem; /* Smaller font for labels */
+  }
+
+  .kk-input {
+    font-size: 14px; /* Smaller font for inputs */
+    padding: 10px 14px; /* Adjust padding for inputs */
+  }
+
+  .kk-btn, .kk-btnss  {
+    font-size: 0.85rem; /* Smaller font for buttons */
+    padding: 8px 0; /* Adjust button padding */
+  }
+
+  .kk-intro h2 {
+    font-size: 22px; /* Smaller font for headings */
+    font-weight: bold;
+  }
+
+  .kk-intro p {
+    font-size: 0.9rem; /* Smaller font for paragraphs */
+  }
+
+  /* Match card spacing and width */
+  .kk-card,
+  .form-group {
+    width: 90%;
+    max-width: 900px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .swal2-popup {
+    width: 90% !important;
+    max-width: 380px !important;
+    padding: 25px 20px !important;
+    font-size: 0.9rem !important;
+  }
+
+  .swal2-title {
+    font-size: 1.3rem !important;
+    padding: 0 0 12px !important;
+  }
+
+  .swal2-html-container {
+    font-size: 0.9rem !important;
+    margin: 0.8em 0 !important;
+  }
+
+  .swal2-icon {
+    width: 60px !important;
+    height: 60px !important;
+    margin: 15px auto !important;
+  }
+
+  .swal2-confirm,
+  .swal2-cancel {
+    font-size: 0.9rem !important;
+    padding: 10px 25px !important;
+    min-width: 100px !important;
+  }
+
+  .swal2-actions {
+    gap: 12px !important;
+    margin-top: 20px !important;
+    flex-wrap: nowrap !important;
+    
+    justify-content: center !important;
+  }
+  
+  /* Reduce overall icon size so the check/cross fit nicely */
+  .swal2-icon.swal2-success,
+  .swal2-icon.swal2-error {
+    width: 70px !important;
+    height: 70px !important;
+    margin: 0 auto !important;
+  }
+
+  /* Thin the stroke and scale the check/cross lines */
+  .swal2-success .swal2-success-line-tip,
+  .swal2-success .swal2-success-line-long,
+  .swal2-success .swal2-success-ring {
+    stroke-width: 4 !important;
+  }
+
+  .swal2-error .swal2-x-mark-line-left,
+  .swal2-error .swal2-x-mark-line-right {
+    stroke-width: 4 !important;
+  }
+
+  /* Slightly scale the path elements to visually center the mark */
+  .swal2-success .swal2-success-line-tip,
+  .swal2-success .swal2-success-line-long,
+  .swal2-error .swal2-x-mark-line-left,
+  .swal2-error .swal2-x-mark-line-right {
+    transform-origin: center center;
+    transform: scale(0.88);
+  }
+
+  /* Keep the title and text readable */
+  .swal2-title { font-size: 1.15rem !important; }
+  .swal2-html-container { font-size: 0.95rem !important; }
+
+
+  
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
+  .card, .card.intro, .kk-card, .kk-upload-col {
+    padding: 20px;
+    width: 90%;
+  }
+  
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-left,
+  .footer-middle,
+  .footer-right {
+    width: 100%;
+  }
 }
 
 .navbar-mobile-menu {
@@ -877,35 +1042,7 @@ select.form-control:focus {
   box-sizing: border-box;
 }
 
-/* Mobile alignment */
-@media (max-width: 768px) {
-  .kk-upload-row {
-    flex-direction: column;
-    gap: 16px;
-    align-items: center;
-    width: 100%;
-    max-width: 900px;
-    margin: 12px auto 25px auto;
-  }
 
-  .kk-upload-col {
-    width: 90%;
-    max-width: 900px;
-    padding: 20px;
-    margin: 0 auto;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-  }
-
-  /* Match card spacing and width */
-  .kk-card,
-  .form-group {
-    width: 90%;
-    max-width: 900px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-}
 .upload-plus {
   display: inline-flex;
   align-items: center;
@@ -1044,34 +1181,7 @@ select.form-control:focus {
   color: #cfd9e8;
 }
 
-/* Responsive Footer */
-@media (max-width: 768px) {
-  .notif-badge {
-    top: -4px;
-    right: -4px;
-    min-width: 16px;
-    height: 16px;
-    font-size: 10px;
-    line-height: 16px;
-  }
-  .card, .card.intro, .kk-card, .kk-upload-col {
-    padding: 20px;
-    width: 90%;
-  }
-  
-  .footer-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 20px;
-  }
 
-  .footer-left,
-  .footer-middle,
-  .footer-right {
-    width: 100%;
-  }
-}
 
 @media (max-width: 480px) {
   .card, .card.intro, .kk-card, .kk-upload-col{
@@ -1128,46 +1238,8 @@ select.form-control:focus {
   }
 }
 
-/* SweetAlert responsive styles for mobile */
-@media (max-width: 768px) {
-  .swal2-popup {
-    width: 90% !important;
-    max-width: 380px !important;
-    padding: 25px 20px !important;
-    font-size: 0.9rem !important;
-  }
 
-  .swal2-title {
-    font-size: 1.3rem !important;
-    padding: 0 0 12px !important;
-  }
 
-  .swal2-html-container {
-    font-size: 0.9rem !important;
-    margin: 0.8em 0 !important;
-  }
-
-  .swal2-icon {
-    width: 60px !important;
-    height: 60px !important;
-    margin: 15px auto !important;
-  }
-
-  .swal2-confirm,
-  .swal2-cancel {
-    font-size: 0.9rem !important;
-    padding: 10px 25px !important;
-    min-width: 100px !important;
-  }
-
-  .swal2-actions {
-    gap: 12px !important;
-    margin-top: 20px !important;
-    flex-wrap: nowrap !important;
-    
-    justify-content: center !important;
-  }
-}
 
 .container {
   display: flex;
@@ -1175,31 +1247,6 @@ select.form-control:focus {
   align-items: center;
 }
 
-@media (min-width: 768px) {
-  /* Adjust font sizes for larger screens */
-  .kk-label, .kk-labels {
-    font-size: 0.9rem; /* Smaller font for labels */
-  }
-
-  .kk-input {
-    font-size: 14px; /* Smaller font for inputs */
-    padding: 10px 14px; /* Adjust padding for inputs */
-  }
-
-  .kk-btn, .kk-btnss  {
-    font-size: 0.85rem; /* Smaller font for buttons */
-    padding: 8px 0; /* Adjust button padding */
-  }
-
-  .kk-intro h2 {
-    font-size: 22px; /* Smaller font for headings */
-    font-weight: bold;
-  }
-
-  .kk-intro p {
-    font-size: 0.9rem; /* Smaller font for paragraphs */
-  }
-}
 
 @media (min-width: 601px) and (max-width: 767px) {
   .kk-label, .kk-labels {
@@ -1244,31 +1291,8 @@ select.form-control:focus {
   box-sizing: border-box; /* Ensure consistent sizing */
 }
 
-/* Responsive adjustments for mobile screens */
-@media (max-width: 768px) {
-  .kk-card {
-    width: 90%; /* Full width on mobile */
-    padding: 20px; /* Adjust padding for smaller screens */
-    margin: 0 auto 16px auto; /* Center alignment */
-  }
-}
 
-/* Center Previous and Next buttons on mobile screens */
-@media (max-width: 768px) {
-  .kk-btn-group {
-    display: flex;
-    justify-content: center; /* Center the buttons horizontally */
-    align-items: center; /* Center the buttons vertically */
-    gap: 16px; /* Add spacing between buttons */
-    margin-top: 20px; /* Add some space above the button group */
-  }
 
-  .kk-btn, .kk-btnss  {
-    width: auto; /* Ensure buttons don't stretch unnecessarily */
-    font-size: 0.9rem; /* Adjust font size for mobile */
-    padding: 10px 20px; /* Add padding for better touch targets */
-  }
-}
 
 /* Default styling for larger screens (tablet, laptop, desktop) */
 .kk-btn-group {
@@ -1279,21 +1303,7 @@ select.form-control:focus {
   margin-top: 20px; /* Add spacing above the button group */
 }
 
-/* Responsive styling for mobile screens */
-@media (max-width: 768px) {
-  .kk-btn-group {
-    justify-content: center; /* Center buttons horizontally */
-    flex-direction: row; /* Keep buttons side by side */
-    gap: 12px; /* Adjust spacing for smaller screens */
-    width: 100%; /* Ensure the button group occupies full width */
-  }
 
-  .kk-btn, .kk-btnss  {
-    width: 50%; /* Each button occupies half of the card */
-    font-size: 0.9rem; /* Adjust font size for mobile */
-    padding: 10px 20px; /* Add padding for better touch targets */
-  }
-}
 
 .kk-card.kk-card-invisible{
   background-color: transparent;
@@ -1323,3 +1333,7 @@ select.form-control:focus {
     margin-top: 15vh; /* Increase margin for screen sizes between 481px and 600px */
   }
 }
+
+
+
+

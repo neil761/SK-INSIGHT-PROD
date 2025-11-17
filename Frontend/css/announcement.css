@@ -281,6 +281,9 @@ body {
         width: 20%;
     }
 
+    /* utility hidden class used by JS to toggle visibility */
+    .hidden { display: none !important; }
+
     .announcement-table th, 
     .announcement-table td {
         font-size: 14px;
@@ -761,7 +764,7 @@ body {
 @media (max-width: 600px) {
   .main-content{
     justify-content: flex-start;
-    margin-top: 30%;
+    margin-top: 25%;
   }
   .announcement-heading-container {
     width: 88%;
