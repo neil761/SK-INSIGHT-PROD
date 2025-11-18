@@ -77,11 +77,11 @@ document.addEventListener('DOMContentLoaded', function () {
       rn.addEventListener('focus', rn._kkFocus);
     }
 
-    // persist into step3 localStorage
+    // persist into step3 sessionStorage
     try {
-      const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+      const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       s3.registeredNationalVoter = 'No';
-      localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
     } catch (e) { /* ignore storage errors */ }
   }
 
@@ -176,9 +176,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
               // persist cleared value
               try {
-                const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+                const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
                 delete s3.specificNeedType;
-                localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+                sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
               } catch (e) { /* ignore */ }
             }
           };
@@ -191,11 +191,11 @@ document.addEventListener('DOMContentLoaded', function () {
             const v = this.value;
             checkAndToggle(v);
             try {
-              const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+              const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
               s3.youthClassification = v;
               // if switching to specific needs keep existing specificNeedType if present
               if (v !== 'Youth with Specific Needs') delete s3.specificNeedType;
-              localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+              sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
             } catch (e) { /* ignore */ }
           });
         }
@@ -237,14 +237,14 @@ document.addEventListener('DOMContentLoaded', function () {
             const v = this.value;
             checkAttendance(v);
             try {
-              const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+              const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
               s3.attendedKKAssembly = v;
               if (v === 'Yes') {
                 delete s3.reasonDidNotAttend;
               } else if (v === 'No') {
                 delete s3.attendanceCount;
               }
-              localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+              sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
             } catch (e) { /* ignore */ }
           });
         }
@@ -279,7 +279,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const v = this.value;
             checkAttendance(v);
             try {
-              const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+              const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
               s3.attendedKKAssembly = v;
               // clear the opposite fields when toggling
               if (v === 'Yes') {
@@ -288,16 +288,16 @@ document.addEventListener('DOMContentLoaded', function () {
               } else if (v === 'No') {
                 delete s3.attendanceCount;
               }
-              localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+              sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
             } catch (e) { /* ignore */ }
           });
 
           // also persist manual changes to the sub-fields
           if (attendanceCountEl) attendanceCountEl.addEventListener('change', function () {
-            try { const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}'); s3.attendanceCount = this.value; localStorage.setItem('kkProfileStep3', JSON.stringify(s3)); } catch(e){}
+            try { const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}'); s3.attendanceCount = this.value; sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3)); } catch(e){}
           });
           if (reasonEl) reasonEl.addEventListener('change', function () {
-            try { const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}'); s3.reasonDidNotAttend = this.value; localStorage.setItem('kkProfileStep3', JSON.stringify(s3)); } catch(e){}
+            try { const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}'); s3.reasonDidNotAttend = this.value; sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3)); } catch(e){}
           });
         }
       } catch (e) {
@@ -389,9 +389,9 @@ document.addEventListener('DOMContentLoaded', function () {
           try {
             const b64 = await fetchImageAsBase64(resolved);
             if (b64) {
-              const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+              const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
               s3.profileImage = b64;
-              localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+              sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
             }
           } catch (e) { /* ignore */ }
         }
@@ -415,9 +415,9 @@ document.addEventListener('DOMContentLoaded', function () {
           try {
             const b64sig = await fetchImageAsBase64(resolvedSig);
             if (b64sig) {
-              const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+              const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
               s3.signatureImage = b64sig;
-              localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+              sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
             }
           } catch (e) { /* ignore */ }
         }
@@ -460,12 +460,12 @@ document.addEventListener('DOMContentLoaded', function () {
         reasonDidNotAttend: map.reasonDidNotAttend
       };
 
-      localStorage.setItem('kkProfileStep1', JSON.stringify(step1));
-      localStorage.setItem('kkProfileStep2', JSON.stringify(step2));
+      sessionStorage.setItem('kkProfileStep1', JSON.stringify(step1));
+      sessionStorage.setItem('kkProfileStep2', JSON.stringify(step2));
       // preserve any existing base64 images in step3
-      const existing3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+      const existing3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       const merged3 = Object.assign({}, existing3, step3);
-      localStorage.setItem('kkProfileStep3', JSON.stringify(merged3));
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(merged3));
 
     } catch (err) {
       console.warn('Failed to fetch kk profile:', err);
@@ -492,13 +492,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const step3 = fromDomOrStorage(step3Keys,'kkProfileStep3');
 
     // merge with existing step3 to preserve images
-    const existing3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+    const existing3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
     const finalStep3 = Object.assign({}, existing3, step3);
 
-    // Update localStorage first
-    localStorage.setItem('kkProfileStep1', JSON.stringify(step1));
-    localStorage.setItem('kkProfileStep2', JSON.stringify(step2));
-    localStorage.setItem('kkProfileStep3', JSON.stringify(finalStep3));
+    // Update sessionStorage first
+    sessionStorage.setItem('kkProfileStep1', JSON.stringify(step1));
+    sessionStorage.setItem('kkProfileStep2', JSON.stringify(step2));
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(finalStep3));
 
     // Attempt to send update to server. Use multipart/form-data similar to create path.
     try {
@@ -769,17 +769,17 @@ document.addEventListener('DOMContentLoaded', function () {
         if (s2) s2.innerHTML = '';
       }
 
-      // update localStorage _removed flags and remove base64
+      // update sessionStorage _removed flags and remove base64
       try {
-        const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         // ensure _removed object exists
         s3._removed = s3._removed || {};
         s3._removed[storageKey] = true;
         // remove the actual base64 payload so it won't be re-uploaded
         if (storageKey in s3) delete s3[storageKey];
-        localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
       } catch (e) {
-        console.warn('Failed to update localStorage on image remove', e);
+        console.warn('Failed to update sessionStorage on image remove', e);
       }
     });
   }
@@ -801,12 +801,12 @@ document.addEventListener('DOMContentLoaded', function () {
       const reader = new FileReader();
       reader.onload = function (ev) {
         const b64 = ev.target.result;
-        const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         // clear any previous removed flag when user chooses a new image
         s3._removed = s3._removed || {};
         delete s3._removed.profileImage;
         s3.profileImage = b64;
-        localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
         // update both profile preview containers if present
         renderPreview('profileImagePreview', b64);
         const altPreview = document.getElementById('idImagePreview');
@@ -831,12 +831,12 @@ document.addEventListener('DOMContentLoaded', function () {
       const reader = new FileReader();
       reader.onload = function (ev) {
         const b64 = ev.target.result;
-        const s3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        const s3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         // clear any previous removed flag when user chooses a new signature
         s3._removed = s3._removed || {};
         delete s3._removed.signatureImage;
         s3.signatureImage = b64;
-        localStorage.setItem('kkProfileStep3', JSON.stringify(s3));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
         // update both signature preview containers if present
         renderPreview('signatureImagePreview', b64);
         const altSig = document.getElementById('signaturePreview');

@@ -11,7 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
     return;
   }
 
-  const saved = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+  const saved = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
 
   // Restore value
   if (saved.educationalBackground) {
@@ -20,15 +20,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Save on change
   educationalBackground.addEventListener('change', function () {
-    const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+    const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
     current.educationalBackground = this.value;
-    localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
   });
 });
 
 document.addEventListener('DOMContentLoaded', function() {
   // Restore youth step data if available
-  const saved = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+  const saved = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
   document.getElementById('youthAgeGroup').value = saved.youthAgeGroup || '';
   document.getElementById('youthClassification').value = saved.youthClassification || '';
   document.getElementById('educationalBackground').value = saved.educationalBackground || '';
@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // If user's age from step1 indicates minor (<=17), default national voter to 'No'
   try {
     const registeredNationalVoterEl = document.getElementById('registeredNationalVoter');
-    const step1 = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
+    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
     let computedAge = null;
     if (step1.age && !isNaN(Number(step1.age))) {
       computedAge = Number(step1.age);
@@ -73,9 +73,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // persist to step3 immediately
       try { saveStep3(); } catch (e) { 
-        const cur = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        const cur = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         cur.registeredNationalVoter = 'No';
-        localStorage.setItem('kkProfileStep3', JSON.stringify(cur));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(cur));
       }
     }
   } catch (err) {
@@ -214,10 +214,10 @@ document.addEventListener('DOMContentLoaded', function() {
       reader.onload = (e) => {
         renderProfileImage(e.target.result);
 
-        // Save to localStorage
-        const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        // Save to sessionStorage
+        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         current.profileImage = e.target.result;
-        localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
       };
       reader.readAsDataURL(file);
     } else {
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!allowed) {
       // ❌ Not allowed → remove
-      localStorage.removeItem('kkProfileStep3');
+      sessionStorage.removeItem('kkProfileStep3');
       document.getElementById('profileImagePreview').innerHTML = '';
       return;
     }
@@ -258,9 +258,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
       previewContainer.innerHTML = "";
       document.getElementById('profileImage').value = "";
-      const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
-      localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
     });
     // View feature
     document.getElementById('viewProfileImage').addEventListener('click', function() {
@@ -300,10 +300,10 @@ document.addEventListener('DOMContentLoaded', function() {
       reader.onload = (e) => {
         renderSignatureImage(e.target.result);
 
-        // Save to localStorage
-        const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        // Save to sessionStorage
+        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         current.signatureImage = e.target.result;
-        localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
       };
       reader.readAsDataURL(file);
     } else {
@@ -318,7 +318,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!allowed) {
       // ❌ Not allowed → remove
-      localStorage.removeItem('kkProfileStep3');
+      sessionStorage.removeItem('kkProfileStep3');
       document.getElementById('signatureImagePreview').innerHTML = '';
       return;
     }
@@ -378,7 +378,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     // Keep existing saved images
-    const existing = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+    const existing = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
     if (existing.profileImage) {
       step3Data.profileImage = existing.profileImage;
     }
@@ -386,10 +386,10 @@ document.addEventListener('DOMContentLoaded', function() {
       step3Data.signatureImage = existing.signatureImage;
     }
 
-    localStorage.setItem('kkProfileStep3', JSON.stringify(step3Data));
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(step3Data));
   }
 
-  // ✅ Automatically restore educational background value from localStorage
+  // ✅ Automatically restore educational background value from sessionStorage
   const educationalBackground = document.getElementById('educationalBackground');
 
   // Restore saved value
@@ -400,9 +400,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Save value when changed
   if (educationalBackground) {
     educationalBackground.addEventListener('change', function () {
-      const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       current.educationalBackground = this.value;
-      localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
     });
   }
 
@@ -447,18 +447,18 @@ document.addEventListener('DOMContentLoaded', function() {
       didOpen: () => { Swal.showLoading(); }
     });
 
-    // Check if profile image is present (either in file input or localStorage)
-    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(localStorage.getItem('kkProfileStep3') || '{}').profileImage);
+    // Check if profile image is present (either in file input or sessionStorage)
+    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').profileImage);
 
     if (!hasImage) {
       await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
       return;
     }
 
-    // Collect all data from localStorage and this page
-    const step1 = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
-    const step2 = JSON.parse(localStorage.getItem('kkProfileStep2') || '{}');
-    const step3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+    // Collect all data from sessionStorage and this page
+    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
+    const step2 = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
+    const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
 
     // In your submit handler, after loading step3:
     const booleanFields = [
@@ -485,10 +485,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Check if signature image is present (either in file input or localStorage)
+    // Check if signature image is present (either in file input or sessionStorage)
     const hasSignature =
       form.signatureImage.files.length > 0 ||
-      (JSON.parse(localStorage.getItem('kkProfileStep3') || '{}').signatureImage);
+      (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').signatureImage);
 
     if (!hasSignature) {
       await Swal.fire("Missing Signature", "Please upload a signature image before submitting.", "warning");
@@ -549,7 +549,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form.profileImage.files.length > 0) {
       formData.append('profileImage', form.profileImage.files[0]);
     } else if (step3.profileImage) {
-      // ✅ Fallback: convert Base64 from localStorage into a File
+      // ✅ Fallback: convert Base64 from sessionStorage into a File
       const file = base64ToFile(step3.profileImage, "profile.png");
       formData.append('profileImage', file);
     }
@@ -592,10 +592,10 @@ document.addEventListener('DOMContentLoaded', function() {
           window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
         });
 
-        // Remove localStorage data
-        localStorage.removeItem('kkProfileStep1');
-        localStorage.removeItem('kkProfileStep2');
-        localStorage.removeItem('kkProfileStep3');
+        // Remove sessionStorage data
+        sessionStorage.removeItem('kkProfileStep1');
+        sessionStorage.removeItem('kkProfileStep2');
+        sessionStorage.removeItem('kkProfileStep3');
       } else if (response.status === 409) {
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
         return;
@@ -923,8 +923,8 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    // Check if profile image is present (either in file input or localStorage)
-    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(localStorage.getItem('kkProfileStep3') || '{}').profileImage);
+    // Check if profile image is present (either in file input or sessionStorage)
+    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').profileImage);
 
     if (!hasImage) {
       Swal.close();
@@ -932,10 +932,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Collect all data from localStorage and this page
-    const step1 = JSON.parse(localStorage.getItem('kkProfileStep1') || '{}');
-    const step2 = JSON.parse(localStorage.getItem('kkProfileStep2') || '{}');
-    const step3 = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+    // Collect all data from sessionStorage and this page
+    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
+    const step2 = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
+    const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
 
     // In your submit handler, after loading step3:
     const booleanFields = [
@@ -963,10 +963,10 @@ document.addEventListener('DOMContentLoaded', function() {
       return;
     }
 
-    // Check if signature image is present (either in file input or localStorage)
+    // Check if signature image is present (either in file input or sessionStorage)
     const hasSignature =
       form.signatureImage.files.length > 0 ||
-      (JSON.parse(localStorage.getItem('kkProfileStep3') || '{}').signatureImage);
+      (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').signatureImage);
 
     if (!hasSignature) {
       Swal.close();
@@ -1000,7 +1000,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form.profileImage.files.length > 0) {
       formData.append('profileImage', form.profileImage.files[0]);
     } else if (step3.profileImage) {
-      // Fallback: convert Base64 from localStorage into a File
+      // Fallback: convert Base64 from sessionStorage into a File
       const file = base64ToFile(step3.profileImage, "profile.png");
       formData.append('profileImage', file);
     }
@@ -1034,10 +1034,10 @@ document.addEventListener('DOMContentLoaded', function() {
           window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
         });
 
-        // Remove localStorage data
-        localStorage.removeItem('kkProfileStep1');
-        localStorage.removeItem('kkProfileStep2');
-        localStorage.removeItem('kkProfileStep3');
+        // Remove sessionStorage data
+        sessionStorage.removeItem('kkProfileStep1');
+        sessionStorage.removeItem('kkProfileStep2');
+        sessionStorage.removeItem('kkProfileStep3');
       } else if (response.status === 409) {
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
         return;
@@ -1072,7 +1072,7 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   document.getElementById('previousBtn')?.addEventListener('click', function(e) {
-    saveStep3(); // Save all current values to localStorage
+    saveStep3(); // Save all current values to sessionStorage
     // Optionally, navigate to the previous page here:
     // window.location.href = 'your-previous-page.html';
   });
@@ -1121,7 +1121,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!allowed) {
       // ❌ Not allowed → remove
-      localStorage.removeItem('kkProfileStep3');
+      sessionStorage.removeItem('kkProfileStep3');
       document.getElementById('profileImagePreview').innerHTML = '';
       return;
     }
@@ -1147,9 +1147,9 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
       previewContainer.innerHTML = "";
       document.getElementById('profileImage').value = "";
-      const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
-      localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
     });
     // View feature
     document.getElementById('viewProfileImage').addEventListener('click', function() {
@@ -1189,10 +1189,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const reader = new FileReader();
       reader.onload = function (e) {
         renderSignatureImage(e.target.result);
-        // Save to localStorage
-        const current = JSON.parse(localStorage.getItem('kkProfileStep3') || '{}');
+        // Save to sessionStorage
+        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
         current.signatureImage = e.target.result;
-        localStorage.setItem('kkProfileStep3', JSON.stringify(current));
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
       };
       reader.readAsDataURL(file);
     } else {
@@ -1207,7 +1207,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!allowed) {
       // ❌ Not allowed → remove
-      localStorage.removeItem('kkProfileStep3');
+      sessionStorage.removeItem('kkProfileStep3');
       document.getElementById('signatureImagePreview').innerHTML = '';
       return;
     }

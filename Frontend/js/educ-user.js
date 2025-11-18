@@ -94,11 +94,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
     if (!confirmResult.isConfirmed) return; // user cancelled
 
-    // Client-side validation (add/remove fields as required by your backend)
-    const requiredIds = ['surname', 'firstName', 'birthday', 'contact', 'year'];
+    // Client-side validation (match backend required fields to avoid server 500)
+    const requiredIds = [
+      'surname', 'firstName', 'middleName', 'birthday', 'placeOfBirth',
+      'gender', 'civilstatus', 'religion', 'email', 'contact', 'year',
+      'schoolname', 'schooladdress', 'fathername', 'mothername'
+    ];
     for (const id of requiredIds) {
       const el = document.getElementById(id);
-      if (!el || !el.value.trim()) {
+      if (!el || !el.value || !el.value.toString().trim()) {
         return Swal.fire('Missing field', `Please fill the ${id} field.`, 'warning');
       }
     }
@@ -214,9 +218,20 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       Swal.close();
 
+      // Read response text for better diagnostics
       const text = await response.text();
       let data = null;
-      try { data = JSON.parse(text); } catch (err) {}
+      try { data = JSON.parse(text); } catch (err) { /* not JSON */ }
+
+      // Log detailed info to console to help debug 500s
+      if (!response.ok) {
+        console.error('Educational assistance submit failed', {
+          status: response.status,
+          statusText: response.statusText,
+          bodyText: text,
+          json: data
+        });
+      }
 
       if (response.status === 403 && (data?.error?.includes('age') || data?.error?.includes('eligible'))) {
         return Swal.fire({
@@ -228,6 +243,7 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
 
       if (!response.ok) {
+        // Prefer server-provided message when available
         const message = data?.message || data?.error || text || `Server returned ${response.status}`;
         return Swal.fire('Submission failed', message, 'error');
       }
