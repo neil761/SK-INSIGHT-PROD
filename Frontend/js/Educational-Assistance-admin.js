@@ -865,25 +865,24 @@ clearFilterBtn.addEventListener("click", () => {
   // Fetch notifications from backend
   async function fetchNotifications() {
     const token = sessionStorage.getItem("token");
-    // Fetch new applications
-    const newRes = await fetch('http://localhost:5000/api/notifications/unread', {
+    // Fetch all pending notifications (regardless of read)
+    const res = await fetch('http://localhost:5000/api/notifications/educational/pending', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    let newNotifs = await newRes.json();
+    let allNotifs = await res.json();
 
-    // Filter: only pending and within last 24 hours
+    // Filter: only pending and within last 24 hours for "New"
     const now = Date.now();
-    newNotifs = newNotifs.filter(n => {
-      if (n.status !== "pending") return false;
+    const newNotifs = allNotifs.filter(n => {
       const created = new Date(n.createdAt).getTime();
       return (now - created) <= 24 * 60 * 60 * 1000;
     });
 
-    // Fetch overdue applications
-    const overdueRes = await fetch('http://localhost:5000/api/notifications/overdue', {
-      headers: { Authorization: `Bearer ${token}` }
+    // Filter: only pending and more than 2 days old for "Overdue"  
+    const overdueNotifs = allNotifs.filter(n => {
+      const created = new Date(n.createdAt).getTime();
+      return (now - created) > 2 * 24 * 60 * 60 * 1000;
     });
-    const overdueNotifs = await overdueRes.json();
 
     // --- Update summary counts ---
     document.getElementById('notifNewToday').textContent = newNotifs.length;
@@ -901,33 +900,30 @@ clearFilterBtn.addEventListener("click", () => {
       return;
     }
     notifs.forEach(n => {
-      // Use flattened fullname and status from backend
-      const name = n.fullname || 'unknown';
-      const status = n.status || 'unknown';
-      const date = new Date(n.createdAt).toLocaleString();
-      const type = n.typeOfBenefit || 'Educational Assistance';
-      const cycle = n.cycle ? `Cycle: ${n.cycle}` : '';
-      const year = n.year ? `Year: ${n.year}` : '';
-      const school = n.school || '';
-      const email = n.email || '';
+      const name = n.fullname || 'Unknown';
+      const status = n.status || 'Unknown';
+      const dateObj = new Date(n.createdAt);
+      const date = dateObj.toLocaleDateString();
+      const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
       container.innerHTML += `
-        <div class="notif-item">
-          <span>
-            <strong>${name}</strong>
-            <span class="notif-status ${isOverdue ? 'notif-overdue' : ''}">${status}${isOverdue ? ' (Overdue)' : ''}</span>
-          </span>
-          <span class="notif-details">
-            ${type}${cycle ? ' | ' + cycle : ''}${year ? ' | ' + year : ''}
-            ${school ? ' | School: ' + school : ''}
-            ${email ? ' | Email: ' + email : ''}
-          </span>
-          <span class="notif-date">${date}</span>
+        <div class="notif-card${isOverdue ? ' notif-card-overdue' : ''}">
+          <div class="notif-card-header">
+            <span class="notif-card-name">${name}</span>
+            <span class="notif-card-status ${isOverdue ? 'notif-status-overdue' : 'notif-status-pending'}">
+              ${status}${isOverdue ? ' (Overdue)' : ''}
+            </span>
+          </div>
+          <div class="notif-card-footer">
+            <span class="notif-card-label">Submitted:</span>
+            <span class="notif-card-date">${date} ${time}</span>
+          </div>
         </div>
       `;
     });
   }
 
-    // Helper to format date/time
+  // Helper to format date/time
   
   // Optional: Hide dropdown when clicking outside
   document.addEventListener('click', function(e) {

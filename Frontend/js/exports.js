@@ -773,4 +773,146 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   })();
+
+async function fetchDeletedProfiles() {
+    const token = sessionStorage.getItem("token");
+    const filter = document.getElementById("deletedFilter").value;
+    let profiles = [];
+
+    if (filter === "kk") {
+      // Only KK deleted profiles
+      const resKK = await fetch("http://localhost:5000/api/kkprofiling/deleted", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      profiles = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
+    } else if (filter === "lgbtq") {
+      // Only LGBTQ deleted profiles
+      const resLGBTQ = await fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      profiles = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
+    } else {
+      // All deleted profiles (KK + LGBTQ)
+      const [resKK, resLGBTQ] = await Promise.all([
+        fetch("http://localhost:5000/api/kkprofiling/deleted", {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
+      const kk = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
+      const lgbtq = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
+      profiles = [...kk, ...lgbtq];
+    }
+
+    // Sort by deletedAt descending (most recent first)
+    profiles.sort((a, b) => new Date(b.deletedAt) - new Date(a.deletedAt));
+
+    const tbody = document.querySelector("#deletedTable tbody");
+    tbody.innerHTML = "";
+    profiles.forEach((p, i) => {
+      // Build full name for KK and LGBTQ profiles
+      let fullName = "N/A";
+      if (p.type === "KK") {
+        const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+        fullName = [p.firstname, mi, p.surname].filter(Boolean).join(" ");
+      } else if (p.type === "LGBTQ") {
+        const mi = p.middlename ? p.middlename[0].toUpperCase() + "." : "";
+        fullName = [p.firstname, mi, p.lastname].filter(Boolean).join(" ");
+      } else {
+        fullName = p.displayData?.residentName || p.name || "N/A";
+      }
+      // Show both date and time
+      const deletedDateTime = p.deletedAt
+        ? new Date(p.deletedAt).toLocaleString()
+        : "—";
+      tbody.innerHTML += `
+        <tr>
+          <td>${i + 1}</td>
+          <td>${fullName}</td>
+          <td>${p.type}</td>
+          <td>${deletedDateTime}</td>
+          <td>
+            <button class="restore-btn" data-id="${p._id}" data-type="${p.type}">Restore</button>
+            <button class="permanent-delete-btn" data-id="${p._id}" data-type="${p.type}">Delete</button>
+          </td>
+        </tr>
+      `;
+    });
+
+    // Attach restore and permanent delete handlers
+    document.querySelectorAll(".restore-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.id;
+        const type = btn.dataset.type;
+        const endpoint = type === "KK"
+          ? `http://localhost:5000/api/kkprofiling/${id}/restore`
+          : `http://localhost:5000/api/lgbtqprofiling/${id}/restore`;
+        const result = await Swal.fire({
+          title: "Restore Profile?",
+          text: "Are you sure you want to restore this profile?",
+          icon: "question",
+          showCancelButton: true,
+          confirmButtonColor: "#07B0F2",
+          cancelButtonColor: "#d33",
+          confirmButtonText: "Yes",
+          cancelButtonText: "Cancel"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(endpoint, {
+            method: "PUT",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          const data = await res.json();
+          if (!res.ok && res.status === 409) {
+            Swal.fire({
+              icon: "error",
+              title: "Restoration Failed",
+              text: data.error
+            });
+            return;
+          }
+          if (res.ok) {
+            Swal.fire("Restored!", "Profile has been restored.", "success");
+            fetchDeletedProfiles();
+          }
+        }
+      };
+    });
+
+    document.querySelectorAll(".permanent-delete-btn").forEach(btn => {
+      btn.onclick = async () => {
+        const id = btn.dataset.id;
+        const type = btn.dataset.type;
+        const endpoint = type === "KK"
+          ? `http://localhost:5000/api/kkprofiling/${id}/permanent`
+          : `http://localhost:5000/api/lgbtqprofiling/${id}/permanent`;
+        const result = await Swal.fire({
+          title: "Delete ?",
+          text: "This action cannot be undone. Are you sure?",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#ef4444",
+          cancelButtonColor: "#0A2C59",
+          confirmButtonText: "Yes",
+          cancelButtonText: "No"
+        });
+        if (result.isConfirmed) {
+          const res = await fetch(endpoint, {
+            method: "DELETE",
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          if (res.ok) {
+            Swal.fire("Deleted!", "Profile permanently deleted.", "success");
+            fetchDeletedProfiles();
+          }
+        }
+      };
+    });
+  }
+
+  // Filter dropdown change handler
+  document.getElementById("deletedFilter").addEventListener("change", fetchDeletedProfiles);
+
 });  // document.addEventListener("DOMContentLoaded")

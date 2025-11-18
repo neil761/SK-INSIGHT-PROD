@@ -412,3 +412,52 @@ exports.getNewEducationalApplications = async (req, res) => {
     res.status(500).json({ error: "Server error fetching new applications" });
   }
 };
+
+// Returns all pending applications for present cycle (regardless of notification read status)
+exports.getPendingEducationalNotifications = async (req, res) => {
+  try {
+    const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
+    // Find all notifications for pending applications in the present cycle
+    const notifs = await Notification.find({
+      type: "educational-assistance",
+      cycleId: cycle._id,
+    })
+      .populate({
+        path: "referenceId",
+        select: "status firstname middlename surname createdAt typeOfBenefit year grade school email",
+        model: "EducationalAssistance",
+        match: { status: "pending" }
+      })
+      .sort({ createdAt: -1 });
+
+    // Only include notifications where the referenced application is still pending
+    const filtered = notifs.filter(n => n.referenceId && n.referenceId.status === "pending");
+
+    // Flatten for frontend
+    const response = filtered.map(n => ({
+      _id: n._id,
+      type: n.type,
+      event: n.event,
+      message: n.message,
+      referenceId: n.referenceId?._id || n.referenceId,
+      cycleId: n.cycleId,
+      createdAt: n.createdAt,
+      read: n.read,
+      status: n.referenceId?.status || "unknown",
+      fullname: n.referenceId
+        ? `${n.referenceId.firstname || ""} ${n.referenceId.middlename || ""} ${n.referenceId.surname || ""}`.trim()
+        : "Unknown",
+      typeOfBenefit: n.referenceId?.typeOfBenefit,
+      year: n.referenceId?.year,
+      grade: n.referenceId?.grade,
+      school: n.referenceId?.school,
+      email: n.referenceId?.email
+    }));
+
+    res.json(response);
+  } catch (err) {
+    console.error("getPendingEducationalNotifications error:", err);
+    res.status(500).json({ error: "Server error fetching notifications" });
+  }
+};
