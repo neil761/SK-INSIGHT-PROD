@@ -460,6 +460,41 @@ document.addEventListener('DOMContentLoaded', function() {
     const step2 = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
     const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
 
+    // Determine age to save. Prefer authoritative birthday from the user API (/api/users/me).
+    // Fallback to step1.birthday if the user API is unavailable.
+    let ageToSave = '';
+    function computeAgeFrom(birthday) {
+      if (!birthday) return '';
+      const birthDate = new Date(birthday);
+      const today = new Date();
+      let age = today.getFullYear() - birthDate.getFullYear();
+      const m = today.getMonth() - birthDate.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
+        age--;
+      }
+      return String(age);
+    }
+    try {
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      if (token) {
+        const userRes = await fetch('http://localhost:5000/api/users/me', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          if (userData && (userData.birthday || userData.dateOfBirth)) {
+            const raw = userData.birthday || userData.dateOfBirth;
+            ageToSave = computeAgeFrom(raw);
+          }
+        }
+      }
+    } catch (e) {
+      // ignore — we'll fallback to step1.birthday below
+    }
+    if (!ageToSave && step1 && step1.birthday) {
+      ageToSave = computeAgeFrom(step1.birthday);
+    }
+
     // In your submit handler, after loading step3:
     const booleanFields = [
       'registeredSKVoter',
@@ -544,6 +579,11 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append(k, v);
       }
     });
+
+    // Append computed age explicitly so backend stores the age value
+    if (ageToSave !== '') {
+      formData.append('age', ageToSave);
+    }
 
     // ✅ Add actual image file if selected
     if (form.profileImage.files.length > 0) {

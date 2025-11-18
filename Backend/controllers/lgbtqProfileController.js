@@ -65,12 +65,53 @@ exports.submitLGBTQProfile = async (req, res) => {
       return res.status(400).json({ success: false, error: "Both front and back ID images are required." });
     }
 
+    // Compute age to store on the LGBTQProfile.
+    // Priority: req.body.age -> req.user.birthday/dateOfBirth -> req.body.birthday/dateOfBirth -> req.user.age
+    function computeAgeFrom(birthday) {
+      if (!birthday) return null;
+      try {
+        const d = new Date(birthday);
+        if (isNaN(d.getTime())) return null;
+        const today = new Date();
+        let a = today.getFullYear() - d.getFullYear();
+        const m = today.getMonth() - d.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+        return a;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    let ageToSave = null;
+    if (req.body && req.body.age) {
+      const n = Number(req.body.age);
+      if (!isNaN(n)) ageToSave = Math.floor(n);
+    }
+    if (ageToSave === null && req.user && (req.user.birthday || req.user.dateOfBirth)) {
+      ageToSave = computeAgeFrom(req.user.birthday || req.user.dateOfBirth);
+    }
+    if (ageToSave === null && req.body && (req.body.birthday || req.body.dateOfBirth)) {
+      ageToSave = computeAgeFrom(req.body.birthday || req.body.dateOfBirth);
+    }
+    if (ageToSave === null && req.user && req.user.age) {
+      const n = Number(req.user.age);
+      if (!isNaN(n)) ageToSave = Math.floor(n);
+    }
+
+    if (ageToSave === null) {
+      // If age couldn't be determined, delete uploaded files and return an error
+      if (req.files?.idImageFront) fs.unlink(req.files.idImageFront[0].path, () => {});
+      if (req.files?.idImageBack) fs.unlink(req.files.idImageBack[0].path, () => {});
+      return res.status(400).json({ success: false, error: "Age is required or could not be determined from birthday." });
+    }
+
     const newProfile = new LGBTQProfile({
       user: userId,
       formCycle: formStatus.cycleId,
       lastname,
       firstname,
       middlename,
+      age: ageToSave,
       sexAssignedAtBirth,
       lgbtqClassification,
       idImageFront: req.files.idImageFront[0].path, // Cloudinary URL
@@ -575,17 +616,19 @@ exports.exportProfilesToExcel = async (req, res) => {
     profiles.forEach(profile => {
       const fullName = `${(profile.lastname || '').toUpperCase()}, ${(profile.firstname || '').toUpperCase()} ${(profile.middlename || '').toUpperCase()}${profile.suffix ? ` ${profile.suffix.toUpperCase()}` : ''}`.trim();
 
-      // Extract birthday details and compute age
+      // Prefer stored age in DB; otherwise extract birthday details and compute age
+      const storedAge = (typeof profile.age !== 'undefined' && profile.age !== null) ? Number(profile.age) : null;
       const birthday = profile.user?.birthday ? new Date(profile.user.birthday) : null;
       const birthMonth = birthday ? birthday.getMonth() + 1 : "N/A"; // Months are 0-indexed
       const birthDay = birthday ? birthday.getDate() : "N/A";
       const birthYear = birthday ? birthday.getFullYear() : "N/A";
 
-      // Compute age dynamically
+      // Compute age dynamically only if not stored on profile
       const today = new Date();
-      const age = birthday
+      const computedAge = birthday
         ? today.getFullYear() - birthYear - (today.getMonth() + 1 < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < birthDay) ? 1 : 0)
         : "N/A";
+      const age = (storedAge !== null && !isNaN(storedAge)) ? storedAge : computedAge;
 
       // Sex Assigned at Birth
       const sexAssignedAtBirth = profile.sexAssignedAtBirth || "N/A";

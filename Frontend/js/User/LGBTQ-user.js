@@ -15,6 +15,77 @@ document.addEventListener("DOMContentLoaded", () => {
   // Get token
   const token = sessionStorage.getItem("token") || localStorage.getItem("token");
 
+  // --- SessionStorage draft key ---
+  const DRAFT_KEY = 'lgbtqDraft';
+
+  // Restore draft if present (persists across reloads, cleared on tab close)
+  const savedDraft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+  if (savedDraft && Object.keys(savedDraft).length) {
+    try {
+      // Fill simple inputs
+      for (const [k, v] of Object.entries(savedDraft)) {
+        if (!v) continue;
+        const el = document.getElementById(k);
+        if (!el) continue;
+        // For file/image previews we set src elsewhere
+        if (el.type === 'file') continue;
+        if (el.tagName === 'SELECT' || el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+          el.value = v;
+        }
+      }
+
+      // Restore image previews if base64 saved
+      if (savedDraft.idImageFront) {
+        const preview = document.getElementById('imagePreviewFront');
+        const container = document.getElementById('imagePreviewContainerFront');
+        if (preview && container) { preview.src = savedDraft.idImageFront; container.style.display = 'block'; }
+      }
+      if (savedDraft.idImageBack) {
+        const preview = document.getElementById('imagePreviewBack');
+        const container = document.getElementById('imagePreviewContainerBack');
+        if (preview && container) { preview.src = savedDraft.idImageBack; container.style.display = 'block'; }
+      }
+      if (savedDraft.profileImage) {
+        const preview = document.getElementById('imagePreviewProfile');
+        const container = document.getElementById('imagePreviewContainerProfile');
+        if (preview && container) { preview.src = savedDraft.profileImage; container.style.display = 'block'; }
+      }
+      if (savedDraft.signatureImage) {
+        const preview = document.getElementById('imagePreviewSignature');
+        const container = document.getElementById('imagePreviewContainerSignature');
+        if (preview && container) { preview.src = savedDraft.signatureImage; container.style.display = 'block'; }
+      }
+    } catch (e) {
+      console.warn('Failed to restore LGBTQ draft:', e);
+    }
+  }
+
+  // Save current form state into sessionStorage
+  function saveDraft() {
+    try {
+      const draft = {};
+      const els = form.querySelectorAll('input, select, textarea');
+      els.forEach(el => {
+        if (!el.id) return;
+        if (el.type === 'file') return; // files handled separately as base64
+        draft[el.id] = el.value;
+      });
+      // Preserve existing base64 images if present
+      const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+      draft.idImageFront = existing.idImageFront || document.getElementById('imagePreviewFront')?.src || '';
+      draft.idImageBack = existing.idImageBack || document.getElementById('imagePreviewBack')?.src || '';
+      draft.profileImage = existing.profileImage || document.getElementById('imagePreviewProfile')?.src || '';
+      draft.signatureImage = existing.signatureImage || document.getElementById('imagePreviewSignature')?.src || '';
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+    } catch (e) {
+      console.warn('Failed to save LGBTQ draft:', e);
+    }
+  }
+
+  // Hook into form changes
+  form.addEventListener('input', saveDraft);
+  form.addEventListener('change', saveDraft);
+
   // Autofill birthday
   if (token && birthdayInput) {
     fetch("http://localhost:5000/api/users/me", {
@@ -103,6 +174,7 @@ document.addEventListener("DOMContentLoaded", () => {
           text: "Redirecting...",
           confirmButtonText: "OK",
         }).then(() => {
+          try { sessionStorage.removeItem(DRAFT_KEY); } catch (e) {}
           window.location.href = "confirmation/html/lgbtqconfirmation.html";
         });
       } else {
@@ -512,12 +584,24 @@ document.addEventListener("DOMContentLoaded", () => {
           reader.onload = function (evt) {
             previewImg.src = evt.target.result; // Set the preview image source
             previewContainer.style.display = 'block'; // Show the preview container
+            try {
+              const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+              existing[inputId] = evt.target.result;
+              sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
+            } catch (e) {
+              console.warn('Failed to save image draft for', inputId, e);
+            }
           };
           reader.readAsDataURL(file);
         } else {
           // No file selected, hide the preview
           previewImg.src = ''; // Clear the preview image
           previewContainer.style.display = 'none'; // Hide the preview container
+          try {
+            const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+            delete existing[inputId];
+            sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
+          } catch (e) { /* ignore */ }
         }
       });
     }
@@ -535,6 +619,11 @@ document.addEventListener("DOMContentLoaded", () => {
           input.value = ''; // Clear the file input
           previewImg.src = ''; // Clear the preview image
           previewContainer.style.display = 'none'; // Hide the preview container
+          try {
+            const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+            delete existing[inputId];
+            sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
+          } catch (e) { /* ignore */ }
         });
       }
     }
@@ -615,6 +704,11 @@ document.getElementById('idImageFront').addEventListener('change', function(e) {
     reader.onload = function (evt) {
       previewImg.src = evt.target.result;
       previewContainer.style.display = 'block';
+      try {
+        const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+        existing.idImageFront = evt.target.result;
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
+      } catch (e) { /* ignore */ }
     };
     reader.readAsDataURL(file);
   } else {
@@ -629,6 +723,7 @@ document.getElementById('removeImageBtnFront').addEventListener('click', functio
   document.getElementById('idImageFront').value = ''; // Clear the file input
   document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
+  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageFront; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
 });
 
 // Back ID image preview
@@ -661,6 +756,11 @@ document.getElementById('idImageBack').addEventListener('change', function (e) {
     reader.onload = function (evt) {
       previewImg.src = evt.target.result;
       previewContainer.style.display = 'block';
+      try {
+        const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+        existing.idImageBack = evt.target.result;
+        sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
+      } catch (e) { /* ignore */ }
     };
     reader.readAsDataURL(file);
   } else {
@@ -675,4 +775,5 @@ document.getElementById('removeImageBtnBack').addEventListener('click', function
   document.getElementById('idImageBack').value = ''; // Clear the file input
   document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
+  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageBack; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
 });

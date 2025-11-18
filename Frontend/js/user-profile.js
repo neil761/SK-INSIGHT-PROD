@@ -13,6 +13,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
   const token = localStorage.getItem("token") || sessionStorage.getItem("token");
   let user = null; // keep user data so we can use birthday later
+  let prevProfileImageUrl = null; // if we load a previous profile, store its image url
   let otpLockoutUntil = null;
   let verificationOtpLockoutUntil = null;
 
@@ -91,20 +92,33 @@ document.addEventListener("DOMContentLoaded", function () {
           if (verifyNowLink) {
             verifyNowLink.addEventListener('click', function (ev) {
               ev.preventDefault();
-              // Open settings modal to the email/verify tab if present
-              const settingsModal = document.getElementById('settingsModal');
-              if (settingsModal) {
-                settingsModal.classList.add('active');
-                // show email tab
-                const emailTab = document.querySelector('.settings-tab[data-tab="email"]');
-                if (emailTab) emailTab.click();
-              }
-              // Also trigger the modular verification flow (if available)
+              // Only open the verification modal (do NOT open settings modal behind it)
               try {
                 const verifyBtn = document.querySelector('.verify-btn');
-                if (verifyBtn) verifyBtn.click();
+                if (verifyBtn) {
+                  verifyBtn.click();
+                  return;
+                }
               } catch (e) {
-                // ignore
+                // ignore and fallback to opening modal directly
+              }
+
+              // Fallback: open verify modal directly if verify button isn't present
+              const verifyEmailModal = document.getElementById('verifyEmailModal');
+              const verifyEmailInput = document.getElementById('verifyEmailInput');
+              if (verifyEmailModal) {
+                // populate email if available
+                if (verifyEmailInput && user && user.email) verifyEmailInput.value = user.email;
+                verifyEmailModal.classList.add('active');
+                // ensure OTP section is hidden and send button visible (match verify-email.js open behavior)
+                const verifyOtpSection = document.getElementById('verifyOtpSection');
+                const sendVerifyOtpBtn = document.getElementById('sendVerifyOtpBtn');
+                const verifyResendOtp = document.getElementById('verifyResendOtp');
+                const verifyResendInfo = document.getElementById('verifyResendInfo');
+                if (verifyOtpSection) verifyOtpSection.style.display = 'none';
+                if (sendVerifyOtpBtn) sendVerifyOtpBtn.style.display = '';
+                if (verifyResendOtp) verifyResendOtp.style.display = '';
+                if (verifyResendInfo) verifyResendInfo.style.display = 'none';
               }
             });
           }
@@ -153,6 +167,34 @@ document.addEventListener("DOMContentLoaded", function () {
         text: "Could not fetch user profile. Please try again.",
         confirmButtonColor: "#0A2C59"
       });
+    }
+
+    // Ensure age is always computed from the account `user.birthday` (from /api/users/me)
+    // This guarantees the age increments correctly over time even when showing previous-cycle profile data.
+    function displayComputedAge(birthday) {
+      if (!birthday) return;
+      const noteId = 'computed-age-note';
+      let noteEl = document.getElementById(noteId);
+      const age = calculateAge(birthday);
+      const dateStr = birthday.split('T')[0];
+      if (!noteEl) {
+        const ageInput = document.getElementById('age');
+        if (!ageInput || !ageInput.parentNode) return;
+        noteEl = document.createElement('div');
+        noteEl.id = noteId;
+        noteEl.style.fontSize = '12px';
+        noteEl.style.color = '#555';
+        noteEl.style.marginTop = '4px';
+        noteEl.style.fontStyle = 'italic';
+        ageInput.parentNode.insertBefore(noteEl, ageInput.nextSibling);
+      }
+      // Update note text every time so it reflects the current computed age
+      noteEl.textContent = `Age computed from account birthday (${dateStr}): ${age}`;
+    }
+
+    if (user && user.birthday) {
+      setValue('age', calculateAge(user.birthday));
+      displayComputedAge(user.birthday);
     }
 
     // Helper: set input value
@@ -204,6 +246,60 @@ document.addEventListener("DOMContentLoaded", function () {
         setValue("youthClassification", kkProfile.youthClassification);
         setValue("civilStatus", kkProfile.civilStatus);
         setValue("purok", kkProfile.purok);
+      } else {
+        // If no KK profile for current cycle (404), try to fetch the user's most recent previous profile
+        if (kkRes.status === 404) {
+          console.info('No KK profile for current cycle; attempting to fetch previous cycle profile');
+          try {
+            const prevRes = await fetch('http://localhost:5000/api/kkprofiling/me/previous', { headers: { Authorization: `Bearer ${token}` } });
+            if (prevRes.ok) {
+              const prev = await prevRes.json();
+              // populate fields from previous profile
+              const middleInitial = prev.middlename ? prev.middlename.charAt(0).toUpperCase() + '.' : '';
+              const fullName = [prev.firstname || '', middleInitial, prev.lastname || ''].filter(Boolean).join(' ');
+              if (fullName) setValue('fullName', fullName);
+              if (user && user.birthday) setValue('age', calculateAge(user.birthday));
+              if (prev.gender) setValue('gender', prev.gender);
+              if (prev.youthClassification) setValue('youthClassification', prev.youthClassification);
+              if (prev.civilStatus) setValue('civilStatus', prev.civilStatus);
+              if (prev.purok) setValue('purok', prev.purok);
+              // If profileImage is present, set profile image immediately
+              const profileImg = document.getElementById('profile-img');
+              if (profileImg && prev.profileImage) {
+                const imageUrl = prev.profileImage;
+                const resolved = imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000/${imageUrl}`;
+                prevProfileImageUrl = resolved;
+                profileImg.src = resolved;
+              }
+            } else {
+              console.info('No previous KK profile available; falling back to user data');
+              if (user) {
+                const middleInitial = user.middlename
+                  ? user.middlename.charAt(0).toUpperCase() + "."
+                  : "";
+                const fullName = [user.firstname || user.firstName || "", middleInitial, user.lastname || user.lastname || ""].filter(Boolean).join(' ');
+                if (fullName) setValue('fullName', fullName);
+                if (user.birthday) setValue('age', calculateAge(user.birthday));
+                if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
+                if (user.purok) setValue('purok', user.purok);
+                if (user.civilstatus || user.civilStatus) setValue('civilStatus', user.civilstatus || user.civilStatus);
+              }
+            }
+          } catch (e) {
+            console.warn('Failed to fetch previous KK profile', e);
+            if (user) {
+              const middleInitial = user.middlename
+                ? user.middlename.charAt(0).toUpperCase() + "."
+                : "";
+              const fullName = [user.firstname || user.firstName || "", middleInitial, user.lastname || user.lastname || ""].filter(Boolean).join(' ');
+              if (fullName) setValue('fullName', fullName);
+              if (user.birthday) setValue('age', calculateAge(user.birthday));
+              if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
+            }
+          }
+        } else {
+          console.warn('Failed to fetch KK profile:', kkRes.status, kkRes.statusText);
+        }
       }
     } catch (err) {
       Swal.fire({
@@ -216,10 +312,14 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch profile image
     try {
+      const profileImg = document.getElementById("profile-img");
+      // If we already resolved a previous profile image, prefer it and skip calling /me/image
+      if (prevProfileImageUrl && profileImg) {
+        profileImg.src = prevProfileImageUrl;
+      } else {
       const imgRes = await fetch("http://localhost:5000/api/kkprofiling/me/image", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      const profileImg = document.getElementById("profile-img");
       if (imgRes.ok) {
         const { imageUrl } = await imgRes.json();
         if (profileImg) {
@@ -231,8 +331,15 @@ document.addEventListener("DOMContentLoaded", function () {
           }
         }
       } else if (profileImg) {
-        // No KK profile yet, use default
-        profileImg.src = "../../assets/default-profile.jpg";
+        // No KK profile image for current cycle — try to fall back to any existing profile image or user avatar
+        console.info('No KK profile image for current cycle; falling back to user avatar or default');
+        // Try to use a user.avatar or user.profileImage if available
+        if (user && (user.avatar || user.profileImage)) {
+          profileImg.src = user.avatar || user.profileImage;
+        } else {
+          profileImg.src = "../../assets/default-profile.jpg";
+        }
+      }
       }
     } catch (err) {
       const profileImg = document.getElementById("profile-img");
