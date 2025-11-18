@@ -144,7 +144,7 @@ export function renderEducationalBackgroundBar(year, cycle) {
             <span class="summary-label">Total Respondents:</span>
             <span class="summary-value">${total}</span>
           </div>
-          <div class="educational-background-summary-row">
+          <div class="educational-background-summary-rows">
             <span class="summary-label">Most Common:</span>
             <span class="summary-value">${mostCommon}</span>
           </div>
