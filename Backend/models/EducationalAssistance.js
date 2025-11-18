@@ -25,7 +25,6 @@ const educationalAssistanceSchema = new mongoose.Schema({
   surname: { type: String, required: true },
   firstname: { type: String, required: true },
   middlename: { type: String, required: true },
-  // birthday: { type: Date, required: true },
   placeOfBirth: { type: String, required: true },
   age: { type: Number, required: true },
   sex: { type: String, required: true },

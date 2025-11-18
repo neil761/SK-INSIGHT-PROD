@@ -939,7 +939,3 @@ exports.exportKKProfilesExcelTemplate = async (req, res) => {
     res.status(500).json({ error: 'Failed to export KK Profiling data' });
   }
 };
-
-
-// Use isPWD, isCICL, isIP as needed here
-
