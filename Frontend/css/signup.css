@@ -1,283 +1,253 @@
-* {
-    box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(to bottom, #0A2C59 30%, #ffffff 30%);
-    min-height: 100vh;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.right-side{
-            display: flex;
-        align-items: center;
-        justify-content: center;
-}
-.sign {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100vh;
+  margin: 0;
+  font-family: 'Poppins', sans-serif;
+  background: linear-gradient(to bottom, #0A2C59 30%, #ffffff 30%);
+  min-height: 110vh;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
-.container1 {
-    text-align: center;
-    margin-top: 20px;
-    width: auto; /* remove any width restriction */
-}
+/* Layout containers */
+.right-side { display: flex; align-items: center; justify-content: center; }
+.sign { display: flex; flex-direction: column; width: 100%; height: 100vh; }
 
-.logo {
-    width: 30%;
-    max-width: 100px;
-    height: auto;
-    margin: 0 auto 10px auto;
-}
+.container1 { text-align: center; margin-top: 20px; width: auto; }
+.logo { width: 30%; max-width: 100px; height: auto; margin: 0 auto 10px auto; }
 
-.title1 {
-    font-size: 2vh;
-    color: #ffffff;
-    letter-spacing: 1px;
-    margin-top: 10px;
-    line-height: 1.2;
-    word-wrap: break-word;
-    text-align: center;
-}
+.title1 { font-size: 2vh; color: #ffffff; letter-spacing: 1px; margin-top: 10px; line-height: 1.2; text-align: center; }
+.title2 h1 { font-size: 2vh; color: #ffffff; margin: 3px 0; line-height: 1.2; text-align: center; }
 
-.title2 h1 {
-    font-size:2vh;
-    color: #ffffff;
-    margin: 3px 0;
-    line-height: 1.2;
-    word-wrap: break-word;
-    text-align: center;
-}
-
+/* Form container */
 .container {
-    width: 100%;
-    max-width: 400px;
-    padding: 20px;
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    margin: 9vh 1vh 0 1vh;
-    /* allow datepicker popups and other overlays to escape container bounds */
-    overflow: visible;
+  width: 100%;
+  max-width: 400px;
+  padding: 20px;
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  margin: 9vh 1vh 0 1vh;
+  overflow: visible;
 }
 
-.acc {
-    margin-top: 10%;
-    text-align: center;
-}
+.acc { margin-top: 10%; text-align: center; }
+.note { font-size: 0.9rem; color: #555; margin-bottom: 15px; font-style: italic; }
 
-.note{
-    font-size: 0.9rem;
-    color: #555;
-    margin-bottom: 15px;
-    font-style: italic;
-}
-
-/* Tablet adjustments */
+/* Responsive layout breakpoints */
 @media (min-width: 768px) {
-    .logo {
-        width: 100px;
-    }
-
-    .title1 h2 {
-        font-size: 1rem;
-    }
-
-    .title2 h1 {
-        font-size: 20px;
-    }
-
-    .container {
-        padding: 5vh;
-        margin-top: 6vh;
-    }
-    .right-side{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+  .logo { width: 100px; }
+  .container { padding: 5vh; margin-top: 6vh; }
 }
 
-/* Desktop Split Screen (1024px and above) */@media (min-width: 1024px) {
-    body {
-        background: linear-gradient(to right, #0A2C59 50%, #ffffff 50%);
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0;
-    }
-
-    .sign {
-        flex-direction: row;
-        height: 100vh;
-    }
-
-    .container1 {
-        margin-top: -10%;
-        width: auto; /* Remove width: 50%; */
-        text-align: center;
-    }
-
-    .left-side, .right-side {
-        width: 50%;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .left-side {
-        background-color: #0A2C59;
-        color: white;
-        flex-direction: column;
-        text-align: center;
-    }
-
-    .right-side {
-        background-color: white;
-    }
-
-    .container {
-        margin: 10%;
-        max-width: 400px;
-        padding: 40px;
-    }
-
-    .logo {
-        width: 180px;
-            max-width: 150px;
-        margin: 0 auto 20px auto;
-    }
-
-    .title1 h2 {
-        font-size: 30px;
-        min-width: 400px; 
-    }
-
-    .title2 h1 {
-        font-size: 30px;
-    }
-
-/* Flatpickr sizing tweaks: make the calendar more compact */
-.flatpickr-calendar {
-    /* slightly smaller base font */
-    font-size: 13px;
-    /* limit width so calendar doesn't feel too big */
-    max-width: 260px;
-}
-
-.flatpickr-calendar .flatpickr-months {
-    padding: 4px 6px;
-}
-
-.flatpickr-weekdays .flatpickr-weekday {
-    padding: 4px 6px;
-    font-size: 11px;
-}
-
-.flatpickr-day {
-    /* smaller square day buttons */
-    padding: 4px 6px;
-    height: 28px;
-    line-height: 28px;
-    border-radius: 6px;
-}
-
-.flatpickr-day.today {
-    font-weight: 600;
-}
-
-.flatpickr-time {
-    font-size: 12px;
-}
-
-/* Make it even more compact on small screens */
-@media (max-width: 480px) {
-    .flatpickr-calendar { font-size: 12px; max-width: 240px; }
-    .flatpickr-day { height: 24px; line-height: 24px; }
-}
-}
-
-/* Flatpickr visual theme to match site branding */
-.flatpickr-calendar {
-    background: #ffffff;
-    border: 1px solid rgba(10,44,89,0.12);
-    box-shadow: 0 10px 30px rgba(2,6,23,0.12);
-    border-radius: 10px;
-    color: #0A2C59; /* primary text color */
-    transition: transform 0.12s ease, opacity 0.12s ease;
-}
-
-.flatpickr-calendar.open {
-    transform: translateY(0);
-    opacity: 1;
-}
-
-.flatpickr-months {
-    display: flex;
-    align-items: center;
+@media (min-width: 1024px) {
+  body {
+    background: linear-gradient(to right, #0A2C59 50%, #ffffff 50%);
+    flex-direction: row;
     justify-content: space-between;
-    padding: 6px 8px;
+    align-items: center;
+    padding: 0;
+    min-height: 100vh;
+
+  }
+  .sign { flex-direction: row; height: 100vh; }
+  .left-side, .right-side { width: 50%; height: 100vh; display: flex; align-items: center; justify-content: center; }
+  .left-side { background-color: #0A2C59; color: white; flex-direction: column; text-align: center; }
+  .right-side { background-color: white; }
+  .container { margin: 10%; max-width: 400px; padding: 40px; }
+  .logo { width: 180px; max-width: 150px; margin: 0 auto 20px auto; }
 }
 
-.flatpickr-current-month {
-    font-weight: 600;
-    color: #ffffff;
-    background: linear-gradient(90deg, #0A2C59 0%, #2563EB 100%);
-    padding: 6px 10px;
-    border-radius: 8px;
+/* Flatpickr theme (kept compact) */
+.flatpickr-calendar {
+  background: #ffffff;
+  border: 1px solid rgba(10,44,89,0.12);
+  box-shadow: 0 10px 30px rgba(2,6,23,0.12);
+  border-radius: 10px;
+  color: #0A2C59;
+  transition: transform 0.12s ease, opacity 0.12s ease;
 }
-
-.flatpickr-prev-month, .flatpickr-next-month {
-    color: #ffffff;
-    opacity: 0.95;
-}
-
-.flatpickr-weekdays {
-    background: transparent;
-    margin-top: 6px;
-}
-
-.flatpickr-weekdays .flatpickr-weekday {
-    color: #6b7280;
-    font-weight: 600;
-}
-
-.flatpickr-day {
-    transition: background 0.12s ease, color 0.12s ease, transform 0.08s ease;
-}
-
-.flatpickr-day:hover {
-    background: rgba(10,44,89,0.06);
-    transform: translateY(-1px);
-}
-
+.flatpickr-calendar.open { transform: translateY(0); opacity: 1; }
+.flatpickr-day { padding: 4px 6px; height: 28px; line-height: 28px; border-radius: 6px; }
 .flatpickr-day.selected, .flatpickr-day.startRange, .flatpickr-day.endRange {
-    background: #0A2C59 !important;
-    color: #ffffff !important;
-    box-shadow: none !important;
+  background: #0A2C59 !important; color: #ffffff !important; box-shadow: none !important;
 }
-
-.flatpickr-day.today {
-    border: 1px solid #0A2C59;
-    font-weight: 600;
-}
-
-.flatpickr-day.disabled {
-    color: #cbd5e1;
-    opacity: 0.6;
-}
-
-/* Small-screen tweaks keep the design compact but usable */
 @media (max-width: 480px) {
-    .flatpickr-calendar { border-radius: 8px; box-shadow: 0 6px 18px rgba(2,6,23,0.10); }
-    .flatpickr-current-month { font-size: 13px; padding: 4px 8px; }
-    .flatpickr-weekdays .flatpickr-weekday { font-size: 10px; }
+  .flatpickr-calendar { font-size: 12px; max-width: 240px; border-radius: 8px; box-shadow: 0 6px 18px rgba(2,6,23,0.10); }
 }
+
+/* -------------------------------------------------------------------------
+   CONSOLIDATED: Birthday custom selects (no duplicates, responsive, full width)
+   ------------------------------------------------------------------------- */
+:root {
+  --sk-primary: #0A2C59;
+  --sk-muted: #f3f4f6;
+  --sk-accent: #2563EB;
+}
+
+/* Container aligns with other inputs and uses full width of .container */
+.birthday-selects {
+  position: relative;
+  width: 100%;
+  box-sizing: border-box;
+  margin-bottom: 1rem;
+}
+
+/* calendar icon: aligned to left of inputs */
+.birthday-selects .fa-calendar {
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(10,44,89,0.55);
+  pointer-events: none;
+}
+
+/* Row that holds the three selects — uses full width and accounts for icon */
+.birthday-selects .birthday-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  width: 100%;
+  padding-left: 36px; /* space for icon so triggers align with other inputs */
+  box-sizing: border-box;
+}
+
+/* Let selects share available width and shrink properly */
+.custom-select {
+  flex: 1 1 0;
+  min-width: 0; /* allow shrinking */
+  position: relative;
+  box-sizing: border-box;
+}
+
+/* Make year slightly wider by default */
+.custom-select[data-field="birthdayYear"] { flex: 1.15 1 0; }
+
+/* Trigger styles (match other form controls) */
+.custom-select-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 36px 10px 12px;
+  height: 42px;
+  background: var(--sk-muted);
+  border: 1px solid rgba(10,44,89,0.08);
+  border-radius: 8px;
+  color: #1f2937;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.03);
+  transition: background .12s, box-shadow .12s, border-color .12s;
+  position: relative;
+}
+
+/* Caret icon in trigger */
+.custom-select-trigger::after {
+  content: "";
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%230A2C59' d='M3 4.5l3 3 3-3z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+}
+
+/* Options panel: limited height and scrollable (no huge popups) */
+.custom-options {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 1px solid rgba(10,44,89,0.12);
+  box-shadow: 0 12px 30px rgba(2,6,23,0.09);
+  border-radius: 10px;
+  z-index: 999;
+  max-height: 200px;
+  overflow-y: auto;
+  display: none;
+  padding: 6px;
+  box-sizing: border-box;
+}
+
+/* Option rows */
+.custom-options .custom-option {
+  padding: 8px 10px;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  color: #1f2937;
+  border-radius: 6px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background .12s, padding-left .12s;
+}
+
+.custom-options .custom-option:hover {
+  background: rgba(10,44,89,0.06);
+  padding-left: 14px;
+}
+
+.custom-options .custom-option[aria-selected="true"] {
+  background: linear-gradient(90deg, rgba(10,44,89,0.10), rgba(37,99,235,0.06));
+  font-weight: 600;
+  color: var(--sk-primary);
+  border-left: 3px solid var(--sk-primary);
+  padding-left: 11px;
+}
+
+/* Show options only when wrapper has .open */
+.custom-select.open .custom-options { display: block; animation: slideDown .14s ease; }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-6px);} to { opacity: 1; transform: translateY(0);} }
+
+/* Keep native selects in DOM but hidden for submission */
+.custom-select .native-select {
+  position: absolute !important;
+  left: -9999px !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  height: 0 !important;
+  width: 0 !important;
+}
+
+/* Responsive behaviors: stack on small screens and use full width */
+@media (max-width: 600px) {
+  .birthday-selects .birthday-row {
+    flex-direction: column;
+    padding-left: 0;
+    gap: 10px;
+  }
+  .birthday-selects .fa-calendar {
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: none;
+    margin-bottom: 6px;
+  }
+  .custom-select { width: 100%; max-width: 100%; }
+  .custom-options { width: 100%; left: 0; right: 0; max-height: 160px; }
+  .custom-select-trigger { height: 40px; padding: 9px 34px 9px 10px; }
+}
+
+/* Scrollbar polish (WebKit) */
+.custom-options::-webkit-scrollbar { width: 7px; }
+.custom-options::-webkit-scrollbar-track { background: rgba(10,44,89,0.02); border-radius: 8px; }
+.custom-options::-webkit-scrollbar-thumb { background: rgba(10,44,89,0.12); border-radius: 8px; }
+.custom-options::-webkit-scrollbar-thumb:hover { background: rgba(10,44,89,0.20); }
+
+/* Ensure triggers and inputs align visually */
+input[type="text"], input[type="email"], input[type="password"], .custom-select-trigger {
+  font-family: 'Poppins', sans-serif;
+  color: #111827;
+}
+
+/* End of consolidated birthday styles */

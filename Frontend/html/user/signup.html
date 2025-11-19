@@ -68,13 +68,52 @@
                         </span>
                     </div>
 
-                    <!-- Birthday with calendar icon -->
-                    <div class="relative mb-4">
+                    <!-- Birthday with calendar icon (REPLACED: custom compact dropdowns) -->
+                    <div class="relative mb-4 birthday-selects">
                         <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">
                             <i class="fa-solid fa-calendar"></i>
                         </span>
-                        <input type="text" id="birthday" name="birthday" placeholder="YYYY-MM-DD" required
-                            class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 focus:outline-none focus:border-blue-500">
+
+                        <div class="birthday-row" aria-label="Birthday">
+                          <!-- Year -->
+                          <div class="custom-select" data-field="birthdayYear">
+                            <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">Year</button>
+                            <div class="custom-options" role="listbox" tabindex="-1"></div>
+                            <select id="birthdayYear" name="birthdayYear" class="native-select" aria-hidden="true">
+                              <option value="">Year</option>
+                            </select>
+                          </div>
+
+                          <!-- Month -->
+                          <div class="custom-select" data-field="birthdayMonth">
+                            <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">Month</button>
+                            <div class="custom-options" role="listbox" tabindex="-1"></div>
+                            <select id="birthdayMonth" name="birthdayMonth" class="native-select" aria-hidden="true">
+                              <option value="">Month</option>
+                              <option value="01">Jan</option>
+                              <option value="02">Feb</option>
+                              <option value="03">Mar</option>
+                              <option value="04">Apr</option>
+                              <option value="05">May</option>
+                              <option value="06">Jun</option>
+                              <option value="07">Jul</option>
+                              <option value="08">Aug</option>
+                              <option value="09">Sep</option>
+                              <option value="10">Oct</option>
+                              <option value="11">Nov</option>
+                              <option value="12">Dec</option>
+                            </select>
+                          </div>
+
+                          <!-- Day -->
+                          <div class="custom-select" data-field="birthdayDay">
+                            <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">Day</button>
+                            <div class="custom-options" role="listbox" tabindex="-1"></div>
+                            <select id="birthdayDay" name="birthdayDay" class="native-select" aria-hidden="true">
+                              <option value="">Day</option>
+                            </select>
+                          </div>
+                        </div>
                     </div>
 
                     <!-- Sign up button -->
