@@ -262,6 +262,8 @@ router.get("/export/:id", protect, async (req, res) => {
 // Static routes (must come before dynamic :id)
 router.get("/me", protect, ctrl.getMyProfile);
 router.get("/me/image", protect, ctrl.getProfileImage);
+// Return most recent profile for the user (previous cycles)
+router.get('/me/previous', protect, ctrl.getMyLatestProfile);
 
 // Admin-only routes
 // router.get("/export", protect, authorizeRoles("admin"), ctrl.exportProfilesToExcel);

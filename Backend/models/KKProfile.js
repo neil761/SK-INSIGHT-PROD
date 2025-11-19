@@ -80,6 +80,9 @@ const kkProfileSchema = new mongoose.Schema({
   profileImage: { type: String, required: true },
   signatureImagePath: { type: String },
   birthday: { type: Date, required: true },
+  age:{
+    type: Number, required: true
+  },
 
   submittedAt: {
     type: Date,

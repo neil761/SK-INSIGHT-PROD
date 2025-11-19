@@ -49,7 +49,14 @@ document.addEventListener('DOMContentLoaded', function () {
   function showFileName(id, txt) {
     const el = document.getElementById(id);
     if (!el) return;
-    el.textContent = txt || '';
+    // truncate display but keep full name in title
+    const full = txt || '';
+    const max = 24;
+    const display = full.length > max ? full.substring(0, max) + '...' : full;
+    el.textContent = display;
+    el.title = full;
+    // ensure visible when a name is provided
+    el.style.display = full ? 'inline-block' : 'none';
   }
 
   // detect mobile layout for siblings/expenses rendering (mutable so we can respond to resize)
@@ -101,8 +108,17 @@ document.addEventListener('DOMContentLoaded', function () {
     btnEl.addEventListener('click', () => {
       state.removed = true;
       state.base64 = null;
-      if (inputEl) inputEl.value = '';
-      if (fileNameElId) showFileName(fileNameElId, '');
+      if (inputEl) {
+        try { inputEl.value = ''; } catch (e) {}
+        // show upload label again if present (e.g., frontLabel)
+        const label = document.getElementById(`${inputEl.id}Label`);
+        if (label) label.style.display = 'inline-flex';
+      }
+      if (fileNameElId) {
+        showFileName(fileNameElId, '');
+        const fn = document.getElementById(fileNameElId);
+        if (fn) fn.style.display = 'none';
+      }
       Swal.fire({ icon: 'success', title: 'Removed', text: 'Image marked for removal.' });
     });
   }
@@ -273,6 +289,13 @@ document.addEventListener('DOMContentLoaded', function () {
     const fr = new FileReader();
     fr.onload = () => { frontState.base64 = fr.result; frontState.removed = false; showFileName('frontFileName', f.name); };
     fr.readAsDataURL(f);
+    fr.onloadend = () => {
+      // hide upload label and show filename
+      const label = document.getElementById('frontLabel');
+      if (label) label.style.display = 'none';
+      const fn = document.getElementById('frontFileName');
+      if (fn) fn.style.display = 'inline-block';
+    };
   });
 
   if (backInput) backInput.addEventListener('change', function (e) {
@@ -282,6 +305,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const fr = new FileReader();
     fr.onload = () => { backState.base64 = fr.result; backState.removed = false; showFileName('backFileName', f.name); };
     fr.readAsDataURL(f);
+    fr.onloadend = () => {
+      const label = document.getElementById('backLabel');
+      if (label) label.style.display = 'none';
+      const fn = document.getElementById('backFileName');
+      if (fn) fn.style.display = 'inline-block';
+    };
   });
   if (coeInput) coeInput.addEventListener('change', function (e) {
     const f = e.target.files && e.target.files[0];
@@ -290,6 +319,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const fr = new FileReader();
     fr.onload = () => { coeState.base64 = fr.result; coeState.removed = false; showFileName('coeFileName', f.name); };
     fr.readAsDataURL(f);
+    fr.onloadend = () => {
+      const label = document.getElementById('coeLabel');
+      if (label) label.style.display = 'none';
+      const fn = document.getElementById('coeFileName');
+      if (fn) fn.style.display = 'inline-block';
+    };
   });
   if (voterInput) voterInput.addEventListener('change', function (e) {
     const f = e.target.files && e.target.files[0];
@@ -298,6 +333,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const fr = new FileReader();
     fr.onload = () => { voterState.base64 = fr.result; voterState.removed = false; showFileName('voterFileName', f.name); };
     fr.readAsDataURL(f);
+    fr.onloadend = () => {
+      const label = document.getElementById('voterLabel');
+      if (label) label.style.display = 'none';
+      const fn = document.getElementById('voterFileName');
+      if (fn) fn.style.display = 'inline-block';
+    };
   });
 
   // populate form from server
@@ -384,20 +425,63 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (frontUrl) {
         const b64 = await fetchImageAsBase64(frontUrl);
-        if (b64) { frontState.base64 = b64; frontState.removed = false; showFileName('frontFileName', 'Current image'); }
+        if (b64) {
+          frontState.base64 = b64;
+          frontState.removed = false;
+          // prefer original filename if URL provides it
+          let fname = 'Current image';
+          try { fname = frontUrl ? decodeURIComponent((new URL(frontUrl)).pathname.split('/').pop() || '') : 'Current image'; } catch (e) { fname = 'Current image'; }
+          if (!fname) fname = 'Current image';
+          showFileName('frontFileName', fname);
+        }
       }
       if (backUrl) {
         const b64 = await fetchImageAsBase64(backUrl);
-        if (b64) { backState.base64 = b64; backState.removed = false; showFileName('backFileName', 'Current image'); }
+        if (b64) {
+          backState.base64 = b64;
+          backState.removed = false;
+          let fname = 'Current image';
+          try { fname = backUrl ? decodeURIComponent((new URL(backUrl)).pathname.split('/').pop() || '') : 'Current image'; } catch (e) { fname = 'Current image'; }
+          if (!fname) fname = 'Current image';
+          showFileName('backFileName', fname);
+        }
       }
       if (coeUrl) {
         const b64 = await fetchImageAsBase64(coeUrl);
-        if (b64) { coeState.base64 = b64; coeState.removed = false; showFileName('coeFileName', 'Current image'); }
+        if (b64) {
+          coeState.base64 = b64;
+          coeState.removed = false;
+          let fname = 'Current image';
+          try { fname = coeUrl ? decodeURIComponent((new URL(coeUrl)).pathname.split('/').pop() || '') : 'Current image'; } catch (e) { fname = 'Current image'; }
+          if (!fname) fname = 'Current image';
+          showFileName('coeFileName', fname);
+        }
       }
       if (voterUrl) {
         const b64 = await fetchImageAsBase64(voterUrl);
-        if (b64) { voterState.base64 = b64; voterState.removed = false; showFileName('voterFileName', 'Current image'); }
+        if (b64) {
+          voterState.base64 = b64;
+          voterState.removed = false;
+          let fname = 'Current image';
+          try { fname = voterUrl ? decodeURIComponent((new URL(voterUrl)).pathname.split('/').pop() || '') : 'Current image'; } catch (e) { fname = 'Current image'; }
+          if (!fname) fname = 'Current image';
+          showFileName('voterFileName', fname);
+        }
       }
+
+      // Toggle upload labels/file name visibility based on existing images
+      const frontLabel = document.getElementById('frontLabel');
+      const frontFN = document.getElementById('frontFileName');
+      if (frontState.base64) { if (frontLabel) frontLabel.style.display = 'none'; if (frontFN) frontFN.style.display = 'inline-block'; }
+      const backLabel = document.getElementById('backLabel');
+      const backFN = document.getElementById('backFileName');
+      if (backState.base64) { if (backLabel) backLabel.style.display = 'none'; if (backFN) backFN.style.display = 'inline-block'; }
+      const coeLabel = document.getElementById('coeLabel');
+      const coeFN = document.getElementById('coeFileName');
+      if (coeState.base64) { if (coeLabel) coeLabel.style.display = 'none'; if (coeFN) coeFN.style.display = 'inline-block'; }
+      const voterLabel = document.getElementById('voterLabel');
+      const voterFN = document.getElementById('voterFileName');
+      if (voterState.base64) { if (voterLabel) voterLabel.style.display = 'none'; if (voterFN) voterFN.style.display = 'inline-block'; }
 
       // siblings (array of { name, gender, age })
       try {

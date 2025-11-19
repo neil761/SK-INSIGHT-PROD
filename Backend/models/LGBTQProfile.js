@@ -16,6 +16,9 @@ const lgbtqProfileSchema = new mongoose.Schema(
     lastname: String,
     firstname: String,
     middlename: String,
+  age:{
+    type: Number, required: true
+  },
     sexAssignedAtBirth: {
       type: String,
       enum: ["Male", "Female"],

@@ -98,13 +98,45 @@ exports.submitKKProfile = async (req, res) => {
         .json({ error: "Reason for not attending is required" });
     }
 
-    // Check for uploaded profile image
-    if (!req.files || !req.files.profileImage || !req.files.profileImage[0]) {
-      return res.status(400).json({ error: "Profile image is required to submit KK Profile." });
-    }
-
     const user = await User.findById(req.user.id);
     const birthday = user.birthday; // use this value for the profile
+
+    // Determine authoritative age to store on KKProfile.
+    // Priority: req.body.age -> user's birthday -> req.body.birthday -> user.age
+    const parseAgeFromBirthday = bd => {
+      if (!bd) return null;
+      const d = new Date(bd);
+      if (isNaN(d)) return null;
+      const today = new Date();
+      let a = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+      return a;
+    };
+
+    let ageToSave = null;
+    if (req.body && typeof req.body.age !== 'undefined' && req.body.age !== null && req.body.age !== '') {
+      const n = Number(req.body.age);
+      if (!isNaN(n)) ageToSave = n;
+    }
+    if (ageToSave === null) {
+      const fromUserBirthday = parseAgeFromBirthday(user.birthday);
+      if (fromUserBirthday !== null) ageToSave = fromUserBirthday;
+    }
+    if (ageToSave === null && req.body && req.body.birthday) {
+      const fromBodyBirthday = parseAgeFromBirthday(req.body.birthday);
+      if (fromBodyBirthday !== null) ageToSave = fromBodyBirthday;
+    }
+    if (ageToSave === null && typeof user.age !== 'undefined' && user.age !== null) {
+      const ua = Number(user.age);
+      if (!isNaN(ua)) ageToSave = ua;
+    }
+    if (ageToSave === null) {
+      if (req.files?.profileImage) fs.unlink(req.files.profileImage[0].path, () => {});
+      if (req.files?.idImage) fs.unlink(req.files.idImage[0].path, () => {});
+      if (req.files?.signatureImage) fs.unlink(req.files.signatureImage[0].path, () => {});
+      return res.status(400).json({ error: "Age is required or could not be determined from birthday." });
+    }
 
     const newProfile = new KKProfile({
       user: userId,
@@ -143,6 +175,7 @@ exports.submitKKProfile = async (req, res) => {
       idImagePath: req.files?.idImage ? req.files.idImage[0].path : null,           // Cloudinary URL
       signatureImagePath: req.files?.signatureImage ? req.files.signatureImage[0].path : null, // Cloudinary URL
 
+      age: ageToSave,
       birthday,
     });
 
@@ -467,6 +500,27 @@ exports.getMyProfile = async (req, res) => {
   }
 };
 
+// GET /api/kkprofiling/me/previous
+// Return the most recent non-deleted KKProfile for the authenticated user (any cycle)
+exports.getMyLatestProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Find latest profile by submittedAt (fallback to creation order)
+    const profile = await KKProfile.findOne({ user: userId, isDeleted: false })
+      .sort({ submittedAt: -1 })
+      .populate('formCycle');
+
+    if (!profile) {
+      return res.status(404).json({ error: 'No previous KK profile found.' });
+    }
+
+    res.status(200).json(profile);
+  } catch (err) {
+    console.error('getMyLatestProfile error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // GET /api/kkprofiling/me/image
 exports.getProfileImage = async (req, res) => {
   try {
@@ -671,6 +725,19 @@ exports.exportKKProfileDocx = async (req, res) => {
     const doc = new Docxtemplater(zip);
 
     // Prepare data for template
+    // Prefer stored age in DB (profile.age or profile.user.age); otherwise compute from birthday
+    const storedAge = (typeof profile.age !== 'undefined' && profile.age !== null) ? Number(profile.age) : null;
+    const userAge = (profile.user && typeof profile.user.age !== 'undefined' && profile.user.age !== null) ? Number(profile.user.age) : null;
+    const birthdayDate = profile.user?.birthday ? new Date(profile.user.birthday) : null;
+    const birthday = birthdayDate ? birthdayDate.toLocaleDateString() : "";
+    const birthMonth = birthdayDate ? birthdayDate.getMonth() + 1 : "N/A";
+    const birthDay = birthdayDate ? birthdayDate.getDate() : "N/A";
+    const birthYear = birthdayDate ? birthdayDate.getFullYear() : "N/A";
+    const today = new Date();
+    const computedAge = birthdayDate
+      ? today.getFullYear() - birthYear - (today.getMonth() + 1 < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < birthDay) ? 1 : 0)
+      : "N/A";
+    const age = (storedAge !== null && !isNaN(storedAge)) ? storedAge : (userAge !== null && !isNaN(userAge) ? userAge : computedAge);
     const data = {
       lastname: profile.lastname || "",
       firstname: profile.firstname || "",
@@ -695,10 +762,8 @@ exports.exportKKProfileDocx = async (req, res) => {
       attendedKKAssembly: profile.attendedKKAssembly ? "Yes" : "No",
       attendanceCount: profile.attendanceCount || "",
       reasonDidNotAttend: profile.reasonDidNotAttend || "",
-      birthday: profile.user?.birthday
-        ? new Date(profile.user.birthday).toLocaleDateString()
-        : "",
-      age: profile.user?.age || "",
+      birthday: birthday,
+      age: age,
       // Add this line for the dropdown value:
       specificNeedType: profile.specificNeedType || "",
     };
@@ -853,17 +918,20 @@ exports.exportKKProfilesExcelTemplate = async (req, res) => {
     profiles.forEach(profile => {
       const fullName = `${(profile.lastname || '').toUpperCase()}, ${(profile.firstname || '').toUpperCase()} ${(profile.middlename || '').toUpperCase()}`.trim();
 
-      // Extract birthday details and compute age
+      // Prefer stored age in DB (profile.age or profile.user.age); otherwise extract birthday details and compute age
+      const storedAge = (typeof profile.age !== 'undefined' && profile.age !== null) ? Number(profile.age) : null;
+      const userAge = (profile.user && typeof profile.user.age !== 'undefined' && profile.user.age !== null) ? Number(profile.user.age) : null;
       const birthday = profile.user?.birthday ? new Date(profile.user.birthday) : null;
       const birthMonth = birthday ? birthday.getMonth() + 1 : "N/A"; // Months are 0-indexed
       const birthDay = birthday ? birthday.getDate() : "N/A";
       const birthYear = birthday ? birthday.getFullYear() : "N/A";
 
-      // Compute age dynamically
+      // Compute age dynamically only if not stored on profile/user
       const today = new Date();
-      const age = birthday
+      const computedAge = birthday
         ? today.getFullYear() - birthYear - (today.getMonth() + 1 < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < birthDay) ? 1 : 0)
         : "N/A";
+      const age = (storedAge !== null && !isNaN(storedAge)) ? storedAge : (userAge !== null && !isNaN(userAge) ? userAge : computedAge);
 
       // Gender logic: M for Male, F for Female
       const gender = profile.gender === "Male" ? "M" : profile.gender === "Female" ? "F" : "N/A";

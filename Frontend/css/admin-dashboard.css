@@ -527,6 +527,19 @@
   color: #0A2C59;
   font-weight: 500;
   margin-bottom: 0.4rem;
+  width: 25vw;
+}
+
+.educational-background-summary-rows {
+  background: #fef9e7;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #FED600;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  width: 17vw;
+  padding: 0.5rem 0.2rem;
+  border-radius: 6px;
 }
 
 .educational-background-summary-list {
