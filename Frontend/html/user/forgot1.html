@@ -3,56 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <link rel="stylesheet" href="../../css/forgot1.css">
-    <title>FORGOT PASSWORD</title>
+    <title>Forgot Password - SK Insight</title>
     <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
 </head>
 <body>
-
-    <div class="sign">
-        <div class="left-side">
-            <div class="container1">
-                <div class="img1">
-                    <img src="../../assets/logo.png" alt="logo" class="logo">
-                </div>
-                <div class="title1">
-                    <h2>SANGGUNIANG KABATAAN</h2>
-                </div>
-                <div class="title2">
-                    <h1>BARANGAY</h1>
-                    <h1>PUTING BATO WEST</h1>
-                </div>
+    <div class="forgot-wrapper">
+        <!-- Left Panel (Desktop Only) -->
+        <div class="forgot-left-panel">
+            <div class="left-content">
+                <img src="../../assets/logo.png" alt="SK Insight" class="left-logo" />
+                <h2 class="left-title">SANGGUNIANG KABATAAN</h2>
+                <p class="left-subtitle">BARANGAY PUTING BATO WEST</p>
+                <div class="left-accent"></div>
             </div>
         </div>
-    
-        <div class="right-side">
-            <div class="container">
-                <h1 class="text-center text-xl font-bold">Forgot your Password</h1>
-                <p class="text-xl text-center m-5">Enter your email below to reset your password.</p>
-                <form id="loginForm">
-                    <input type="email" name="email" placeholder="Email" required
-                    class="border	bg-gray-100 border-black rounded px-3 py-2 w-full mb-3 focus:outline-none focus:border-blue-500">
 
-                    <div class="button flex justify-center">
-                        <button type="submit" class="bg-blue-900 text-white py-2 px-6 rounded hover:bg-blue-800">
-                            Send OTP
+        <!-- Right Panel (Form) -->
+        <div class="forgot-right-panel">
+            <!-- Mobile Header -->
+            <div class="mobile-header-bar">
+                <img src="../../assets/logo.png" alt="SK Insight" class="mobile-logo" />
+            </div>
+
+            <!-- Form Container -->
+            <div class="forgot-form-container">
+                <div class="form-header">
+                    <h1>Reset Password</h1>
+                    <p class="form-subtitle">Enter your email to receive an OTP code</p>
+                </div>
+
+                <!-- Forgot Password Form -->
+                <form id="loginForm">
+                    <div class="form-section">
+                        <!-- Email -->
+                        <div class="form-group full-width">
+                            <label for="email">Email Address *</label>
+                            <div class="input-wrapper">
+                                <i class="icon fa-solid fa-envelope"></i>
+                                <input 
+                                    type="email" 
+                                    id="email" 
+                                    name="email" 
+                                    placeholder="your@email.com" 
+                                    required 
+                                    autocomplete="email" 
+                                />
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Send OTP Button -->
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            Send OTP <i class="fa-solid fa-envelope-open"></i>
                         </button>
                     </div>
-                    <div class="log text-center text-sm text-gray-700">Go back to
-                        <a href="../../html/user/login.html" class="text-blue-600 hover:text-blue-800 font-medium">
-                            Log in
-                        </a>
-              </form>
+
+                    <!-- Back to Login Link -->
+                    <div class="back-link">
+                        Remember your password? <a href="/Frontend/html/user/login.html">Back to Sign In</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 
-
-    <script src="../../js/forgot1.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="../../js/forgot1.js" defer></script>
 </body>
-
 </html>
