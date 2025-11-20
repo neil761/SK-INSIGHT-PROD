@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // if (!validateTokenAndRedirect("KK Youth Form")) {
   //   return;
   // }
-  
 
   const educationalBackground = document.getElementById('educationalBackground');
 
@@ -31,330 +30,224 @@ document.addEventListener('DOMContentLoaded', function() {
   const saved = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
   document.getElementById('youthAgeGroup').value = saved.youthAgeGroup || '';
   document.getElementById('youthClassification').value = saved.youthClassification || '';
+  // Show specific needs selector when classification requires it
+  const youthClassificationEl = document.getElementById('youthClassification');
+  const specificNeedsGroup = document.getElementById('specificNeedsGroup');
+  const specificNeedTypeEl = document.getElementById('specificNeedType');
+
+  function updateSpecificNeedsVisibility() {
+    try {
+      if (!youthClassificationEl || !specificNeedsGroup) return;
+      if (String(youthClassificationEl.value).trim() === 'Youth with Specific Needs') {
+        specificNeedsGroup.style.display = 'block';
+        // restore saved value if available
+        if (specificNeedTypeEl && saved.specificNeedType) specificNeedTypeEl.value = saved.specificNeedType;
+        if (specificNeedTypeEl) {
+          specificNeedTypeEl.required = true;
+          specificNeedTypeEl.setAttribute('aria-required', 'true');
+        }
+      } else {
+        specificNeedsGroup.style.display = 'none';
+        if (specificNeedTypeEl) {
+          specificNeedTypeEl.value = '';
+          specificNeedTypeEl.required = false;
+          specificNeedTypeEl.removeAttribute('aria-required');
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // Initialize visibility on load
+  updateSpecificNeedsVisibility();
+
+  // Toggle visibility when classification changes and autosave
+  if (youthClassificationEl) {
+    youthClassificationEl.addEventListener('change', function () {
+      updateSpecificNeedsVisibility();
+      // ensure we save the change
+      try { saveStep3(); } catch (e) { /* ignore */ }
+    });
+  }
   document.getElementById('educationalBackground').value = saved.educationalBackground || '';
   document.getElementById('workStatus').value = saved.workStatus || '';
   document.getElementById('registeredSKVoter').value = saved.registeredSKVoter || '';
   document.getElementById('registeredNationalVoter').value = saved.registeredNationalVoter || '';
-  // If user's age from step1 indicates minor (<=17), default national voter to 'No'
-  try {
-    const registeredNationalVoterEl = document.getElementById('registeredNationalVoter');
-    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
-    let computedAge = null;
-    if (step1.age && !isNaN(Number(step1.age))) {
-      computedAge = Number(step1.age);
-    } else if (step1.birthday) {
-      const bd = new Date(step1.birthday);
-      if (!isNaN(bd.getTime())) {
-        const today = new Date();
-        computedAge = today.getFullYear() - bd.getFullYear();
-        const m = today.getMonth() - bd.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) computedAge--;
-      }
-    }
-
-    if (computedAge !== null && computedAge <= 17 && registeredNationalVoterEl) {
-      // set value and prevent user interaction while keeping element enabled so it is submitted
-      registeredNationalVoterEl.value = 'No';
-      // prevent changes but keep it enabled so form submission includes the value
-      const preventChange = (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        // ensure the value stays 'No'
-        registeredNationalVoterEl.value = 'No';
-        // blur to avoid keyboard focus
-        try { registeredNationalVoterEl.blur(); } catch (e) {}
-        return false;
-      };
-      registeredNationalVoterEl.dataset.readonlyMinor = 'true';
-      registeredNationalVoterEl.addEventListener('change', preventChange, { passive: false });
-      registeredNationalVoterEl.addEventListener('keydown', preventChange, { passive: false });
-      registeredNationalVoterEl.addEventListener('mousedown', preventChange, { passive: false });
-      registeredNationalVoterEl.addEventListener('focus', () => registeredNationalVoterEl.blur());
-
-      // persist to step3 immediately
-      try { saveStep3(); } catch (e) { 
-        const cur = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        cur.registeredNationalVoter = 'No';
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(cur));
-      }
-    }
-  } catch (err) {
-    // If anything fails, don't block the form — silently ignore
-    console.warn('Could not apply minor voter default:', err);
-  }
-  document.getElementById('votedLastSKElection').value = saved.votedLastSKElection || '';
   document.getElementById('attendedKKAssembly').value = saved.attendedKKAssembly || '';
-  document.getElementById('attendanceCount').value = saved.attendanceCount || '';
-  document.getElementById('reasonDidNotAttend').value = saved.reasonDidNotAttend || '';
 
-  // Restore specific needs dropdown visibility and value
-  const youthClassification = document.getElementById('youthClassification');
-  const specificNeedsGroup = document.getElementById('specificNeedsGroup');
-  const specificNeedType = document.getElementById('specificNeedType');
-  specificNeedType.value = saved.specificNeedType || '';
+  // Show/hide attendance related fields and toggle required attribute
+  const attendedEl = document.getElementById('attendedKKAssembly');
+  const attendanceCountEl = document.getElementById('attendanceCount');
+  const reasonEl = document.getElementById('reasonDidNotAttend');
 
-  // Always show the specific needs dropdown if a value is present or "Youth with Specific Needs" is selected
-  if (
-    saved.youthClassification === 'Youth with Specific Needs' ||
-    saved.specificNeedType
-  ) {
-    specificNeedsGroup.style.display = 'block';
-    if (specificNeedType) specificNeedType.required = true;
-  } else {
-    specificNeedsGroup.style.display = 'none';
-    if (specificNeedType) {
-      specificNeedType.required = false;
-      specificNeedType.value = '';
-    }
+  const attendanceCountWrapper = attendanceCountEl ? (attendanceCountEl.closest('.form-group') || attendanceCountEl.parentElement) : null;
+  const reasonWrapper = reasonEl ? (reasonEl.closest('.form-group') || reasonEl.parentElement) : null;
+
+  function updateAttendanceVisibility() {
+    try {
+      if (!attendedEl) return;
+      const val = String(attendedEl.value || '').trim();
+      // When user answers 'Yes' → show attendance count
+      if (val === 'Yes' || val === 'yes' || val === 'true') {
+        if (attendanceCountWrapper) attendanceCountWrapper.style.display = 'block';
+        if (attendanceCountEl) {
+          attendanceCountEl.required = true;
+          attendanceCountEl.setAttribute('aria-required', 'true');
+          // restore saved value if available
+          if (saved.attendanceCount) attendanceCountEl.value = saved.attendanceCount;
+        }
+        if (reasonWrapper) reasonWrapper.style.display = 'none';
+        if (reasonEl) {
+          reasonEl.value = '';
+          reasonEl.required = false;
+          reasonEl.removeAttribute('aria-required');
+        }
+      }
+      // When user answers 'No' → show reason did not attend
+      else if (val === 'No' || val === 'no' || val === 'false') {
+        if (reasonWrapper) reasonWrapper.style.display = 'block';
+        if (reasonEl) {
+          reasonEl.required = true;
+          reasonEl.setAttribute('aria-required', 'true');
+          if (saved.reasonDidNotAttend) reasonEl.value = saved.reasonDidNotAttend;
+        }
+        if (attendanceCountWrapper) attendanceCountWrapper.style.display = 'none';
+        if (attendanceCountEl) {
+          attendanceCountEl.value = '';
+          attendanceCountEl.required = false;
+          attendanceCountEl.removeAttribute('aria-required');
+        }
+      } else {
+        if (attendanceCountWrapper) attendanceCountWrapper.style.display = 'none';
+        if (reasonWrapper) reasonWrapper.style.display = 'none';
+        if (attendanceCountEl) { attendanceCountEl.required = false; attendanceCountEl.removeAttribute('aria-required'); attendanceCountEl.value = ''; }
+        if (reasonEl) { reasonEl.required = false; reasonEl.removeAttribute('aria-required'); reasonEl.value = ''; }
+      }
+    } catch (e) { /* ignore */ }
   }
 
-  // Show/hide dropdown for Youth with Specific Needs on change
-  youthClassification.addEventListener('change', function () {
-    if (this.value === 'Youth with Specific Needs') {
-      specificNeedsGroup.style.display = 'block';
-      if (specificNeedType) specificNeedType.required = true;
-    } else {
-      specificNeedsGroup.style.display = 'none';
-      if (specificNeedType) {
-        specificNeedType.required = false;
-        specificNeedType.value = '';
+  // Initialize attendance visibility on load
+  updateAttendanceVisibility();
+
+  if (attendedEl) {
+    attendedEl.addEventListener('change', function () {
+      updateAttendanceVisibility();
+      try { saveStep3(); } catch (e) { /* ignore */ }
+    });
+  }
+  // Use centralized preview containers and restore existing saved images (if any)
+  const profileImageInput = document.getElementById('profileImage');
+  const signatureImageInput = document.getElementById('signatureImage');
+  const profilePreviewWrapper = document.getElementById('imagePreviewContainerFront');
+  const signaturePreviewWrapper = document.getElementById('imagePreviewContainerBack');
+
+  // Ensure filename placeholders are hidden by default when there's no saved filename
+  try {
+    const profileFilenameEl = document.getElementById('profileImageFilename');
+    if (profileFilenameEl) {
+      if (saved.profileImageName) {
+        profileFilenameEl.textContent = saved.profileImageName;
+        profileFilenameEl.style.display = 'inline-block';
+      } else {
+        profileFilenameEl.textContent = '';
+        profileFilenameEl.style.display = 'none';
       }
     }
-    saveStep3(); // Save state when changed
-  });
 
-  // Separate profile and signature image preview containers
-  const profileImagePreview = document.getElementById('profileImagePreview');
-  const signatureImagePreview = document.getElementById('signatureImagePreview');
-  const profileImage = document.getElementById('profileImage');
-  const signatureImage = document.getElementById('signatureImage');
+    const signatureFilenameEl = document.getElementById('signatureImageFilename');
+    if (signatureFilenameEl) {
+      if (saved.signatureImageName) {
+        signatureFilenameEl.textContent = saved.signatureImageName;
+        signatureFilenameEl.style.display = 'inline-block';
+      } else {
+        signatureFilenameEl.textContent = '';
+        signatureFilenameEl.style.display = 'none';
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
 
-  // ✅ Restore saved image if exists
+  // Restore previews from sessionStorage when page loads
   if (saved.profileImage) {
+    // `renderProfileImage` will populate the preview area and attach remove handler
     renderProfileImage(saved.profileImage);
+    // restore filename display if available
+    try {
+      const fd = document.getElementById('profileImageFilename');
+      if (fd && saved.profileImageName) {
+        fd.textContent = saved.profileImageName;
+        fd.style.display = 'inline-block';
+      } else if (fd) {
+        fd.textContent = '';
+        fd.style.display = 'none';
+      }
+    } catch (e) {}
   }
   if (saved.signatureImage) {
     renderSignatureImage(saved.signatureImage);
-  }
-
-  // Attendance logic
-  const attendedKKAssembly = document.getElementById('attendedKKAssembly');
-  const attendanceCountGroup = document.getElementById('attendanceCountGroup');
-  const reasonGroup = document.getElementById('reasonGroup');
-
-  // Show/hide attendanceCountGroup and reasonGroup based on saved value
-  if (saved.attendedKKAssembly === 'Yes') {
-    attendanceCountGroup.style.display = 'block';
-    reasonGroup.style.display = 'none';
-    const attEl = document.getElementById('attendanceCount'); if (attEl) attEl.required = true;
-    const reasonEl = document.getElementById('reasonDidNotAttend'); if (reasonEl) reasonEl.required = false;
-  } else if (saved.attendedKKAssembly === 'No') {
-    attendanceCountGroup.style.display = 'none';
-    reasonGroup.style.display = 'block';
-    const attEl2 = document.getElementById('attendanceCount'); if (attEl2) attEl2.required = false;
-    const reasonEl2 = document.getElementById('reasonDidNotAttend'); if (reasonEl2) reasonEl2.required = true;
-  } else {
-    attendanceCountGroup.style.display = 'none';
-    reasonGroup.style.display = 'none';
-    const attEl3 = document.getElementById('attendanceCount'); if (attEl3) attEl3.required = false;
-    const reasonEl3 = document.getElementById('reasonDidNotAttend'); if (reasonEl3) reasonEl3.required = false;
-  }
-
-  attendedKKAssembly.addEventListener('change', function () {
-    if (this.value === 'Yes') {
-      attendanceCountGroup.style.display = 'block';
-      reasonGroup.style.display = 'none';
-      // mark attendanceCount required
-      const attEl = document.getElementById('attendanceCount');
-      if (attEl) attEl.required = true;
-      const reasonEl = document.getElementById('reasonDidNotAttend');
-      if (reasonEl) reasonEl.required = false;
-    } else if (this.value === 'No') {
-      attendanceCountGroup.style.display = 'none';
-      reasonGroup.style.display = 'block';
-      // mark reason required
-      const attEl = document.getElementById('attendanceCount');
-      if (attEl) attEl.required = false;
-      const reasonEl = document.getElementById('reasonDidNotAttend');
-      if (reasonEl) reasonEl.required = true;
-    } else {
-      attendanceCountGroup.style.display = 'none';
-      reasonGroup.style.display = 'none';
-      const attEl = document.getElementById('attendanceCount');
-      if (attEl) attEl.required = false;
-      const reasonEl = document.getElementById('reasonDidNotAttend');
-      if (reasonEl) reasonEl.required = false;
-    }
-  });
-
-  // Profile image preview
-  profileImage.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // ✅ ALLOWED TYPES
-    const previewContainer = document.getElementById('profileImagePreview');
-
-    if (file) {
-      // ✅ VALIDATE TYPE FIRST
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonColor: '#0A2C59'
-        });
-
-        // 🔹 Clear input + preview
-        e.target.value = '';
-        previewContainer.innerHTML = '';
-        return; // Stop further processing
+    try {
+      const fd = document.getElementById('signatureImageFilename');
+      if (fd && saved.signatureImageName) {
+        fd.textContent = saved.signatureImageName;
+        fd.style.display = 'inline-block';
+      } else if (fd) {
+        fd.textContent = '';
+        fd.style.display = 'none';
       }
+    } catch (e) {}
+  }
 
-      // ✅ Proceed if valid
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        renderProfileImage(e.target.result);
+  // If there is no saved image, hide the outer preview wrappers and remove buttons
+  try {
+    const removeBtnFront = document.getElementById('removeImageBtnFront');
+    const removeBtnBack = document.getElementById('removeImageBtnBack');
+    if (profilePreviewWrapper) profilePreviewWrapper.style.display = saved.profileImage ? 'block' : 'none';
+    if (signaturePreviewWrapper) signaturePreviewWrapper.style.display = saved.signatureImage ? 'block' : 'none';
+    if (removeBtnFront) removeBtnFront.style.display = saved.profileImage ? 'inline-block' : 'none';
+    if (removeBtnBack) removeBtnBack.style.display = saved.signatureImage ? 'inline-block' : 'none';
+  } catch (e) {
+    // ignore
+  }
 
-        // Save to sessionStorage
-        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        current.profileImage = e.target.result;
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
-
-  function renderProfileImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('profileImagePreview').innerHTML = '';
-      return;
-    }
-
-    const previewContainer = document.getElementById('profileImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewProfileImage">
-        <button id="removeProfileImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('profileImage').value = "";
+  // Remove profile image handler
+  const removeFront = document.getElementById('removeImageBtnFront');
+  if (removeFront) {
+    removeFront.addEventListener('click', function () {
+      if (profileImageInput) profileImageInput.value = '';
       const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
+      // clear filename
+      delete current.profileImageName;
       sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-    });
-    // View feature
-    document.getElementById('viewProfileImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Profile Image',
-        showConfirmButton: false,
-        width: 400
-      });
+      // Clear preview area and hide wrapper
+      const preview = document.getElementById('profileImagePreview');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      if (profilePreviewWrapper) profilePreviewWrapper.style.display = 'none';
+      this.style.display = 'none';
+        const filenameDisplay = document.getElementById('profileImageFilename');
+        if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
     });
   }
 
-  // Signature image preview
-  signatureImage.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // ✅ ALLOWED TYPES
-    const previewContainer = document.getElementById('signatureImagePreview');
-
-    if (file) {
-      // ✅ VALIDATE TYPE FIRST
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonColor: '#0A2C59'
-        });
-
-        // 🔹 Clear input + preview
-        e.target.value = '';
-        previewContainer.innerHTML = '';
-        return; // Stop further processing
-      }
-
-      // ✅ Proceed if valid
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        renderSignatureImage(e.target.result);
-
-        // Save to sessionStorage
-        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        current.signatureImage = e.target.result;
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
-
-  function renderSignatureImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('signatureImagePreview').innerHTML = '';
-      return;
-    }
-
-    const previewContainer = document.getElementById('signatureImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewSignatureImage">
-        <button id="removeSignatureImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('signatureImage').value = "";
-    });
-    // View feature
-    document.getElementById('viewSignatureImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Signature Image',
-        showConfirmButton: false,
-        width: 400
-      });
+  // Remove signature image handler
+  const removeBack = document.getElementById('removeImageBtnBack');
+  if (removeBack) {
+    removeBack.addEventListener('click', function () {
+      if (signatureImageInput) signatureImageInput.value = '';
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+      delete current.signatureImage;
+      // clear filename
+      delete current.signatureImageName;
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      const preview = document.getElementById('signatureImagePreview');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      if (signaturePreviewWrapper) signaturePreviewWrapper.style.display = 'none';
+      this.style.display = 'none';
+         const filenameDisplay = document.getElementById('signatureImageFilename');
+         if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
     });
   }
+
 
   const youthForm = document.getElementById('youthForm');
 
@@ -385,6 +278,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (existing.signatureImage) {
       step3Data.signatureImage = existing.signatureImage;
     }
+    // Keep existing saved filenames
+    if (existing.profileImageName) step3Data.profileImageName = existing.profileImageName;
+    if (existing.signatureImageName) step3Data.signatureImageName = existing.signatureImageName;
 
     sessionStorage.setItem('kkProfileStep3', JSON.stringify(step3Data));
   }
@@ -420,254 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Final submit
-  youthForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    // Always save before confirmation
-    saveStep3();
-
-    // SweetAlert confirmation before actual submit
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to submit your KKProfile?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes, submit",
-      cancelButtonText: "Cancel"
-    });
-
-    if (!result.isConfirmed) return;
-
-    // Show loading while submitting
-    Swal.fire({
-      title: 'Submitting...',
-      text: 'Please wait while we submit your form',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => { Swal.showLoading(); }
-    });
-
-    // Check if profile image is present (either in file input or sessionStorage)
-    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').profileImage);
-
-    if (!hasImage) {
-      await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
-      return;
-    }
-
-    // Collect all data from sessionStorage and this page
-    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
-    const step2 = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
-    const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-
-    // Determine age to save. Prefer authoritative birthday from the user API (/api/users/me).
-    // Fallback to step1.birthday if the user API is unavailable.
-    let ageToSave = '';
-    function computeAgeFrom(birthday) {
-      if (!birthday) return '';
-      const birthDate = new Date(birthday);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      return String(age);
-    }
-    try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (token) {
-        const userRes = await fetch('http://localhost:5000/api/users/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData && (userData.birthday || userData.dateOfBirth)) {
-            const raw = userData.birthday || userData.dateOfBirth;
-            ageToSave = computeAgeFrom(raw);
-          }
-        }
-      }
-    } catch (e) {
-      // ignore — we'll fallback to step1.birthday below
-    }
-    if (!ageToSave && step1 && step1.birthday) {
-      ageToSave = computeAgeFrom(step1.birthday);
-    }
-
-    // In your submit handler, after loading step3:
-    const booleanFields = [
-      'registeredSKVoter',
-      'registeredNationalVoter',
-      'votedLastSKElection',
-      'attendedKKAssembly'
-    ];
-
-    booleanFields.forEach(field => {
-      if (field in step3) {
-        step3[field] = step3[field] === 'Yes' ? true
-                      : step3[field] === 'No' ? false
-                      : '';
-      }
-    });
-
-    // Validate image presence
-    if (
-      form.profileImage.files.length === 0 &&
-      !step3.profileImage
-    ) {
-      await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
-      return;
-    }
-
-    // Check if signature image is present (either in file input or sessionStorage)
-    const hasSignature =
-      form.signatureImage.files.length > 0 ||
-      (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').signatureImage);
-
-    if (!hasSignature) {
-      await Swal.fire("Missing Signature", "Please upload a signature image before submitting.", "warning");
-      return;
-    }
-
-    // Additional validation rules:
-    // - If youthClassification is 'Youth with Specific Needs', require specificNeedType
-    // - If attendedKKAssembly is true (Yes), require attendanceCount
-    // - If attendedKKAssembly is false (No), require reasonDidNotAttend
-    try {
-      const yc = step3.youthClassification || '';
-      const specific = step3.specificNeedType || '';
-      if (yc === 'Youth with Specific Needs' && (!specific || String(specific).trim() === '')) {
-        await Swal.fire('Missing Field', 'Please specify the type of specific need.', 'warning');
-        return;
-      }
-
-      if (step3.attendedKKAssembly === true) {
-        if (!step3.attendanceCount || String(step3.attendanceCount).trim() === '') {
-          await Swal.fire('Missing Field', 'Please indicate how many times you attended the KK Assembly.', 'warning');
-          return;
-        }
-      }
-      if (step3.attendedKKAssembly === false) {
-        if (!step3.reasonDidNotAttend || String(step3.reasonDidNotAttend).trim() === '') {
-          await Swal.fire('Missing Field', 'Please indicate the reason why you did not attend the KK Assembly.', 'warning');
-          return;
-        }
-      }
-    } catch (e) {
-      // ignore validation errors and allow server-side checks to handle them
-    }
-
-    const formData = new FormData();
-
-    // Step 1
-    Object.entries(step1).forEach(([k, v]) => formData.append(k, v));
-    // Step 2
-    Object.entries(step2).forEach(([k, v]) => formData.append(k, v));
-    // Step 3 (excluding profileImage)
-    Object.entries(step3).forEach(([k, v]) => {
-      // Only send attendanceCount if attended
-      if (k === 'attendanceCount' && step3.attendedKKAssembly) {
-        formData.append(k, v);
-      }
-      // Only send reasonDidNotAttend if NOT attended
-      else if (k === 'reasonDidNotAttend' && !step3.attendedKKAssembly) {
-        formData.append(k, v);
-      }
-      // Send other fields
-      else if (k !== 'profileImage' && k !== 'attendanceCount' && k !== 'reasonDidNotAttend') {
-        formData.append(k, v);
-      }
-    });
-
-    // Append computed age explicitly so backend stores the age value
-    if (ageToSave !== '') {
-      formData.append('age', ageToSave);
-    }
-
-    // ✅ Add actual image file if selected
-    if (form.profileImage.files.length > 0) {
-      formData.append('profileImage', form.profileImage.files[0]);
-    } else if (step3.profileImage) {
-      // ✅ Fallback: convert Base64 from sessionStorage into a File
-      const file = base64ToFile(step3.profileImage, "profile.png");
-      formData.append('profileImage', file);
-    }
-
-    // ✅ Add signature image file if selected
-    if (form.signatureImage && form.signatureImage.files.length > 0) {
-      formData.append('signatureImage', form.signatureImage.files[0]);
-    } else if (step3.signatureImage) {
-      const file = base64ToFile(step3.signatureImage, "signature.png");
-      formData.append('signatureImage', file);
-    }
-
-    // Show loading while submitting
-    Swal.fire({
-      title: 'Submitting...',
-      text: 'Please wait while we submit your form',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/kkprofiling', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
-      Swal.close();
-      if (response.ok) {
-        await Swal.fire({
-          title: "Submitted!",
-          text: "Form submitted successfully!",
-          icon: "success",
-          showConfirmButton: true, // Show the OK button
-          confirmButtonText: "OK", // Text for the button
-          allowOutsideClick: false, // Prevent closing by clicking outside
-        }).then(() => {
-          // Redirect to the confirmation page when OK is clicked
-          window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
-        });
-
-        // Remove sessionStorage data
-        sessionStorage.removeItem('kkProfileStep1');
-        sessionStorage.removeItem('kkProfileStep2');
-        sessionStorage.removeItem('kkProfileStep3');
-      } else if (response.status === 409) {
-        Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
-        return;
-      } else if (response.status === 403) {
-        let error;
-        try {
-          error = await response.json();
-        } catch {
-          error = { error: await response.text() };
-        }
-        // Show SweetAlert for age/access restriction
-        Swal.fire({
-          icon: "error",
-          title: "Not Eligible",
-          text: error.error || error.message || "You are not eligible to submit this form due to age restrictions.",
-          confirmButtonColor: "#0A2C59"
-        });
-        return;
-      } else {
-        let error;
-        try {
-          error = await response.json();
-        } catch {
-          error = { message: await response.text() };
-        }
-        Swal.fire("Error", error.message || 'Something went wrong', "error");
-      }
-    } catch (error) {
-      Swal.close();
-      Swal.fire("Error", "Failed to submit form", "error");
-    }
-  });
+  
 
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
@@ -934,11 +583,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // When submitting the form
   const form = document.getElementById('youthForm');
+  // Disable browser native validation so our custom SweetAlert workflow always runs
+  if (form) form.noValidate = true;
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     // Always save before confirmation
     saveStep3();
+
+    // Validate required fields (we disabled browser validation above)
+    try {
+      const requiredIds = [
+        'youthAgeGroup', 'youthClassification', 'educationalBackground', 'workStatus',
+        'registeredSKVoter', 'registeredNationalVoter', 'votedLastSKElection', 'attendedKKAssembly'
+      ];
+      for (const id of requiredIds) {
+        const el = document.getElementById(id);
+        if (el && String(el.value || '').trim() === '') {
+          await Swal.fire('Missing Field', 'Please fill out all required fields before submitting.', 'warning');
+          return;
+        }
+      }
+    } catch (e) { /* ignore */ }
 
     // SweetAlert confirmation before actual submit
     const result = await Swal.fire({
@@ -1062,6 +728,28 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       Swal.close();
       if (response.ok) {
+        // Try to update user name fields on the backend so /api/users/me reflects submitted names
+        try {
+          const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+          if (token && step1) {
+            const namesPayload = {
+              lastname: step1.lastname || step1.lastName || '',
+              firstname: step1.firstname || step1.firstName || '',
+              middlename: step1.middlename || step1.middleName || ''
+            };
+            if (namesPayload.lastname || namesPayload.firstname || namesPayload.middlename) {
+              await fetch('http://localhost:5000/api/users/me', {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(namesPayload)
+              }).catch(() => {});
+            }
+          }
+        } catch (e) { /* ignore update errors */ }
+
         await Swal.fire({
           title: "Submitted!",
           text: "Form submitted successfully!",
@@ -1117,177 +805,196 @@ document.addEventListener('DOMContentLoaded', function() {
     // window.location.href = 'your-previous-page.html';
   });
 
-  document.getElementById('customUploadBtn').addEventListener('click', function() {
-    document.getElementById('profileImage').click();
-  });
+  const customUploadBtn = document.getElementById('customUploadBtn');
+  if (customUploadBtn) {
+    customUploadBtn.addEventListener('click', function() {
+      const p = document.getElementById('profileImage');
+      if (p) p.click();
+    });
+  }
 
-  document.getElementById('profileImage').addEventListener('change', function () {
-    const file = this.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
-    const previewContainer = document.getElementById('profileImagePreview');
+  const profileImageEl = document.getElementById('profileImage');
+  if (profileImageEl) {
+    profileImageEl.addEventListener('change', function () {
+      const file = this.files[0];
+      const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
+      // Display filename element
+      const filenameDisplay = document.getElementById('profileImageFilename');
+      const imgEl = document.getElementById('profileImagePreview');
+      const outer = document.getElementById('imagePreviewContainerFront');
+      const removeStatic = document.getElementById('removeImageBtnFront');
 
-    if (file) {
-      // Validate file type
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#0A2C59',
-        });
+      if (file) {
+        // Validate file type
+        if (!allowedTypes.includes(file.type)) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid File Type',
+            text: 'Only PNG and JPG files are allowed.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0A2C59',
+          });
 
-        // Automatically remove invalid file
-        this.value = ''; // Clear the file input
-        previewContainer.innerHTML = ''; // Clear the preview
-        return; // Stop further processing
+          // Automatically remove invalid file
+          this.value = ''; // Clear the file input
+          if (imgEl) imgEl.src = '';
+          if (outer) outer.style.display = 'none';
+          if (removeStatic) removeStatic.style.display = 'none';
+          return; // Stop further processing
+        }
+
+        // File is valid, show the preview
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          renderProfileImage(e.target.result);
+          // Save the filename separately so it can be shown after reload
+          try {
+            const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+            current.profileImageName = file.name;
+            sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+            if (filenameDisplay) { filenameDisplay.textContent = file.name; filenameDisplay.style.display = 'inline-block'; }
+          } catch (e) {}
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Clear the preview if no file is selected
+        if (imgEl) imgEl.src = '';
+        if (outer) outer.style.display = 'none';
+        if (removeStatic) removeStatic.style.display = 'none';
+        const filenameDisplay = document.getElementById('profileImageFilename');
+        if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
       }
-
-      // File is valid, show the preview
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        renderProfileImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
+    });
+  }
 
   function renderProfileImage(base64Image) {
     // ✅ Check MIME
     const allowed = base64Image.startsWith('data:image/png') ||
                     base64Image.startsWith('data:image/jpeg');
 
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('profileImagePreview').innerHTML = '';
-      return;
-    }
+    const imgEl = document.getElementById('profileImagePreview');
+    const outer = document.getElementById('imagePreviewContainerFront');
+    const removeStatic = document.getElementById('removeImageBtnFront');
 
-    const previewContainer = document.getElementById('profileImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewProfileImage">
-        <button id="removeProfileImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('profileImage').value = "";
+    if (!allowed) {
       const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
       sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-    });
-    // View feature
-    document.getElementById('viewProfileImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Profile Image',
-        showConfirmButton: false,
-        width: 400
-      });
-    });
-  }
-
-  // Signature image
-  document.getElementById('signatureImage').addEventListener('change', function () {
-    const file = this.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
-    const previewContainer = document.getElementById('signatureImagePreview');
-
-    if (file) {
-      // Validate file type
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#0A2C59',
-        });
-
-        // Automatically remove invalid file
-        this.value = ''; // Clear the file input
-        previewContainer.innerHTML = ''; // Clear the preview
-        return; // Stop further processing
-      }
-
-      // File is valid, show the preview
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        renderSignatureImage(e.target.result);
-        // Save to sessionStorage
-        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        current.signatureImage = e.target.result;
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
-
-  function renderSignatureImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('signatureImagePreview').innerHTML = '';
+      if (imgEl) imgEl.src = '';
+      if (outer) outer.style.display = 'none';
+      if (removeStatic) removeStatic.style.display = 'none';
       return;
     }
 
-    const previewContainer = document.getElementById('signatureImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewSignatureImage">
-        <button id="removeSignatureImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('signatureImage').value = "";
-    });
-    // View feature
-    document.getElementById('viewSignatureImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Signature Image',
-        showConfirmButton: false,
-        width: 400
-      });
+    if (imgEl) {
+      imgEl.src = base64Image;
+      imgEl.style.display = 'block';
+      imgEl.style.cursor = 'pointer';
+      imgEl.onclick = function () {
+        Swal.fire({ imageUrl: base64Image, imageAlt: 'Profile Image', showConfirmButton: false, showCloseButton: true, width: 400 });
+      };
+    }
+    if (outer) outer.style.display = 'block';
+    if (removeStatic) removeStatic.style.display = 'inline-block';
+
+    // Save to sessionStorage so it persists across navigation
+    const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+    current.profileImage = base64Image;
+    // ensure we don't overwrite an existing filename when rendering from other sources
+    if (!current.profileImageName) {
+      current.profileImageName = current.profileImageName || '';
+    }
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+    // Restore filename display if present
+    const filenameDisplay = document.getElementById('profileImageFilename');
+    if (filenameDisplay && current.profileImageName) { filenameDisplay.textContent = current.profileImageName; filenameDisplay.style.display = 'inline-block'; }
+    else if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
+  }
+
+  // Signature image
+  const signatureEl = document.getElementById('signatureImage');
+  if (signatureEl) {
+    signatureEl.addEventListener('change', function () {
+      const file = this.files[0];
+      const allowedTypes = ['image/png', 'image/jpeg'];
+      const filenameDisplay = document.getElementById('signatureImageFilename');
+      const imgEl = document.getElementById('signatureImagePreview');
+      const outer = document.getElementById('imagePreviewContainerBack');
+      const removeStatic = document.getElementById('removeImageBtnBack');
+
+      if (file) {
+        if (!allowedTypes.includes(file.type)) {
+          Swal.fire({ icon: 'error', title: 'Invalid File Type', text: 'Only PNG and JPG files are allowed.', confirmButtonText: 'OK', confirmButtonColor: '#0A2C59' });
+          this.value = '';
+          if (imgEl) imgEl.src = '';
+          if (outer) outer.style.display = 'none';
+          if (removeStatic) removeStatic.style.display = 'none';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          renderSignatureImage(e.target.result);
+          try {
+            const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+            current.signatureImageName = file.name;
+            sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+            if (filenameDisplay) { filenameDisplay.textContent = file.name; filenameDisplay.style.display = 'inline-block'; }
+          } catch (e) {}
+        };
+        reader.readAsDataURL(file);
+      } else {
+        if (imgEl) imgEl.src = '';
+        if (outer) outer.style.display = 'none';
+        if (removeStatic) removeStatic.style.display = 'none';
+        const filenameDisplay = document.getElementById('signatureImageFilename');
+        if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
+      }
     });
   }
 
-  document.getElementById('customSignatureBtn').addEventListener('click', function() {
-    document.getElementById('signatureImage').click();
-  });
+  function renderSignatureImage(base64Image) {
+    const allowed = base64Image.startsWith('data:image/png') || base64Image.startsWith('data:image/jpeg');
+    const imgEl = document.getElementById('signatureImagePreview');
+    const outer = document.getElementById('imagePreviewContainerBack');
+    const removeStatic = document.getElementById('removeImageBtnBack');
+
+    if (!allowed) {
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+      delete current.signatureImage;
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      if (imgEl) imgEl.src = '';
+      if (outer) outer.style.display = 'none';
+      if (removeStatic) removeStatic.style.display = 'none';
+      return;
+    }
+
+    if (imgEl) {
+      imgEl.src = base64Image;
+      imgEl.style.display = 'block';
+      imgEl.style.cursor = 'pointer';
+      imgEl.onclick = function () { Swal.fire({ imageUrl: base64Image, imageAlt: 'Signature Image', showConfirmButton: false, showCloseButton: true, width: 400 }); };
+    }
+    if (outer) outer.style.display = 'block';
+    if (removeStatic) removeStatic.style.display = 'inline-block';
+
+    const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+    current.signatureImage = base64Image;
+    if (!current.signatureImageName) {
+      current.signatureImageName = current.signatureImageName || '';
+    }
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+    const filenameDisplay = document.getElementById('signatureImageFilename');
+    if (filenameDisplay && current.signatureImageName) { filenameDisplay.textContent = current.signatureImageName; filenameDisplay.style.display = 'inline-block'; }
+    else if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
+  }
+
+  const customSignatureBtn = document.getElementById('customSignatureBtn');
+  if (customSignatureBtn) {
+    customSignatureBtn.addEventListener('click', function() {
+      const s = document.getElementById('signatureImage');
+      if (s) s.click();
+    });
+  }
 
   // Add this event listener to handle the change for registeredSKVoter
   const registeredSKVoter = document.getElementById('registeredSKVoter');

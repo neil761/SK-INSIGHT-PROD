@@ -226,7 +226,7 @@ body {
     line-height: 16px;
   }
   .navbar{
-    padding: 4% 4.5% !important;
+    padding: 4% 4.8% !important;
   }
     .card-intro{  
     padding: 20px !important; 
@@ -261,7 +261,6 @@ body {
   
   .navbar img {
     height: 2rem;
-    margin-top: 10%;
   }
   
   .navbar .title {
@@ -270,7 +269,7 @@ body {
   }
   
   .navbar-hamburger {
-    font-size: 1.3rem;
+    font-size: 1.5rem;
     margin-right: 5px;
     display: flex;
     align-items: center;
@@ -285,8 +284,8 @@ body {
   }
   
   .navbar-right {
-    gap: 5px;
-    font-size: 18px;
+        gap: 8.5px;
+        font-size: 1.1rem;
     display: flex;
     align-items: center;
   }
@@ -427,6 +426,7 @@ body {
 }
 
 .image-preview-container .remove-image-btn {
+  color: #ff0000;
   position: absolute;
   right: 8px;
   top: 8px;
@@ -628,6 +628,12 @@ body {
   color: #cfd9e8;
 }
 @media (max-width: 480px) {
+      .kk-upload-btn {
+        font-size: 0.8rem;
+        min-width: 38%;
+        padding: 3.5% 0 !important;
+        margin-bottom: 0;
+    }
   .allow{
   font-size: 0.8rem;
   color: red;
@@ -687,6 +693,21 @@ body {
 
   .footer-bottom p {
     font-size: 12px;
+  }
+}
+
+@media (max-width: 1012px) and (min-width: 769px) {
+  
+  .kk-upload-filename{
+    min-width: 2vw;
+    margin-left: 12px;
+  }
+  .kk-upload-btn{
+    padding: 3.8% !important;
+    font-size: 0.8rem;
+  }
+  .custom-file{
+    gap: 0 !important;
   }
 }
 
@@ -756,7 +777,7 @@ body {
         margin-right: auto !important;
         margin-bottom: 16px;
         border-radius: 10px;
-        max-width: 80vw !important;
+        max-width: 90vw !important;
     }
     /* Invisible card wrapper to align actions with cards without visible chrome */
     .kk-card-invisible {
@@ -776,6 +797,76 @@ body {
   justify-content: center;
   align-items: flex-start;
   flex-wrap: wrap; /* allow wrapping on narrower widths */
+}
+
+/* Custom file button + filename display (keeps native input for form submission) */
+.custom-file {
+  display: flex;
+  align-items: center;
+  margin-top: 2%;
+}
+.custom-file .kk-upload-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2.5% 12px;
+    border-radius: 8px;
+    background: #0a2c59;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+}
+.kk-upload-btn {
+  background: #143d77;
+  color: #fff;
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.kk-upload-filename {
+    min-width: 37vh;
+    margin-left: 12px;
+    color: #0A2C59;
+    font-weight: bold;
+}
+
+.kk-upload-btn:hover { background: #1a4c9c; }
+.kk-upload-filename {
+display: inline-block;
+    min-width: 20%;
+    max-width: 60%;
+    padding: 8px 12px;
+    margin-left: 10px;
+    border: 1px solid #bcd4ec;
+    display: none; /* shown only when filename exists */
+    background: #f7fbff;
+    color: #0A1A3A;
+    font-size: 0.95rem;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    vertical-align: middle;
+}
+.custom-file-input {
+  position: absolute;
+  left: -9999px; /* keep native input available but out of sight */
+  width: 1px;
+  .kk-upload-filename.visible { display: inline-block; }
+  height: 1px;
+  opacity: 0;
+}
+
+/* Preview inner wrapper used to absolutely position the remove button relative to image */
+.preview-inner {
+  position: relative;
+  display: inline-block;
+}
+.preview-img {
+  display: block;
+  max-width: 100%;
+  border-radius: 8px;
 }
 
 /* Desktop / tablet: two columns that visually match .card */
