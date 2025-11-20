@@ -30,10 +30,110 @@ document.addEventListener('DOMContentLoaded', function() {
   const saved = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
   document.getElementById('youthAgeGroup').value = saved.youthAgeGroup || '';
   document.getElementById('youthClassification').value = saved.youthClassification || '';
+  // Show specific needs selector when classification requires it
+  const youthClassificationEl = document.getElementById('youthClassification');
+  const specificNeedsGroup = document.getElementById('specificNeedsGroup');
+  const specificNeedTypeEl = document.getElementById('specificNeedType');
+
+  function updateSpecificNeedsVisibility() {
+    try {
+      if (!youthClassificationEl || !specificNeedsGroup) return;
+      if (String(youthClassificationEl.value).trim() === 'Youth with Specific Needs') {
+        specificNeedsGroup.style.display = 'block';
+        // restore saved value if available
+        if (specificNeedTypeEl && saved.specificNeedType) specificNeedTypeEl.value = saved.specificNeedType;
+        if (specificNeedTypeEl) {
+          specificNeedTypeEl.required = true;
+          specificNeedTypeEl.setAttribute('aria-required', 'true');
+        }
+      } else {
+        specificNeedsGroup.style.display = 'none';
+        if (specificNeedTypeEl) {
+          specificNeedTypeEl.value = '';
+          specificNeedTypeEl.required = false;
+          specificNeedTypeEl.removeAttribute('aria-required');
+        }
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // Initialize visibility on load
+  updateSpecificNeedsVisibility();
+
+  // Toggle visibility when classification changes and autosave
+  if (youthClassificationEl) {
+    youthClassificationEl.addEventListener('change', function () {
+      updateSpecificNeedsVisibility();
+      // ensure we save the change
+      try { saveStep3(); } catch (e) { /* ignore */ }
+    });
+  }
   document.getElementById('educationalBackground').value = saved.educationalBackground || '';
   document.getElementById('workStatus').value = saved.workStatus || '';
   document.getElementById('registeredSKVoter').value = saved.registeredSKVoter || '';
   document.getElementById('registeredNationalVoter').value = saved.registeredNationalVoter || '';
+  document.getElementById('attendedKKAssembly').value = saved.attendedKKAssembly || '';
+
+  // Show/hide attendance related fields and toggle required attribute
+  const attendedEl = document.getElementById('attendedKKAssembly');
+  const attendanceCountEl = document.getElementById('attendanceCount');
+  const reasonEl = document.getElementById('reasonDidNotAttend');
+
+  const attendanceCountWrapper = attendanceCountEl ? (attendanceCountEl.closest('.form-group') || attendanceCountEl.parentElement) : null;
+  const reasonWrapper = reasonEl ? (reasonEl.closest('.form-group') || reasonEl.parentElement) : null;
+
+  function updateAttendanceVisibility() {
+    try {
+      if (!attendedEl) return;
+      const val = String(attendedEl.value || '').trim();
+      // When user answers 'Yes' → show attendance count
+      if (val === 'Yes' || val === 'yes' || val === 'true') {
+        if (attendanceCountWrapper) attendanceCountWrapper.style.display = 'block';
+        if (attendanceCountEl) {
+          attendanceCountEl.required = true;
+          attendanceCountEl.setAttribute('aria-required', 'true');
+          // restore saved value if available
+          if (saved.attendanceCount) attendanceCountEl.value = saved.attendanceCount;
+        }
+        if (reasonWrapper) reasonWrapper.style.display = 'none';
+        if (reasonEl) {
+          reasonEl.value = '';
+          reasonEl.required = false;
+          reasonEl.removeAttribute('aria-required');
+        }
+      }
+      // When user answers 'No' → show reason did not attend
+      else if (val === 'No' || val === 'no' || val === 'false') {
+        if (reasonWrapper) reasonWrapper.style.display = 'block';
+        if (reasonEl) {
+          reasonEl.required = true;
+          reasonEl.setAttribute('aria-required', 'true');
+          if (saved.reasonDidNotAttend) reasonEl.value = saved.reasonDidNotAttend;
+        }
+        if (attendanceCountWrapper) attendanceCountWrapper.style.display = 'none';
+        if (attendanceCountEl) {
+          attendanceCountEl.value = '';
+          attendanceCountEl.required = false;
+          attendanceCountEl.removeAttribute('aria-required');
+        }
+      } else {
+        if (attendanceCountWrapper) attendanceCountWrapper.style.display = 'none';
+        if (reasonWrapper) reasonWrapper.style.display = 'none';
+        if (attendanceCountEl) { attendanceCountEl.required = false; attendanceCountEl.removeAttribute('aria-required'); attendanceCountEl.value = ''; }
+        if (reasonEl) { reasonEl.required = false; reasonEl.removeAttribute('aria-required'); reasonEl.value = ''; }
+      }
+    } catch (e) { /* ignore */ }
+  }
+
+  // Initialize attendance visibility on load
+  updateAttendanceVisibility();
+
+  if (attendedEl) {
+    attendedEl.addEventListener('change', function () {
+      updateAttendanceVisibility();
+      try { saveStep3(); } catch (e) { /* ignore */ }
+    });
+  }
   // Use centralized preview containers and restore existing saved images (if any)
   const profileImageInput = document.getElementById('profileImage');
   const signatureImageInput = document.getElementById('signatureImage');
@@ -216,254 +316,7 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   // Final submit
-  youthForm.addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    // Always save before confirmation
-    saveStep3();
-
-    // SweetAlert confirmation before actual submit
-    const result = await Swal.fire({
-      title: "Are you sure?",
-      text: "Do you want to submit your KKProfile?",
-      icon: "question",
-      showCancelButton: true,
-      confirmButtonText: "Yes, submit",
-      cancelButtonText: "Cancel"
-    });
-
-    if (!result.isConfirmed) return;
-
-    // Show loading while submitting
-    Swal.fire({
-      title: 'Submitting...',
-      text: 'Please wait while we submit your form',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => { Swal.showLoading(); }
-    });
-
-    // Check if profile image is present (either in file input or sessionStorage)
-    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').profileImage);
-
-    if (!hasImage) {
-      await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
-      return;
-    }
-
-    // Collect all data from sessionStorage and this page
-    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
-    const step2 = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
-    const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-
-    // Determine age to save. Prefer authoritative birthday from the user API (/api/users/me).
-    // Fallback to step1.birthday if the user API is unavailable.
-    let ageToSave = '';
-    function computeAgeFrom(birthday) {
-      if (!birthday) return '';
-      const birthDate = new Date(birthday);
-      const today = new Date();
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const m = today.getMonth() - birthDate.getMonth();
-      if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
-        age--;
-      }
-      return String(age);
-    }
-    try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (token) {
-        const userRes = await fetch('http://localhost:5000/api/users/me', {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        if (userRes.ok) {
-          const userData = await userRes.json();
-          if (userData && (userData.birthday || userData.dateOfBirth)) {
-            const raw = userData.birthday || userData.dateOfBirth;
-            ageToSave = computeAgeFrom(raw);
-          }
-        }
-      }
-    } catch (e) {
-      // ignore — we'll fallback to step1.birthday below
-    }
-    if (!ageToSave && step1 && step1.birthday) {
-      ageToSave = computeAgeFrom(step1.birthday);
-    }
-
-    // In your submit handler, after loading step3:
-    const booleanFields = [
-      'registeredSKVoter',
-      'registeredNationalVoter',
-      'votedLastSKElection',
-      'attendedKKAssembly'
-    ];
-
-    booleanFields.forEach(field => {
-      if (field in step3) {
-        step3[field] = step3[field] === 'Yes' ? true
-                      : step3[field] === 'No' ? false
-                      : '';
-      }
-    });
-
-    // Validate image presence
-    if (
-      form.profileImage.files.length === 0 &&
-      !step3.profileImage
-    ) {
-      await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
-      return;
-    }
-
-    // Check if signature image is present (either in file input or sessionStorage)
-    const hasSignature =
-      form.signatureImage.files.length > 0 ||
-      (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').signatureImage);
-
-    if (!hasSignature) {
-      await Swal.fire("Missing Signature", "Please upload a signature image before submitting.", "warning");
-      return;
-    }
-
-    // Additional validation rules:
-    // - If youthClassification is 'Youth with Specific Needs', require specificNeedType
-    // - If attendedKKAssembly is true (Yes), require attendanceCount
-    // - If attendedKKAssembly is false (No), require reasonDidNotAttend
-    try {
-      const yc = step3.youthClassification || '';
-      const specific = step3.specificNeedType || '';
-      if (yc === 'Youth with Specific Needs' && (!specific || String(specific).trim() === '')) {
-        await Swal.fire('Missing Field', 'Please specify the type of specific need.', 'warning');
-        return;
-      }
-
-      if (step3.attendedKKAssembly === true) {
-        if (!step3.attendanceCount || String(step3.attendanceCount).trim() === '') {
-          await Swal.fire('Missing Field', 'Please indicate how many times you attended the KK Assembly.', 'warning');
-          return;
-        }
-      }
-      if (step3.attendedKKAssembly === false) {
-        if (!step3.reasonDidNotAttend || String(step3.reasonDidNotAttend).trim() === '') {
-          await Swal.fire('Missing Field', 'Please indicate the reason why you did not attend the KK Assembly.', 'warning');
-          return;
-        }
-      }
-    } catch (e) {
-      // ignore validation errors and allow server-side checks to handle them
-    }
-
-    const formData = new FormData();
-
-    // Step 1
-    Object.entries(step1).forEach(([k, v]) => formData.append(k, v));
-    // Step 2
-    Object.entries(step2).forEach(([k, v]) => formData.append(k, v));
-    // Step 3 (excluding profileImage)
-    Object.entries(step3).forEach(([k, v]) => {
-      // Only send attendanceCount if attended
-      if (k === 'attendanceCount' && step3.attendedKKAssembly) {
-        formData.append(k, v);
-      }
-      // Only send reasonDidNotAttend if NOT attended
-      else if (k === 'reasonDidNotAttend' && !step3.attendedKKAssembly) {
-        formData.append(k, v);
-      }
-      // Send other fields
-      else if (k !== 'profileImage' && k !== 'attendanceCount' && k !== 'reasonDidNotAttend') {
-        formData.append(k, v);
-      }
-    });
-
-    // Append computed age explicitly so backend stores the age value
-    if (ageToSave !== '') {
-      formData.append('age', ageToSave);
-    }
-
-    // ✅ Add actual image file if selected
-    if (form.profileImage.files.length > 0) {
-      formData.append('profileImage', form.profileImage.files[0]);
-    } else if (step3.profileImage) {
-      // ✅ Fallback: convert Base64 from sessionStorage into a File
-      const file = base64ToFile(step3.profileImage, "profile.png");
-      formData.append('profileImage', file);
-    }
-
-    // ✅ Add signature image file if selected
-    if (form.signatureImage && form.signatureImage.files.length > 0) {
-      formData.append('signatureImage', form.signatureImage.files[0]);
-    } else if (step3.signatureImage) {
-      const file = base64ToFile(step3.signatureImage, "signature.png");
-      formData.append('signatureImage', file);
-    }
-
-    // Show loading while submitting
-    Swal.fire({
-      title: 'Submitting...',
-      text: 'Please wait while we submit your form',
-      allowOutsideClick: false,
-      allowEscapeKey: false,
-      didOpen: () => { Swal.showLoading(); }
-    });
-
-    try {
-      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/kkprofiling', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` },
-        body: formData
-      });
-      Swal.close();
-      if (response.ok) {
-        await Swal.fire({
-          title: "Submitted!",
-          text: "Form submitted successfully!",
-          icon: "success",
-          showConfirmButton: true, // Show the OK button
-          confirmButtonText: "OK", // Text for the button
-          allowOutsideClick: false, // Prevent closing by clicking outside
-        }).then(() => {
-          // Redirect to the confirmation page when OK is clicked
-          window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
-        });
-
-        // Remove sessionStorage data
-        sessionStorage.removeItem('kkProfileStep1');
-        sessionStorage.removeItem('kkProfileStep2');
-        sessionStorage.removeItem('kkProfileStep3');
-      } else if (response.status === 409) {
-        Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
-        return;
-      } else if (response.status === 403) {
-        let error;
-        try {
-          error = await response.json();
-        } catch {
-          error = { error: await response.text() };
-        }
-        // Show SweetAlert for age/access restriction
-        Swal.fire({
-          icon: "error",
-          title: "Not Eligible",
-          text: error.error || error.message || "You are not eligible to submit this form due to age restrictions.",
-          confirmButtonColor: "#0A2C59"
-        });
-        return;
-      } else {
-        let error;
-        try {
-          error = await response.json();
-        } catch {
-          error = { message: await response.text() };
-        }
-        Swal.fire("Error", error.message || 'Something went wrong', "error");
-      }
-    } catch (error) {
-      Swal.close();
-      Swal.fire("Error", "Failed to submit form", "error");
-    }
-  });
+  
 
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
@@ -730,11 +583,28 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // When submitting the form
   const form = document.getElementById('youthForm');
+  // Disable browser native validation so our custom SweetAlert workflow always runs
+  if (form) form.noValidate = true;
   form.addEventListener('submit', async function (e) {
     e.preventDefault();
 
     // Always save before confirmation
     saveStep3();
+
+    // Validate required fields (we disabled browser validation above)
+    try {
+      const requiredIds = [
+        'youthAgeGroup', 'youthClassification', 'educationalBackground', 'workStatus',
+        'registeredSKVoter', 'registeredNationalVoter', 'votedLastSKElection', 'attendedKKAssembly'
+      ];
+      for (const id of requiredIds) {
+        const el = document.getElementById(id);
+        if (el && String(el.value || '').trim() === '') {
+          await Swal.fire('Missing Field', 'Please fill out all required fields before submitting.', 'warning');
+          return;
+        }
+      }
+    } catch (e) { /* ignore */ }
 
     // SweetAlert confirmation before actual submit
     const result = await Swal.fire({
@@ -858,6 +728,28 @@ document.addEventListener('DOMContentLoaded', function() {
       });
       Swal.close();
       if (response.ok) {
+        // Try to update user name fields on the backend so /api/users/me reflects submitted names
+        try {
+          const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+          if (token && step1) {
+            const namesPayload = {
+              lastname: step1.lastname || step1.lastName || '',
+              firstname: step1.firstname || step1.firstName || '',
+              middlename: step1.middlename || step1.middleName || ''
+            };
+            if (namesPayload.lastname || namesPayload.firstname || namesPayload.middlename) {
+              await fetch('http://localhost:5000/api/users/me', {
+                method: 'PATCH',
+                headers: {
+                  'Content-Type': 'application/json',
+                  'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(namesPayload)
+              }).catch(() => {});
+            }
+          }
+        } catch (e) { /* ignore update errors */ }
+
         await Swal.fire({
           title: "Submitted!",
           text: "Form submitted successfully!",

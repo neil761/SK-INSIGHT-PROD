@@ -62,6 +62,42 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
+  // If name fields are empty and we have a token, fetch user info from /api/users/me
+  // and populate `lastname`, `firstname`, `middlename`, `suffix` when available.
+  if (token) {
+    try {
+      fetch('http://localhost:5000/api/users/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+      .then(res => res.ok ? res.json() : null)
+      .then(user => {
+        if (!user) return;
+        // Support multiple id variants used across templates
+        const lastnameEl = document.getElementById('lastname') || document.getElementById('lastName') || document.getElementById('surname');
+        const firstnameEl = document.getElementById('firstname') || document.getElementById('firstName');
+        const middlenameEl = document.getElementById('middlename') || document.getElementById('middleName');
+        const suffixEl = document.getElementById('suffix');
+
+        // Only fill if the field is currently empty (do not overwrite saved/drafted values)
+        if (lastnameEl && (!lastnameEl.value || lastnameEl.value === '')) {
+          lastnameEl.value = user.lastname || user.lastName || user.surname || user.familyName || '';
+        }
+        if (firstnameEl && (!firstnameEl.value || firstnameEl.value === '')) {
+          firstnameEl.value = user.firstname || user.firstName || user.givenName || '';
+        }
+        if (middlenameEl && (!middlenameEl.value || middlenameEl.value === '')) {
+          middlenameEl.value = user.middlename || user.middleName || '';
+        }
+        if (suffixEl && (!suffixEl.value || suffixEl.value === '')) {
+          suffixEl.value = user.suffix || '';
+        }
+      })
+      .catch(() => {});
+    } catch (e) {
+      // ignore fetch errors silently
+    }
+  }
+
 
 
   form.addEventListener('submit', function (e) {

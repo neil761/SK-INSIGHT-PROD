@@ -131,19 +131,48 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener('input', saveDraft);
   form.addEventListener('change', saveDraft);
 
-  // Autofill birthday
+  // Autofill birthday and name fields from /api/users/me when token is available
   if (token && birthdayInput) {
     fetch("http://localhost:5000/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((user) => {
-        if (user && user.birthday) {
-          const d = new Date(user.birthday);
-          birthdayInput.value = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
-          ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (!user) return;
+
+        // Populate birthday if available and the field is empty
+        if (user.birthday) {
+          try {
+            const d = new Date(user.birthday);
+            if (d && !isNaN(d.getTime()) && (!birthdayInput.value || birthdayInput.value === '')) {
+              birthdayInput.value = `${d.getFullYear()}-${String(
+                d.getMonth() + 1
+              ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            }
+          } catch (e) { /* ignore */ }
         }
+
+        // Populate name fields if empty (do not overwrite existing/drafted values)
+        try {
+          // Support multiple possible id names used across templates
+          const lastnameEl = document.getElementById('lastname') || document.getElementById('lastName') || document.getElementById('surname');
+          const firstnameEl = document.getElementById('firstname') || document.getElementById('firstName');
+          const middlenameEl = document.getElementById('middlename') || document.getElementById('middleName');
+          const suffixEl = document.getElementById('suffix');
+
+          if (lastnameEl && (!lastnameEl.value || lastnameEl.value === '')) {
+            lastnameEl.value = user.lastname || user.surname || user.lastName || '';
+          }
+          if (firstnameEl && (!firstnameEl.value || firstnameEl.value === '')) {
+            firstnameEl.value = user.firstname || user.firstName || user.givenName || '';
+          }
+          if (middlenameEl && (!middlenameEl.value || middlenameEl.value === '')) {
+            middlenameEl.value = user.middlename || user.middleName || '';
+          }
+          if (suffixEl && (!suffixEl.value || suffixEl.value === '')) {
+            suffixEl.value = user.suffix || '';
+          }
+        } catch (e) { /* ignore DOM errors */ }
       })
       .catch((err) => console.error("❌ Fetch me error:", err));
   }
