@@ -8,8 +8,7 @@ const fs = require('fs');
 const { changePassword, sendChangeEmailOtp, changeEmail } = require("../controllers/userControllers");
 
 router.post(
-  "/smart/register",
-  upload.single('idImage'),                 
+  "/smart/register",                 
   userCtrl.smartRegister
 );
 

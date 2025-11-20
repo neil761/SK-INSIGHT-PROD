@@ -1,15 +1,22 @@
 document.addEventListener('DOMContentLoaded', () => {
-
-    const signupForm = document.getElementById('signupForm');
+    // Stepper logic
+    const step1 = document.getElementById('signupStep1');
+    const step2 = document.getElementById('signupStep2');
+    const step1Indicator = document.getElementById('step1-indicator');
+    const step2Indicator = document.getElementById('step2-indicator');
+    const nextBtn = document.getElementById('nextStep');
+    const prevBtn = document.getElementById('prevStep');
     const passwordField = document.getElementById('passwordField');
+    const confirmPasswordField = document.getElementById('confirmPasswordField');
     const togglePassword = document.getElementById('togglePassword');
+    const toggleConfirmPassword = document.getElementById('toggleConfirmPassword');
 
-    // NEW: birthday selects (ensure HTML has #birthdayYear, #birthdayMonth, #birthdayDay)
+    // Birthday selects
     const yearSelect = document.getElementById('birthdayYear');
     const monthSelect = document.getElementById('birthdayMonth');
     const daySelect = document.getElementById('birthdayDay');
 
-    // helper to access custom wrapper parts
+    // Helper for custom selects
     function getCustom(field) {
       const wrapper = document.querySelector(`.custom-select[data-field="${field}"]`);
       if (!wrapper) return null;
@@ -21,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
       };
     }
 
+    // Birthday select population
     (function populateBirthdaySelects() {
         const now = new Date();
         const currentYear = now.getFullYear();
@@ -30,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const monthCustom = getCustom('birthdayMonth');
         const dayCustom = getCustom('birthdayDay');
 
-        // Populate native years (descending) and custom options
         for (let y = currentYear; y >= startYear; y--) {
             const opt = document.createElement('option');
             opt.value = String(y);
@@ -47,9 +54,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         }
 
-        // Populate month custom options from native monthSelect (native months already in HTML)
         if (monthCustom && monthCustom.optionsContainer) {
-          const monthOptions = Array.from(monthSelect.querySelectorAll('option')).slice(1); // skip placeholder
+          const monthOptions = Array.from(monthSelect.querySelectorAll('option')).slice(1);
           monthOptions.forEach(optEl => {
             const row = document.createElement('div');
             row.className = 'custom-option';
@@ -60,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
           });
         }
 
-        // Days population helper (native + custom)
         function setDays(count) {
             daySelect.innerHTML = '<option value="">Day</option>';
             if (dayCustom && dayCustom.optionsContainer) dayCustom.optionsContainer.innerHTML = '';
@@ -83,7 +88,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setDays(31);
 
-        // Update days when month or year changes (handles leap years)
         function updateDaysFromNative() {
             const year = parseInt(yearSelect.value, 10);
             const month = parseInt(monthSelect.value, 10);
@@ -95,38 +99,32 @@ document.addEventListener('DOMContentLoaded', () => {
             const prev = daySelect.value;
             setDays(daysInMonth);
             if (prev && parseInt(prev, 10) <= daysInMonth) daySelect.value = prev;
-            // reflect selection text on custom trigger if day changed
             const dayC = getCustom('birthdayDay');
-            if (dayC && prev) updateTrigger(dayC, String(Number(prev))); // remove leading zero for display
+            if (dayC && prev) updateTrigger(dayC, String(Number(prev)));
         }
 
         monthSelect.addEventListener('change', updateDaysFromNative);
         yearSelect.addEventListener('change', updateDaysFromNative);
 
-        // utility to set trigger text and aria-selected
         function updateTrigger(custom, text) {
           if (!custom) return;
           const trigger = custom.trigger;
           trigger.textContent = text || (custom.native && custom.native.querySelector('option')?.textContent) || '';
         }
 
-        // Attach interactions for custom selects
         ['birthdayYear','birthdayMonth','birthdayDay'].forEach(field => {
           const custom = getCustom(field);
           if (!custom) return;
 
-          // initialize trigger display from native select if any
           const nativeEl = document.getElementById(field);
           if (nativeEl && nativeEl.value) {
             const selectedOpt = nativeEl.querySelector(`option[value="${nativeEl.value}"]`);
             if (selectedOpt) updateTrigger(custom, selectedOpt.textContent);
           }
 
-          // open/close on trigger click
           custom.trigger.addEventListener('click', (ev) => {
             ev.stopPropagation();
             const isOpen = custom.wrapper.classList.contains('open');
-            // close others
             document.querySelectorAll('.custom-select.open').forEach(w => {
               if (w !== custom.wrapper) {
                 w.classList.remove('open');
@@ -137,7 +135,6 @@ document.addEventListener('DOMContentLoaded', () => {
             if (!isOpen) {
               custom.wrapper.classList.add('open');
               custom.trigger.setAttribute('aria-expanded','true');
-              // focus first option
               const first = custom.optionsContainer.querySelector('.custom-option');
               if (first) first.focus();
             } else {
@@ -146,29 +143,23 @@ document.addEventListener('DOMContentLoaded', () => {
             }
           });
 
-          // option click
           custom.optionsContainer.addEventListener('click', (ev) => {
             const opt = ev.target.closest('.custom-option');
             if (!opt) return;
             const val = opt.dataset.value;
-            // set native value
             const native = document.getElementById(field);
             if (native) {
               native.value = val;
-              // update trigger display
               updateTrigger(custom, opt.textContent);
               native.dispatchEvent(new Event('change', { bubbles: true }));
             }
-            // mark selection visually
             custom.optionsContainer.querySelectorAll('.custom-option').forEach(o => o.removeAttribute('aria-selected'));
             opt.setAttribute('aria-selected','true');
-            // close
             custom.wrapper.classList.remove('open');
             custom.trigger.setAttribute('aria-expanded','false');
             custom.trigger.focus();
           });
 
-          // keyboard navigation inside options container
           custom.optionsContainer.addEventListener('keydown', (ev) => {
             const items = Array.from(custom.optionsContainer.querySelectorAll('.custom-option'));
             const idx = items.indexOf(document.activeElement);
@@ -191,10 +182,8 @@ document.addEventListener('DOMContentLoaded', () => {
               custom.trigger.focus();
             }
           });
-
         });
 
-        // close on outside click
         document.addEventListener('click', (e) => {
           if (!e.target.closest('.custom-select')) {
             document.querySelectorAll('.custom-select.open').forEach(w => {
@@ -204,81 +193,239 @@ document.addEventListener('DOMContentLoaded', () => {
             });
           }
         });
-
     })();
 
-    if (!signupForm) {
-        console.error('Signup form not found.');
-        return;
+    // Stepper navigation and sessionStorage
+    function saveStep1ToSession() {
+      const data = {
+        firstName: step1.elements['firstName'].value,
+        middleName: step1.elements['middleName'].value,
+        lastName: step1.elements['lastName'].value,
+        suffix: step1.elements['suffix'].value,
+        birthdayYear: step1.elements['birthdayYear'].value,
+        birthdayMonth: step1.elements['birthdayMonth'].value,
+        birthdayDay: step1.elements['birthdayDay'].value,
+      };
+      sessionStorage.setItem('signupStep1', JSON.stringify(data));
+    }
+    function loadStep1FromSession() {
+      const data = JSON.parse(sessionStorage.getItem('signupStep1') || '{}');
+      if (!data) return;
+      step1.elements['firstName'].value = data.firstName || '';
+      step1.elements['middleName'].value = data.middleName || '';
+      step1.elements['lastName'].value = data.lastName || '';
+      step1.elements['suffix'].value = data.suffix || '';
+      step1.elements['birthdayYear'].value = data.birthdayYear || '';
+      step1.elements['birthdayMonth'].value = data.birthdayMonth || '';
+      step1.elements['birthdayDay'].value = data.birthdayDay || '';
+      ['birthdayYear','birthdayMonth','birthdayDay'].forEach(field => {
+        const custom = getCustom(field);
+        if (custom) {
+          const native = custom.native;
+          const selectedOpt = native && native.querySelector(`option[value="${native.value}"]`);
+          if (selectedOpt) {
+            custom.trigger.textContent = selectedOpt.textContent;
+          }
+        }
+      });
     }
 
-    // Show/Hide Password Toggle
-    togglePassword.addEventListener('click', () => {
-        const isPassword = passwordField.type === 'password';
-        passwordField.type = isPassword ? 'text' : 'password';
-        togglePassword.innerHTML = isPassword
-            ? '<i class="fa-solid fa-eye-slash"></i>'
-            : '<i class="fa-solid fa-eye"></i>';
+    function saveStep2ToSession() {
+      const data = {
+        username: step2.elements['username'].value,
+        email: step2.elements['email'].value,
+        password: step2.elements['password'].value,
+        confirmPassword: step2.elements['confirmPassword'].value,
+      };
+      sessionStorage.setItem('signupStep2', JSON.stringify(data));
+    }
+    function loadStep2FromSession() {
+      const data = JSON.parse(sessionStorage.getItem('signupStep2') || '{}');
+      if (!data) return;
+      step2.elements['username'].value = data.username || '';
+      step2.elements['email'].value = data.email || '';
+      step2.elements['password'].value = data.password || '';
+      step2.elements['confirmPassword'].value = data.confirmPassword || '';
+    }
+
+    // Function to switch steps and update indicators
+    function goToStep1() {
+      step1.classList.add('active');
+      step2.classList.remove('active');
+      step1Indicator.classList.add('active');
+      step2Indicator.classList.remove('active');
+      loadStep1FromSession();
+      step1.elements['firstName'].focus();
+      sessionStorage.setItem('signupStep2Active', 'false');
+    }
+
+    function goToStep2() {
+      step1.classList.remove('active');
+      step2.classList.add('active');
+      step1Indicator.classList.remove('active');
+      step2Indicator.classList.add('active');
+      loadStep2FromSession();
+      step2.elements['username'].focus();
+      sessionStorage.setItem('signupStep2Active', 'true');
+    }
+
+    // Next button
+    nextBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      // Validate Step 1
+      if (!step1.elements['firstName'].value.trim() ||
+          !step1.elements['lastName'].value.trim() ||
+          !step1.elements['birthdayYear'].value ||
+          !step1.elements['birthdayMonth'].value ||
+          !step1.elements['birthdayDay'].value) {
+        Swal.fire({ icon: 'error', title: 'Missing Fields', text: 'Please fill all required fields.' });
+        return;
+      }
+      saveStep1ToSession();
+      goToStep2();
     });
 
-    // Submit Form (regular signup without ID image/AI checks)
-    signupForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+    // Previous button
+    prevBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      saveStep2ToSession();
+      goToStep1();
+    });
 
-        const username = signupForm.querySelector('input[name="username"]').value.trim();
-        const email = signupForm.querySelector('input[name="email"]').value.trim();
-        const password = signupForm.querySelector('input[name="password"]').value;
+    // Password toggle
+    togglePassword.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isPassword = passwordField.type === 'password';
+      passwordField.type = isPassword ? 'text' : 'password';
+      togglePassword.innerHTML = isPassword
+        ? '<i class="fa-solid fa-eye-slash"></i>'
+        : '<i class="fa-solid fa-eye"></i>';
+    });
 
-        // Build birthday from native selects (they are kept updated by custom UI)
-        const year = yearSelect.value;
-        const month = monthSelect.value;
-        const day = daySelect.value;
-        const birthday = (year && month && day) ? `${year}-${month}-${day}` : '';
+    // Confirm Password toggle
+    toggleConfirmPassword.addEventListener('click', (e) => {
+      e.preventDefault();
+      const isPassword = confirmPasswordField.type === 'password';
+      confirmPasswordField.type = isPassword ? 'text' : 'password';
+      toggleConfirmPassword.innerHTML = isPassword
+        ? '<i class="fa-solid fa-eye-slash"></i>'
+        : '<i class="fa-solid fa-eye"></i>';
+    });
 
-        if (!username || !email || !password || !birthday) {
-            Swal.fire({ icon: 'error', title: 'Missing Fields', text: 'Please fill all required fields.' });
-            return;
-        }
+    // On page load, restore step and values
+    if (sessionStorage.getItem('signupStep2Active') === 'true') {
+      goToStep2();
+    } else {
+      goToStep1();
+    }
 
-        // Show loading alert
-        Swal.fire({
-            title: 'Registering...',
-            text: 'Please wait while we process your registration.',
-            allowOutsideClick: false,
-            didOpen: () => {
-                Swal.showLoading();
-            }
+    // Final submit
+    step2.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      // Validate Step 2
+      if (!step2.elements['username'].value.trim() ||
+          !step2.elements['email'].value.trim() ||
+          !step2.elements['password'].value ||
+          !step2.elements['confirmPassword'].value) {
+        Swal.fire({ icon: 'error', title: 'Missing Fields', text: 'Please fill all required fields.' });
+        return;
+      }
+      if (step2.elements['password'].value !== step2.elements['confirmPassword'].value) {
+        Swal.fire({ icon: 'error', title: 'Password Mismatch', text: 'Passwords do not match.' });
+        return;
+      }
+      
+      // Gather all data
+      saveStep2ToSession();
+      const step1Data = JSON.parse(sessionStorage.getItem('signupStep1') || '{}');
+      const step2Data = JSON.parse(sessionStorage.getItem('signupStep2') || '{}');
+      
+      // Format birthday as YYYY-MM-DD
+      const birthday = (step1Data.birthdayYear && step1Data.birthdayMonth && step1Data.birthdayDay)
+        ? `${step1Data.birthdayYear}-${step1Data.birthdayMonth}-${step1Data.birthdayDay}` 
+        : '';
+      
+      const payload = {
+        firstName: step1Data.firstName || '',
+        middleName: step1Data.middleName || '',
+        lastName: step1Data.lastName || '',
+        suffix: step1Data.suffix || '',
+        birthday: birthday,
+        username: step2Data.username || '',
+        email: step2Data.email || '',
+        password: step2Data.password || ''
+      };
+
+      // Validate payload
+      if (!payload.firstName || !payload.lastName || !payload.birthday || !payload.username || !payload.email || !payload.password) {
+        Swal.fire({ 
+          icon: 'error', 
+          title: 'Missing Fields', 
+          text: 'Please complete all required fields in both steps.' 
+        });
+        console.error('Payload validation failed:', payload);
+        return;
+      }
+
+      // Show loading
+      Swal.fire({
+        title: 'Registering...',
+        text: 'Please wait while we process your registration.',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        const response = await fetch('http://localhost:5000/api/users/smart/register', {
+          method: 'POST',
+          headers: { 
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
         });
 
-        try {
-            const payload = { username, email, password, birthday };
-            const response = await fetch('http://localhost:5000/api/users', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload)
-            });
+        const data = await response.json().catch((err) => {
+          console.error('JSON parse error:', err);
+          return null;
+        });
 
-            Swal.close(); // Close loading alert
+        Swal.close();
 
-            const data = await response.json().catch(() => null);
+        if (response.ok && data) {
+          sessionStorage.removeItem('signupStep1');
+          sessionStorage.removeItem('signupStep2');
+          sessionStorage.removeItem('signupStep2Active');
+          Swal.fire({ 
+            icon: 'success', 
+            title: 'Registration Successful!', 
+            text: 'You can now log in.', 
+            timer: 2000, 
+            showConfirmButton: false 
+          }).then(() => {
+            window.location.href = '/Frontend/html/user/login.html';
+          });
+        } else {
+          let alertText = (data && (data.message || data.error)) || 'Registration failed. Please try again.';
+          if (data && data.code === 'email_exists') alertText = 'This email is already registered.';
+          if (data && data.code === 'username_exists') alertText = 'This username is already taken.';
+          if (data && data.code === 'birthday_invalid') alertText = 'Invalid birthday format.';
+          if (data && data.code === 'age_not_allowed') alertText = 'Only users aged 15 to 30 are allowed to sign up.';
 
-            if (response.ok) {
-                Swal.fire({ icon: 'success', title: 'Registration Successful!', text: 'You can now log in.', timer: 1000, showConfirmButton: false })
-                    .then(() => window.location.href = '/Frontend/html/user/login.html');
-            } else {
-                let alertText = (data && (data.message || data.error)) || 'Please try again.';
-                if (data && data.code === 'email_exists') alertText = 'This email is already registered.';
-                if (data && data.code === 'username_exists') alertText = 'This username is already taken.';
-                Swal.fire({ icon: 'error', title: 'Registration Failed', text: alertText });
-            }
-
-        } catch (error) {
-            Swal.close(); // Close loading alert if fetch fails
-            console.error('Fetch Error:', error);
-            Swal.fire({ icon: 'error', title: 'Network Error', text: 'An error occurred during registration.' });
+          Swal.fire({ 
+            icon: 'error', 
+            title: 'Registration Failed', 
+            text: alertText 
+          });
         }
+      } catch (error) {
+        Swal.close();
+        console.error('Fetch Error:', error);
+        Swal.fire({ 
+          icon: 'error', 
+          title: 'Network Error', 
+          text: 'An error occurred during registration: ' + error.message 
+        });
+      }
     });
-
-    // Remove flatpickr usage — birthday is now non-typable selects.
-    // (If flatpickr script still loads it will not affect anything.)
 });

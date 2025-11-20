@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link
-      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
     <link
@@ -12,107 +12,99 @@
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../css/login.css" />
-        <title>LOGIN</title>
+    <title>Sign In - SK Insight</title>
     <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
   </head>
   <body>
-    <div class="sign">
-      <div class="left-side">
-        <div class="container1">
-          <div class="img1">
-            <img src="../../assets/logo.png" alt="logo" class="logo" />
-          </div>
-          <div>
-            <h2 class="sk">SANGGUNIANG KABATAAN</h2>
-          </div>
-          <div>
-            <h1 class="sk1">BARANGAY</h1>
-            <h1 class="sk1">PUTING BATO WEST</h1>
-          </div>
+    <div class="login-wrapper">
+      <!-- Left Panel (Desktop Only) -->
+      <div class="login-left-panel">
+        <div class="left-content">
+          <img src="../../assets/logo.png" alt="SK Insight" class="left-logo" />
+          <h2 class="left-title">SANGGUNIANG KABATAAN</h2>
+          <p class="left-subtitle">BARANGAY PUTING BATO WEST</p>
+          <div class="left-accent"></div>
         </div>
       </div>
 
-      <div class="right-side">
-        <div class="container">
-          <h1 class="text-center text-xl font-bold mb-6">Sign In</h1>
+      <!-- Right Panel (Form) -->
+      <div class="login-right-panel">
+        <!-- Mobile Header -->
+        <div class="mobile-header-bar">
+          <img src="../../assets/logo.png" alt="SK Insight" class="mobile-logo" />
+        </div>
+
+        <!-- Form Container -->
+        <div class="login-form-container">
+          <div class="form-header">
+            <h1>Welcome Back</h1>
+            <p class="form-subtitle">Sign in to your SK Insight account</p>
+          </div>
+
+          <!-- Login Form -->
           <form id="loginForm">
-            <!-- Username with user icon -->
-            <div class="relative mb-4">
-              <span
-                class="absolute inset-y-0 left-3 flex items-center text-gray-500"
-              >
-                <i class="fa-solid fa-user"></i>
-              </span>
-              <input
-                type="text"
-                name="email"
-                placeholder="Email"
-                required
-                class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 focus:outline-none focus:border-blue-500"
-              />
+            <div class="form-section">
+              <!-- Email -->
+              <div class="form-group full-width">
+                <label for="email">Email Address *</label>
+                <div class="input-wrapper">
+                  <i class="icon fa-solid fa-envelope"></i>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    placeholder="your@email.com"
+                    required
+                    autocomplete="email"
+                  />
+                </div>
+              </div>
+
+              <!-- Password -->
+              <div class="form-group full-width">
+                <label for="password">Password *</label>
+                <div class="input-wrapper">
+                  <i class="icon fa-solid fa-lock"></i>
+                  <input
+                    type="password"
+                    id="passwordField"
+                    name="password"
+                    placeholder="••••••••"
+                    required
+                    autocomplete="current-password"
+                  />
+                  <button
+                    type="button"
+                    id="togglePassword"
+                    class="input-toggle"
+                    aria-label="Toggle password visibility"
+                  >
+                    <i class="fa-solid fa-eye-slash"></i>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Forgot Password Link -->
+              <div class="form-footer">
+                <a
+                  href="./forgot1.html"
+                  class="forgot-link"
+                  >Forgot password?</a
+                >
+              </div>
             </div>
 
-            <!-- Password with padlock icon and eye toggle -->
-            <div class="relative mb-4">
-              <span
-                class="absolute inset-y-0 left-3 flex items-center text-gray-500"
-              >
-                <i class="fa-solid fa-lock"></i>
-              </span>
-              <input
-                type="password"
-                name="password"
-                placeholder="Password"
-                required
-                id="passwordField"
-                class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 pr-10 focus:outline-none focus:border-blue-500"
-              />
-              <span
-                id="togglePassword"
-                class="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500"
-              >
-                <i class="fa-solid fa-eye-slash"></i>
-              </span>
-            </div>
-
-            <!-- Remember me and Forgot password -->
-            <div class="flex justify-between items-center mb-6">
-              <!-- <label class="flex items-center text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  name="rememberMe"
-                  class="mr-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                />
-                Remember me
-              </label> -->
-              <a
-                href="./forgot1.html"
-                class="text-blue-500 text-sm hover:text-blue-700"
-                >Forgot password</a
-              >
-            </div>
-
-            <!-- Sign in button -->
-            <div class="mb-6">
-              <button
-                type="submit"
-                class="w-full bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition-colors"
-              >
-                Sign in
+            <!-- Sign In Button -->
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">
+                Sign In <i class="fa-solid fa-arrow-right"></i>
               </button>
             </div>
 
-            <!-- Sign up link -->
-            <div class="text-center text-sm text-gray-700">
-              I don't have an account?
-              <a
-                href="/Frontend/html/user/signup.html"
-                class="text-blue-600 hover:text-blue-800 font-medium"
-                >Sign Up</a
-              >
+            <!-- Sign Up Link -->
+            <div class="signup-link">
+              Don't have an account? <a href="/Frontend/html/user/signup.html">Sign Up</a>
             </div>
           </form>
         </div>

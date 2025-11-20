@@ -1,13 +1,12 @@
 const User = require("../models/User");
-  const { extractFromIDImage } = require("../utils/extractBirthday");
-  const { normalizeDate } = require("../utils/dateUtils");
-  const jwt = require("jsonwebtoken");
-  const nodemailer = require("nodemailer");
-  const path = require("path");
-  const asyncHandler = require("express-async-handler");
-  const fs = require("fs");
-  const mailer = require("../utils/mailer");
-  const KKProfile = require("../models/KKProfile");
+const { normalizeDate } = require("../utils/dateUtils");
+const jwt = require("jsonwebtoken");
+const nodemailer = require("nodemailer");
+const path = require("path");
+const asyncHandler = require("express-async-handler");
+const fs = require("fs");
+const mailer = require("../utils/mailer");
+const KKProfile = require("../models/KKProfile");
 const LGBTQProfile = require("../models/LGBTQProfile");
 const EducationalAssistance = require("../models/EducationalAssistance");
 
@@ -318,115 +317,135 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
 
   // POST /api/users/smart-register
   exports.smartRegister = async (req, res) => {
-    try {
-      if (!req.file || !req.file.path) {
-        return res.status(400).json({ message: "No ID image uploaded." });
-      }
+  try {
+    console.log('=== smartRegister called ===');
+    console.log('Request body:', req.body);
+    
+    const {
+      lastName,
+      firstName,
+      middleName,
+      suffix,
+      username,
+      email,
+      password,
+      birthday
+    } = req.body;
 
-      const { username, email, password, birthday } = req.body;
-      const idImagePath = req.file.path;
-
-      // Validate input birthday format
-      const normalizedInputBirthday = normalizeDate(birthday);
-      if (!normalizedInputBirthday) {
-        return res.status(400).json({
-          message: "Please enter a valid birthday in YYYY-MM-DD format.",
-          code: "birthday_invalid"
-        });
-      }
-
-      // OCR extraction
-      const { birthday: ocrBirthday, address: ocrAddress } =
-        await extractFromIDImage(idImagePath);
-
-      // Log extracted birthday and address
-      console.log("Extracted birthday (controller):", ocrBirthday);
-      console.log("Extracted address (controller):", ocrAddress);
-
-      // Require birthday match
-      if (!ocrBirthday || ocrBirthday !== normalizedInputBirthday) {
-        return res.status(400).json({
-          message: "Birthday on ID does not match the input birthday.",
-          code: "birthday_mismatch"
-        });
-      }
-
-      // Address validation (accept "CALACA" or "CALACA CITY", any case)
-      const addressValid =
-        ocrAddress &&
-        /puting bato west/i.test(ocrAddress) &&
-        /(calaca|calaca city)/i.test(ocrAddress) &&
-        /batangas/i.test(ocrAddress);
-
-      if (!addressValid) {
-        return res.status(400).json({
-          message: "Address must be Puting Bato West, Calaca City, Batangas.",
-          code: "address_invalid"
-        });
-      }
-
-      // Calculate precise age
-      const computedAge = calculateAge(ocrBirthday);
-
-      // Enforce age restriction (15-30)
-      if (computedAge < 15 || computedAge > 30) {
-        return res.status(400).json({
-          message: "Registration is only allowed for ages 15 to 30.",
-          code: "age_invalid"
-        });
-      }
-
-      // Check if email already exists
-      const existingEmail = await User.findOne({ email });
-      if (existingEmail)
-        return res.status(400).json({ message: "Email already in use", code: "email_exists" });
-
-      // Check if username already exists
-      const existingUsername = await User.findOne({ username });
-      if (existingUsername)
-        return res.status(400).json({ message: "Username already in use", code: "username_exists" });
-
-      // Clean up the extracted address before saving
-      let cleanedAddress = ocrAddress
-        ? ocrAddress.replace(/\s*\([^)]+\)\s*$/, "").trim()
-        : ocrAddress;
-
-      // Create and save new user with accessLevel
-      const user = new User({
-        username,
-        email,
-        password,
-        birthday: ocrBirthday,
-        verifiedAddress: cleanedAddress,
-        accessLevel: "full",
-        idImage: path.basename(idImagePath),
+    // Basic required fields validation
+    if (!lastName || !firstName || !username || !email || !password || !birthday) {
+      console.log('Missing required fields:', { lastName, firstName, username, email, password, birthday });
+      return res.status(400).json({ 
+        message: "Missing required fields.",
+        code: "missing_fields",
+        received: { lastName, firstName, username, email, password, birthday }
       });
-      await user.save();
-
-      // Calculate and set user age
-      user.age = calculateAge(ocrBirthday);
-      await user.save();
-
-      const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-        expiresIn: "7d",
-      });
-
-      res.status(201).json({
-        message: "Smart registration successful",
-        user: {
-          _id: user._id,
-          username: user.username,
-          email: user.email,
-          verifiedAddress: user.verifiedAddress,
-          accessLevel: user.accessLevel,
-        },
-        token,
-      });
-    } catch (err) {
-      console.error("Smart registration error:", err);
-      res.status(500).json({ message: "Server error during registration.", code: "server_error" });
     }
-  };
+
+    console.log('All fields present. Validating birthday...');
+
+    // Validate/normalize birthday (expects YYYY-MM-DD or compatible)
+    const normalizedBirthday = normalizeDate(birthday);
+    console.log('Original birthday:', birthday);
+    console.log('Normalized birthday:', normalizedBirthday);
+    
+    if (!normalizedBirthday) {
+      console.log('Birthday normalization failed');
+      return res.status(400).json({
+        message: "Please enter a valid birthday in YYYY-MM-DD format.",
+        code: "birthday_invalid",
+        received: birthday
+      });
+    }
+
+    // Compute age
+    const computedAge = calculateAge(normalizedBirthday);
+    console.log('Computed age:', computedAge);
+
+    // Only allow age 15-30 inclusive
+    if (computedAge < 15 || computedAge > 30) {
+      return res.status(400).json({
+        message: "Only users aged 15 to 30 are allowed to sign up.",
+        code: "age_not_allowed"
+      });
+    }
+
+    // Determine access level
+    const accessLevel = "full";
+    console.log('Access level:', accessLevel);
+
+    // Uniqueness checks
+    console.log('Checking email uniqueness...');
+    const existingEmail = await User.findOne({ email });
+    if (existingEmail) {
+      console.log('Email already exists:', email);
+      return res.status(400).json({ 
+        message: "Email already in use", 
+        code: "email_exists" 
+      });
+    }
+
+    console.log('Checking username uniqueness...');
+    const existingUsername = await User.findOne({ username });
+    if (existingUsername) {
+      console.log('Username already exists:', username);
+      return res.status(400).json({ 
+        message: "Username already in use", 
+        code: "username_exists" 
+      });
+    }
+
+    // Create user (single save; password hashing via schema pre-save)
+    console.log('Creating new user...');
+    const user = new User({
+      lastName,
+      firstName,
+      middleName,
+      suffix,
+      username,
+      email,
+      password,
+      birthday: normalizedBirthday,
+      age: computedAge,
+      accessLevel
+    });
+
+    console.log('User object before save:', user);
+    await user.save();
+    console.log('User saved successfully with ID:', user._id);
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "7d" });
+
+    console.log('Registration successful for user:', user.email);
+    res.status(201).json({
+      message: "Registration successful",
+      user: {
+        _id: user._id,
+        lastName: user.lastName,
+        firstName: user.firstName,
+        middleName: user.middleName,
+        suffix: user.suffix,
+        username: user.username,
+        email: user.email,
+        accessLevel: user.accessLevel,
+        age: user.age,
+        createdAt: user.createdAt
+      },
+      token
+    });
+  } catch (err) {
+    console.error("=== Smart registration error ===");
+    console.error('Error message:', err.message);
+    console.error('Error stack:', err.stack);
+    console.error('Full error:', err);
+    
+    res.status(500).json({ 
+      message: "Server error during registration.",
+      code: "server_error",
+      error: err.message
+    });
+  }
+};
 
   // POST /api/users/change-password
   exports.changePassword = async (req, res) => {

@@ -734,6 +734,7 @@ exports.exportApplicationsToExcel = async (req, res) => {
     // Get applications
     let applications = await EducationalAssistance.find({
       formCycle: cycleDoc._id,
+      status: "approved" // Only export approved applications
     }).populate("user", "username email birthday sex address");
 
     if (!applications.length) {

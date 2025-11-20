@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
+  lastName: { type: String, required: true, trim: true },
+  firstName: { type: String, required: true, trim: true },
+  middleName: { type: String, trim: true },
+  suffix: { type: String, trim: true },
+
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -41,6 +46,9 @@ const userSchema = new mongoose.Schema({
   },
   gender: { type: String },
   civilStatus: { type: String },
+},
+{
+  timestamps: true // adds createdAt and updatedAt
 });
 
 // Hash password before saving
