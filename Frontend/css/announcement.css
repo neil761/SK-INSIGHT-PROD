@@ -1,3 +1,27 @@
+/* Tab notification badge styles */
+.tab-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+
+
 /* Reset */
 * {
     margin: 0;
@@ -168,12 +192,6 @@ body {
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
-@media (max-width: 600px) {
-    .navbar-left .title {
-        font-size: 1rem;
-    }
-}
-
 @media (max-width: 1048px) {
     .navbar-center {
         display: none !important;
@@ -245,7 +263,7 @@ body {
     .announcement-heading-container {
         width: 90%;
         padding: 15px;
-        margin-top: 13%;
+        margin-top: 13% !important;
     }
 
     .announcement-heading-container h2 {
@@ -357,7 +375,7 @@ body {
 .announcement-heading-container {
     max-width: 1100px;
     width: 45%;
-    margin: 10% auto 20px auto; 
+    margin: 8% auto 20px auto; 
     padding: 20px 25px;
     /* background: #fff;  */
     color: #000;
@@ -367,7 +385,7 @@ body {
 }
 
 .announcement-heading-container h2 {
-    font-size: 2rem;
+    font-size:  1.5rem;
     font-weight: 700;
 }
 
@@ -704,13 +722,20 @@ body {
 
 /* Hide event date column on very small screens (480px and below) */
 @media (max-width: 480px) {
-  .announcement-tabs{
-    gap: 5% !important;
-    margin: 0 10px 0 10px;
+  .main-content{
+    justify-content: flex-start;
+    margin-top: 15% !important;
   }
+  .announcement-tabs{
+    gap: 5px !important;
+  }
+  .announcement-tabs1, .announcement-tabs2{
+    gap: 0 ;
+    margin: 0 3px 0 0;
+  } 
   .tab-btn{
-    padding: 5% 10% !important;
-    font-size: 0.9rem !important;
+    font-size: 0.8rem !important;
+  padding: 10px 20px !important;
   }
     .announcement-table th:nth-child(2),
     .announcement-table td:nth-child(2) {
@@ -764,7 +789,7 @@ body {
 @media (max-width: 600px) {
   .main-content{
     justify-content: flex-start;
-    margin-top: 25%;
+    margin-top: 8%;
   }
   .announcement-heading-container {
     width: 88%;
@@ -836,6 +861,37 @@ body {
   .announcement-table th,
   .announcement-table td {
     font-size: 12.5px;
+  }
+  
+  .tab-notif-badge {
+    top: 0px;
+    right: 0px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+    .navbar-left .title {
+        font-size: 1rem;
+    }
+  .verification-strip {
+    font-size: 14px;
+    padding: 10px 15px;
+    gap: 8px;
+    width: 92%;
+    max-width: 95vw;
+    top: calc(1rem + 56px); /* adjust if navbar is shorter on mobile */
+    border-radius: 10px;
+  }
+  
+  .verification-strip i {
+    font-size: 18px;
+    margin-right: 3px;
+  }
+  
+  .verification-strip a {
+    font-size: 13px;
+    padding: 3px 8px;
   }
 }
 
@@ -1046,29 +1102,6 @@ body {
     transform: scale(1.05);
   }
 }
-
-/* Mobile responsive verification strip */
-@media (max-width: 600px) {
-  .verification-strip {
-    font-size: 14px;
-    padding: 10px 15px;
-    gap: 8px;
-    width: 92%;
-    max-width: 95vw;
-    top: calc(1rem + 56px); /* adjust if navbar is shorter on mobile */
-    border-radius: 10px;
-  }
-  
-  .verification-strip i {
-    font-size: 18px;
-    margin-right: 3px;
-  }
-  
-  .verification-strip a {
-    font-size: 13px;
-    padding: 3px 8px;
-  }
-}
 .disabled {
   pointer-events: none; /* Prevent clicks */
   opacity: 0.5; /* Make the button look disabled */
@@ -1094,11 +1127,10 @@ body {
   margin-left: auto; /* Align badge to the right */
 }
 
-.announcement-tabs {
+.announcement-tabs, .announcement-tabs1, .announcement-tabs2 {
   display: flex;
   justify-content: center;
   gap: 16px;
-  margin-bottom: 18px;
 }
 .tab-btn {
   background: #eaf3fa;

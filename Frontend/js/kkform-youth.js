@@ -2,7 +2,6 @@ document.addEventListener('DOMContentLoaded', function() {
   // if (!validateTokenAndRedirect("KK Youth Form")) {
   //   return;
   // }
-  
 
   const educationalBackground = document.getElementById('educationalBackground');
 
@@ -35,326 +34,120 @@ document.addEventListener('DOMContentLoaded', function() {
   document.getElementById('workStatus').value = saved.workStatus || '';
   document.getElementById('registeredSKVoter').value = saved.registeredSKVoter || '';
   document.getElementById('registeredNationalVoter').value = saved.registeredNationalVoter || '';
-  // If user's age from step1 indicates minor (<=17), default national voter to 'No'
+  // Use centralized preview containers and restore existing saved images (if any)
+  const profileImageInput = document.getElementById('profileImage');
+  const signatureImageInput = document.getElementById('signatureImage');
+  const profilePreviewWrapper = document.getElementById('imagePreviewContainerFront');
+  const signaturePreviewWrapper = document.getElementById('imagePreviewContainerBack');
+
+  // Ensure filename placeholders are hidden by default when there's no saved filename
   try {
-    const registeredNationalVoterEl = document.getElementById('registeredNationalVoter');
-    const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
-    let computedAge = null;
-    if (step1.age && !isNaN(Number(step1.age))) {
-      computedAge = Number(step1.age);
-    } else if (step1.birthday) {
-      const bd = new Date(step1.birthday);
-      if (!isNaN(bd.getTime())) {
-        const today = new Date();
-        computedAge = today.getFullYear() - bd.getFullYear();
-        const m = today.getMonth() - bd.getMonth();
-        if (m < 0 || (m === 0 && today.getDate() < bd.getDate())) computedAge--;
+    const profileFilenameEl = document.getElementById('profileImageFilename');
+    if (profileFilenameEl) {
+      if (saved.profileImageName) {
+        profileFilenameEl.textContent = saved.profileImageName;
+        profileFilenameEl.style.display = 'inline-block';
+      } else {
+        profileFilenameEl.textContent = '';
+        profileFilenameEl.style.display = 'none';
       }
     }
 
-    if (computedAge !== null && computedAge <= 17 && registeredNationalVoterEl) {
-      // set value and prevent user interaction while keeping element enabled so it is submitted
-      registeredNationalVoterEl.value = 'No';
-      // prevent changes but keep it enabled so form submission includes the value
-      const preventChange = (ev) => {
-        ev.preventDefault();
-        ev.stopPropagation();
-        // ensure the value stays 'No'
-        registeredNationalVoterEl.value = 'No';
-        // blur to avoid keyboard focus
-        try { registeredNationalVoterEl.blur(); } catch (e) {}
-        return false;
-      };
-      registeredNationalVoterEl.dataset.readonlyMinor = 'true';
-      registeredNationalVoterEl.addEventListener('change', preventChange, { passive: false });
-      registeredNationalVoterEl.addEventListener('keydown', preventChange, { passive: false });
-      registeredNationalVoterEl.addEventListener('mousedown', preventChange, { passive: false });
-      registeredNationalVoterEl.addEventListener('focus', () => registeredNationalVoterEl.blur());
-
-      // persist to step3 immediately
-      try { saveStep3(); } catch (e) { 
-        const cur = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        cur.registeredNationalVoter = 'No';
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(cur));
+    const signatureFilenameEl = document.getElementById('signatureImageFilename');
+    if (signatureFilenameEl) {
+      if (saved.signatureImageName) {
+        signatureFilenameEl.textContent = saved.signatureImageName;
+        signatureFilenameEl.style.display = 'inline-block';
+      } else {
+        signatureFilenameEl.textContent = '';
+        signatureFilenameEl.style.display = 'none';
       }
     }
-  } catch (err) {
-    // If anything fails, don't block the form — silently ignore
-    console.warn('Could not apply minor voter default:', err);
-  }
-  document.getElementById('votedLastSKElection').value = saved.votedLastSKElection || '';
-  document.getElementById('attendedKKAssembly').value = saved.attendedKKAssembly || '';
-  document.getElementById('attendanceCount').value = saved.attendanceCount || '';
-  document.getElementById('reasonDidNotAttend').value = saved.reasonDidNotAttend || '';
-
-  // Restore specific needs dropdown visibility and value
-  const youthClassification = document.getElementById('youthClassification');
-  const specificNeedsGroup = document.getElementById('specificNeedsGroup');
-  const specificNeedType = document.getElementById('specificNeedType');
-  specificNeedType.value = saved.specificNeedType || '';
-
-  // Always show the specific needs dropdown if a value is present or "Youth with Specific Needs" is selected
-  if (
-    saved.youthClassification === 'Youth with Specific Needs' ||
-    saved.specificNeedType
-  ) {
-    specificNeedsGroup.style.display = 'block';
-    if (specificNeedType) specificNeedType.required = true;
-  } else {
-    specificNeedsGroup.style.display = 'none';
-    if (specificNeedType) {
-      specificNeedType.required = false;
-      specificNeedType.value = '';
-    }
+  } catch (e) {
+    // ignore
   }
 
-  // Show/hide dropdown for Youth with Specific Needs on change
-  youthClassification.addEventListener('change', function () {
-    if (this.value === 'Youth with Specific Needs') {
-      specificNeedsGroup.style.display = 'block';
-      if (specificNeedType) specificNeedType.required = true;
-    } else {
-      specificNeedsGroup.style.display = 'none';
-      if (specificNeedType) {
-        specificNeedType.required = false;
-        specificNeedType.value = '';
-      }
-    }
-    saveStep3(); // Save state when changed
-  });
-
-  // Separate profile and signature image preview containers
-  const profileImagePreview = document.getElementById('profileImagePreview');
-  const signatureImagePreview = document.getElementById('signatureImagePreview');
-  const profileImage = document.getElementById('profileImage');
-  const signatureImage = document.getElementById('signatureImage');
-
-  // ✅ Restore saved image if exists
+  // Restore previews from sessionStorage when page loads
   if (saved.profileImage) {
+    // `renderProfileImage` will populate the preview area and attach remove handler
     renderProfileImage(saved.profileImage);
+    // restore filename display if available
+    try {
+      const fd = document.getElementById('profileImageFilename');
+      if (fd && saved.profileImageName) {
+        fd.textContent = saved.profileImageName;
+        fd.style.display = 'inline-block';
+      } else if (fd) {
+        fd.textContent = '';
+        fd.style.display = 'none';
+      }
+    } catch (e) {}
   }
   if (saved.signatureImage) {
     renderSignatureImage(saved.signatureImage);
-  }
-
-  // Attendance logic
-  const attendedKKAssembly = document.getElementById('attendedKKAssembly');
-  const attendanceCountGroup = document.getElementById('attendanceCountGroup');
-  const reasonGroup = document.getElementById('reasonGroup');
-
-  // Show/hide attendanceCountGroup and reasonGroup based on saved value
-  if (saved.attendedKKAssembly === 'Yes') {
-    attendanceCountGroup.style.display = 'block';
-    reasonGroup.style.display = 'none';
-    const attEl = document.getElementById('attendanceCount'); if (attEl) attEl.required = true;
-    const reasonEl = document.getElementById('reasonDidNotAttend'); if (reasonEl) reasonEl.required = false;
-  } else if (saved.attendedKKAssembly === 'No') {
-    attendanceCountGroup.style.display = 'none';
-    reasonGroup.style.display = 'block';
-    const attEl2 = document.getElementById('attendanceCount'); if (attEl2) attEl2.required = false;
-    const reasonEl2 = document.getElementById('reasonDidNotAttend'); if (reasonEl2) reasonEl2.required = true;
-  } else {
-    attendanceCountGroup.style.display = 'none';
-    reasonGroup.style.display = 'none';
-    const attEl3 = document.getElementById('attendanceCount'); if (attEl3) attEl3.required = false;
-    const reasonEl3 = document.getElementById('reasonDidNotAttend'); if (reasonEl3) reasonEl3.required = false;
-  }
-
-  attendedKKAssembly.addEventListener('change', function () {
-    if (this.value === 'Yes') {
-      attendanceCountGroup.style.display = 'block';
-      reasonGroup.style.display = 'none';
-      // mark attendanceCount required
-      const attEl = document.getElementById('attendanceCount');
-      if (attEl) attEl.required = true;
-      const reasonEl = document.getElementById('reasonDidNotAttend');
-      if (reasonEl) reasonEl.required = false;
-    } else if (this.value === 'No') {
-      attendanceCountGroup.style.display = 'none';
-      reasonGroup.style.display = 'block';
-      // mark reason required
-      const attEl = document.getElementById('attendanceCount');
-      if (attEl) attEl.required = false;
-      const reasonEl = document.getElementById('reasonDidNotAttend');
-      if (reasonEl) reasonEl.required = true;
-    } else {
-      attendanceCountGroup.style.display = 'none';
-      reasonGroup.style.display = 'none';
-      const attEl = document.getElementById('attendanceCount');
-      if (attEl) attEl.required = false;
-      const reasonEl = document.getElementById('reasonDidNotAttend');
-      if (reasonEl) reasonEl.required = false;
-    }
-  });
-
-  // Profile image preview
-  profileImage.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // ✅ ALLOWED TYPES
-    const previewContainer = document.getElementById('profileImagePreview');
-
-    if (file) {
-      // ✅ VALIDATE TYPE FIRST
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonColor: '#0A2C59'
-        });
-
-        // 🔹 Clear input + preview
-        e.target.value = '';
-        previewContainer.innerHTML = '';
-        return; // Stop further processing
+    try {
+      const fd = document.getElementById('signatureImageFilename');
+      if (fd && saved.signatureImageName) {
+        fd.textContent = saved.signatureImageName;
+        fd.style.display = 'inline-block';
+      } else if (fd) {
+        fd.textContent = '';
+        fd.style.display = 'none';
       }
+    } catch (e) {}
+  }
 
-      // ✅ Proceed if valid
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        renderProfileImage(e.target.result);
+  // If there is no saved image, hide the outer preview wrappers and remove buttons
+  try {
+    const removeBtnFront = document.getElementById('removeImageBtnFront');
+    const removeBtnBack = document.getElementById('removeImageBtnBack');
+    if (profilePreviewWrapper) profilePreviewWrapper.style.display = saved.profileImage ? 'block' : 'none';
+    if (signaturePreviewWrapper) signaturePreviewWrapper.style.display = saved.signatureImage ? 'block' : 'none';
+    if (removeBtnFront) removeBtnFront.style.display = saved.profileImage ? 'inline-block' : 'none';
+    if (removeBtnBack) removeBtnBack.style.display = saved.signatureImage ? 'inline-block' : 'none';
+  } catch (e) {
+    // ignore
+  }
 
-        // Save to sessionStorage
-        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        current.profileImage = e.target.result;
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
-
-  function renderProfileImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('profileImagePreview').innerHTML = '';
-      return;
-    }
-
-    const previewContainer = document.getElementById('profileImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewProfileImage">
-        <button id="removeProfileImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('profileImage').value = "";
+  // Remove profile image handler
+  const removeFront = document.getElementById('removeImageBtnFront');
+  if (removeFront) {
+    removeFront.addEventListener('click', function () {
+      if (profileImageInput) profileImageInput.value = '';
       const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
+      // clear filename
+      delete current.profileImageName;
       sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-    });
-    // View feature
-    document.getElementById('viewProfileImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Profile Image',
-        showConfirmButton: false,
-        width: 400
-      });
+      // Clear preview area and hide wrapper
+      const preview = document.getElementById('profileImagePreview');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      if (profilePreviewWrapper) profilePreviewWrapper.style.display = 'none';
+      this.style.display = 'none';
+        const filenameDisplay = document.getElementById('profileImageFilename');
+        if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
     });
   }
 
-  // Signature image preview
-  signatureImage.addEventListener('change', (e) => {
-    const file = e.target.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // ✅ ALLOWED TYPES
-    const previewContainer = document.getElementById('signatureImagePreview');
-
-    if (file) {
-      // ✅ VALIDATE TYPE FIRST
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonColor: '#0A2C59'
-        });
-
-        // 🔹 Clear input + preview
-        e.target.value = '';
-        previewContainer.innerHTML = '';
-        return; // Stop further processing
-      }
-
-      // ✅ Proceed if valid
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        renderSignatureImage(e.target.result);
-
-        // Save to sessionStorage
-        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        current.signatureImage = e.target.result;
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
-
-  function renderSignatureImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('signatureImagePreview').innerHTML = '';
-      return;
-    }
-
-    const previewContainer = document.getElementById('signatureImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewSignatureImage">
-        <button id="removeSignatureImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('signatureImage').value = "";
-    });
-    // View feature
-    document.getElementById('viewSignatureImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Signature Image',
-        showConfirmButton: false,
-        width: 400
-      });
+  // Remove signature image handler
+  const removeBack = document.getElementById('removeImageBtnBack');
+  if (removeBack) {
+    removeBack.addEventListener('click', function () {
+      if (signatureImageInput) signatureImageInput.value = '';
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+      delete current.signatureImage;
+      // clear filename
+      delete current.signatureImageName;
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      const preview = document.getElementById('signatureImagePreview');
+      if (preview) { preview.src = ''; preview.style.display = 'none'; }
+      if (signaturePreviewWrapper) signaturePreviewWrapper.style.display = 'none';
+      this.style.display = 'none';
+         const filenameDisplay = document.getElementById('signatureImageFilename');
+         if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
     });
   }
+
 
   const youthForm = document.getElementById('youthForm');
 
@@ -385,6 +178,9 @@ document.addEventListener('DOMContentLoaded', function() {
     if (existing.signatureImage) {
       step3Data.signatureImage = existing.signatureImage;
     }
+    // Keep existing saved filenames
+    if (existing.profileImageName) step3Data.profileImageName = existing.profileImageName;
+    if (existing.signatureImageName) step3Data.signatureImageName = existing.signatureImageName;
 
     sessionStorage.setItem('kkProfileStep3', JSON.stringify(step3Data));
   }
@@ -1117,177 +913,196 @@ document.addEventListener('DOMContentLoaded', function() {
     // window.location.href = 'your-previous-page.html';
   });
 
-  document.getElementById('customUploadBtn').addEventListener('click', function() {
-    document.getElementById('profileImage').click();
-  });
+  const customUploadBtn = document.getElementById('customUploadBtn');
+  if (customUploadBtn) {
+    customUploadBtn.addEventListener('click', function() {
+      const p = document.getElementById('profileImage');
+      if (p) p.click();
+    });
+  }
 
-  document.getElementById('profileImage').addEventListener('change', function () {
-    const file = this.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
-    const previewContainer = document.getElementById('profileImagePreview');
+  const profileImageEl = document.getElementById('profileImage');
+  if (profileImageEl) {
+    profileImageEl.addEventListener('change', function () {
+      const file = this.files[0];
+      const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
+      // Display filename element
+      const filenameDisplay = document.getElementById('profileImageFilename');
+      const imgEl = document.getElementById('profileImagePreview');
+      const outer = document.getElementById('imagePreviewContainerFront');
+      const removeStatic = document.getElementById('removeImageBtnFront');
 
-    if (file) {
-      // Validate file type
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#0A2C59',
-        });
+      if (file) {
+        // Validate file type
+        if (!allowedTypes.includes(file.type)) {
+          Swal.fire({
+            icon: 'error',
+            title: 'Invalid File Type',
+            text: 'Only PNG and JPG files are allowed.',
+            confirmButtonText: 'OK',
+            confirmButtonColor: '#0A2C59',
+          });
 
-        // Automatically remove invalid file
-        this.value = ''; // Clear the file input
-        previewContainer.innerHTML = ''; // Clear the preview
-        return; // Stop further processing
+          // Automatically remove invalid file
+          this.value = ''; // Clear the file input
+          if (imgEl) imgEl.src = '';
+          if (outer) outer.style.display = 'none';
+          if (removeStatic) removeStatic.style.display = 'none';
+          return; // Stop further processing
+        }
+
+        // File is valid, show the preview
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          renderProfileImage(e.target.result);
+          // Save the filename separately so it can be shown after reload
+          try {
+            const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+            current.profileImageName = file.name;
+            sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+            if (filenameDisplay) { filenameDisplay.textContent = file.name; filenameDisplay.style.display = 'inline-block'; }
+          } catch (e) {}
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Clear the preview if no file is selected
+        if (imgEl) imgEl.src = '';
+        if (outer) outer.style.display = 'none';
+        if (removeStatic) removeStatic.style.display = 'none';
+        const filenameDisplay = document.getElementById('profileImageFilename');
+        if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
       }
-
-      // File is valid, show the preview
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        renderProfileImage(e.target.result);
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
+    });
+  }
 
   function renderProfileImage(base64Image) {
     // ✅ Check MIME
     const allowed = base64Image.startsWith('data:image/png') ||
                     base64Image.startsWith('data:image/jpeg');
 
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('profileImagePreview').innerHTML = '';
-      return;
-    }
+    const imgEl = document.getElementById('profileImagePreview');
+    const outer = document.getElementById('imagePreviewContainerFront');
+    const removeStatic = document.getElementById('removeImageBtnFront');
 
-    const previewContainer = document.getElementById('profileImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Profile Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewProfileImage">
-        <button id="removeProfileImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeProfileImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('profileImage').value = "";
+    if (!allowed) {
       const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
       sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-    });
-    // View feature
-    document.getElementById('viewProfileImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Profile Image',
-        showConfirmButton: false,
-        width: 400
-      });
-    });
-  }
-
-  // Signature image
-  document.getElementById('signatureImage').addEventListener('change', function () {
-    const file = this.files[0];
-    const allowedTypes = ['image/png', 'image/jpeg']; // Allowed file types
-    const previewContainer = document.getElementById('signatureImagePreview');
-
-    if (file) {
-      // Validate file type
-      if (!allowedTypes.includes(file.type)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Invalid File Type',
-          text: 'Only PNG and JPG files are allowed.',
-          confirmButtonText: 'OK',
-          confirmButtonColor: '#0A2C59',
-        });
-
-        // Automatically remove invalid file
-        this.value = ''; // Clear the file input
-        previewContainer.innerHTML = ''; // Clear the preview
-        return; // Stop further processing
-      }
-
-      // File is valid, show the preview
-      const reader = new FileReader();
-      reader.onload = function (e) {
-        renderSignatureImage(e.target.result);
-        // Save to sessionStorage
-        const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-        current.signatureImage = e.target.result;
-        sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
-      };
-      reader.readAsDataURL(file);
-    } else {
-      previewContainer.innerHTML = ''; // Clear the preview if no file is selected
-    }
-  });
-
-  function renderSignatureImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
-    if (!allowed) {
-      // ❌ Not allowed → remove
-      sessionStorage.removeItem('kkProfileStep3');
-      document.getElementById('signatureImagePreview').innerHTML = '';
+      if (imgEl) imgEl.src = '';
+      if (outer) outer.style.display = 'none';
+      if (removeStatic) removeStatic.style.display = 'none';
       return;
     }
 
-    const previewContainer = document.getElementById('signatureImagePreview');
-    previewContainer.innerHTML = `
-      <div style="position: relative; display: inline-block; max-width: 220px;">
-        <img src="${base64Image}" alt="Signature Preview" style="width:100%; border-radius:10px; cursor:pointer;" id="viewSignatureImage">
-        <button id="removeSignatureImageBtn" style="
-          position:absolute;
-          top:5px;
-          right:5px;
-          background:red;
-          color:white;
-          border:none;
-          border-radius:50%;
-          width:24px;
-          height:24px;
-          cursor:pointer;
-        ">×</button>
-      </div>
-    `;
-    document.getElementById('removeSignatureImageBtn').addEventListener('click', () => {
-      previewContainer.innerHTML = "";
-      document.getElementById('signatureImage').value = "";
-    });
-    // View feature
-    document.getElementById('viewSignatureImage').addEventListener('click', function() {
-      Swal.fire({
-        imageUrl: base64Image,
-        imageAlt: 'Signature Image',
-        showConfirmButton: false,
-        width: 400
-      });
+    if (imgEl) {
+      imgEl.src = base64Image;
+      imgEl.style.display = 'block';
+      imgEl.style.cursor = 'pointer';
+      imgEl.onclick = function () {
+        Swal.fire({ imageUrl: base64Image, imageAlt: 'Profile Image', showConfirmButton: false, showCloseButton: true, width: 400 });
+      };
+    }
+    if (outer) outer.style.display = 'block';
+    if (removeStatic) removeStatic.style.display = 'inline-block';
+
+    // Save to sessionStorage so it persists across navigation
+    const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+    current.profileImage = base64Image;
+    // ensure we don't overwrite an existing filename when rendering from other sources
+    if (!current.profileImageName) {
+      current.profileImageName = current.profileImageName || '';
+    }
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+    // Restore filename display if present
+    const filenameDisplay = document.getElementById('profileImageFilename');
+    if (filenameDisplay && current.profileImageName) { filenameDisplay.textContent = current.profileImageName; filenameDisplay.style.display = 'inline-block'; }
+    else if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
+  }
+
+  // Signature image
+  const signatureEl = document.getElementById('signatureImage');
+  if (signatureEl) {
+    signatureEl.addEventListener('change', function () {
+      const file = this.files[0];
+      const allowedTypes = ['image/png', 'image/jpeg'];
+      const filenameDisplay = document.getElementById('signatureImageFilename');
+      const imgEl = document.getElementById('signatureImagePreview');
+      const outer = document.getElementById('imagePreviewContainerBack');
+      const removeStatic = document.getElementById('removeImageBtnBack');
+
+      if (file) {
+        if (!allowedTypes.includes(file.type)) {
+          Swal.fire({ icon: 'error', title: 'Invalid File Type', text: 'Only PNG and JPG files are allowed.', confirmButtonText: 'OK', confirmButtonColor: '#0A2C59' });
+          this.value = '';
+          if (imgEl) imgEl.src = '';
+          if (outer) outer.style.display = 'none';
+          if (removeStatic) removeStatic.style.display = 'none';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          renderSignatureImage(e.target.result);
+          try {
+            const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+            current.signatureImageName = file.name;
+            sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+            if (filenameDisplay) { filenameDisplay.textContent = file.name; filenameDisplay.style.display = 'inline-block'; }
+          } catch (e) {}
+        };
+        reader.readAsDataURL(file);
+      } else {
+        if (imgEl) imgEl.src = '';
+        if (outer) outer.style.display = 'none';
+        if (removeStatic) removeStatic.style.display = 'none';
+        const filenameDisplay = document.getElementById('signatureImageFilename');
+        if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
+      }
     });
   }
 
-  document.getElementById('customSignatureBtn').addEventListener('click', function() {
-    document.getElementById('signatureImage').click();
-  });
+  function renderSignatureImage(base64Image) {
+    const allowed = base64Image.startsWith('data:image/png') || base64Image.startsWith('data:image/jpeg');
+    const imgEl = document.getElementById('signatureImagePreview');
+    const outer = document.getElementById('imagePreviewContainerBack');
+    const removeStatic = document.getElementById('removeImageBtnBack');
+
+    if (!allowed) {
+      const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+      delete current.signatureImage;
+      sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+      if (imgEl) imgEl.src = '';
+      if (outer) outer.style.display = 'none';
+      if (removeStatic) removeStatic.style.display = 'none';
+      return;
+    }
+
+    if (imgEl) {
+      imgEl.src = base64Image;
+      imgEl.style.display = 'block';
+      imgEl.style.cursor = 'pointer';
+      imgEl.onclick = function () { Swal.fire({ imageUrl: base64Image, imageAlt: 'Signature Image', showConfirmButton: false, showCloseButton: true, width: 400 }); };
+    }
+    if (outer) outer.style.display = 'block';
+    if (removeStatic) removeStatic.style.display = 'inline-block';
+
+    const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+    current.signatureImage = base64Image;
+    if (!current.signatureImageName) {
+      current.signatureImageName = current.signatureImageName || '';
+    }
+    sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
+    const filenameDisplay = document.getElementById('signatureImageFilename');
+    if (filenameDisplay && current.signatureImageName) { filenameDisplay.textContent = current.signatureImageName; filenameDisplay.style.display = 'inline-block'; }
+    else if (filenameDisplay) { filenameDisplay.textContent = ''; filenameDisplay.style.display = 'none'; }
+  }
+
+  const customSignatureBtn = document.getElementById('customSignatureBtn');
+  if (customSignatureBtn) {
+    customSignatureBtn.addEventListener('click', function() {
+      const s = document.getElementById('signatureImage');
+      if (s) s.click();
+    });
+  }
 
   // Add this event listener to handle the change for registeredSKVoter
   const registeredSKVoter = document.getElementById('registeredSKVoter');

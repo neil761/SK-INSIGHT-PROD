@@ -149,21 +149,40 @@
           </select>
         </div>
       </div>
-      <!-- Side-by-side image upload containers -->
+
+      <!-- Front ID Image Upload -->
       <div class="kk-upload-row">
-        <div class="kk-card kk-upload-col">
-          <label class="kk-label">Profile Image (ID):</label>
+        <div class="lcard kk-upload-col">
+          <label class="label"  for="profileImage">Profile Image (ID):</label>
           <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
-          <button type="button" id="customUploadBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Image</button>
-          <div id="profileImagePreview" class="kk-upload-preview"></div>
-          <input type="file" id="profileImage" accept="image/*" style="display:none;">
+          <div class="custom-file">
+            <button type="button" id="customUploadBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="profileImageFilename" aria-live="polite"></div>
+            <input type="file" id="profileImage" name="profileImage" accept="image/*" required class="custom-file-input">
+          </div>
+          <div id="imagePreviewContainerFront" class="image-preview-container">
+            <div class="preview-inner">
+              <img id="profileImagePreview" class="preview-img" alt="Profile preview" style="display:none;" />
+              <button type="button" id="removeImageBtnFront" class="remove-image-btn" title="Remove image">&times;</button>
+            </div>
+          </div>
         </div>
-        <div class="kk-card kk-upload-col">
-          <label class="kk-label">Signature Image:</label>
+
+      <!-- Back ID Image Upload -->
+        <div class="lcard kk-upload-col">
+          <label class="label" for="signatureImage">Signature Image:</label>
           <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
-          <button type="button" id="customSignatureBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Signature</button>
-          <div id="signatureImagePreview" class="kk-upload-preview"></div>
-          <input type="file" id="signatureImage" accept="image/*" style="display:none;">
+          <div class="custom-file">
+            <button type="button" id="customSignatureBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="signatureImageFilename" aria-live="polite"></div>
+            <input type="file" id="signatureImage" name="signatureImage" accept="image/*" required class="custom-file-input">
+          </div>
+          <div id="imagePreviewContainerBack" class="image-preview-container">
+            <div class="preview-inner">
+              <img id="signatureImagePreview" class="preview-img" alt="Signature preview" style="display:none;" />
+              <button type="button" id="removeImageBtnBack" class="remove-image-btn" title="Remove image">&times;</button>
+            </div>
+          </div>
         </div>
       </div>
 

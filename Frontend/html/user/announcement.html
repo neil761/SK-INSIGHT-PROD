@@ -56,8 +56,20 @@
 
   <!-- Announcement Tabs -->
   <div class="announcement-tabs">
-    <button class="tab-btn active" data-tab="general">General</button>
-    <button class="tab-btn" data-tab="foryou">Personal</button>
+    <div class="announcement-tabs1" style="position:relative;">
+      <button class="tab-btn active" data-tab="general">
+        General
+        <span class="tab-badge tab-notif-badge" id="badge-general"></span>
+      </button>
+      <span class="tab-notif-badge" id="notif-general" aria-hidden="true"></span>
+    </div>
+    <div class="announcement-tabs2" style="position:relative;">
+      <button class="tab-btn" data-tab="foryou">
+        Personal
+        <span class="tab-badge tab-notif-badge" id="badge-foryou"></span>
+      </button>
+      <span class="tab-notif-badge" id="notif-foryou" aria-hidden="true"></span>
+    </div>
     <button class="tab-btn" data-tab="expired">Expired</button>
   </div>
 
@@ -150,6 +162,7 @@
   </footer>
     <script src="../../js/token-validation.js"></script>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="../../js/notification-badge.js"></script>
   <script src="../../js/user-announcement.js"></script>
 </body>
 </html>

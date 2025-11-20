@@ -599,10 +599,34 @@ if (logoutBtn) {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-        localStorage.clear(); // <-- clear all local storage
-        sessionStorage.removeItem('token');
-        window.location.href = './index.html'; // Adjust path if needed
-      }
+          // Clear persistent localStorage completely (user intentionally logs out)
+          try { localStorage.clear(); } catch (e) { /* ignore */ }
+
+          // Remove common session keys used by multi-step forms and auth
+          try {
+            sessionStorage.removeItem('token');
+            sessionStorage.removeItem('user');
+            sessionStorage.removeItem('kkProfileStep1');
+            sessionStorage.removeItem('kkProfileStep2');
+            sessionStorage.removeItem('kkProfileStep3');
+            sessionStorage.removeItem('lgbtqDraft');
+
+            // Remove any other session keys that look like drafts or kkProfile data
+            const toRemove = [];
+            for (let i = 0; i < sessionStorage.length; i++) {
+              const key = sessionStorage.key(i);
+              if (!key) continue;
+              const lower = key.toLowerCase();
+              if (lower.includes('draft') || lower.includes('kkprofil') || lower.includes('kkprofile') || lower.startsWith('kkprofile')) {
+                toRemove.push(key);
+              }
+            }
+            toRemove.forEach(k => sessionStorage.removeItem(k));
+          } catch (e) { /* ignore storage errors */ }
+
+          // Finally redirect to home
+          window.location.href = './index.html'; // Adjust path if needed
+        }
     });
   });
 }
