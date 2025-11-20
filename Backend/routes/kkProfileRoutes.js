@@ -229,7 +229,7 @@ router.get("/export/:id", protect, async (req, res) => {
 
       birthday: formatDateDMY(profile.birthday),
       submittedAt: formatDateDMY(profile.submittedAt),
-      age: calculateAge(profile.birthday),
+      age: profile.age || "", // Use age from database
 
       // New fields for DOCX
       specificNeedType: specificNeedType,
