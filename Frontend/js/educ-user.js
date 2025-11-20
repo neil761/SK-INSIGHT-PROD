@@ -64,6 +64,23 @@ document.addEventListener('DOMContentLoaded', async function () {
     birthdayInput.readOnly = true; // Make it non-editable
   }
 
+  // Populate name fields from user details if they are empty (do not overwrite user input)
+  try {
+    const surnameEl = document.getElementById('surname');
+    const firstNameEl = document.getElementById('firstName');
+    const middleNameEl = document.getElementById('middleName');
+
+    if (surnameEl && (!surnameEl.value || surnameEl.value === '')) {
+      surnameEl.value = userDetails.surname || userDetails.lastname || userDetails.lastName || '';
+    }
+    if (firstNameEl && (!firstNameEl.value || firstNameEl.value === '')) {
+      firstNameEl.value = userDetails.firstName || userDetails.firstname || userDetails.givenName || '';
+    }
+    if (middleNameEl && (!middleNameEl.value || middleNameEl.value === '')) {
+      middleNameEl.value = userDetails.middleName || userDetails.middlename || '';
+    }
+  } catch (e) { /* ignore errors */ }
+
   function calculateAge(birthday) {
     if (!birthday) return '';
     const birthDate = new Date(birthday);

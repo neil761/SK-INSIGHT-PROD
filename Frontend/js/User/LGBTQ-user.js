@@ -34,27 +34,67 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       }
 
+        // Ensure filename placeholders are hidden when there's no image/file
+        (function initFilenamePlaceholders() {
+          try {
+            const inputs = ['idImageFront','idImageBack','profileImage','signatureImage'];
+            inputs.forEach(inputId => {
+              const fileInput = document.getElementById(inputId);
+              const filenameEl = document.getElementById(`${inputId}Filename`);
+              const previewImg = document.getElementById((inputId === 'idImageFront' ? 'imagePreviewFront' : inputId === 'idImageBack' ? 'imagePreviewBack' : inputId === 'profileImage' ? 'imagePreviewProfile' : 'imagePreviewSignature'));
+
+              const hasFile = (fileInput && fileInput.files && fileInput.files.length > 0);
+              const hasPreview = (previewImg && previewImg.src && previewImg.src.trim() !== '');
+              const saved = (savedDraft && (savedDraft[`${inputId}Name`] || savedDraft[inputId]));
+
+              if (filenameEl) {
+                if (hasFile || hasPreview || saved) {
+                  filenameEl.classList.add('visible');
+                  // if there's a saved name, fill it
+                  if (!filenameEl.textContent && savedDraft && savedDraft[`${inputId}Name`]) filenameEl.textContent = savedDraft[`${inputId}Name`];
+                } else {
+                  filenameEl.textContent = '';
+                  filenameEl.classList.remove('visible');
+                }
+              }
+            });
+          } catch (e) { /* ignore */ }
+        })();
+
       // Restore image previews if base64 saved
       if (savedDraft.idImageFront) {
         const preview = document.getElementById('imagePreviewFront');
         const container = document.getElementById('imagePreviewContainerFront');
-        if (preview && container) { preview.src = savedDraft.idImageFront; container.style.display = 'block'; }
+        if (preview && container) { preview.src = savedDraft.idImageFront; preview.style.display = 'block'; container.style.display = 'block'; }
       }
       if (savedDraft.idImageBack) {
         const preview = document.getElementById('imagePreviewBack');
         const container = document.getElementById('imagePreviewContainerBack');
-        if (preview && container) { preview.src = savedDraft.idImageBack; container.style.display = 'block'; }
+        if (preview && container) { preview.src = savedDraft.idImageBack; preview.style.display = 'block'; container.style.display = 'block'; }
       }
       if (savedDraft.profileImage) {
         const preview = document.getElementById('imagePreviewProfile');
         const container = document.getElementById('imagePreviewContainerProfile');
-        if (preview && container) { preview.src = savedDraft.profileImage; container.style.display = 'block'; }
+        if (preview && container) { preview.src = savedDraft.profileImage; preview.style.display = 'block'; container.style.display = 'block'; }
       }
       if (savedDraft.signatureImage) {
         const preview = document.getElementById('imagePreviewSignature');
         const container = document.getElementById('imagePreviewContainerSignature');
-        if (preview && container) { preview.src = savedDraft.signatureImage; container.style.display = 'block'; }
+        if (preview && container) { preview.src = savedDraft.signatureImage; preview.style.display = 'block'; container.style.display = 'block'; }
       }
+      // Restore saved filenames (if any) and show filename elements
+      try {
+        const frontNameEl = document.getElementById('idImageFrontFilename');
+        if (frontNameEl) {
+          if (savedDraft.idImageFrontName) { frontNameEl.textContent = savedDraft.idImageFrontName; frontNameEl.classList.add('visible'); }
+          else { frontNameEl.textContent = ''; frontNameEl.classList.remove('visible'); }
+        }
+        const backNameEl = document.getElementById('idImageBackFilename');
+        if (backNameEl) {
+          if (savedDraft.idImageBackName) { backNameEl.textContent = savedDraft.idImageBackName; backNameEl.classList.add('visible'); }
+          else { backNameEl.textContent = ''; backNameEl.classList.remove('visible'); }
+        }
+      } catch (e) { /* ignore */ }
     } catch (e) {
       console.warn('Failed to restore LGBTQ draft:', e);
     }
@@ -76,6 +116,11 @@ document.addEventListener("DOMContentLoaded", () => {
       draft.idImageBack = existing.idImageBack || document.getElementById('imagePreviewBack')?.src || '';
       draft.profileImage = existing.profileImage || document.getElementById('imagePreviewProfile')?.src || '';
       draft.signatureImage = existing.signatureImage || document.getElementById('imagePreviewSignature')?.src || '';
+      // Preserve filenames so they survive reloads
+      draft.idImageFrontName = existing.idImageFrontName || document.getElementById('idImageFront')?.files?.[0]?.name || '';
+      draft.idImageBackName = existing.idImageBackName || document.getElementById('idImageBack')?.files?.[0]?.name || '';
+      draft.profileImageName = existing.profileImageName || document.getElementById('profileImage')?.files?.[0]?.name || '';
+      draft.signatureImageName = existing.signatureImageName || document.getElementById('signatureImage')?.files?.[0]?.name || '';
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     } catch (e) {
       console.warn('Failed to save LGBTQ draft:', e);
@@ -86,19 +131,48 @@ document.addEventListener("DOMContentLoaded", () => {
   form.addEventListener('input', saveDraft);
   form.addEventListener('change', saveDraft);
 
-  // Autofill birthday
+  // Autofill birthday and name fields from /api/users/me when token is available
   if (token && birthdayInput) {
     fetch("http://localhost:5000/api/users/me", {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
       .then((user) => {
-        if (user && user.birthday) {
-          const d = new Date(user.birthday);
-          birthdayInput.value = `${d.getFullYear()}-${String(
-            d.getMonth() + 1
-          ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+        if (!user) return;
+
+        // Populate birthday if available and the field is empty
+        if (user.birthday) {
+          try {
+            const d = new Date(user.birthday);
+            if (d && !isNaN(d.getTime()) && (!birthdayInput.value || birthdayInput.value === '')) {
+              birthdayInput.value = `${d.getFullYear()}-${String(
+                d.getMonth() + 1
+              ).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+            }
+          } catch (e) { /* ignore */ }
         }
+
+        // Populate name fields if empty (do not overwrite existing/drafted values)
+        try {
+          // Support multiple possible id names used across templates
+          const lastnameEl = document.getElementById('lastname') || document.getElementById('lastName') || document.getElementById('surname');
+          const firstnameEl = document.getElementById('firstname') || document.getElementById('firstName');
+          const middlenameEl = document.getElementById('middlename') || document.getElementById('middleName');
+          const suffixEl = document.getElementById('suffix');
+
+          if (lastnameEl && (!lastnameEl.value || lastnameEl.value === '')) {
+            lastnameEl.value = user.lastname || user.surname || user.lastName || '';
+          }
+          if (firstnameEl && (!firstnameEl.value || firstnameEl.value === '')) {
+            firstnameEl.value = user.firstname || user.firstName || user.givenName || '';
+          }
+          if (middlenameEl && (!middlenameEl.value || middlenameEl.value === '')) {
+            middlenameEl.value = user.middlename || user.middleName || '';
+          }
+          if (suffixEl && (!suffixEl.value || suffixEl.value === '')) {
+            suffixEl.value = user.suffix || '';
+          }
+        } catch (e) { /* ignore DOM errors */ }
       })
       .catch((err) => console.error("❌ Fetch me error:", err));
   }
@@ -583,10 +657,17 @@ document.addEventListener("DOMContentLoaded", () => {
           const reader = new FileReader();
           reader.onload = function (evt) {
             previewImg.src = evt.target.result; // Set the preview image source
+            previewImg.style.display = 'block'; // show the image element
             previewContainer.style.display = 'block'; // Show the preview container
             try {
               const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
               existing[inputId] = evt.target.result;
+              // save filename if available
+                if (file && file.name) {
+                  existing[`${inputId}Name`] = file.name;
+                  const nameEl = document.getElementById(`${inputId}Filename`);
+                  if (nameEl) { nameEl.textContent = file.name; nameEl.classList.add('visible'); }
+                }
               sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
             } catch (e) {
               console.warn('Failed to save image draft for', inputId, e);
@@ -596,10 +677,15 @@ document.addEventListener("DOMContentLoaded", () => {
         } else {
           // No file selected, hide the preview
           previewImg.src = ''; // Clear the preview image
+          previewImg.style.display = 'none';
           previewContainer.style.display = 'none'; // Hide the preview container
           try {
             const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
             delete existing[inputId];
+            // delete saved filename as well
+            delete existing[`${inputId}Name`];
+            const nameEl = document.getElementById(`${inputId}Filename`);
+            if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
             sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
           } catch (e) { /* ignore */ }
         }
@@ -622,8 +708,11 @@ document.addEventListener("DOMContentLoaded", () => {
           try {
             const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
             delete existing[inputId];
+            delete existing[`${inputId}Name`];
             sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
           } catch (e) { /* ignore */ }
+          const nameEl = document.getElementById(`${inputId}Filename`);
+          if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
         });
       }
     }
@@ -641,6 +730,16 @@ document.addEventListener("DOMContentLoaded", () => {
 
   handleImageInputChange('signatureImage', 'imagePreviewContainerSignature', 'imagePreviewSignature');
   handleImageRemove('signatureImage', 'imagePreviewContainerSignature', 'imagePreviewSignature');
+  
+  // Wire custom choose buttons (if present) to trigger hidden native inputs
+  const customFrontBtn = document.getElementById('customIdFrontBtn');
+  if (customFrontBtn) {
+    customFrontBtn.addEventListener('click', () => document.getElementById('idImageFront')?.click());
+  }
+  const customBackBtn = document.getElementById('customIdBackBtn');
+  if (customBackBtn) {
+    customBackBtn.addEventListener('click', () => document.getElementById('idImageBack')?.click());
+  }
 });
 
 // ✅ Image preview + remove logic
@@ -703,10 +802,17 @@ document.getElementById('idImageFront').addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function (evt) {
       previewImg.src = evt.target.result;
+      previewImg.style.display = 'block';
       previewContainer.style.display = 'block';
       try {
         const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
         existing.idImageFront = evt.target.result;
+        // store original filename too
+        if (file && file.name) {
+          existing.idImageFrontName = file.name;
+          const nameEl = document.getElementById('idImageFrontFilename');
+          if (nameEl) { nameEl.textContent = file.name; nameEl.classList.add('visible'); }
+        }
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
       } catch (e) { /* ignore */ }
     };
@@ -714,7 +820,10 @@ document.getElementById('idImageFront').addEventListener('change', function(e) {
   } else {
     // No file selected, hide the preview
     previewImg.src = '';
+    previewImg.style.display = 'none';
     previewContainer.style.display = 'none';
+    const nameEl = document.getElementById('idImageFrontFilename');
+    if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
   }
 });
 
@@ -723,7 +832,8 @@ document.getElementById('removeImageBtnFront').addEventListener('click', functio
   document.getElementById('idImageFront').value = ''; // Clear the file input
   document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
-  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageFront; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
+  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageFront; delete existing.idImageFrontName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
+  const nameEl = document.getElementById('idImageFrontFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
 });
 
 // Back ID image preview
@@ -755,10 +865,16 @@ document.getElementById('idImageBack').addEventListener('change', function (e) {
     const reader = new FileReader();
     reader.onload = function (evt) {
       previewImg.src = evt.target.result;
+      previewImg.style.display = 'block';
       previewContainer.style.display = 'block';
       try {
         const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
         existing.idImageBack = evt.target.result;
+        if (file && file.name) {
+          existing.idImageBackName = file.name;
+          const nameEl = document.getElementById('idImageBackFilename');
+          if (nameEl) { nameEl.textContent = file.name; nameEl.classList.add('visible'); }
+        }
         sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
       } catch (e) { /* ignore */ }
     };
@@ -766,7 +882,10 @@ document.getElementById('idImageBack').addEventListener('change', function (e) {
   } else {
     // No file selected, hide the preview
     previewImg.src = '';
+    previewImg.style.display = 'none';
     previewContainer.style.display = 'none';
+    const nameEl = document.getElementById('idImageBackFilename');
+    if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
   }
 });
 
@@ -775,5 +894,21 @@ document.getElementById('removeImageBtnBack').addEventListener('click', function
   document.getElementById('idImageBack').value = ''; // Clear the file input
   document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
-  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageBack; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
+  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageBack; delete existing.idImageBackName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
+  const nameEl = document.getElementById('idImageBackFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
 });
+
+// --- View (enlarge) previews using SweetAlert (adds a close button) ---
+function attachPreviewViewer(imgId) {
+  const img = document.getElementById(imgId);
+  if (!img) return;
+  img.style.cursor = 'pointer';
+  img.addEventListener('click', function () {
+    const src = img.src;
+    if (!src) return;
+    Swal.fire({ imageUrl: src, imageAlt: 'Image preview', showConfirmButton: false, showCloseButton: true, width: 'auto', customClass: { popup: 'swal2-image-popup' } });
+  });
+}
+
+// Attach viewers to all preview images used in the form
+['imagePreview', 'imagePreviewFront', 'imagePreviewBack', 'imagePreviewProfile', 'imagePreviewSignature'].forEach(attachPreviewViewer);

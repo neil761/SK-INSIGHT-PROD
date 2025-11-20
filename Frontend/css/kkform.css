@@ -149,21 +149,11 @@ body {
   padding: 30px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
-
-/* ✅ UPLOAD LAYOUT */
-.kk-upload-row {
-  display: flex;
-  gap: 32px;
-  justify-content: space-between;
-  align-items: flex-start;
-  width: 90%;
-  max-width: 900px;
-  margin: 12px auto 25px auto;
-}
-
-.kk-upload-col {
-  flex: 1 1 0;
-  min-width: 220px;
+.kk-upload-col .image-preview-container img {
+    width: 100%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #bcd4ec;
 }
 
 /* ✅ UPLOAD BUTTONS */
@@ -378,13 +368,17 @@ body {
   }
 
   .kk-upload-col {
-    width: 90%;
-    max-width: 900px;
-    padding: 20px;
-    margin: 0 auto;
-    border-radius: 15px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
-  }
+        width: 90% !important;
+        max-width: 900px !important;
+        flex: 0 0 auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+        padding: 4% !important;
+        border-radius: 15px !important;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15) !important;
+        box-sizing: border-box !important;
+    }
+    
   /* Adjust font sizes for larger screens */
   .kk-label, .kk-labels {
     font-size: 0.9rem; /* Smaller font for labels */
@@ -407,6 +401,58 @@ body {
 
   .kk-intro p {
     font-size: 0.9rem; /* Smaller font for paragraphs */
+  }
+
+  
+  .kk-upload-row {
+    flex-direction: column;
+    gap: 0rem;
+    align-items: stretch;
+  }
+
+  .kk-upload-col {
+    width: 90%;
+    max-width: 900px; /* same as .card */
+    flex: 0 0 auto;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 4%; /* match .card */
+    border-radius: 15px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    box-sizing: border-box;
+  }
+    .kk-upload-btn{
+    font-size: 0.8rem;
+    min-width: 25%;
+    padding: 1.7% 0 !important;
+    margin-bottom: 0 !important;
+  }
+  
+  .kk-upload-filename {
+   min-width: 5%;
+   margin-left: 0;
+}
+.custom-file {
+    margin-top: 1%;
+}
+
+  .image-preview-container {
+    position: relative;
+    margin-top: 0.75rem;
+    padding-top: 0;
+  }
+
+  .remove-image-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0,0,0,0.6);
+    color: #ff0000;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
   }
 
   /* Match card spacing and width */
@@ -1020,27 +1066,17 @@ select.form-control:focus {
 }
 }
 
-/* Side-by-side upload containers */
+/* Upload containers: side-by-side on wide screens, identical card styling and sizing on mobile */
 .kk-upload-row {
+  width: 100%;
   display: flex;
-  gap: 32px;
-  justify-content: space-between;
+  gap: 1%;
+  justify-content: center;
   align-items: flex-start;
-  width: 90%;
-  max-width: 900px;
-  margin: 12px auto 25px auto;
-  flex-wrap: wrap; /* allow wrapping when needed */
+  flex-wrap: wrap; /* allow wrapping on narrower widths */
 }
 
-.kk-upload-col {
-  flex: 1 1 0;
-  min-width: 220px;
-  background-color: #fff;
-  border-radius: 15px;
-  padding: 30px;
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
-  box-sizing: border-box;
-}
+
 
 
 .upload-plus {
@@ -1078,16 +1114,192 @@ select.form-control:focus {
   opacity: 1;
   pointer-events: auto;
 }
-.kk-upload-btn {
-  background: #0A2C59;
+
+/* Match LGBTQ form upload style */
+.kk-upload-col {
+
+    flex: 1 1 0;
+    min-width: 280px;
+    width: calc(50% - 16px);
+    max-width: 29vw;
+    background-color: #fff;
+    border-radius: 15px;
+    padding: 3%;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    margin-bottom: 25px;
+    box-sizing: border-box;
+}
+
+.kk-upload-col label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #143d77;
+}
+
+.kk-upload-col .allow {
+  font-size: 1rem;
+  color: red;
+}
+
+.kk-upload-col input[type="file"] {
+width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #bcd4ec;
+    border-radius: 8px;
+    background: #f5faff;
+    font-size: 15px;
+    color: #143d77;
+    cursor: pointer;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+.kk-upload-col input[type="file"]:focus {
+  border: 1.5px solid #143d77;
+  background: #eaf3fa;
+}
+
+/* Filename display next to the native choose button */
+.kk-upload-filename {
+  display: inline-block;
+  min-width: 220px;
+  max-width: 60%;
+  padding: 8px 12px;
+  margin-left: 10px;
+  border: 1px solid #bcd4ec;
+  border-radius: 8px;
+  background: #f7fbff;
+  color: #0A1A3A;
+  font-size: 0.95rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+}
+
+/* Hide the browser's default filename text while keeping the button visible.
+   Uses modern pseudo-element selectors and fallbacks for WebKit/Firefox. */
+input[type="file"] {
+  color: transparent; /* hide native filename text */
+}
+input[type="file"]::file-selector-button,
+input[type="file"]::-webkit-file-upload-button,
+input[type="file"]::-moz-file-select-button {
+  color: initial; /* keep button label visible */
+}
+
+/* Custom file wrapper: show a button + filename; hide the native input visually */
+.custom-file {
+  display: flex;
+  align-items: center;
+  margin-top: 2%;
+}
+.custom-file-input {
+  position: absolute !important;
+  left: -9999px !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden !important;
+  opacity: 0 !important;
+}
+.custom-file .kk-upload-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2.5% 12px;
+  border-radius: 8px;
+  background: #0a2c59;
   color: #fff;
   border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
   cursor: pointer;
-  margin-bottom: 8px;
+}
+.custom-file .kk-upload-btn:hover { background: #143d77; }
+
+.image-preview-container {
+    max-width: 100%;
+    max-height: 60vh;
+    width: auto;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+    object-fit: contain;
+    border-radius: 8px;
+}
+.image-preview-container img {
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #bcd4ec;
+  background: #f5faff;
+}
+.remove-image-btn {    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: rgba(0, 0, 0, 0.6);
+    color: #fff;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    font-size: 16px;
+    line-height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.2s;
+}
+.remove-image-btn:hover {
+  background: #d32f2f;
+}
+
+/* Responsive: stack upload columns on smaller screens and scale previews */
+/* @media (max-width: 900px) {
+  .kk-upload-row {
+    flex-direction: column;
+    gap: 18px;
+    align-items: stretch;
+  }
+  .kk-upload-col {
+    width: 100%;
+    padding: 18px;
+    margin: 0 auto 18px auto;
+  }
+  .image-preview-container {
+    justify-content: flex-start;
+    gap: 12px;
+  }
+  .image-preview-container img {
+    width: 160px;
+    height: 100px;
+  }
+} */
+
+@media (max-width: 600px) {
+  .kk-upload-row { gap: 12px; }
+  .kk-upload-col { 
+    padding: 6% !important; 
+  }
+  .image-preview-container { 
+    gap: 8px; 
+  }
+  .image-preview-container img { 
+    width: 120px; 
+    height: 60vh; }
+  .remove-image-btn { width: 22px; height: 22px; font-size: 1rem; }
+  .kk-upload-col input[type="file"] { width: 100%; }
+}
+
+@media (max-width: 400px) {
+  .image-preview-container img { width: 100px; height: 70px; }
+  .kk-upload-col { 
+    padding: 7%; 
+  }
 }
 .kk-upload-filename {
+  min-width: 37vh;
   margin-left: 12px;
   color: #0A2C59;
   font-weight: bold;
@@ -1185,7 +1397,6 @@ select.form-control:focus {
 
 @media (max-width: 480px) {
   .card, .card.intro, .kk-card, .kk-upload-col{
-    margin-top: 26%;
     width: 90%;
   }
   .notifs{
@@ -1194,6 +1405,21 @@ select.form-control:focus {
   .notif{
     margin-top: 1%;
   }
+
+  .kk-upload-btn{
+    font-size: 0.8rem;
+    min-width: 38%;
+    padding: 3.5% 0 !important;
+    margin-bottom: 0;
+  }
+  .kk-upload-filename {
+   min-width: 5%;
+   margin-left: 0;
+}
+.custom-file {
+    margin-top: 3%;
+        gap: 3%;
+}
   .footer {
     padding: 30px 20px 15px;
   }
@@ -1241,54 +1467,63 @@ select.form-control:focus {
 
 
 
-.container {
+.image-preview-container {
+      width: 100%;
+      margin-top: 2%;
+    height: auto;
+    border-radius: 8px;
+    border: 1px solid #bcd4ec;
+}
+.image-preview-container img {
+  display: block;
+  width: 100%;
+  max-width: 360px; /* allow larger previews on desktop but keep responsive */
+  height: auto; /* maintain aspect ratio */
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid #e3edf7;
+  background: #f5faff;
+}
+.remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 60;
+  background: #ffffff; /* white circle like screenshots */
+  color: #d32f2f; /* red × */
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
   display: flex;
-  flex-direction: column;
   align-items: center;
+  justify-content: center;
+  transition: box-shadow 0.12s, transform 0.06s;
+  box-shadow: 0 6px 14px rgba(20,61,119,0.12);
 }
+.remove-image-btn:focus { outline: none; box-shadow: 0 6px 14px rgba(20,61,119,0.18); }
+.remove-image-btn:hover { transform: translateY(-2px); }
 
-
-@media (min-width: 601px) and (max-width: 767px) {
-  .kk-label, .kk-labels {
-    font-size: 0.85rem; /* Smaller font for labels */
-  }
-
-  .kk-input {
-    font-size: 13px; /* Smaller font for inputs */
-    padding: 8px 6px; /* Adjust padding for inputs */
-  }
-
-  .kk-btn, .kk-btnss  {
-    font-size: 0.8rem; /* Smaller font for buttons */
-    padding: 8px 0; /* Adjust button padding */
-  }
-
-  .kk-intro h2 {
-    font-size: 20px; /* Smaller font for headings */
-    font-weight: bold;
-  }
-
-  .kk-intro p {
-    font-size: 0.85rem; /* Smaller font for paragraphs */
-  }
+/* New: inner wrapper to ensure the remove button anchors to the image area */
+.preview-inner {
+  position: relative;
+  display: inline-block;
+  line-height: 0; /* remove inline gaps */
 }
-
-.kk-card {
-  width: 90%; /* Same width as .kk-intro */
-  max-width: 900px; /* Same max-width as .kk-intro */
-  margin: 12px auto; /* Center alignment like .kk-intro */
-  background-color: #fff; /* Same background color */
-  border-radius: 15px; /* Same border-radius */
-  padding: 30px; /* Same padding as .kk-intro */
-  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Same shadow */
-  box-sizing: border-box; /* Ensure consistent sizing */
+.preview-inner .preview-img {
+  display: block;
+  max-width: 90vh;
+  width: 100%;
+  height: auto;
+  border-radius: 10px;
+  object-fit: cover;
 }
-.kk-btn-group{
-  width: 90%; /* Same width as .kk-intro */
-  max-width: 900px; /* Same max-width as .kk-intro */
-  margin: 12px auto; /* Center alignment like .kk-intro */
-  border-radius: 15px; /* Same border-radius */
-  box-sizing: border-box; /* Ensure consistent sizing */
+.preview-inner .remove-image-btn {
+  top: 8px;
+  right: 8px;
 }
 
 
@@ -1310,6 +1545,17 @@ select.form-control:focus {
   box-shadow: none;
 }
 
+@media (max-width: 1012px) and (min-width: 769px) {
+  
+  .kk-upload-filename{
+    min-width: 20vw;
+  }
+  .kk-upload-btn{
+    padding: 3.8% !important;
+    font-size: 0.8rem;
+  }
+}
+
 /* Align buttons to the right for larger screens */
 @media (min-width: 769px) {
   .kk-btn-group {
@@ -1320,6 +1566,34 @@ select.form-control:focus {
   }
   .notif{
     font-size: 1.25rem;
+  }
+  /* Ensure upload columns sit side-by-side on larger screens */
+  .kk-upload-row {
+    width: 90%;
+    max-width: 900px;
+    margin: 12px auto 25px auto;
+    gap: 32px;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+
+  .kk-upload-col {
+        flex: 1;
+        min-width: auto;
+        width: calc(50% - 16px);
+        max-width: none;
+        padding: 30px;
+        margin: 0;
+  }
+
+  /* Make sure preview containers align horizontally inside each column */
+  .image-preview-container {
+    display: flex;
+    flex-direction: row;
+    gap: 12px;
+    align-items: center;
   }
 }
 

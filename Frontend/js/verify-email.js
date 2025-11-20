@@ -220,7 +220,12 @@ export function setupVerifyEmail(user) {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Your account has been verified.");
+        await Swal.fire({
+          icon: 'success',
+          title: 'Verified!',
+          text: 'Your account has been verified.',
+          confirmButtonColor: '#0A2C59'
+        });
         verifyEmailModal.classList.remove("active");
         // clear timer
         if (otpTimerInterval) { clearInterval(otpTimerInterval); otpTimerInterval = null; }
@@ -228,7 +233,12 @@ export function setupVerifyEmail(user) {
         if (verifyOtpTimer) verifyOtpTimer.textContent = "";
         window.location.reload();
       } else {
-        alert(data.message || "Invalid or expired OTP");
+        await Swal.fire({
+          icon: 'error',
+          title: 'Verification Failed',
+          text: data.message || "Invalid or expired OTP",
+          confirmButtonColor: '#0A2C59'
+        });
       }
     } catch (err) {
       alert("Could not verify OTP. Please try again.");
