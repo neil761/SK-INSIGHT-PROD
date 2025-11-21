@@ -29,31 +29,31 @@ document.addEventListener('DOMContentLoaded', async function() {
     const data = await res.json();
 
 
-    try {
-      const userRes = await fetch('http://localhost:5000/api/kkprofiling/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const userInfo = userRes.ok ? await userRes.json() : {};
+    // try {
+    //   const userRes = await fetch('http://localhost:5000/api/kkprofiling/me', {
+    //     headers: { Authorization: `Bearer ${token}` }
+    //   });
+    //   const userInfo = userRes.ok ? await userRes.json() : {};
 
-      // Try to find birthday in different places
-      let birthday = '';
-      if (userInfo.birthday) {
-        birthday = userInfo.birthday;
-      } else if (userInfo.personalInfo && userInfo.personalInfo.birthday) {
-        birthday = userInfo.personalInfo.birthday;
-      } else if (data.birthday) {
-        birthday = data.birthday;
-      } else {
-      }
+    //   // Try to find birthday in different places
+    //   let birthday = '';
+    //   if (userInfo.birthday) {
+    //     birthday = userInfo.birthday;
+    //   } else if (userInfo.personalInfo && userInfo.personalInfo.birthday) {
+    //     birthday = userInfo.personalInfo.birthday;
+    //   } else if (data.birthday) {
+    //     birthday = data.birthday;
+    //   } else {
+    //   }
 
-      // Apply to input
-      const bdayInput = document.getElementById('birthday');
-      if (bdayInput) {
-        bdayInput.value = birthday ? birthday.split('T')[0] : '';
-      } else {
-      }
-    } catch (err) {
-    }
+    //   // Apply to input
+    //   const bdayInput = document.getElementById('birthday');
+    //   if (bdayInput) {
+    //     bdayInput.value = birthday ? birthday.split('T')[0] : '';
+    //   } else {
+    //   }
+    // } catch (err) {
+    // }
 
     // Fill form fields with fetched data
     document.getElementById('surname').value = data.surname || '';
@@ -292,9 +292,15 @@ function handleKKProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "../../kkform-personal.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "../../kkform-personal.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -365,9 +371,15 @@ function handleLGBTQProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "../../lgbtqform.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "../../lgbtqform.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -436,11 +448,17 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No Application found`,
+        title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "../../Educational-assistance-user.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "../../Educational-assistance-user.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -466,13 +484,78 @@ document.addEventListener('DOMContentLoaded', async function () {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
 
   try {
+    // Fetch Educational Assistance data
     const res = await fetch('http://localhost:5000/api/educational-assistance/me', {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
     const data = await res.json();
 
-    // Populate the requirements table with Cloudinary URLs
+    // Fetch user data (to get birthday from sign-up)
+    const userRes = await fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const userInfo = userRes.ok ? await userRes.json() : {};
+
+    // Use the birthday from the user data
+    const birthday = userInfo.birthday || ''; // Default to empty string if not found
+    const birthdayInput = document.getElementById('birthday');
+    if (birthdayInput) {
+      birthdayInput.value = birthday ? birthday.split('T')[0] : ''; // Format as YYYY-MM-DD
+      birthdayInput.disabled = true; // Make it read-only
+    }
+
+    // Populate other fields with fetched data
+    document.getElementById('surname').value = data.surname || '';
+    document.getElementById('firstName').value = data.firstname || '';
+    document.getElementById('middleName').value = data.middlename || '';
+    document.getElementById('suffix').value = data.suffix || '';
+    document.getElementById('placeOfBirth').value = data.placeOfBirth || '';
+    document.getElementById('age').value = data.age || '';
+    document.getElementById('gender').value = data.sex || '';
+    document.getElementById('civilStatus').value = data.civilStatus || '';
+    document.getElementById('religion').value = data.religion || '';
+    document.getElementById('email').value = data.email || '';
+    document.getElementById('contact').value = data.contactNumber || '';
+    document.getElementById('schoolname').value = data.school || '';
+    document.getElementById('schooladdress').value = data.schoolAddress || '';
+    document.getElementById('year').value = data.year || '';
+    document.getElementById('benefittype').value = data.typeOfBenefit || '';
+    document.getElementById('fathername').value = data.fatherName || '';
+    document.getElementById('fathercontact').value = data.fatherPhone || '';
+    document.getElementById('mothername').value = data.motherName || '';
+    document.getElementById('mothercontact').value = data.motherPhone || '';
+
+    // Populate siblings table
+    const siblingsBody = document.getElementById('siblingsTableBody');
+    siblingsBody.innerHTML = '';
+    if (Array.isArray(data.siblings)) {
+      data.siblings.forEach((sibling) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${sibling.name || ''}</td>
+          <td>${sibling.gender || ''}</td>
+          <td>${sibling.age || ''}</td>
+        `;
+        siblingsBody.appendChild(row);
+      });
+    }
+
+    // Populate expenses table
+    const expensesBody = document.getElementById('expensesTableBody');
+    expensesBody.innerHTML = '';
+    if (Array.isArray(data.expenses)) {
+      data.expenses.forEach((expense) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${expense.item || ''}</td>
+          <td>${expense.expectedCost || ''}</td>
+        `;
+        expensesBody.appendChild(row);
+      });
+    }
+
+    // Populate requirements (e.g., uploaded files)
     const requirements = [
       { id: 'viewFront', column: 'frontImage', label: 'Front ID', url: data.frontImage },
       { id: 'viewBack', column: 'backImage', label: 'Back ID', url: data.backImage },
@@ -482,14 +565,62 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     requirements.forEach((req) => {
       const column = document.getElementById(`${req.column}UploadColumn`);
-      if (!column) {
-        console.warn(`⚠️ Column with ID "${req.column}UploadColumn" not found in the DOM.`);
+      if (column) {
+        const fileName = req.url ? req.url.replace(/^.*[\\/]/, '') : '';
+        const truncatedName = truncateFileName(fileName);
+        column.textContent = truncatedName;
+        column.title = fileName; // Show full name on hover
       }
     });
+
+    // Add preview logic for images
+    const viewFront = document.getElementById('viewFront');
+    if (viewFront) {
+      viewFront.onclick = function () {
+        if (data.frontImage) {
+          showImagePreview(data.frontImage);
+        }
+      };
+    }
+
+    const viewBack = document.getElementById('viewBack');
+    if (viewBack) {
+      viewBack.onclick = function () {
+        if (data.backImage) {
+          showImagePreview(data.backImage);
+        }
+      };
+    }
+
+    const viewCOE = document.getElementById('viewCOE');
+    if (viewCOE) {
+      viewCOE.onclick = function () {
+        if (data.coeImage) {
+          showImagePreview(data.coeImage);
+        }
+      };
+    }
+
+    const viewVoter = document.getElementById('viewVoter');
+    if (viewVoter) {
+      viewVoter.onclick = function () {
+        if (data.voter) {
+          showImagePreview(data.voter);
+        }
+      };
+    }
   } catch (err) {
     console.error('Failed to fetch Educational Assistance data:', err);
   }
 });
+
+// Helper function to truncate file names
+function truncateFileName(fileName, maxLength = 6) {
+  if (fileName.length <= maxLength) {
+    return fileName;
+  }
+  return fileName.substring(0, maxLength) + '...';
+}
 
 // Helper function to show image preview in a modal
 function showImagePreview(imageUrl) {

@@ -2,28 +2,9 @@
 // ANNOUNCEMENT SECTION
 // =========================
 
-// Token validation helper function
-// function validateTokenAndRedirect(featureName = "this feature") {
-//   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-//   if (!token) {
-//     Swal.fire({
-//       icon: 'warning',
-//       title: 'Authentication Required',
-//       text: `You need to log in first to access ${featureName}.`,
-//       confirmButtonText: 'Go to Login',
-//       confirmButtonColor: '#0A2C59',
-//       allowOutsideClick: false,
-//       allowEscapeKey: false,
-//     }).then(() => {
-//       window.location.href = '/Frontend/html/user/login.html';
-//     });
-//     return false;
-//   }
-//   return true;
-// }
-
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   const tableBody = document.querySelector(".announcement-table tbody");
+  const tableHead = document.querySelector(".announcement-table thead tr");
   const modal = document.getElementById("announcementModal");
   const modalTitle = modal.querySelector(".modal-header h3");
   const modalEventDate = modal.querySelector(".event-date");
@@ -31,100 +12,211 @@ document.addEventListener("DOMContentLoaded", () => {
   const modalDescription = modal.querySelector(".description-box");
   const closeModalBtn = modal.querySelector(".close-modal");
 
-  // Create or select a cards container for mobile view
   let cardsContainer = document.querySelector(".announcement-cards");
   if (!cardsContainer) {
     cardsContainer = document.createElement("div");
     cardsContainer.className = "announcement-cards";
-    // Insert before the table for layout consistency
     const tableEl = document.querySelector(".announcement-table");
     if (tableEl && tableEl.parentNode) {
       tableEl.parentNode.insertBefore(cardsContainer, tableEl);
     }
   }
 
-  // Keep last loaded announcements to support responsive re-rendering
   let lastAnnouncements = [];
+  let generalAnnouncements = [];
+  let expiredAnnouncements = [];
+  let forYouAnnouncements = [];
+  let currentUserId = null;
 
-  // Fetch announcements
-  async function fetchAnnouncements() {
-    // Check token first
-    // if (!validateTokenAndRedirect("announcements")) {
-    //   return;
-    // }
-
+  async function loadCurrentUserId() {
     try {
-      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
-      const res = await fetch("http://localhost:5000/api/announcements", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (!res.ok) {
-        console.error("Fetch failed:", res.status, await res.text());
-        throw new Error("Failed to fetch announcements");
-      }
-
-      const data = await res.json();
-      if (!data.success) {
-        throw new Error(data.message || "Failed to fetch announcements");
-      }
-
-      lastAnnouncements = data.announcements || [];
-      renderAnnouncementsResponsive(lastAnnouncements);
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      if (!token) return;
+      const res = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return;
+      const data = await res.json().catch(() => null);
+      // API may return { user: {...} } or the user object directly
+      const userObj = (data && data.user) ? data.user : data;
+      currentUserId = (userObj && (userObj._id || userObj.id)) || null;
     } catch (err) {
-      console.error("Error fetching announcements:", err);
-      tableBody.innerHTML = `
-        <tr>
-          <td colspan="4" style="text-align:center">Error loading announcements</td>
-        </tr>
-      `;
+      console.warn('Failed to load current user id', err);
     }
   }
 
-  // Responsive renderer: choose cards (mobile) or table (desktop)
+  const tabBtns = document.querySelectorAll('.tab-btn');
+  let currentTab = 'general';
+
+  tabBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentTab = btn.dataset.tab;
+      updateTableHeader();
+      renderTabAnnouncements();
+    });
+  });
+
+  function updateTableHeader() {
+    if (!tableHead) return;
+    // Change the second column header based on tab
+    const ths = tableHead.querySelectorAll("th");
+    if (ths.length >= 2) {
+      if (currentTab === "foryou") {
+        ths[1].textContent = "Created At";
+      } else {
+        ths[1].textContent = "Event Date";
+      }
+    }
+  }
+
+  async function fetchGeneralAndExpired() {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const res = await fetch("http://localhost:5000/api/announcements", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    const all = data.announcements || [];
+    // Only general announcements (recipient: null)
+    generalAnnouncements = all.filter(a => a.isActive === true && a.recipient === null);
+    expiredAnnouncements = all.filter(a => a.isActive === false && a.recipient === null);
+  }
+
+  async function fetchForYou() {
+    const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+    const res = await fetch("http://localhost:5000/api/announcements/myannouncements", {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const data = await res.json();
+    forYouAnnouncements = data.announcements || [];
+    // Log for debugging
+    console.log("For You Announcements:", forYouAnnouncements);
+  }
+
+  // Mark an announcement as viewed for the current user (server will push user id into viewedBy)
+  async function markAnnouncementViewed(id) {
+    try {
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      if (!token || !id) return;
+      const res = await fetch(`http://localhost:5000/api/announcements/${id}/view`, {
+        method: "POST",
+        headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
+      });
+      if (!res.ok) {
+        // non-fatal: server may already have it marked or endpoint may be protected
+        console.warn("Failed to mark announcement viewed", res.status);
+      }
+      // refresh announcements UI and the badge (if the badge script exposes the helper)
+      try { await renderTabAnnouncements(); } catch (e) { /* ignore */ }
+      if (window.updateNotificationBadge) {
+        try { window.updateNotificationBadge(); } catch (e) { /* ignore */ }
+      }
+    } catch (err) {
+      console.warn("markAnnouncementViewed error", err);
+    }
+  }
+
+  async function renderTabAnnouncements() {
+    if (currentTab === 'general' || currentTab === 'expired') {
+      await fetchGeneralAndExpired();
+    }
+    if (currentTab === 'foryou') {
+      await fetchForYou();
+    }
+    let announcements = [];
+    if (currentTab === 'general') {
+      announcements = generalAnnouncements;
+    } else if (currentTab === 'foryou') {
+      announcements = forYouAnnouncements;
+    } else if (currentTab === 'expired') {
+      announcements = expiredAnnouncements;
+    }
+    lastAnnouncements = announcements;
+    renderAnnouncementsResponsive(announcements);
+  }
+
   function renderAnnouncementsResponsive(announcements) {
     const isMobile = window.matchMedia('(max-width: 600px)').matches;
+    const tableEl = document.querySelector('.announcement-table');
     if (isMobile) {
-      document.querySelector('.announcement-table')?.classList.add('hidden');
+      if (tableEl) tableEl.classList.add('hidden');
       renderAnnouncementsCards(announcements);
     } else {
-      document.querySelector('.announcement-table')?.classList.remove('hidden');
+      // show the table and hide cards container
+      if (tableEl) tableEl.classList.remove('hidden');
+      // ensure cards container is hidden before rendering table
+      if (cardsContainer) cardsContainer.style.display = 'none';
       renderAnnouncementsTable(announcements);
     }
   }
 
-  // Render announcements into table (desktop)
   function renderAnnouncementsTable(announcements) {
+    // hide cards container when rendering the table
+    if (cardsContainer) cardsContainer.style.display = 'none';
     tableBody.innerHTML = "";
 
+    let displayAnnouncements = announcements;
     const now = new Date();
-    const upcomingAnnouncements = announcements.filter(a => {
-      const ev = new Date(a.eventDate);
-      return ev >= now;
-    });
 
-    // Sort: pinned announcements first, then by event date
-    upcomingAnnouncements.sort((a, b) => {
-      // If one is pinned and the other isn't, pinned comes first
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      
-      // If both are pinned or both are not pinned, sort by event date
-      return new Date(a.eventDate) - new Date(b.eventDate);
-    });
-    
-    const limitedAnnouncements = upcomingAnnouncements.slice(0, 8);
+    if (currentTab === 'general') {
+      displayAnnouncements = announcements.filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp >= now;
+      });
+      // Sort by nearest eventDate (soonest first)
+      displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+      // ensure pinned announcements appear first while keeping relative order
+      const pinned = displayAnnouncements.filter(x => x.isPinned);
+      const unpinned = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinned.concat(unpinned);
+    }
+    else if (currentTab === 'expired') {
+      displayAnnouncements = announcements.filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp < now;
+      });
+      // Sort so latest expired (most recent expiresAt) is on top
+      displayAnnouncements.sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt));
+    }
+    else if (currentTab === 'foryou') {
+      displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // pinned on top
+      const pinnedFY = displayAnnouncements.filter(x => x.isPinned);
+      const unpinnedFY = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinnedFY.concat(unpinnedFY);
+    }
+
+    const limitedAnnouncements = displayAnnouncements.slice(0, 8);
 
     limitedAnnouncements.forEach(a => {
-      const status = getAnnouncementStatus(a.eventDate);
-      const tr = document.createElement("tr");
-      
-      // Add pinned class for styling
+      let status, dateCol;
+      if (currentTab === 'foryou') {
+        status = "No Expiry";
+        dateCol = a.createdAt ? formatDateTime(a.createdAt) : "-";
+      } else {
+        status = getAnnouncementStatus(a.expiresAt);
+        dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
+      }
+        const tr = document.createElement("tr");
       if (a.isPinned) {
         tr.classList.add("pinned-row");
       }
-      
+        // read/unread visual state
+        try {
+          const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          const isRead = currentUserId ? viewedBy.includes(String(currentUserId)) : false;
+          tr.classList.add(isRead ? 'announcement-read' : 'announcement-notread');
+        } catch (e) {
+          // ignore
+        }
+      // Add status hue for For You tab
+if (currentTab === 'foryou') {
+  const title = (a.title || "").toLowerCase();
+  if (title.includes("rejected") || title.includes("deleted")) {
+    tr.classList.add("announcement-row-rejected");
+  } else if (title.includes("approved") || title.includes("restored")) {
+    tr.classList.add("announcement-row-approved");
+  }
+}
       tr.innerHTML = `
         <td>
           <div class="announcement-title">
@@ -133,8 +225,8 @@ document.addEventListener("DOMContentLoaded", () => {
             ${a.title}
           </div>
         </td>
-        <td>${a.eventDate ? formatDateTime(a.eventDate) : "-"}</td>
-        <td><span class="status-badge ${status.toLowerCase()}">${status}</span></td>
+        <td>${dateCol}</td>
+        <td><span class="status-badge ${status.toLowerCase().replace(/\s/g, '')}">${status}</span></td>
         <td>
           <button class="view-btn" data-id="${a._id}">
             <i class="fas fa-eye"></i>
@@ -146,104 +238,161 @@ document.addEventListener("DOMContentLoaded", () => {
 
     for (let i = limitedAnnouncements.length; i < 8; i++) {
       const tr = document.createElement("tr");
-      tr.innerHTML = `
-      `;
+      tr.innerHTML = ``;
       tableBody.appendChild(tr);
+    }
+    // make sure the table is visible (in case a previous code path hid it)
+    const tableEl = document.querySelector('.announcement-table');
+    if (tableEl) {
+      tableEl.classList.remove('hidden');
+      tableEl.style.display = '';
     }
   }
 
-  // Render announcements as cards (mobile)
   function renderAnnouncementsCards(announcements) {
-    // Ensure container exists
     if (!cardsContainer) return;
     cardsContainer.innerHTML = "";
-
-    // Hide the table body content when in mobile cards mode
     if (tableBody) tableBody.innerHTML = "";
 
+    let displayAnnouncements = announcements;
     const now = new Date();
-    const upcomingAnnouncements = (announcements || []).filter(a => {
-      const ev = new Date(a.eventDate);
-      return ev >= now;
-    });
 
-    upcomingAnnouncements.sort((a, b) => {
-      if (a.isPinned && !b.isPinned) return -1;
-      if (!a.isPinned && b.isPinned) return 1;
-      return new Date(a.eventDate) - new Date(b.eventDate);
-    });
+    if (currentTab === 'general') {
+      displayAnnouncements = (announcements || []).filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp >= now;
+      });
+      displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+      // pinned first
+      const pinned = displayAnnouncements.filter(x => x.isPinned);
+      const unpinned = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinned.concat(unpinned);
+    }
+    else if (currentTab === 'expired') {
+      displayAnnouncements = (announcements || []).filter(a => {
+        const exp = new Date(a.expiresAt);
+        return exp < now;
+      });
+      displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
+    }
+    else if (currentTab === 'foryou') {
+      displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      // pinned first
+      const pinnedFY = displayAnnouncements.filter(x => x.isPinned);
+      const unpinnedFY = displayAnnouncements.filter(x => !x.isPinned);
+      displayAnnouncements = pinnedFY.concat(unpinnedFY);
+    }
 
-    const limitedAnnouncements = upcomingAnnouncements.slice(0, 8);
+    const limitedAnnouncements = displayAnnouncements.slice(0, 8);
 
     limitedAnnouncements.forEach(a => {
-      const status = getAnnouncementStatus(a.eventDate);
+      let status, dateCol;
+      if (currentTab === 'foryou') {
+        status = "No Expiry";
+        dateCol = a.createdAt ? formatDateTime(a.createdAt) : "-";
+      } else {
+        status = getAnnouncementStatus(a.expiresAt);
+        dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
+      }
       const card = document.createElement('div');
-      card.className = 'announcement-card';
+      // read/unread visual state for cards
+      try {
+        const viewedBy2 = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+        const isReadCard = currentUserId ? viewedBy2.includes(String(currentUserId)) : false;
+        card.className = 'announcement-card ' + (isReadCard ? 'announcement-read' : 'announcement-notread');
+      } catch (e) {
+        card.className = 'announcement-card';
+      }
+      // Add status hue for For You tab
+if (currentTab === 'foryou') {
+  const title = (a.title || "").toLowerCase();
+  if (title.includes("rejected") || title.includes("deleted")) {
+    card.classList.add("announcement-card-rejected");
+  } else if (title.includes("approved") || title.includes("restored")) {
+    card.classList.add("announcement-card-approved");
+  }
+}
       card.innerHTML = `
         <div class="card-header">
           <div class="title">
             ${a.isPinned ? '<i class="fa-solid fa-location-pin" style="color: #d4af37; margin-right: 8px;"></i>' : ''}
             <i class="fa-solid fa-bullhorn"></i>
             <span>${a.title}</span>
+            <span class="status-badge ${status.toLowerCase().replace(/\s/g, '')}">${status}</span>
           </div>
-          <span class="status-badge ${status.toLowerCase()}">${status}</span>
         </div>
         <div class="card-meta">
-          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${a.eventDate ? formatDateTime(a.eventDate) : '-'}</div>
+          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>
           <div class="meta-row"><i class="fa-regular fa-clock"></i> Posted: ${a.createdAt ? formatDateTime(a.createdAt) : '-'}</div>
         </div>
-        <div class="card-actions">
-          <button class="view-btn" data-id="${a._id}"><i class="fas fa-eye"></i> View</button>
-        </div>
       `;
+
+      card.addEventListener('click', async () => {
+        if (!validateTokenAndRedirect("announcement details")) {
+          return;
+        }
+        try {
+          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+          const res = await fetch(`http://localhost:5000/api/announcements/${a._id}`, {
+            headers: { "Authorization": `Bearer ${token}` }
+          });
+          if (!res.ok) throw new Error("Announcement not found");
+          const { announcement } = await res.json();
+          modalTitle.textContent = announcement.title;
+          // For "foryou" tab, hide event date in modal
+          if (currentTab === 'foryou') {
+            modalEventDate.style.display = "none";
+          } else {
+            modalEventDate.style.display = "";
+            modalEventDate.textContent = formatDateTime(announcement.eventDate);
+          }
+          modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
+          modalDescription.textContent = announcement.content;
+          modal.classList.add("active");
+          // mark as viewed on the server and refresh badge/UI
+          try { await markAnnouncementViewed(a._id); } catch (e) { /* ignore */ }
+        } catch (err) {
+          console.error("Error fetching announcement:", err);
+          alert("Failed to load announcement details");
+        }
+      });
+
       cardsContainer.appendChild(card);
     });
 
-    // Show cards container and hide table on mobile
+    // show cards and hide the table using the "hidden" class
     cardsContainer.style.display = 'block';
     const tableEl = document.querySelector('.announcement-table');
-    if (tableEl) tableEl.style.display = 'none';
+    if (tableEl) tableEl.classList.add('hidden');
   }
 
-  // Handle resize to re-render appropriately
-  window.addEventListener('resize', () => {
-    if (!lastAnnouncements) return;
-    // Toggle visibility styles back when moving to desktop
-    const tableEl = document.querySelector('.announcement-table');
-    if (window.matchMedia('(max-width: 600px)').matches) {
-      if (cardsContainer) cardsContainer.style.display = 'block';
-      if (tableEl) tableEl.style.display = 'none';
-    } else {
-      if (cardsContainer) cardsContainer.style.display = 'none';
-      if (tableEl) tableEl.style.display = '';
-    }
-    renderAnnouncementsResponsive(lastAnnouncements);
-  });
-
-  // View modal handler
+  // Modal view for table (desktop)
   document.addEventListener("click", async (e) => {
     if (e.target.closest(".view-btn")) {
       if (!validateTokenAndRedirect("announcement details")) {
         return;
       }
-      
       const id = e.target.closest(".view-btn").dataset.id;
       try {
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-
         const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
-
         if (!res.ok) throw new Error("Announcement not found");
         const { announcement } = await res.json();
-
         modalTitle.textContent = announcement.title;
-        modalEventDate.textContent = formatDateTime(announcement.eventDate);
+        // For "foryou" tab, hide event date in modal
+        if (currentTab === 'foryou') {
+          modalEventDate.style.display = "none";
+        } else {
+          modalEventDate.style.display = "";
+          modalEventDate.textContent = formatDateTime(announcement.eventDate);
+        }
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
         modalDescription.textContent = announcement.content;
-
         modal.classList.add("active");
+  // mark as viewed on the server and refresh badge/UI
+  try { await markAnnouncementViewed(id); } catch (e) { /* ignore */ }
       } catch (err) {
         console.error("Error fetching announcement:", err);
         alert("Failed to load announcement details");
@@ -251,7 +400,6 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // Close modal
   closeModalBtn.addEventListener("click", () => {
     modal.classList.remove("active");
   });
@@ -259,7 +407,6 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target === modal) modal.classList.remove("active");
   });
 
-  // Helper functions
   function formatDateTime(dt) {
     if (!dt) return "";
     return new Date(dt).toLocaleString("en-US", {
@@ -272,57 +419,74 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  function getAnnouncementStatus(eventDate) {
-    if (!eventDate) return "Unknown";
+  function getAnnouncementStatus(expiresAt) {
+    if (!expiresAt) return "Unknown";
     const now = new Date();
-    const ev = new Date(eventDate);
-    return ev >= now ? "Upcoming" : "Expired";
+    const exp = new Date(expiresAt);
+    return exp >= now ? "Upcoming" : "Expired";
   }
 
-  // Load announcements on page load
-  fetchAnnouncements();
+  // Initial load: show general tab and update header
+  await loadCurrentUserId();
+  updateTableHeader();
+  await renderTabAnnouncements();
 
-  // =========================
-  // REALTIME UPDATES WITH WEBSOCKET
-  // =========================
-  // Connect to WebSocket server
+  // WebSocket updates (optional, keep your logic here)
   const socket = io("http://localhost:5000", { transports: ["websocket"] });
-
-  // Listen for announcement updates
-  socket.on("announcement:created", (data) => {
-
-    // Refresh announcements to show the new one
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:updated", (data) => {
-
-    // Refresh announcements to show the updated one
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:deleted", (data) => {
-
-    // Refresh announcements to remove the deleted one
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:pinned", (data) => {
-
-    // Refresh announcements to show pin status
-    fetchAnnouncements();
-  });
-
-  socket.on("announcement:unpinned", (data) => {
-
-    // Refresh announcements to show pin status
-    fetchAnnouncements();
-  });
-
+  socket.on("announcement:created", renderTabAnnouncements);
+  socket.on("announcement:updated", renderTabAnnouncements);
+  socket.on("announcement:deleted", renderTabAnnouncements);
+  socket.on("announcement:pinned", renderTabAnnouncements);
+  socket.on("announcement:unpinned", renderTabAnnouncements);
+  
+  // Listen for breakpoint changes (mobile <-> desktop) and re-render accordingly.
+  // Using matchMedia 'change' is more efficient than raw resize events.
+  (function setupBreakpointListener() {
+    try {
+      const mq = window.matchMedia('(max-width: 600px)');
+      const handleMqChange = (e) => {
+        try {
+          if (lastAnnouncements && lastAnnouncements.length) {
+            renderAnnouncementsResponsive(lastAnnouncements);
+          } else {
+            // If data not yet loaded, trigger a full render which will fetch data
+            renderTabAnnouncements();
+          }
+        } catch (err) {
+          console.warn('Error handling media query change, falling back to full render', err);
+          renderTabAnnouncements();
+        }
+      };
+      // Initial sync in case JS loaded after a size change
+      mq.matches ? renderAnnouncementsResponsive(lastAnnouncements) : renderAnnouncementsResponsive(lastAnnouncements);
+      if (typeof mq.addEventListener === 'function') {
+        mq.addEventListener('change', handleMqChange);
+      } else if (typeof mq.addListener === 'function') {
+        // Older browsers
+        mq.addListener(handleMqChange);
+      }
+    } catch (err) {
+      // If matchMedia is not supported, fallback to a debounced resize listener
+      let resizeTimer = null;
+      window.addEventListener('resize', () => {
+        if (resizeTimer) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          try {
+            if (lastAnnouncements && lastAnnouncements.length) {
+              renderAnnouncementsResponsive(lastAnnouncements);
+            } else {
+              renderTabAnnouncements();
+            }
+          } catch (err2) {
+            console.warn('Resize fallback failed', err2);
+            renderTabAnnouncements();
+          }
+        }, 150);
+      });
+    }
+  })();
 
 });
-
-
 // =========================
 // NAVBAR & KK PROFILING SECTION
 // =========================
@@ -401,16 +565,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "kkform-personal.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "kkform-personal.html");
   }
@@ -474,16 +644,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "lgbtqform.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "lgbtqform.html");
   }
@@ -547,16 +723,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No Application found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "Educational-assistance-user.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }
@@ -571,4 +753,71 @@ document.addEventListener('DOMContentLoaded', function() {
   // Educational Assistance
   document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
   document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const verificationStrip = document.getElementById('verification-strip');
+
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => response.json())
+      .then(user => {
+        if (!user.isVerified) {
+          // Show verification strip for unverified accounts
+          if (verificationStrip) {
+            verificationStrip.style.display = 'flex';
+          }
+
+          // Disable navigation buttons
+          const navSelectors = [
+            '#kkProfileNavBtnDesktop',
+            '#kkProfileNavBtnMobile',
+            '#lgbtqProfileNavBtnDesktop',
+            '#lgbtqProfileNavBtnMobile',
+            '#educAssistanceNavBtnDesktop',
+            '#educAssistanceNavBtnMobile',
+            '.announcement-btn'
+          ];
+          navSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+              btn.classList.add('disabled');
+              btn.setAttribute('tabindex', '-1');
+              btn.setAttribute('aria-disabled', 'true');
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+            });
+          });
+        }
+      })
+      .catch(() => {
+        console.error('Failed to fetch user verification status.');
+      });
+  }
+});
+
+document.addEventListener("DOMContentLoaded", function () {
+  const announcementTableBody = document.querySelector(".announcement-table tbody");
+
+  if (announcementTableBody) {
+    const rows = announcementTableBody.querySelectorAll("tr");
+    if (rows.length <= 5) {
+      // If there are 5 or fewer announcements, remove scrolling
+      announcementTableBody.style.display = 'block';
+      announcementTableBody.style.overflowY = "visible";
+    } else {
+      // If there are more than 5 announcements, enable scrolling
+      announcementTableBody.style.maxHeight = "400px"; // Adjust height as needed
+      announcementTableBody.style.overflowY = "auto";
+    }
+  }
 });

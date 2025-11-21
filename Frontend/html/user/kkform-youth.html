@@ -27,7 +27,10 @@
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
       <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
     </div>
   </div>
@@ -48,7 +51,7 @@
       </div>
       <div class="kk-card">
         <label for="youthClassification" class="kk-label">Youth Classification</label>
-        <select id="youthClassification" name="youthClassification" class="kk-input">
+        <select id="youthClassification" name="youthClassification" class="kk-input" required>
           <option value="">Select classification</option>
           <option value="In School Youth">In School Youth</option>
           <option value="Out of School Youth">Out of School Youth</option>
@@ -58,7 +61,7 @@
 
         <div id="specificNeedsGroup" style="display: none; margin-top: 12px;">
           <label for="specificNeedType" class="kk-label">If Youth with Specific Needs, specify:</label>
-          <select id="specificNeedType" name="specificNeedType" class="kk-input">
+          <select id="specificNeedType" name="specificNeedType" class="kk-input" >
             <option value="">Select Specific Need</option>
             <option value="Person w/Disability">Person w/Disability</option>
             <option value="Children in Conflict w/Law">Children in Conflict w/Law</option>
@@ -130,7 +133,7 @@
         <!-- These two groups are now inside the same kk-card container -->
         <div id="attendanceCountGroup" style="display: none; margin-top: 12px;">
           <label class="kk-label" for="attendanceCount">How many times?</label>
-          <select class="kk-input" id="attendanceCount" name="attendanceCount">
+          <select class="kk-input" id="attendanceCount" name="attendanceCount" >
             <option value="">Select</option>
             <option value="1-2 times">1-2 times</option>
             <option value="3-4 times">3-4 times</option>
@@ -139,32 +142,53 @@
         </div>
         <div id="reasonGroup" style="display: none; margin-top: 12px;">
           <label class="kk-label" for="reasonDidNotAttend">Why didn't you attend?</label>
-          <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend">
+          <select class="kk-input" id="reasonDidNotAttend" name="reasonDidNotAttend" >
             <option value="">Select</option>
             <option value="There was no KK Assembly">There was no KK Assembly</option>
             <option value="Not interested">Not interested</option>
           </select>
         </div>
       </div>
-      <!-- Side-by-side image upload containers -->
+
+      <!-- Front ID Image Upload -->
       <div class="kk-upload-row">
-        <div class="kk-card kk-upload-col">
-          <label class="kk-label">Profile Image (ID):</label>
-          <button type="button" id="customUploadBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Image</button>
-          <div id="profileImagePreview" class="kk-upload-preview"></div>
-          <input type="file" id="profileImage" accept="image/*" style="display:none;">
+        <div class="lcard kk-upload-col">
+          <label class="label"  for="profileImage">Profile Image (ID):</label>
+          <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
+          <div class="custom-file">
+            <button type="button" id="customUploadBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="profileImageFilename" aria-live="polite"></div>
+            <input type="file" id="profileImage" name="profileImage" accept="image/*" required class="custom-file-input">
+          </div>
+          <div id="imagePreviewContainerFront" class="image-preview-container">
+            <div class="preview-inner">
+              <img id="profileImagePreview" class="preview-img" alt="Profile preview" style="display:none;" />
+              <button type="button" id="removeImageBtnFront" class="remove-image-btn" title="Remove image">&times;</button>
+            </div>
+          </div>
         </div>
-        <div class="kk-card kk-upload-col">
-          <label class="kk-label">Signature Image:</label>
-          <button type="button" id="customSignatureBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Signature</button>
-          <div id="signatureImagePreview" class="kk-upload-preview"></div>
-          <input type="file" id="signatureImage" accept="image/*" style="display:none;">
+
+      <!-- Back ID Image Upload -->
+        <div class="lcard kk-upload-col">
+          <label class="label" for="signatureImage">Signature Image:</label>
+          <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
+          <div class="custom-file">
+            <button type="button" id="customSignatureBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="signatureImageFilename" aria-live="polite"></div>
+            <input type="file" id="signatureImage" name="signatureImage" accept="image/*" required class="custom-file-input">
+          </div>
+          <div id="imagePreviewContainerBack" class="image-preview-container">
+            <div class="preview-inner">
+              <img id="signatureImagePreview" class="preview-img" alt="Signature preview" style="display:none;" />
+              <button type="button" id="removeImageBtnBack" class="remove-image-btn" title="Remove image">&times;</button>
+            </div>
+          </div>
         </div>
       </div>
 
       <div class="kk-btn-group">
         <button type="button" id="previousBtn" class="kk-btn kk-submit-btn" onclick="window.location.href='kkform-address.html'">Previous</button>
-        <button type="submit" class="kk-btn kk-submit-btn">Finish</button>
+        <button type="submit" class="kk-btn kk-submit-btn">Submit</button>
       </div>
     </form>
   </div>
@@ -207,6 +231,7 @@
       </div>
     </footer>
   <script src="../../js/token-validation.js"></script>
+    <script src="../../js/notification-badge.js" defer></script>
   <script src="../../js/kkform-youth.js"></script>
 </body>
 </html>

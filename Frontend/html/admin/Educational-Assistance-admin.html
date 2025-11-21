@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>SK-INSIGHT</title>
+    <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
   <!-- Add this in your <head> -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
@@ -229,13 +230,11 @@
       <label for="rejectionReasonSelect">Rejection Reason</label>
       <select id="rejectionReasonSelect" style="width:100%;border-radius:8px;border:1.5px solid #e0e0e0;padding:10px;font-size:1em;background:#f7f7f7;color:#222;margin-bottom:12px;">
         <option value="">Select a reason...</option>
-        <option value="requirements not correct">Requirements not correct</option>
-        <option value="incomplete documents">Incomplete documents</option>
-        <option value="not eligible">Not eligible</option>
-        <option value="duplicate application">Duplicate application</option>
+        <option value="Incorrect Requirements">Incorrect Requirements</option>
+        <option value="Incorrect Information">Incorrect Information</option>
       </select>
-      <label for="rejectionReasonInput">Custom Message (optional)</label>
-      <textarea id="rejectionReasonInput" rows="3" placeholder="Type your message here..." style="width:100%;border-radius:8px;border:1.5px solid #e0e0e0;padding:10px;font-size:1em;background:#f7f7f7;color:#222;margin-bottom:18px;"></textarea>
+      <label for="rejectionReasonInput">Specify Rejection Reason</label>
+      <textarea id="rejectionReasonInput" rows="3" placeholder="Type the specific reason here..." style="width:100%;border-radius:8px;border:1.5px solid #e0e0e0;padding:10px;font-size:1em;background:#f7f7f7;color:#222;margin-bottom:18px;"></textarea>
       <div style="margin-top:18px;text-align:right;">
         <button id="submitRejectionBtn" style="background:#e74c3c;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-weight:500;font-size:1em;cursor:pointer;transition:background 0.2s;">Submit</button>
       </div>

@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="en">
 
   <head>
@@ -35,7 +35,10 @@
         <span class="navbar-hamburger" id="navbarHamburger">
           <i class="fa-solid fa-bars"></i>
         </span>
-        <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+        <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
         <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
       </div>
     </div>
@@ -53,6 +56,14 @@
       <i class="fa-solid fa-circle-info"></i>
       <span>
         You need to <a href="/Frontend/html/user/login.html">login</a> to access full features.
+      </span>
+    </div>
+
+    <!-- Verification Required Strip -->
+    <div id="verification-strip" class="verification-strip" style="display: none;">
+      <i class="fa-solid fa-circle-info"></i>
+      <span>
+        You need to verify your account to access full features. <a href="../../html/user/userProfile.html">Verify Now</a>
       </span>
     </div>
 
@@ -104,6 +115,7 @@
       </div>
     </footer>
 
-    <script src="../../js/index.js"></script>
+  <script src="../../js/notification-badge.js" defer></script>
+  <script src="../../js/index.js"></script>
   </body>
 </html>

@@ -229,7 +229,7 @@ router.get("/export/:id", protect, async (req, res) => {
 
       birthday: formatDateDMY(profile.birthday),
       submittedAt: formatDateDMY(profile.submittedAt),
-      age: calculateAge(profile.birthday),
+      age: profile.age || "", // Use age from database
 
       // New fields for DOCX
       specificNeedType: specificNeedType,
@@ -262,6 +262,8 @@ router.get("/export/:id", protect, async (req, res) => {
 // Static routes (must come before dynamic :id)
 router.get("/me", protect, ctrl.getMyProfile);
 router.get("/me/image", protect, ctrl.getProfileImage);
+// Return most recent profile for the user (previous cycles)
+router.get('/me/previous', protect, ctrl.getMyLatestProfile);
 
 // Admin-only routes
 // router.get("/export", protect, authorizeRoles("admin"), ctrl.exportProfilesToExcel);
@@ -292,7 +294,17 @@ router.get('/export-template', protect, authorizeRoles('admin'), ctrl.exportKKPr
 
 // Admin or Owner can manage a specific profile
 router.get("/:id", protect, authorizeRoles("admin"), ctrl.getProfileById);
-router.put("/:id", protect, ctrl.updateProfileById);
+// Allow image uploads on update as well (PUT with multipart/form-data)
+router.put(
+  "/:id",
+  protect,
+  upload.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "idImage", maxCount: 1 },
+    { name: "signatureImage", maxCount: 1 },
+  ]),
+  ctrl.updateProfileById
+);
 router.delete("/:id", protect, authorizeRoles("admin"), ctrl.deleteProfileById);
 router.put("/:id/restore", protect, authorizeRoles("admin"), ctrl.restoreProfileById);
 router.delete("/:id/permanent", protect, authorizeRoles("admin"), ctrl.permanentlyDeleteProfileById);

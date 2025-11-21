@@ -1,23 +1,73 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
 
   // Handle mobile menu toggle
   if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
+    hamburger.addEventListener('click', function (e) {
       e.stopPropagation();
       mobileMenu.classList.toggle('active');
     });
-    document.addEventListener('click', function(e) {
+    document.addEventListener('click', function (e) {
       if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
         mobileMenu.classList.remove('active');
       }
     });
   }
 
-  // Show login strip if not logged in
+  // Check user verification status
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  if (!token) {
+  let isVerified = false;
+
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => response.json())
+      .then(user => {
+        isVerified = user.isVerified || false;
+
+        if (!isVerified) {
+          // Show verification strip
+          const verificationStrip = document.getElementById('verification-strip');
+          if (verificationStrip) {
+            verificationStrip.style.display = 'flex';
+          }
+          document.body.classList.add('has-verification-strip');
+
+          // Disable navigation buttons for forms and announcements
+          const navSelectors = [
+            '#kkProfileNavBtnDesktop',
+            '#kkProfileNavBtnMobile',
+            '#lgbtqProfileNavBtnDesktop',
+            '#lgbtqProfileNavBtnMobile',
+            '#educAssistanceNavBtnDesktop',
+            '#educAssistanceNavBtnMobile',
+            '.announcement-btn'
+          ];
+          navSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+              btn.classList.add('disabled');
+              btn.setAttribute('tabindex', '-1');
+              btn.setAttribute('aria-disabled', 'true');
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+            });
+          });
+        }
+      })
+      .catch(() => {
+        console.error('Failed to fetch user verification status.');
+      });
+  } else {
+    // If no token, show login strip
     const loginStrip = document.getElementById('login-strip');
     if (loginStrip) {
       loginStrip.style.display = 'flex';
@@ -26,20 +76,20 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Disable all navbar buttons for non-logged-in users
     const navSelectors = [
-      '.navbar-center a',           // All main nav links
-      '.navbar-right a',            // User profile, logout, etc.
-      '.navbar-mobile-menu a',      // Mobile nav links
-      '.announcement-btn',          // Announcement button (if it has this class or id)
-      '#userProfileBtn',            // User profile button (if it has this id)
-      '.prof',                      // Profile nav buttons
-      '.nav-btn'                    // Mobile nav buttons
+      '.navbar-center a',
+      '.navbar-right a',
+      '.navbar-mobile-menu a',
+      '.announcement-btn',
+      '#userProfileBtn',
+      '.prof',
+      '.nav-btn'
     ];
     navSelectors.forEach(selector => {
       document.querySelectorAll(selector).forEach(btn => {
         btn.classList.add('disabled');
         btn.setAttribute('tabindex', '-1');
         btn.setAttribute('aria-disabled', 'true');
-        btn.addEventListener('click', function(e) {
+        btn.addEventListener('click', function (e) {
           e.preventDefault();
           Swal.fire({
             icon: 'warning',
@@ -122,16 +172,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "kkform-personal.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "kkform-personal.html");
   }
@@ -206,16 +262,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No profile found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "lgbtqform.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "lgbtqform.html");
   }
@@ -290,16 +352,22 @@ document.addEventListener('DOMContentLoaded', function() {
       }
       // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `No  Application found`,
-          text: `You don't have a profile yet. Please fill out the form to create one.`,
-          confirmButtonText: "Go to form"
-        }).then(() => {
+      Swal.fire({
+        icon: "info",
+        title: `No profile found`,
+        text: `You don't have a profile yet. Please fill out the form to create one.`,
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
           window.location.href = "Educational-assistance-user.html";
-        });
-        return;
-      }
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
+      });
+      return;
+    }
     })
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }

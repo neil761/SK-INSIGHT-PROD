@@ -1,0 +1,1180 @@
+/* ✅ RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Poppins', Arial, sans-serif;
+  background-color: #D1E1F5;
+  color: #0A1A3A;
+  min-height: 100vh;
+  margin: 0;
+  padding-top: 3.3%;
+}
+
+/* Navbar */
+  .navbar {
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    height: 7.9%;
+    background: #0A2C59;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 15px 30px;
+    border-radius: 15px;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+    z-index: 1000;
+}
+
+
+.navbar img {
+  margin-top: 5%;
+  height: 4vh;
+  border-radius: 50%;
+}
+
+.navbar .title {
+    color: white;
+    text-decoration: none;
+  font-size: 1rem !important;
+  font-weight: bold;
+  margin-left: 10px;
+}
+
+.nav-btn{
+  text-decoration: none;
+  margin: 0 10px;
+}
+
+.navbar-center {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+}
+
+.navbar-left {
+  display: flex;
+  align-items: center;
+}
+
+.bell {
+    color: white;
+    cursor: pointer;
+    margin-top: 0;
+    margin-right: 5px;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.prof {
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 16px;
+    padding: 8px 12px;
+    font-weight: bold;
+    border-radius: 8px;
+    transition: background 0.2s, color 0.2s;
+}
+
+.navbar-right {
+  display: flex;
+  gap: 8px;
+  font-size: 1.1rem;
+}
+
+.navbar-right a {
+  text-decoration: none;
+}
+
+.nav-btn {
+    color: #ffffff;
+    padding: 7px 18px;
+    border-radius: 6px;
+    font-weight: 500;
+    text-decoration: none;
+    font-size: 1rem;
+    transition: background 0.2s, color 0.2s;
+    border: none;
+    outline: none;
+}
+
+.nav-btn:hover, .nav-btn.active {
+    background: #1e4e9e;
+    color: #fff;
+}
+
+.kk-btns{
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Hamburger Icon */
+.navbar-hamburger {
+  display: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  margin-right: 10px;
+}
+
+.label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    font-size: 1rem;
+    color: #143d77;
+}
+
+.allow{
+  margin-top: 3%;
+  color: red;
+}
+
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+    /* Responsive behavior */
+    @media (max-width: 1048px) {
+        .navbar-center {
+            display: none !important;
+        }
+        .navbar-hamburger {
+            display: inline-block !important;
+        }
+    .notif{
+      margin-top: 1%;
+    }
+    }
+
+    @media (min-width: 1049px) {
+        .navbar-center {
+            display: flex !important;
+        }
+        .navbar-hamburger {
+            display: none !important;
+        }
+    }
+
+    /* Mobile navbar optimization */
+    @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
+        .card.intro {
+    margin-top: 12vh; /* Slightly larger margin for smaller screens */
+  }
+      .navbar {
+        padding: 4% 4.8%;
+      }
+      
+      .navbar img {
+        height: 2rem;
+      }
+      
+      .navbar .title {
+        font-size: 14px;
+        margin-left: 8px;
+      }
+      
+      .navbar-hamburger {
+        font-size: 1.3rem;
+        margin-right: 5px;
+        display: flex;
+        align-items: center;
+      }
+      
+      .bell {
+    font-size: 1.1rem;
+    margin-right: 3px;
+    display: flex;
+    align-items: center;
+      }
+      
+      .navbar-right {
+        gap: 5px;
+        font-size: 1.1rem;
+        display: flex;
+        align-items: center;
+      }
+      
+      .navbar-right .prof {
+        display: flex;
+        align-items: center;
+        margin-top: 0;
+      }
+    }
+
+    /* Mobile Menu */
+    .navbar-mobile-menu {
+        display: none;
+        position: fixed;
+        top: 60px;
+        right: 16px;
+        width: 220px;
+        background: #fff;
+        flex-direction: column;
+        align-items: stretch;
+        z-index: 2000;
+        padding: 18px 12px;
+        border-radius: 14px;
+        box-shadow: 0 8px 32px rgba(20,61,119,0.18);
+        border: 1px solid #e3eaf3;
+    }
+
+    .navbar-mobile-menu.active {
+        display: flex !important;
+    }
+
+    .navbar-mobile-menu .nav-btn {
+        display: block;
+        width: 100%;
+        padding: 12px 0;
+        font-size: 1rem;
+        border-radius: 8px;
+        color: #143d77;
+        background: none;
+        text-align: left;
+        border: none;
+        margin-bottom: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: background 0.18s, color 0.18s;
+    }
+
+    .navbar-mobile-menu .nav-btn:last-child {
+        margin-bottom: 0;
+    }
+
+    .navbar-mobile-menu .nav-btn:hover {
+        background: #eaf3fa;
+        color: #1e4e9e;
+    }
+
+    /* Container */
+    .container {
+  max-width: 100vw;
+  margin: 0.5rem auto;
+  padding: 1%;
+}
+
+/* Tunnel / mask under the navbar so cards appear to slide into it.
+   Keeps the visual gradient but does not create layout space — adjust
+   body padding-top elsewhere to reserve space for the navbar. */
+.container::before,
+.kk-container::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* adjust to match navbar height */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #d1e1f5 80%, transparent 100%);
+  z-index: 900; /* below .navbar (1000) but above page content */
+}
+
+/* Cards */
+    .card {
+        width: 90%;
+        max-width: 900px;
+        margin: 12px auto 25px auto;
+        background-color: #fff;
+        border-radius: 15px;
+        padding: 30px;
+        box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        box-sizing: border-box;
+          z-index: 0; /* lower than navbar */
+    }
+
+    .card.intro{
+      margin-top: 10vh;
+    }
+
+    /* Intro Card */
+    .card.intro h2 {
+      font-size: 1.4rem;
+      margin-bottom: 1%;
+      color: #0a2c59;
+    }
+
+    .card.intro p {
+      font-size: 16px;
+      margin-bottom: 10px;
+      line-height: 1.5;
+    }
+
+    /* Form Inputs */
+    input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="email"],
+input[type="password"],
+select,
+textarea {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1px solid #bcd4ec;
+    border-radius: 8px;
+    background: #f5faff;
+    font-size: 15px !important;
+    color: #143d77;
+    margin-bottom: 0;
+    box-sizing: border-box;
+    transition: border 0.2s, box-shadow 0.2s;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    border-color: #1e4e9e;
+    outline: none;
+    box-shadow: 0 0 0 2px #eaf3fa;
+}
+
+.cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 1.7% 5% !important;
+    background-color: #777777;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+    margin-right: 15px;
+}
+
+    /* Submit Button */
+    .submit-btn {
+        
+    min-width: 120px;
+    min-height: 40px;
+    padding: 12px 30px !important;
+    background-color: #143d77;
+    color: white;
+    font-size: 15px;
+    font-weight: bold;
+    border: none;
+    border-radius: 7px;
+    cursor: pointer;
+    text-decoration: none;
+    }
+
+    .submit-btn:hover {
+        background-color: #072147;
+    }
+
+    /* Announcement Boxes */
+    .announcement-heading-container,
+    .announcement-container {
+        max-width: 500px;
+        width: 95vw;
+        margin: 120px auto 20px auto;
+        border-radius: 14px;
+        padding: 18px 12px;
+    }
+
+    @media (max-width: 600px) {
+        .announcement-heading-container,
+        .announcement-container {
+            max-width: 98vw;
+            width: 98vw;
+            padding: 10px;
+            margin-top: 80px;
+            margin-bottom: 10px;
+            border-radius: 10px;
+        }
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+      .card.intro{
+        margin-top: -3%;
+        padding: 20px; 
+        width: 90%;
+      }
+      .card { 
+        padding: 20px; 
+        width: 90%;
+      }
+    }
+
+    @media (max-width: 480px) {
+    .notif{
+      margin-top: 1%;
+    }
+        .card {
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .card.intro{
+            margin-top: 10vh;
+            width: 90%;
+        }
+        .container {
+            width: 95%;
+            padding: 0 10px;
+        }
+        input[type="text"] {
+            font-size: 0.95rem;
+        }
+    }
+
+    @media (max-width: 600px) {
+        .navbar-left .title {
+            font-size: 1rem;
+        }
+        .container { 
+          padding: 5%; 
+        }
+    }
+    @media (max-width: 768px) and (min-width: 481px) {
+  .card.intro {
+        margin: 10vh auto 25px auto;
+  }
+}
+
+    @media (max-width: 564px) {
+        .container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            width: 100vw;
+            padding: 2% 1%;
+        }
+        .card {
+            margin-left: auto;
+            margin-right: auto;
+            width: 90%;
+            max-width: 98vw;
+        }
+    }
+
+    /* Upload Plus */
+    .upload-plus {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a2c59;
+      color: #fff;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      border: none;
+      transition: background 0.2s;
+    }
+    .upload-plus:hover { background: #1e4e9e; }
+
+    /* Sibling/Expense Tables */
+    #siblingsTable, #expensesTable {
+      width: 100%;
+      margin-top: 15px;
+      border-collapse: collapse;
+      border: 1px solid black;
+    }
+    #siblingsTable th, #siblingsTable td,
+    #expensesTable th, #expensesTable td {
+      border: 1px solid black;
+      padding: 8px;
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    #addSiblingBtn, #addExpenseBtn {
+      padding: 5px 10px;
+      border: 1px solid black;
+      background: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+    #expensesTable { margin-top: 0; }
+
+    /* Requirements Table */
+    .requirements-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+      table-layout: fixed;
+    }
+    .requirements-table th, .requirements-table td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: center;
+      overflow: hidden;
+      white-space: nowrap;
+    }
+    
+    /* Set specific column widths */
+    .requirements-table th:nth-child(1), 
+    .requirements-table td:nth-child(1) {
+      width: 35%; /* Documents column */
+    }
+    .requirements-table th:nth-child(2), 
+    .requirements-table td:nth-child(2) {
+      width: 15%; /* View column */
+    }
+    .requirements-table th:nth-child(3), 
+    .requirements-table td:nth-child(3) {
+      width: 15%; /* Delete column */
+    }
+    .requirements-table th:nth-child(4), 
+    .requirements-table td:nth-child(4) {
+      width: 35%; /* Upload column */
+    }
+    
+    input[type="file"] { display: none; }
+    .file-name {
+      display: none;
+      font-size: 0.95em;
+      color: #143d77;
+      margin-left: 8px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+    }
+
+    /* Show file name when file is selected */
+    .file-name.show {
+      display: inline-block;
+    }
+
+    /* Responsive Font Sizes for Mobile and Tablet */
+    
+    /* Tablet (768px - 1024px) */
+    @media (max-width: 1024px) and (min-width: 769px) {
+      body {
+        font-size: 15px;
+      }
+      
+      .card, .cardintro {
+        font-size: 14px;
+      }
+      .notif{
+        font-size: 1.2rem;
+      }
+      
+      .requirements-table th, .requirements-table td {
+        font-size: 13px;
+      }
+      
+      h2 {
+        font-size: 1.4rem;
+      }
+      
+      h3 {
+        font-size: 18px;
+      }
+      
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      input[type="email"],
+      input[type="password"],
+      select,
+      textarea {
+        font-size: 14px;
+      }
+    }
+    
+    /* Mobile Large (481px - 768px) */
+    @media (max-width: 768px) and (min-width: 481px) {
+      body {
+        font-size: 14px;
+      }
+      
+      .card, .cardintro {
+        font-size: 13px;
+      }
+      
+      .requirements-table th, .requirements-table td {
+        font-size: 12px;
+      }
+      
+      h2 {
+        font-size: 1.4rem;
+      }
+      
+      h3 {
+        font-size: 16px;
+      }
+      
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      input[type="email"],
+      input[type="password"],
+      select,
+      textarea {
+        font-size: 13px;
+      }
+      
+      .file-name {
+        max-width: 100%;
+        font-size: 0.9em;
+      }
+      
+      /* Adjust table column widths for mobile */
+      .requirements-table th:nth-child(1), 
+      .requirements-table td:nth-child(1) {
+        width: 40%; /* Documents column */
+      }
+      .requirements-table th:nth-child(2), 
+      .requirements-table td:nth-child(2) {
+        width: 20%; /* View column */
+      }
+      .requirements-table th:nth-child(3), 
+      .requirements-table td:nth-child(3) {
+        width: 20%; /* Delete column */
+      }
+      .requirements-table th:nth-child(4), 
+      .requirements-table td:nth-child(4) {
+        width: 20%; /* Upload column */
+      }
+      
+      .submit-btn {
+        min-width: 100px;
+        min-height: 36px;
+        padding: 10px 20px !important;
+        font-size: 14px;
+      }
+      
+    }
+    
+    /* Mobile Medium (321px - 480px) */
+    @media (max-width: 480px) and (min-width: 321px) {
+      body {
+        font-size: 13px;
+      }
+
+      .cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 3% 5% !important;
+      }
+      .submit-btn-container{
+        padding-right: 0 !important;
+      }
+      
+      .card, .cardintro {
+        font-size: 12px;
+      }
+      
+      .requirements-table th, .requirements-table td {
+        font-size: 11px;
+      }
+      
+      h2 {
+        font-size: 1.4rem;
+      }
+      
+      h3 {
+        font-size: 15px;
+      }
+      
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      input[type="email"],
+      input[type="password"],
+      select,
+      textarea {
+        font-size: 12px;
+      }
+      
+      .file-name {
+        max-width: 100%;
+        font-size: 0.85em;
+        margin-left: 6px;
+      }
+      
+      /* Further adjust table for small mobile */
+      .requirements-table th:nth-child(1), 
+      .requirements-table td:nth-child(1) {
+        width: 45%; /* Documents column */
+      }
+      .requirements-table th:nth-child(2), 
+      .requirements-table td:nth-child(2) {
+        width: 18%; /* View column */
+      }
+      .requirements-table th:nth-child(3), 
+      .requirements-table td:nth-child(3) {
+        width: 18%; /* Delete column */
+      }
+      .requirements-table th:nth-child(4), 
+      .requirements-table td:nth-child(4) {
+        width: 19%; /* Upload column */
+      }
+      
+      .submit-btn {
+        min-width: 90px;
+        min-height: 34px;
+        padding: 8px 16px !important;
+        font-size: 13px;
+      }
+      
+      .submit-btn-container {
+        gap: 41%;
+      }
+    }
+    
+    /* Mobile Small (up to 320px) */
+    @media (max-width: 320px) {
+      body {
+        font-size: 12px;
+      }
+      
+      .cancel{
+    min-width: 25%;
+    min-height: 10%;
+    padding: 3% 5% !important;
+      }
+      
+      .card, .cardintro {
+        font-size: 11px;
+      }
+      
+      .requirements-table th, .requirements-table td {
+        font-size: 10px;
+        padding: 6px;
+      }
+      
+      h2 {
+        font-size: 1.4rem;
+      }
+      
+      h3 {
+        font-size: 14px;
+      }
+      
+      input[type="text"],
+      input[type="number"],
+      input[type="date"],
+      input[type="email"],
+      input[type="password"],
+      select,
+      textarea {
+        font-size: 11px;
+      }
+      
+      .file-name {
+        max-width: 100%;
+        font-size: 0.8em;
+        margin-left: 4px;
+      }
+      
+      /* Ultra-compact table for very small screens */
+      .requirements-table th:nth-child(1), 
+      .requirements-table td:nth-child(1) {
+        width: 50%; /* Documents column */
+      }
+      .requirements-table th:nth-child(2), 
+      .requirements-table td:nth-child(2) {
+        width: 16%; /* View column */
+      }
+      .requirements-table th:nth-child(3), 
+      .requirements-table td:nth-child(3) {
+        width: 16%; /* Delete column */
+      }
+      .requirements-table th:nth-child(4), 
+      .requirements-table td:nth-child(4) {
+        width: 18%; /* Upload column */
+      }
+      
+      .submit-btn {
+        min-width: 80px;
+        min-height: 32px;
+        padding: 7px 14px !important;
+        font-size: 12px;
+      }
+      
+      .submit-btn-container {
+        display: flex;
+        justify-content: end;
+        align-items: end;
+        padding-right: 0 !important;
+      }
+    }
+
+    /* Icons */
+    .view-icon { cursor: pointer; color: skyblue; }
+    .delete-icon { cursor: pointer; color: red; }
+    .view-icon.disabled,
+.delete-icon.disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
+
+    /* Submit Button Container */
+    .submit-btn-container {
+      width: 90%;
+      max-width: 900px;
+      margin: 0 auto 25px auto;
+      text-align: right;
+      box-sizing: border-box;
+    }
+    .submit-btn {
+      width: auto;
+      padding: 8px 20px;
+    }
+
+    /* Invisible Card for Button Alignment */
+    .invisible-card {
+      background: transparent;
+      box-shadow: none;
+      padding: 8px 20px 0 20px;
+      margin-top: -8px;
+      margin-bottom: 0;
+    }
+
+    /* Image Preview Modal */
+    #imagePreviewModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      overflow: auto; /* ensure modal can scroll internally if needed, but image will be constrained */
+    }
+
+    #imagePreviewModal img {
+      /* Always fit within the viewport to avoid page scroll — prefer viewport-relative limits */
+      max-width: min(800px, 95vw);
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      border-radius: 10px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* Mobile and Tablet Responsive Styles for Image Preview */
+    @media (max-width: 1024px) {
+      #imagePreviewModal {
+        padding: 20px;
+        box-sizing: border-box;
+      }
+      
+      #imagePreviewModal img {
+        max-width: 95vw;
+        max-height: 90vh;
+        width: auto;
+        height: auto;
+        display: block;
+        margin: 0 auto;
+        object-fit: contain;
+      }
+    }
+
+    @media (max-width: 768px) {
+      #imagePreviewModal {
+        padding: 15px;
+      }
+      
+      #imagePreviewModal img {
+        max-width: 98vw;
+        max-height: 80vh;
+        border-radius: 8px;
+        object-fit: contain;
+      }
+    }
+
+    @media (max-width: 480px) {
+      #imagePreviewModal {
+        padding: 10px;
+      }
+      
+      #imagePreviewModal img {
+        max-width: 100vw;
+        max-height: 75vh;
+        border-radius: 6px;
+        object-fit: contain;
+      }
+
+/* Provide a small utility class for consistent inline thumbnails used elsewhere */
+.thumbnail-fixed {
+  width: 180px;
+  height: 120px;
+  max-width: 180px;
+  max-height: 120px;
+  object-fit: cover;
+  border-radius: 8px;
+  display: block;
+}
+    }
+
+    /* Close Preview Button */
+.close-preview-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: #fff;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1001;
+}
+
+/* Mobile Close Button Adjustments */
+@media (max-width: 768px) {
+  .close-preview-btn {
+    top: 15px;
+    right: 15px;
+    width: 35px;
+    height: 35px;
+    font-size: 20px;
+  }
+}
+
+@media (max-width: 480px) {
+  .close-preview-btn {
+    top: 10px;
+    right: 10px;
+    width: 30px;
+    height: 30px;
+    font-size: 18px;
+  }
+}
+
+/* Add to Educational-assistance-user.css */
+
+.removeSiblingBtn,
+.removeExpenseBtn {
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 14px;
+  font-size: 0.98rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.18s, box-shadow 0.18s;
+  box-shadow: 0 2px 6px rgba(231,76,60,0.08);
+  margin-left: 4px;
+}
+
+.removeSiblingBtn:hover,
+.removeExpenseBtn:hover {
+  background: #c0392b;
+}
+
+.expense-header {
+  display: flex;
+  justify-content: space-between; /* <-- change this line */
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.footer {
+  background: #0A2C59;
+  color: #fff;
+  padding: 40px 60px 20px;
+  margin-top: auto; /* pushes footer down */
+}
+
+.footer-container {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 40px;
+  margin-bottom: 20px;
+}
+
+.footer-left h3 {
+  font-size: 20px;
+  margin-bottom: 10px;
+}
+
+.footer-left p {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #cfd9e8;
+}
+
+.footer-middle h4,
+.footer-right h4 {
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.footer-middle ul,
+.footer-right ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.footer-middle ul li,
+.footer-right ul li {
+  margin-bottom: 8px;
+}
+
+.footer-middle ul li a,
+.footer-right ul li a {
+  text-decoration: none;
+  color: #cfd9e8;
+  font-size: 15px;
+  transition: color 0.3s ease;
+}
+
+.footer-middle ul li a:hover,
+.footer-right ul li a:hover {
+  color: #ffffff;
+}
+
+.footer-right ul li i {
+  margin-right: 8px;
+  font-size: 15px;
+}
+
+.footer hr {
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  margin: 20px 0;
+}
+
+.footer-bottom {
+  text-align: center;
+}
+
+.footer-bottom p {
+  font-size: 14px;
+  color: #cfd9e8;
+}
+
+/* Responsive Footer */
+@media (max-width: 768px) {
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-left,
+  .footer-middle,
+  .footer-right {
+    width: 100%;
+  }
+
+}
+
+@media (max-width: 480px) {
+  .footer {
+    padding: 30px 20px 15px;
+  }
+
+  .footer-left h3 {
+    font-size: 18px;
+  }
+
+  .footer-left p {
+    font-size: 14px;
+  }
+
+  .footer-middle h4,
+  .footer-right h4 {
+    font-size: 15px;
+  }
+
+  .footer-middle ul li a,
+  .footer-right ul li a {
+    font-size: 14px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
+  }
+}
+
+#navbarMobileMenu {
+    display: none; /* Initially hidden */
+}
+
+#navbarMobileMenu.active {
+    display: block; /* Show when active */
+}
+
+.sibling-card,
+.expense-card {
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 10px;
+  background-color: #f9f9f9;
+}
+
+.sibling-field,
+.expense-field {
+  margin-bottom: 5px;
+}
+
+.sibling-field label,
+.expense-field label {
+  display: block;
+  font-weight: bold;
+}
+
+.sibling-field input,
+.expense-field input {
+  width: 100%;
+  padding: 5px;
+  margin-top: 2px;
+}

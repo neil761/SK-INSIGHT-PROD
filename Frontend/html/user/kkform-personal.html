@@ -27,7 +27,10 @@
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../user/announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
       <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
     </div>
   </div>
@@ -50,10 +53,10 @@
       </p>
     </div>
     <form id="personalForm">
-      <div class="kk-card"><label class="kk-label" for="lastname">Last Name:</label><input class="kk-input" type="text" id="lastname" name="lastname" required></div>
-      <div class="kk-card"><label class="kk-label" for="firstname">First Name:</label><input class="kk-input" type="text" id="firstname" name="firstname" required></div>
-      <div class="kk-card"><label class="kk-label" for="middlename">Middle Name:</label><input class="kk-input" type="text" id="middlename" name="middlename" required></div>
-      <div class="kk-card"><label class="kk-label" for="suffix">Suffix (if any):</label><input class="kk-input" type="text" id="suffix" name="suffix"></div>
+      <div class="kk-card"><label class="kk-label" for="lastname">Last Name:</label><input class="kk-input" type="text" id="lastname" name="lastname" placeholder="Your Answer" readonly></div>
+      <div class="kk-card"><label class="kk-label" for="firstname">First Name:</label><input class="kk-input" type="text" id="firstname" name="firstname" placeholder="Your Answer"  readonly></div>
+      <div class="kk-card"><label class="kk-label" for="middlename">Middle Name:</label><input class="kk-input" type="text" id="middlename" name="middlename" placeholder="Your Answer"  readonly></div>
+      <div class="kk-card"><label class="kk-label" for="suffix">Suffix (if any):</label><input class="kk-input" type="text" id="suffix" name="suffix" placeholder="Your Answer" readonly></div>
       <div class="kk-card">
         <label class="kk-label" for="gender">Gender:</label>
         <select class="kk-input" id="gender" name="gender" required>
@@ -64,7 +67,7 @@
       </div>
       <div class="kk-card">
         <label class="kk-label" for="birthday">Birthday:</label>
-        <input class="kk-input" type="date" id="birthday" name="birthday" required>
+        <input class="kk-input" type="date" id="birthday" name="birthday" readonly>
       </div>
       <div class="kk-card">
         <label class="kk-label" for="age">Age:</label>
@@ -112,6 +115,7 @@
       </div>
     </footer>
   <script src="../../js/token-validation.js"></script>
+    <script src="../../js/notification-badge.js" defer></script>
   <script src="../../js/kkform-personal.js"></script>
 </body>
 </html>

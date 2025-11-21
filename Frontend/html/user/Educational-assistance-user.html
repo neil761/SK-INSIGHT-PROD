@@ -31,8 +31,11 @@
         <span class="navbar-hamburger" id="navbarHamburger">
           <i class="fa-solid fa-bars"></i>
         </span>
-      <a href="./announcement.html"><i class="fa-solid fa-bell bell"></i></a>
-      <a href="../user/userProfile.html"><i class="fa-solid fa-user bell"></i></a>
+      <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
+      <a class="notif" href="../user/userProfile.html"><i class="fa-solid fa-user bell"></i></a>
       </div>
     </div>
     <div class="navbar-mobile-menu" id="navbarMobileMenu">
@@ -54,42 +57,42 @@
   <!-- Individual Cards for Each Field -->
   <form id="educationalAssistanceForm">
   <div class="card">
-    <label for="surname">Last Name:</label>
-    <input type="text" id="surname" name="surname" placeholder="Your Answer">
+    <label class="label" for="surname">Last Name:</label>
+    <input type="text" id="surname" name="surname" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
-    <label for="firstName">First Name:</label>
-    <input type="text" id="firstName" name="firstName" placeholder="Your Answer">
+    <label class="label"  for="firstName">First Name:</label>
+    <input type="text" id="firstName" name="firstName" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
-    <label for="middleName">Middle Name:</label>
-    <input type="text" id="middleName" name="middleName" placeholder="Your Answer">
+    <label class="label"  for="middleName">Middle Name:</label>
+    <input type="text" id="middleName" name="middleName" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
-    <label for="suffix">Suffix (if applicable):</label>
-    <input type="text" id="suffix" name="suffix" placeholder="Your Answer">
+    <label class="label"  for="suffix">Suffix (if applicable):</label>
+    <input type="text" id="suffix" name="suffix" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
-    <label for="birthday">Birthday:</label>
+    <label class="label"  for="birthday">Birthday:</label>
     <input type="date" id="birthday" class="birthday-input" name="birthday" required>
   </div>
 
   <div class="card">
-    <label for="placeOfBirth">Place of Birth:</label>
+    <label class="label"  for="placeOfBirth">Place of Birth:</label>
     <input type="text" id="placeOfBirth" name="placeOfBirth" placeholder="Your Answer">
   </div>
   
   <div class="card">
-    <label for="age">Age:</label>
+    <label class="label"  for="age">Age:</label>
     <input type="number" id="age" class="age-input" name="age" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
-    <label for="gender">Gender:</label>
+    <label class="label"  for="gender">Gender:</label>
     <select id="gender" name="gender" required>
       <option value="">Select Gender</option>
       <option value="Male">Male</option>
@@ -98,7 +101,7 @@
   </div>
 
   <div class="card">
-    <label for="civilstatus">Civil Status:</label>
+    <label class="label"  for="civilstatus">Civil Status:</label>
     <select id="civilstatus" name="civilstatus" required>
       <option value="">Select Civil Status</option>
       <option value="Single">Single</option>
@@ -113,32 +116,32 @@
   </div>
 
   <div class="card">
-    <label for="religion">Religion:</label>
+    <label class="label"  for="religion">Religion:</label>
     <input type="text" id="religion" name="religion" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="email">E-mail Address:</label>
+    <label class="label"  for="email">E-mail Address:</label>
     <input type="email" id="email" name="email" placeholder="Your Answer" required>
   </div>
 
   <div class="card">
-    <label for="contact">Contact Number:</label>
-    <input type="text" id="contact" name="contact" placeholder="Your Answer" maxlength="11">
+    <label class="label"  for="contact">Contact Number:</label>
+    <input type="tel" id="contact" name="contact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
   </div>
 
   <div class="card">
-    <label for="schoolname">Name of School:</label>
+    <label class="label"  for="schoolname">Name of School:</label>
     <input type="text" id="schoolname" name="schoolname" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="schooladdress">School Address:</label>
+    <label class="label"  for="schooladdress">School Address:</label>
     <input type="text" id="schooladdress" name="schooladdress" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="year">Year:</label>
+    <label class="label"  for="year">Year:</label>
     <select class="year" id="year" name="year" required>
       <option value="">Select Classification</option>
       <option value="Grade 11">Grade 11</option>
@@ -147,28 +150,28 @@
   </div>
 
   <div class="card">
-    <label for="benefittype">Types of Benefiting as Applicant:</label>
+    <label class="label"  for="benefittype">Types of Benefiting as Applicant:</label>
     <input type="text" id="benefittype" name="benefittype" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="fathername">Father's Name:</label>
+    <label class="label"  for="fathername">Father's Name:</label>
     <input type="text" id="fathername" name="fathername" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="fathercontact">Father's Contact Number:</label>
-    <input type="text" id="fathercontact" name="fathercontact" placeholder="Your Answer" maxlength="11">
+    <label class="label"  for="fathercontact">Father's Contact Number:</label>
+    <input type="tel" id="fathercontact" name="fathercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
   </div>
 
   <div class="card">
-    <label for="mothername">Mother's Name:</label>
+    <label class="label"  for="mothername">Mother's Name:</label>
     <input type="text" id="mothername" name="mothername" placeholder="Your Answer">
   </div>
 
   <div class="card">
-    <label for="mothercontact">Mother's Contact Number:</label>
-    <input type="text" id="mothercontact" name="mothercontact" placeholder="Your Answer" maxlength="11">
+    <label class="label"  for="mothercontact">Mother's Contact Number:</label>
+    <input type="tel" id="mothercontact" name="mothercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
   </div>
 
   <!-- Siblings Section -->
@@ -212,6 +215,7 @@
 
   <div class="card">
     <h3>III. Requirements</h3>
+    <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
     
     <table class="requirements-table">
       <thead>
@@ -317,6 +321,7 @@
       </div>
     </footer>
   <script src="../../js/token-validation.js"></script>
+    <script src="../../js/notification-badge.js" defer></script>
   <script src="../../js/educ-user.js"></script>
 </body>
 </html>

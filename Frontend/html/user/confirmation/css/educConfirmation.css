@@ -14,6 +14,19 @@ body {
   flex-direction: column;
   padding-top: 6rem;   /* space for fixed navbar */
 }
+/* subtle fixed mask under navbar so content appears to "enter a tunnel" when scrolling */
+body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* match the visual height of the navbar */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #eaf2fb 80%, transparent 100%);
+  z-index: 900; /* below navbar (1000) but above page content */
+}
 
 /* Navbar */
   .navbar {
@@ -70,7 +83,7 @@ body {
     cursor: pointer;
     margin-top: 0;
     margin-right: 5px;
-    font-size: 1rem;
+    font-size: 1.2rem;
     line-height: 1;
 }
 
@@ -90,8 +103,10 @@ body {
   font-size: 1.1rem;
 }
 
+
 .navbar-right a {
   text-decoration: none;
+  margin-top: 3%;
 }
 
 .nav-btn {
@@ -127,6 +142,31 @@ body {
   display: flex;
 }
 
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
 /* Responsive behavior */
 @media (max-width: 1048px) {
   .navbar-center {
@@ -147,6 +187,17 @@ body {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .navbar-right a {
+  margin-top: 1%;
+}
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar {
     padding: 10px 15px;
   }
@@ -186,6 +237,14 @@ body {
     display: flex;
     align-items: center;
     margin-top: 0;
+  }
+  .card{
+    width: 90%;
+  }
+  .container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
   }
 }
 
@@ -266,17 +325,17 @@ body {
   margin-bottom: 20px;
 }
 
-.btn {
+.views, .edit {
   padding: 10px 20px;
-  border: 1px solid #000;
+  border: 1px solid #0A2C59;
   border-radius: 6px;
-  background: #fff;
+  background: #0A2C59;
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
-  color: #000000;
+  color: #ffffff;
 }
 
 .btn:hover {
@@ -396,6 +455,22 @@ body {
 }
 
 @media (max-width: 480px) {
+  .card-logo{
+  width: 60px;  
+  height: 60px;
+
+  }
+  .card h2{
+    font-size: 1rem;
+    margin-top: 5%;
+  }
+  .views, .edit {
+    padding: 5% 3%;
+    font-size: 0.7rem;
+    margin-bottom: 5%;
+    background: #0A2C59;
+    color: white;
+  }
   .footer {
     padding: 30px 20px 15px;
   }

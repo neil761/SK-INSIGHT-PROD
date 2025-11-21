@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SK-INSIGHT</title>
+    <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
     <link rel="stylesheet" href="../../css/exports.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -32,8 +33,8 @@
             <span class="dashb">Dashboard</span>
           </a>
         <a href="./KK-Profile.html" class="flex items-center space-x-2">
-          <i class="Kk fas fa-id-badge"></i>
-          <span class="kk">KK Profile</span>
+          <i class="kk2 fas fa-id-badge"></i>
+          <span class="kk1">KK Profile</span>
           <span id="sidebarNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
         </a>
         <a href="./LGBTQ-Profile.html" class="flex items-center space-x-2">
@@ -43,7 +44,7 @@
         </a>
         <a href="./Educational-Assistance-admin.html" class="flex items-center space-x-2">
           <i class="fas fa-graduation-cap"></i>
-          <span class="educ">Educational</span>
+          <span class="educ1">Educational</span>
           <span id="sidebarEducNotifBadge" class="notif-badge" style="display:none; margin-left:6px;">0</span>
         </a>
         <a href="./Announcement-admin.html" class="flex items-center space-x-2">
@@ -82,8 +83,7 @@
 
       <!-- Export Container -->
       <div class="export-container settings-tab-content" id="exportTab">
-        <h1>Export Data</h1>
-        <p class="subtitle">Select a category to export data to Excel</p>
+        
         
         <div class="export-grid">
           <div class="export-card" data-type="kk">
@@ -126,13 +126,17 @@
 
       <!-- Form Configuration Container -->
       <div class="form-config-container settings-tab-content" id="formTab" style="display:none;">
-  <!-- Title and Subtitle (outside nested container) -->
-  <h1 style="color:#0A2C59; font-size:2rem; font-weight:700; margin-bottom:0.5rem;">Form Configuration</h1>
-  <p class="subtitle" style="color:#666;">Open or close forms for KK Profiling, LGBTQ Profiling, and Educational Assistance.</p>
-  
+        <!-- added header with inline history icon button -->
+        <div class="form-config-header" style="justify-content:flex-end;">
+          <h1 style="flex:1; margin:0;">Form Configuration</h1>
+          <button id="formHistoryBtn" class="history-icon" title="History" style="background:transparent; border:none; color:#0A2C59; font-size:1.05rem; cursor:pointer;">
+            <i class="fas fa-history"></i>
+          </button>
+        </div>
+
   <!-- Nested container for form controls -->
   <div class="form-config-nested">
-    <!-- Centered Logo and SK-PBW label -->
+    <!-- history moved to modal (triggered by History icon) -->
     <form id="formConfigForm">
       <div class="form-config-row">
         <div class="form-config-icon">
@@ -180,15 +184,11 @@
         </div>
       </div>
     </form> 
-  </div>
+   </div>
 </div>
 
       <!-- Recently Deleted Profiles Container -->
       <div class="recycle-bin-container settings-tab-content" id="deletedTab" style="display:none;">
-         <h1 style="color:#0A2C59; font-size:2rem; font-weight:700; margin-bottom:0.5rem;">Recently Deleted Profiles</h1>
-          <p class="subtitle" style="color:#666; margin-bottom:2rem;">
-            View and manage profiles that have been deleted. You can restore or permanently delete items from the recycle bin.
-          </p>
           <div class="recycle-bin-container-nested">
         <div style="margin-bottom: 16px;">
           <label for="deletedFilter"><strong>Filter:</strong></label>
@@ -246,7 +246,59 @@
   </div>
 </div>
 
-    
+<!-- Add modal near end of file (before scripts) -->
+<div id="historyModal" class="modal">
+  <div class="modal-content history-modal">
+    <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center;">
+      <h3 style="margin:0;">Form Cycle History</h3>
+      <button id="closeHistoryModal" class="history-close" aria-label="Close history">&times;</button>
+    </div>
+
+    <div class="modal-body" id="historyModalBody">
+      <div style="display:flex; flex-direction:column; gap:12px; height:100%;">
+        <!-- Controls: filter + search -->
+        <div style="display:flex; gap:12px; align-items:center; justify-content:space-between; flex-wrap:wrap;">
+          <div style="display:flex; gap:8px; align-items:center;">
+            <label for="historyFilter"x style="font-weight:600; color:#0A2C59;">Show</label>
+            <select id="historyFilter" style="padding:8px 10px; border-radius:6px; border:1px solid #e6eef6; background:#fff;">
+              <option value="all">All forms</option>
+              <option value="kk">KK Profiling</option>
+              <option value="lgbtq">LGBTQIA+ Profiling</option>
+              <option value="educ">Educational Assistance</option>
+            </select>
+            <button id="historyReloadBtn" title="Reload" style="margin-left:8px; padding:8px 10px; border-radius:6px; border:none; background:#07B0F2; color:#fff; cursor:pointer;">
+              <i class="fas fa-sync-alt"></i>
+            </button>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center;">
+            <input id="historySearch" placeholder="Search by username, year, cycle..." style="padding:8px 12px; border-radius:8px; border:1px solid #e6eef6; min-width:240px;" />
+            <small style="color:#6b7280;">Tip: type then press Enter</small>
+          </div>
+        </div>
+
+        <!-- Table area -->
+        <div style="flex:1; overflow:auto; background:transparent; border-radius:8px;">
+          <table id="historyTable" class="history-table" role="table" aria-label="Form cycle history">
+            <thead>
+              <tr>
+                <th style="width:150px">Form</th>
+                <th>Year</th>
+                <th>Cycle</th>
+                <th>Opened</th>
+                <th>Opened By</th>
+                <th>Closed</th>
+                <th>Closed By</th>
+              </tr>
+            </thead>
+            <tbody id="historyTableBody" role="rowgroup"></tbody>
+          </table>
+
+          <div id="historyEmptyModal" style="display:none; color:#666; text-align:center; padding:24px;">No history available.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
     <script>
       fetch('./header.html')
@@ -284,16 +336,42 @@
           !link.hasAttribute('target')
         ) {
           link.addEventListener('click', function(e) {
-            // Only fade if not a sidebar link
-            // (Sidebar links are outside .content, so always fade .content)
             e.preventDefault();
             content.classList.remove('page-fade-in');
             content.classList.add('page-fade');
             setTimeout(() => {
               window.location.href = href;
-            }, 180); // match the CSS transition duration
+            }, 180);
           });
         }
+      });
+
+      // SAFE history modal handlers (do NOT auto-open)
+      document.addEventListener('DOMContentLoaded', () => {
+        const historyModal = document.getElementById('historyModal');
+        const openHistoryBtn = document.getElementById('openHistoryBtn'); // may exist in header
+        const closeHistoryBtn = document.getElementById('closeHistoryModal');
+
+        // Ensure modal starts hidden
+        if (historyModal) historyModal.style.display = 'none';
+
+        // Only attach listeners if elements exist; never auto-trigger click/show here
+        if (openHistoryBtn && historyModal) {
+          openHistoryBtn.addEventListener('click', () => {
+            historyModal.style.display = 'flex';
+            // exports.js will fetch/render content when the modal opens (it listens on formHistoryBtn)
+          });
+        }
+        if (closeHistoryBtn && historyModal) {
+          closeHistoryBtn.addEventListener('click', () => {
+            historyModal.style.display = 'none';
+          });
+        }
+
+        // click outside to close
+        window.addEventListener('click', (e) => {
+          if (e.target === historyModal) historyModal.style.display = 'none';
+        });
       });
     </script>
     <script src="/Frontend/js/admin/sidebar-notif-badge.js"></script>

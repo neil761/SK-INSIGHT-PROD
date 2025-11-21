@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const loginForm = document.getElementById('loginForm');
     const passwordField = document.getElementById('passwordField');
-    // const rememberMeCheckbox = document.getElementById('rememberMe');
     const togglePassword = document.getElementById('togglePassword');
 
     // On page load, check for token in sessionStorage or localStorage
@@ -12,7 +11,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Show/Hide password toggle
-    togglePassword.addEventListener('click', () => {
+    togglePassword.addEventListener('click', (e) => {
+        e.preventDefault();
         const isPassword = passwordField.type === 'password';
         passwordField.type = isPassword ? 'text' : 'password';
         togglePassword.innerHTML = isPassword 
@@ -24,9 +24,25 @@ document.addEventListener('DOMContentLoaded', () => {
     loginForm.addEventListener('submit', async (e) => {
         e.preventDefault();
 
-        const email = loginForm.email.value;
+        const email = loginForm.email.value.trim();
         const password = passwordField.value;
-        // const rememberMe = rememberMeCheckbox.checked;
+
+        if (!email || !password) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Missing Fields',
+                text: 'Please enter both email and password.'
+            });
+            return;
+        }
+
+        // Show loading
+        Swal.fire({
+            title: 'Signing In...',
+            text: 'Please wait while we verify your credentials.',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
 
         try {
             const response = await fetch('http://localhost:5000/api/auth/login', {
@@ -35,36 +51,34 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ email, password })
             });
 
-            const data = await response.json();
+            const data = await response.json().catch(() => null);
+
+            Swal.close();
 
             if (response.ok && data.token) {
-                // Store token based on Remember Me
-                // if (rememberMe) {
-                //     localStorage.setItem('token', data.token);
-                //     sessionStorage.removeItem('token');
-                // } else {
-                //     sessionStorage.setItem('token', data.token);
-                //     localStorage.removeItem('token');
-                // }
                 sessionStorage.setItem('token', data.token);
                 localStorage.removeItem('token');
+                
                 Swal.fire({
                     icon: 'success',
                     title: 'Login Successful!',
-                    text: 'Welcome SK Residents, you have successfully logged in.',
+                    text: 'Welcome to SK Insight.',
                     showConfirmButton: false,
                     timer: 1200
                 }).then(() => {
                     window.location.href = 'index.html';
                 });
             } else {
+                const errorMsg = (data && (data.error || data.message)) || 'Login failed. Please check your credentials.';
                 Swal.fire({
                     icon: 'error',
                     title: 'Login Failed',
-                    text: data.error || 'Login failed. Please check your credentials and try again.'
+                    text: errorMsg
                 });
             }
         } catch (error) {
+            Swal.close();
+            console.error('Fetch Error:', error);
             Swal.fire({
                 icon: 'error',
                 title: 'Network Error',

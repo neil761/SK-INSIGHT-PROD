@@ -19,7 +19,7 @@ const kkProfileSchema = new mongoose.Schema({
   barangay: String,
   purok: {
     type: String,
-    enum: ["Purok 1", "Purok 2", "Purok 3", "Purok 4", "Purok 5", "Purok 6", "Purok 7", "Purok 8", "Purok 9", "Purok 10"],
+    enum: ["1", "2", "3", "4", "5", "6", "7.2", "8", "9", "7.1"],
   },
 
   email: String,
@@ -80,6 +80,9 @@ const kkProfileSchema = new mongoose.Schema({
   profileImage: { type: String, required: true },
   signatureImagePath: { type: String },
   birthday: { type: Date, required: true },
+  age:{
+    type: Number, required: true
+  },
 
   submittedAt: {
     type: Date,

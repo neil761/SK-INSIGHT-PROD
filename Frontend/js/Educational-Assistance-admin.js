@@ -1,4 +1,17 @@
 (function() {
+  if (!sessionStorage.getItem("token")) {
+    const channel = new BroadcastChannel("skinsight-auth");
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.token) {
+        sessionStorage.setItem("token", ev.data.token);
+        channel.close();
+        location.reload();
+      }
+    };
+    setTimeout(() => channel.close(), 3000);
+  }
+})();
+(function() {
   const token = sessionStorage.getItem("token");
   function sessionExpired() {
     Swal.fire({
@@ -664,27 +677,36 @@ let applicants = [];
         // Submit rejection handler
         submitRejectionBtn.onclick = async () => {
           const selectedReason = rejectionReasonSelect.value;
-          const customMessage = rejectionReasonInput.value;
+          const customMessage = rejectionReasonInput.value.trim();
 
-          if (!selectedReason) {
-            rejectionModal.style.display = "none";
-            modal.style.display = "none";
-            await Swal.fire('Error', 'Please select a rejection reason', 'error');
-            rejectionModal.style.display = "flex";
+          if (!selectedReason && !customMessage) {
+            await Swal.fire('Error', 'Please select or specify a rejection reason.', 'error');
             return;
+          }
+
+          // Capitalize the first letter of the selected 
+          // reason
+          let formattedReason = selectedReason
+            ? selectedReason.charAt(0).toUpperCase() + selectedReason.slice(1)
+            : "";
+
+          // Capitalize the first letter of the custom message
+          let formattedMessage = customMessage
+            ? customMessage.charAt(0).toUpperCase() + customMessage.slice(1)
+            : "";
+
+          // Combine for final rejectionReason
+          let rejectionReason = formattedReason;
+          if (formattedMessage) {
+            rejectionReason += formattedReason ? `:\n${formattedMessage}` : formattedMessage;
           }
 
           rejectionModal.style.display = "none";
           modal.style.display = "none";
 
-          // --- SHOW LOADING MODAL (highlighted for reuse) ---
+          // Show loading modal
           const loadingModal = document.getElementById("loadingModal");
           loadingModal.style.display = "flex";
-          // --- END LOADING MODAL ---
-
-          const rejectionReason = customMessage 
-            ? `${selectedReason} - ${customMessage}`
-            : selectedReason;
 
           try {
             const res = await fetch(`http://localhost:5000/api/educational-assistance/${app._id}/status`, {
@@ -699,11 +721,12 @@ let applicants = [];
               })
             });
 
-            // --- HIDE LOADING MODAL (highlighted for reuse) ---
             loadingModal.style.display = "none";
-            // --- END LOADING MODAL ---
 
-            if (!res.ok) throw new Error('Failed to reject');
+            if (!res.ok) {
+              const data = await res.json();
+              throw new Error(data.error || 'Failed to reject');
+            }
 
             await Swal.fire({
               icon: 'success',
@@ -719,7 +742,7 @@ let applicants = [];
             await Swal.fire({
               icon: 'error',
               title: 'Rejection Failed',
-              text: 'Failed to reject the application. Please try again.',
+              text: err.message || 'Failed to reject the application. Please try again.',
               confirmButtonColor: '#0A2C59'
             });
             rejectionModal.style.display = "flex";
@@ -855,25 +878,24 @@ clearFilterBtn.addEventListener("click", () => {
   // Fetch notifications from backend
   async function fetchNotifications() {
     const token = sessionStorage.getItem("token");
-    // Fetch new applications
-    const newRes = await fetch('http://localhost:5000/api/notifications/unread', {
+    // Fetch all pending notifications (regardless of read)
+    const res = await fetch('http://localhost:5000/api/notifications/educational/pending', {
       headers: { Authorization: `Bearer ${token}` }
     });
-    let newNotifs = await newRes.json();
+    let allNotifs = await res.json();
 
-    // Filter: only pending and within last 24 hours
+    // Filter: only pending and within last 24 hours for "New"
     const now = Date.now();
-    newNotifs = newNotifs.filter(n => {
-      if (n.status !== "pending") return false;
+    const newNotifs = allNotifs.filter(n => {
       const created = new Date(n.createdAt).getTime();
       return (now - created) <= 24 * 60 * 60 * 1000;
     });
 
-    // Fetch overdue applications
-    const overdueRes = await fetch('http://localhost:5000/api/notifications/overdue', {
-      headers: { Authorization: `Bearer ${token}` }
+    // Filter: only pending and more than 2 days old for "Overdue"  
+    const overdueNotifs = allNotifs.filter(n => {
+      const created = new Date(n.createdAt).getTime();
+      return (now - created) > 2 * 24 * 60 * 60 * 1000;
     });
-    const overdueNotifs = await overdueRes.json();
 
     // --- Update summary counts ---
     document.getElementById('notifNewToday').textContent = newNotifs.length;
@@ -891,33 +913,30 @@ clearFilterBtn.addEventListener("click", () => {
       return;
     }
     notifs.forEach(n => {
-      // Use flattened fullname and status from backend
-      const name = n.fullname || 'unknown';
-      const status = n.status || 'unknown';
-      const date = new Date(n.createdAt).toLocaleString();
-      const type = n.typeOfBenefit || 'Educational Assistance';
-      const cycle = n.cycle ? `Cycle: ${n.cycle}` : '';
-      const year = n.year ? `Year: ${n.year}` : '';
-      const school = n.school || '';
-      const email = n.email || '';
+      const name = n.fullname || 'Unknown';
+      const status = n.status || 'Unknown';
+      const dateObj = new Date(n.createdAt);
+      const date = dateObj.toLocaleDateString();
+      const time = dateObj.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
       container.innerHTML += `
-        <div class="notif-item">
-          <span>
-            <strong>${name}</strong>
-            <span class="notif-status ${isOverdue ? 'notif-overdue' : ''}">${status}${isOverdue ? ' (Overdue)' : ''}</span>
-          </span>
-          <span class="notif-details">
-            ${type}${cycle ? ' | ' + cycle : ''}${year ? ' | ' + year : ''}
-            ${school ? ' | School: ' + school : ''}
-            ${email ? ' | Email: ' + email : ''}
-          </span>
-          <span class="notif-date">${date}</span>
+        <div class="notif-card${isOverdue ? ' notif-card-overdue' : ''}">
+          <div class="notif-card-header">
+            <span class="notif-card-name">${name}</span>
+            <span class="notif-card-status ${isOverdue ? 'notif-status-overdue' : 'notif-status-pending'}">
+              ${status}${isOverdue ? ' (Overdue)' : ''}
+            </span>
+          </div>
+          <div class="notif-card-footer">
+            <span class="notif-card-label">Submitted:</span>
+            <span class="notif-card-date">${date} ${time}</span>
+          </div>
         </div>
       `;
     });
   }
 
-    // Helper to format date/time
+  // Helper to format date/time
   
   // Optional: Hide dropdown when clicking outside
   document.addEventListener('click', function(e) {
@@ -951,6 +970,18 @@ clearFilterBtn.addEventListener("click", () => {
 
   // Call badge update on page load
   updateNotifBadge();
+
+    const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id && typeof showApplicantModal === "function") {
+    fetch(`http://localhost:5000/api/educational-assistance/${id}`, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+    })
+    .then(res => res.json())
+    .then(app => {
+      if (app && app._id) showApplicantModal(app);
+    });
+  }
 });
 
 // Remove any duplicate socket initializations and listeners below this point!

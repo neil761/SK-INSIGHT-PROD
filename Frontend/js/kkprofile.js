@@ -1,5 +1,17 @@
 // kkprofile.js
-
+(function() {
+  if (!sessionStorage.getItem("token")) {
+    const channel = new BroadcastChannel("skinsight-auth");
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.token) {
+        sessionStorage.setItem("token", ev.data.token);
+        channel.close();
+        location.reload();
+      }
+    };
+    setTimeout(() => channel.close(), 3000);
+  }
+})();
   // 🔹 Redirect to login if no token or token expired
   (function() {
     const token = sessionStorage.getItem("token"); // Only sessionStorage!
@@ -189,15 +201,24 @@
       return str.charAt(0).toUpperCase() + str.slice(1);
     }
 
-    // 🔹 Render profiles into table
+    const PROFILES_PER_PAGE = 30;
+    let currentPage = 1;
+
+    // Replace your renderProfiles function with this paginated version:
     function renderProfiles(profiles) {
+      const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
+      const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
+      const endIdx = startIdx + PROFILES_PER_PAGE;
+      const pageProfiles = profiles.slice(startIdx, endIdx);
+
       tableBody.innerHTML = "";
-      if (!profiles.length) {
+      if (!pageProfiles.length) {
         tableBody.innerHTML = `<tr><td colspan="8">No profiles found</td></tr>`;
+        renderPagination(profiles.length, totalPages);
         return;
       }
 
-      profiles.forEach((p, i) => {
+      pageProfiles.forEach((p, i) => {
         const lastname = p.lastname ? capitalize(p.lastname.trim()) : "";
         const firstname = p.firstname ? capitalize(p.firstname.trim()) : "";
         const middlename = p.middlename && p.middlename.trim() !== ""
@@ -209,19 +230,20 @@
           : "N/A";
 
         const gender = p.gender || "-";
-        const age = p.user?.age ?? "N/A";
+        const ageVal = getAgeFromProfile(p);
+        const ageDisplay = (ageVal === null || ageVal === undefined) ? "N/A" : String(ageVal);
         const purok = p.purok ? `Purok ${p.purok}` : "-";
         const civilStatus = p.civilStatus || "-";
         const workStatus = p.workStatus || "-";
 
         const row = document.createElement("tr");
         row.className = p.isRead ? 'row-read' : 'row-unread';
-        row.setAttribute('data-id', p._id); // Set data-id attribute
+        row.setAttribute('data-id', p._id);
         row.innerHTML = `
-          <td>${i + 1}</td>
+          <td>${startIdx + i + 1}</td>
           <td>${fullName}</td>
           <td>${gender}</td>
-          <td>${age}</td>
+          <td>${ageDisplay}</td>
           <td>${purok}</td>
           <td>${civilStatus}</td>
           <td>${workStatus}</td>
@@ -233,6 +255,8 @@
         `;
         tableBody.appendChild(row);
       });
+
+      renderPagination(profiles.length, totalPages);
 
       // Attach modal openers
       document.querySelectorAll(".view-btn").forEach((btn) =>
@@ -277,6 +301,56 @@
       });
     }
 
+    // Add this function for pagination controls:
+    function renderPagination(totalProfiles, totalPages) {
+      const pagination = document.getElementById("pagination");
+      pagination.innerHTML = "";
+
+      if (totalPages <= 1) return;
+
+      // Previous button
+      const prevBtn = document.createElement("button");
+      prevBtn.className = "pagination-btn";
+      prevBtn.textContent = "Prev";
+      prevBtn.disabled = currentPage === 1;
+      prevBtn.onclick = () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderProfiles(allProfiles);
+        }
+      };
+      pagination.appendChild(prevBtn);
+
+      // Page numbers (show max 5 pages at a time)
+      let startPage = Math.max(1, currentPage - 2);
+      let endPage = Math.min(totalPages, startPage + 4);
+      if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
+
+      for (let i = startPage; i <= endPage; i++) {
+        const pageBtn = document.createElement("button");
+        pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
+        pageBtn.textContent = i;
+        pageBtn.onclick = () => {
+          currentPage = i;
+          renderProfiles(allProfiles);
+        };
+        pagination.appendChild(pageBtn);
+      }
+
+      // Next button
+      const nextBtn = document.createElement("button");
+      nextBtn.className = "pagination-btn";
+      nextBtn.textContent = "Next";
+      nextBtn.disabled = currentPage === totalPages;
+      nextBtn.onclick = () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderProfiles(allProfiles);
+        }
+      };
+      pagination.appendChild(nextBtn);
+    }
+
     let currentProfileId = null; // Track the current profile ID
 
     // Modify showProfileModal to set currentProfileId and update download button
@@ -306,7 +380,8 @@
       <div class="profile-name">${fullName}</div>
     `;
 
-    // ✅ Fill in modal details
+    const modalAge = getAgeFromProfile(p);
+    // ✅ Fill in modal details (use modalAge)
     details.innerHTML = `
       <div class="profile-details-modal">
         <div class="profile-details-row full">
@@ -320,7 +395,7 @@
         <div class="profile-details-row">
           <div class="profile-detail">
             <span class="label">Age</span>
-            <span class="value">${p.user?.age ?? "N/A"}</span>
+            <span class="value">${modalAge !== null && modalAge !== undefined ? modalAge : "N/A"}</span>
           </div>
           <div class="profile-detail">
             <span class="label">Gender</span>
@@ -408,6 +483,12 @@
       </div>
     `;
 
+    // Set modal data attribute and download button data-id so download uses the modal owner
+    modal.dataset.currentProfile = p._id;
+    window.currentProfileId = p._id;
+    const downloadBtnEl = document.getElementById("downloadBtn");
+    if (downloadBtnEl) downloadBtnEl.dataset.id = p._id;
+
     // Use p._id directly for modal delete
     const deleteBtn = document.getElementById("deleteProfileBtn");
     deleteBtn.addEventListener("click", async () => {
@@ -452,60 +533,96 @@
   }
 
 
-    // Download button logic
-    document.addEventListener("DOMContentLoaded", function () {
-      const downloadBtn = document.getElementById("downloadBtn");
-      let currentProfileId = null;
+    // ------------------ improved download logic (replace previous block) ------------------
+(function setupDownloadHandler(){
+  async function downloadProfileDocx(profileId) {
+    if (!profileId) return Swal.fire('Error','No profile selected to download.','error');
+    const token = sessionStorage.getItem('token') || '';
+    if (!token) return Swal.fire('Not authenticated','Please sign in to download.','warning');
 
-      // Set currentProfileId when showing modal
-      window.showProfileModal = function(profileId) {
-        currentProfileId = profileId;
-        // ...existing code to show modal...
-      };
-
-      if (downloadBtn) {
-        downloadBtn.addEventListener("click", function () {
-          if (!currentProfileId) return;
-          downloadProfileDocx(currentProfileId);
-        });
-      }
-
-      async function downloadProfileDocx(profileId) {
-        try {
-          const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-          const res = await fetch(`/api/kkprofiling/export/${profileId}`, {
-            method: "GET",
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          });
-          if (!res.ok) {
-            alert("Failed to download profile.");
-            return;
-          }
-          const blob = await res.blob();
-          // Try to get filename from header
-          let filename = "KKProfile.docx";
-          const disposition = res.headers.get("Content-Disposition");
-          if (disposition && disposition.indexOf("filename=") !== -1) {
-            filename = disposition.split("filename=")[1].replace(/"/g, "");
-          }
-          const url = window.URL.createObjectURL(blob);
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = filename;
-          document.body.appendChild(a);
-          a.click();
-          setTimeout(() => {
-            window.URL.revokeObjectURL(url);
-            a.remove();
-          }, 100);
-        } catch (err) {
-          alert("Error downloading profile.");
-        }
-      }
+    Swal.fire({
+      title: 'Preparing download...',
+      didOpen: () => Swal.showLoading(),
+      allowOutsideClick: false
     });
 
+    try {
+      const res = await fetch(`http://localhost:5000/api/kkprofiling/export/${profileId}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/json'
+        }
+      });
+
+      const contentType = res.headers.get('content-type') || '';
+
+      if (!res.ok) {
+        if (contentType.includes('application/json')) {
+          const err = await res.json().catch(()=>({ message: `Status ${res.status}` }));
+          Swal.close();
+          console.error('Export error response:', err);
+          return Swal.fire('Export Failed', err.message || err.error || `Status ${res.status}`, 'error');
+        } else {
+          const text = await res.text().catch(()=>`Status ${res.status}`);
+          Swal.close();
+          console.error('Export failed:', text);
+          return Swal.fire('Export Failed', `Status ${res.status}: ${text}`, 'error');
+        }
+      }
+
+      if (contentType.includes('application/json')) {
+        const payload = await res.json().catch(()=>null);
+        Swal.close();
+        console.error('Unexpected JSON response for file download:', payload);
+        return Swal.fire('Export Failed', (payload && (payload.message||payload.error)) || 'Server returned JSON instead of file', 'error');
+      }
+
+      const blob = await res.blob();
+      let filename = `KKProfile.docx`;
+      const disposition = res.headers.get('Content-Disposition') || '';
+      if (disposition && disposition.indexOf('filename=') !== -1) {
+        filename = disposition.split('filename=')[1].trim().replace(/["']/g,'');
+      }
+
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(()=> window.URL.revokeObjectURL(url), 2000);
+
+      Swal.close();
+    } catch (err) {
+      Swal.close();
+      console.error('Download exception:', err);
+      Swal.fire('Error', 'Could not download file. Check console for details.', 'error');
+    }
+  }
+
+  // Delegate click so button created/removed in modal still works
+  document.addEventListener('click', (ev) => {
+    const btn = ev.target.closest('#downloadBtn, .modern-modal-download');
+    if (!btn) return;
+
+    // Priority for determining which profile to download:
+    // 1) If a modal is open and has data-current-profile -> use that
+    // 2) Else use window.currentProfileId if set
+    // 3) Else use data-id on the clicked button
+    let profileId = null;
+    const modal = document.getElementById('profileModal');
+    if (modal && modal.style.display && modal.style.display !== 'none') {
+      profileId = modal.dataset.currentProfile || null;
+    }
+    if (!profileId && window.currentProfileId) profileId = window.currentProfileId;
+    if (!profileId) profileId = btn.dataset.id || btn.getAttribute('data-id') || null;
+
+    downloadProfileDocx(profileId);
+  });
+})();
+  
     // 🔹 Cycle filter (year + cycle)
     filterBtn.addEventListener("click", () => {
       // Require year and cycle for any filter
@@ -843,6 +960,18 @@
     updateNotifBadge();
   });
 
+    const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id && typeof showProfileModal === "function") {
+    fetch(`http://localhost:5000/api/kkprofiling/${id}`, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+    })
+    .then(res => res.json())
+    .then(profile => {
+      if (profile && profile._id) showProfileModal(profile);
+    });
+  }
+
   }); // <-- This closes the DOMContentLoaded handler
 
 async function updateNotifBadge() {
@@ -876,3 +1005,13 @@ async function updateNotifBadge() {
 
 // Always show the unread notification badge on page load
 updateNotifBadge();
+
+
+
+// helper: get age from profile (multiple locations)
+function getAgeFromProfile(p) {
+  if (!p) return null;
+  if (p.age !== undefined && p.age !== null) return p.age;
+  if (p.user && p.user.age !== undefined && p.user.age !== null) return p.user.age;
+  return null;
+}

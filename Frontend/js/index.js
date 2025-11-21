@@ -117,9 +117,15 @@ function handleKKProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "kkform-personal.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "kkform-personal.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -190,9 +196,15 @@ function handleLGBTQProfileNavClick(event) {
         icon: "info",
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "lgbtqform.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "lgbtqform.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -261,11 +273,17 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && !hasProfile) {
       Swal.fire({
         icon: "info",
-        title: `No Application found`,
+        title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
-        confirmButtonText: "Go to form"
-      }).then(() => {
-        window.location.href = "Educational-assistance-user.html";
+        showCancelButton: true, // Show the "No" button
+        confirmButtonText: "Go to form", // Text for the "Go to Form" button
+        cancelButtonText: "No", // Text for the "No" button
+      }).then(result => {
+        if (result.isConfirmed) {
+          // Redirect to the form page when "Go to Form" is clicked
+          window.location.href = "Educational-assistance-user.html";
+        } else if (result.dismiss === Swal.DismissReason.cancel) {
+        }
       });
       return;
     }
@@ -309,4 +327,54 @@ if (educAssistanceNavBtnDesktop) {
 if (educAssistanceNavBtnMobile) {
   educAssistanceNavBtnMobile.addEventListener('click', handleEducAssistanceNavClick);
 }
+});
+
+document.addEventListener('DOMContentLoaded', function () {
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  const verificationStrip = document.getElementById('verification-strip');
+
+  if (token) {
+    fetch('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` }
+    })
+      .then(response => response.json())
+      .then(user => {
+        if (!user.isVerified) {
+          // Show verification strip for unverified accounts
+          if (verificationStrip) {
+            verificationStrip.style.display = 'flex';
+          }
+
+          // Disable navigation buttons
+          const navSelectors = [
+            '#kkProfileNavBtnDesktop',
+            '#kkProfileNavBtnMobile',
+            '#lgbtqProfileNavBtnDesktop',
+            '#lgbtqProfileNavBtnMobile',
+            '#educAssistanceNavBtnDesktop',
+            '#educAssistanceNavBtnMobile',
+            '.announcement-btn'
+          ];
+          navSelectors.forEach(selector => {
+            document.querySelectorAll(selector).forEach(btn => {
+              btn.classList.add('disabled');
+              btn.setAttribute('tabindex', '-1');
+              btn.setAttribute('aria-disabled', 'true');
+              btn.addEventListener('click', function (e) {
+                e.preventDefault();
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+            });
+          });
+        }
+      })
+      .catch(() => {
+        console.error('Failed to fetch user verification status.');
+      });
+  }
 });

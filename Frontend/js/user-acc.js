@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
       allowOutsideClick: false,
       allowEscapeKey: false,
     }).then(() => {
-      window.location.href = "/Frontend/html/user/login.html";
+      window.location.href = "/Frontend/html/admin/admin-log.html";
     });
   }
   if (!token) {
@@ -139,33 +139,90 @@ async function showUserModal(userId) {
         Authorization: `Bearer ${sessionStorage.getItem("token")}`,
       },
     });
-    const user = await response.json();
+    const payload = await response.json();
+    const user = payload.user || payload;
+    const profiles = payload.profiles || {};
+    console.log("Modal profile IDs:", profiles);
 
+    // Resolve profile IDs (prefer answered-latest id, fallback to any-profile id, keep legacy keys)
+    const kkId = profiles.kkAnsweredLatestId || profiles.kkAnyProfileId || profiles.kkProfileId || null;
+    const lgbtqId = profiles.lgbtqAnsweredLatestId || profiles.lgbtqAnyProfileId || profiles.lgbtqProfileId || null;
+    const educId = profiles.educationalAnsweredLatestId || profiles.educationalAnyProfileId || profiles.educationalProfileId || null;
+    
     Swal.fire({
-      title: '<h2 style="color: #0A2C59; font-size: 24px;">User Details</h2>',
-      html: `
-        <div class="user-modal-content">
-          <div class="user-info-group">
-            <label>Username:</label>
-            <span>${user.username}</span>
-          </div>
-          <div class="user-info-group">
-            <label>Email:</label>
-            <span>${user.email}</span>
-          </div>
-          <div class="user-info-group">
-            <label>Birthday:</label>
-            <span>${user.birthday ? new Date(user.birthday).toLocaleDateString() : 'Not set'}</span>
-          </div>
-        </div>
-      `,
       showCloseButton: true,
       showConfirmButton: false,
-      width: '500px',
+      width: '900px',
       customClass: {
-        popup: 'user-modal-popup',
-        closeButton: 'user-modal-close'
-      }
+        popup: 'modern-modal',
+        closeButton: 'modern-modal-close'
+      },
+      html: `
+        <div class="modern-modal-header" style="background: linear-gradient(135deg, #0A2C59 0%, #1a3f6f 100%); padding: 32px 48px 20px 48px; display: flex; align-items: center; flex-direction: column; position: relative; gap: 8px; border-radius: 28px 28px 0 0;">
+          <div style="display:flex; flex-direction:column; align-items: center; text-align: center;">
+            <div style="font-size:20px; font-weight:700; color:#fff; line-height:1;">${user.username || user.email || '-'}</div>
+            <div style="opacity:0.9; font-size:13px; color:#fff; margin-top:6px;">${user.email || '-'}</div>
+          </div>
+        </div>
+
+        <div class="modern-modal-body" style="padding: 25px 28px; background: #f8fafc; color: #223; font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif; overflow-y: auto; max-height: 520px; border-radius: 0 0 28px 28px;">
+          
+          <!-- User Info Cards Grid (2 columns) - NO username/email here -->
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-bottom: 28px;">
+            
+            <!-- Birthday Card -->
+            <div class="profile-detail" style="background: #fff; padding: 16px 20px; border-radius: 14px; box-shadow: 0 2px 8px rgba(10,44,89,0.06); border: 1px solid #f0f4fa;">
+              <div style="font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Birthday</div>
+              <div style="font-weight: 700; color: #0A2C59; font-size: 16px;">${user.birthday ? new Date(user.birthday).toLocaleDateString() : '-'}</div>
+            </div>
+
+            <!-- Age Card -->
+            <div class="profile-detail" style="background: #fff; padding: 16px 20px; border-radius: 14px; box-shadow: 0 2px 8px rgba(10,44,89,0.06); border: 1px solid #f0f4fa;">
+              <div style="font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Age</div>
+              <div style="font-weight: 700; color: #0A2C59; font-size: 16px;">${user.age ?? '-'}</div>
+            </div>
+
+            <!-- Account Created Card (Full Width) -->
+            <div class="profile-detail" style="background: #fff; padding: 16px 20px; border-radius: 14px; box-shadow: 0 2px 8px rgba(10,44,89,0.06); border: 1px solid #f0f4fa; grid-column: 1 / -1;">
+              <div style="font-weight: 600; color: #64748b; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px;">Account Created</div>
+              <div style="font-weight: 700; color: #0A2C59; font-size: 16px;">${user.createdAt ? new Date(user.createdAt).toLocaleString() : '-'}</div>
+            </div>
+          </div>
+
+          <!-- Submitted Forms Section -->
+          <div style="background: #fff; padding: 20px; border-radius: 14px; box-shadow: 0 2px 8px rgba(10,44,89,0.06); border: 1px solid #f0f4fa;">
+            <h3 style="margin: 0 0 18px 0; font-size: 16px; font-weight: 700; color: #0A2C59; letter-spacing: 0.3px;">Submitted Forms</h3>
+            
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;">
+              
+              <!-- KK Profiling -->
+              <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #07B0F2;">
+                <div style="font-weight: 700; color: #0A2C59; font-size: 14px; letter-spacing: 0.2px;">KK Profiling</div>
+                ${kkId ? `<a href="#" onclick="window.openProfileTabWithToken('/Frontend/html/admin/KK-Profile.html', '${kkId}'); return false;" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #07B0F2; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
+                  <i class="fas fa-arrow-up-right-from-square"></i> View
+                </a>` : `<div style="color: #888; font-size: 13px; font-weight: 500;">Not submitted</div>`}
+              </div>
+
+              <!-- LGBTQIA+ Profiling -->
+              <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #8b5cf6;">
+                <div style="font-weight: 700; color: #0A2C59; font-size: 14px; letter-spacing: 0.2px;">LGBTQIA+ Profiling</div>
+                ${lgbtqId ? `<a href="#" onclick="window.openProfileTabWithToken('/Frontend/html/admin/LGBTQ-Profile.html', '${lgbtqId}'); return false;" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #8b5cf6; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
+                  <i class="fas fa-arrow-up-right-from-square"></i> View
+                </a>` : `<div style="color: #888; font-size: 13px; font-weight: 500;">Not submitted</div>`}
+              </div>
+
+              <!-- Educational Assistance -->
+              <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #06b6d4;">
+                <div style="font-weight: 700; color: #0A2C59; font-size: 14px; letter-spacing: 0.2px;">Educational Assistance</div>
+                ${educId ? `<a href="#" onclick="window.openProfileTabWithToken('/Frontend/html/admin/Educational-Assistance-admin.html', '${educId}'); return false;" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #06b6d4; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
+                  <i class="fas fa-arrow-up-right-from-square"></i> View
+                </a>` : `<div style="color: #888; font-size: 13px; font-weight: 500;">Not submitted</div>`}
+              </div>
+            </div>
+          </div>
+
+        </div>
+      `
     });
   } catch (error) {
     console.error('Error fetching user details:', error);
@@ -176,3 +233,19 @@ async function showUserModal(userId) {
     });
   }
 }
+
+// Helper to open profile tab and transfer session token via BroadcastChannel
+function openProfileTabWithToken(url, profileId) {
+  const tab = window.open(`${url}?id=${encodeURIComponent(profileId)}`, '_blank');
+  const token = sessionStorage.getItem("token");
+  if (token && tab) {
+    const channel = new BroadcastChannel("skinsight-auth");
+    setTimeout(() => {
+      channel.postMessage({ token });
+      channel.close();
+    }, 500);
+  }
+}
+
+// Make helper available globally for modal HTML
+window.openProfileTabWithToken = openProfileTabWithToken;

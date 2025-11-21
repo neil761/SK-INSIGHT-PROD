@@ -2,6 +2,11 @@ const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema({
+  lastName: { type: String, required: true, trim: true },
+  firstName: { type: String, required: true, trim: true },
+  middleName: { type: String, trim: true },
+  suffix: { type: String, trim: true },
+
   username: { type: String, required: true, unique: true },
   email: { type: String, required: true, unique: true },
   password: { type: String, required: true },
@@ -20,14 +25,30 @@ const userSchema = new mongoose.Schema({
   otpCode: String,
   otpExpires: Date,
   otpAttempts: { type: Number, default: 0 },
-  otpLockedUntil: Date,
+  otpLockedUntil: Date, // for general OTP (verification, password reset)
 
+
+  emailChangeOtp: String,
+  emailChangeOtpExpires: Date,
+  emailChangeOtpAttempts: { type: Number, default: 0 },
+  emailChangeOtpLockedUntil: Date,
+  emailChangeOtpVerified: Boolean,
+  emailChangeOtpSendCount: { type: Number, default: 0 },
+  emailChangeOtpSendWindowStart: { type: Number },
+  emailChangeOtpLastSent: { type: Number }, // or Date
+
+  emailVerificationOtpSendCount: { type: Number, default: 0 },
+  emailVerificationOtpSendWindowStart: { type: Number },
+  emailVerificationOtpLastSent: { type: Number }, // or Date
   verifiedAddress: {
     type: String,
     trim: true,
   },
   gender: { type: String },
   civilStatus: { type: String },
+},
+{
+  timestamps: true // adds createdAt and updatedAt
 });
 
 // Hash password before saving

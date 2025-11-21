@@ -9,16 +9,24 @@ const fs = require("fs");
 const PizZip = require("pizzip");
 const Docxtemplater = require("docxtemplater");
 const Notification = require("../models/Notification");
+const Announcement = require("../models/Announcement"); // Add at top if not present
 async function getPresentCycle(formName) {
-  console.log("getPresentCycle called with formName:", formName);
-  const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
-    "cycleId"
-  );
-  console.log("FormStatus found:", status ? status._id : null);
-  if (!status || !status.cycleId) {
-    throw new Error("No active form cycle");
+  // Prefer an explicitly open cycle (FormStatus.isOpen === true)
+  const openStatus = await FormStatus.findOne({ formName, isOpen: true }).populate("cycleId");
+  if (openStatus && openStatus.cycleId) return openStatus.cycleId;
+
+  // If no open status, fallback to any FormStatus entry (may be closed)
+  const anyStatus = await FormStatus.findOne({ formName }).populate("cycleId");
+  if (anyStatus && anyStatus.cycleId) {
+    // If there is no other open cycle (we already checked), treat this cycle as present
+    return anyStatus.cycleId;
   }
-  return status.cycleId;
+
+  // Final fallback: return latest FormCycle record for the form (by year, cycleNumber)
+  const latestCycle = await FormCycle.findOne({ formName }).sort({ year: -1, cycleNumber: -1 });
+  if (latestCycle) return latestCycle;
+
+  throw new Error("No active form cycle");
 }
 
 // POST /api/kkprofiling
@@ -90,13 +98,45 @@ exports.submitKKProfile = async (req, res) => {
         .json({ error: "Reason for not attending is required" });
     }
 
-    // Check for uploaded profile image
-    if (!req.files || !req.files.profileImage || !req.files.profileImage[0]) {
-      return res.status(400).json({ error: "Profile image is required to submit KK Profile." });
-    }
-
     const user = await User.findById(req.user.id);
     const birthday = user.birthday; // use this value for the profile
+
+    // Determine authoritative age to store on KKProfile.
+    // Priority: req.body.age -> user's birthday -> req.body.birthday -> user.age
+    const parseAgeFromBirthday = bd => {
+      if (!bd) return null;
+      const d = new Date(bd);
+      if (isNaN(d)) return null;
+      const today = new Date();
+      let a = today.getFullYear() - d.getFullYear();
+      const m = today.getMonth() - d.getMonth();
+      if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+      return a;
+    };
+
+    let ageToSave = null;
+    if (req.body && typeof req.body.age !== 'undefined' && req.body.age !== null && req.body.age !== '') {
+      const n = Number(req.body.age);
+      if (!isNaN(n)) ageToSave = n;
+    }
+    if (ageToSave === null) {
+      const fromUserBirthday = parseAgeFromBirthday(user.birthday);
+      if (fromUserBirthday !== null) ageToSave = fromUserBirthday;
+    }
+    if (ageToSave === null && req.body && req.body.birthday) {
+      const fromBodyBirthday = parseAgeFromBirthday(req.body.birthday);
+      if (fromBodyBirthday !== null) ageToSave = fromBodyBirthday;
+    }
+    if (ageToSave === null && typeof user.age !== 'undefined' && user.age !== null) {
+      const ua = Number(user.age);
+      if (!isNaN(ua)) ageToSave = ua;
+    }
+    if (ageToSave === null) {
+      if (req.files?.profileImage) fs.unlink(req.files.profileImage[0].path, () => {});
+      if (req.files?.idImage) fs.unlink(req.files.idImage[0].path, () => {});
+      if (req.files?.signatureImage) fs.unlink(req.files.signatureImage[0].path, () => {});
+      return res.status(400).json({ error: "Age is required or could not be determined from birthday." });
+    }
 
     const newProfile = new KKProfile({
       user: userId,
@@ -135,6 +175,7 @@ exports.submitKKProfile = async (req, res) => {
       idImagePath: req.files?.idImage ? req.files.idImage[0].path : null,           // Cloudinary URL
       signatureImagePath: req.files?.signatureImage ? req.files.signatureImage[0].path : null, // Cloudinary URL
 
+      age: ageToSave,
       birthday,
     });
 
@@ -218,6 +259,28 @@ exports.getProfileById = async (req, res) => {
 };
 
 // PUT /api/kkprofiling/:id
+const cloudinary = require('../config/cloudinaryConfig');
+
+// Helper: derive Cloudinary public_id from a full Cloudinary URL
+function publicIdFromUrl(url) {
+  try {
+    if (!url) return null;
+    const u = new URL(url);
+    // path after /upload/
+    const parts = u.pathname.split('/upload/');
+    if (parts.length < 2) return null;
+    let after = parts[1];
+    // remove possible version prefix v123456/
+    after = after.replace(/^v[0-9]+\//, '');
+    // remove file extension
+    const lastDot = after.lastIndexOf('.');
+    if (lastDot !== -1) after = after.substring(0, lastDot);
+    return after;
+  } catch (e) {
+    return null;
+  }
+}
+
 exports.updateProfileById = async (req, res) => {
   try {
     const profile = await KKProfile.findById(req.params.id);
@@ -227,11 +290,139 @@ exports.updateProfileById = async (req, res) => {
       return res.status(403).json({ error: "Not authorized" });
     }
 
-    Object.assign(profile, req.body);
-    await profile.save();
+    // If new files were uploaded via multer (CloudinaryStorage), replace the stored URLs
+    try {
+      if (req.files && req.files.profileImage && req.files.profileImage[0]) {
+        // delete old image from Cloudinary if possible
+        const oldUrl = profile.profileImage;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy old profile image', e); }
+        }
+        // multer-storage-cloudinary exposes path (the secure URL)
+        profile.profileImage = req.files.profileImage[0].path;
+      }
+
+      if (req.files && req.files.signatureImage && req.files.signatureImage[0]) {
+        const oldSigUrl = profile.signatureImagePath;
+        const oldSigPublicId = publicIdFromUrl(oldSigUrl);
+        if (oldSigPublicId) {
+          try { await cloudinary.uploader.destroy(oldSigPublicId); } catch (e) { console.warn('Failed to destroy old signature image', e); }
+        }
+        profile.signatureImagePath = req.files.signatureImage[0].path;
+      }
+
+      if (req.files && req.files.idImage && req.files.idImage[0]) {
+        // optional id image replacement
+        const oldIdUrl = profile.idImagePath;
+        const oldIdPublicId = publicIdFromUrl(oldIdUrl);
+        if (oldIdPublicId) {
+          try { await cloudinary.uploader.destroy(oldIdPublicId); } catch (e) { console.warn('Failed to destroy old id image', e); }
+        }
+        profile.idImagePath = req.files.idImage[0].path;
+      }
+    } catch (e) {
+      console.warn('File processing during update failed', e);
+    }
+
+    // Apply other body updates (coerce types as needed)
+    // Merge req.body into profile (careful not to overwrite image fields already set above)
+    let body = Object.assign({}, req.body);
+
+    // If client sent _removed flags (as JSON string when using FormData), parse them
+    let removedFlags = null;
+    if (body._removed) {
+      try {
+        removedFlags = typeof body._removed === 'string' ? JSON.parse(body._removed) : body._removed;
+      } catch (e) {
+        // ignore parse error, but keep the raw value
+        removedFlags = body._removed;
+      }
+    }
+
+    // If client asked to remove images without replacement, delete old Cloudinary resources and clear fields
+    try {
+      if (removedFlags && removedFlags.profileImage) {
+        const oldUrl = profile.profileImage;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy removed profile image', e); }
+        }
+        profile.profileImage = null;
+      }
+      if (removedFlags && removedFlags.signatureImage) {
+        const oldUrl = profile.signatureImagePath;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy removed signature image', e); }
+        }
+        profile.signatureImagePath = null;
+      }
+      if (removedFlags && removedFlags.idImage) {
+        const oldUrl = profile.idImagePath;
+        const oldPublicId = publicIdFromUrl(oldUrl);
+        if (oldPublicId) {
+          try { await cloudinary.uploader.destroy(oldPublicId); } catch (e) { console.warn('Failed to destroy removed id image', e); }
+        }
+        profile.idImagePath = null;
+      }
+    } catch (e) {
+      console.warn('Error handling removed flags', e);
+    }
+
+    // Remove any image fields from body if present (we already handled files above)
+    delete body.profileImage;
+    delete body.signatureImagePath;
+    delete body.signatureImage;
+    delete body.idImagePath;
+    delete body.idImage;
+    delete body._removed;
+
+    // Basic coercion for common form values sent via FormData (strings -> booleans/numbers/dates)
+    const parseBool = v => {
+      if (v === true || v === false) return v;
+      if (!v && v !== 0) return v;
+      const s = String(v).trim().toLowerCase();
+      if (s === 'true' || s === 'yes') return true;
+      if (s === 'false' || s === 'no') return false;
+      return v;
+    };
+    const parseNumber = v => {
+      if (v === null || v === undefined || v === '') return v;
+      const n = Number(v);
+      return isNaN(n) ? v : n;
+    };
+
+    if ('attendedKKAssembly' in body) body.attendedKKAssembly = parseBool(body.attendedKKAssembly);
+    if ('registeredSKVoter' in body) body.registeredSKVoter = parseBool(body.registeredSKVoter);
+    if ('registeredNationalVoter' in body) body.registeredNationalVoter = parseBool(body.registeredNationalVoter);
+    if ('votedLastSKElection' in body) body.votedLastSKElection = parseBool(body.votedLastSKElection);
+    if ('attendanceCount' in body) body.attendanceCount = parseNumber(body.attendanceCount);
+    if ('birthday' in body && body.birthday) {
+      // convert YYYY-MM-DD or ISO strings to Date
+      const bd = new Date(body.birthday);
+      if (!isNaN(bd)) body.birthday = bd;
+    }
+
+    // Remove empty strings to avoid enum/validation collisions
+    Object.keys(body).forEach(k => {
+      if (body[k] === '') delete body[k];
+    });
+
+    // Merge sanitized body into profile
+    Object.assign(profile, body);
+
+    try {
+      await profile.save();
+    } catch (saveErr) {
+      console.error('Failed to save updated profile:', saveErr);
+      // give more context in development; do not expose stack in production
+      return res.status(400).json({ error: saveErr.message || 'Validation error', details: saveErr.errors || null });
+    }
 
     res.json({ message: "Profile updated", profile });
   } catch (err) {
+    console.error('Update profile error', err);
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -239,8 +430,11 @@ exports.updateProfileById = async (req, res) => {
 // DELETE /api/kkprofiling/:id
 exports.deleteProfileById = async (req, res) => {
   try {
-    const profile = await KKProfile.findById(req.params.id);
-    if (!profile) return res.status(404).json({ error: "Profile not found" });
+    const profile = await KKProfile.findById(req.params.id).populate("user");
+    if (!profile) {
+      console.error("Soft delete failed: Profile not found", req.params.id);
+      return res.status(404).json({ error: "Profile not found" });
+    }
 
     // Soft delete: set isDeleted and deletedAt
     profile.isDeleted = true;
@@ -255,8 +449,24 @@ exports.deleteProfileById = async (req, res) => {
       req.app.get("io").emit("kk-profile:deleted", { id: profile._id });
     }
 
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "KK Profiling Form Deleted",
+      content: `The admin has observed that your KK Profiling form has inaccuracies. As a result, your KK Profiling form for this cycle has been deleted and moved to the recycle bin. You may submit a new form if the cycle is still open, please make sure all information is accurate.`,
+      category: "KK Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id,
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
+
     res.json({ message: "Profile moved to recycle bin." });
   } catch (err) {
+    console.error("Soft delete error:", err); // <-- Add this line
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -294,6 +504,27 @@ exports.getMyProfile = async (req, res) => {
   }
 };
 
+// GET /api/kkprofiling/me/previous
+// Return the most recent non-deleted KKProfile for the authenticated user (any cycle)
+exports.getMyLatestProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    // Find latest profile by submittedAt (fallback to creation order)
+    const profile = await KKProfile.findOne({ user: userId, isDeleted: false })
+      .sort({ submittedAt: -1 })
+      .populate('formCycle');
+
+    if (!profile) {
+      return res.status(404).json({ error: 'No previous KK profile found.' });
+    }
+
+    res.status(200).json(profile);
+  } catch (err) {
+    console.error('getMyLatestProfile error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // GET /api/kkprofiling/me/image
 exports.getProfileImage = async (req, res) => {
   try {
@@ -316,9 +547,14 @@ exports.getProfileImage = async (req, res) => {
       return res.status(404).json({ error: "No image found" });
     }
 
-    res.status(200).json({
-      imageUrl: `${req.protocol}://${req.get("host")}/${profile.profileImage}`,
-    });
+    // If the stored profileImage is already a full URL (e.g., Cloudinary secure URL),
+    // return it directly. Otherwise, build a server-prefixed URL for local files.
+    let imageUrl = profile.profileImage;
+    if (imageUrl && !/^https?:\/\//i.test(imageUrl)) {
+      imageUrl = `${req.protocol}://${req.get("host")}/${imageUrl}`;
+    }
+
+    res.status(200).json({ imageUrl });
   } catch (error) {
     res.status(500).json({ error: "Error fetching image" });
   }
@@ -377,6 +613,9 @@ exports.getAllProfiles = async (req, res) => {
     } = req.query;
     let cycleDoc = null;
     let filter = {};
+
+    // Always exclude deleted profiles
+    filter.isDeleted = false;
 
     if (all === "true") {
       if (classification) filter.youthClassification = classification;
@@ -493,6 +732,19 @@ exports.exportKKProfileDocx = async (req, res) => {
     const doc = new Docxtemplater(zip);
 
     // Prepare data for template
+    // Prefer stored age in DB (profile.age or profile.user.age); otherwise compute from birthday
+    const storedAge = (typeof profile.age !== 'undefined' && profile.age !== null) ? Number(profile.age) : null;
+    const userAge = (profile.user && typeof profile.user.age !== 'undefined' && profile.user.age !== null) ? Number(profile.user.age) : null;
+    const birthdayDate = profile.user?.birthday ? new Date(profile.user.birthday) : null;
+    const birthday = birthdayDate ? birthdayDate.toLocaleDateString() : "";
+    const birthMonth = birthdayDate ? birthdayDate.getMonth() + 1 : "N/A";
+    const birthDay = birthdayDate ? birthdayDate.getDate() : "N/A";
+    const birthYear = birthdayDate ? birthdayDate.getFullYear() : "N/A";
+    const today = new Date();
+    const computedAge = birthdayDate
+      ? today.getFullYear() - birthYear - (today.getMonth() + 1 < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < birthDay) ? 1 : 0)
+      : "N/A";
+    const age = (storedAge !== null && !isNaN(storedAge)) ? storedAge : (userAge !== null && !isNaN(userAge) ? userAge : computedAge);
     const data = {
       lastname: profile.lastname || "",
       firstname: profile.firstname || "",
@@ -517,10 +769,8 @@ exports.exportKKProfileDocx = async (req, res) => {
       attendedKKAssembly: profile.attendedKKAssembly ? "Yes" : "No",
       attendanceCount: profile.attendanceCount || "",
       reasonDidNotAttend: profile.reasonDidNotAttend || "",
-      birthday: profile.user?.birthday
-        ? new Date(profile.user.birthday).toLocaleDateString()
-        : "",
-      age: profile.user?.age || "",
+      birthday: birthday,
+      age: age,
       // Add this line for the dropdown value:
       specificNeedType: profile.specificNeedType || "",
     };
@@ -567,6 +817,21 @@ exports.restoreProfileById = async (req, res) => {
     profile.isDeleted = false;
     profile.deletedAt = null;
     await profile.save();
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "KK Profiling Form Restored",
+      content: `Your KK Profiling form for this cycle has been restored.`,
+      category: "KK Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile restored" });
   } catch (err) {
@@ -660,17 +925,20 @@ exports.exportKKProfilesExcelTemplate = async (req, res) => {
     profiles.forEach(profile => {
       const fullName = `${(profile.lastname || '').toUpperCase()}, ${(profile.firstname || '').toUpperCase()} ${(profile.middlename || '').toUpperCase()}`.trim();
 
-      // Extract birthday details and compute age
+      // Prefer stored age in DB (profile.age or profile.user.age); otherwise extract birthday details and compute age
+      const storedAge = (typeof profile.age !== 'undefined' && profile.age !== null) ? Number(profile.age) : null;
+      const userAge = (profile.user && typeof profile.user.age !== 'undefined' && profile.user.age !== null) ? Number(profile.user.age) : null;
       const birthday = profile.user?.birthday ? new Date(profile.user.birthday) : null;
       const birthMonth = birthday ? birthday.getMonth() + 1 : "N/A"; // Months are 0-indexed
       const birthDay = birthday ? birthday.getDate() : "N/A";
       const birthYear = birthday ? birthday.getFullYear() : "N/A";
 
-      // Compute age dynamically
+      // Compute age dynamically only if not stored on profile/user
       const today = new Date();
-      const age = birthday
+      const computedAge = birthday
         ? today.getFullYear() - birthYear - (today.getMonth() + 1 < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < birthDay) ? 1 : 0)
         : "N/A";
+      const age = (storedAge !== null && !isNaN(storedAge)) ? storedAge : (userAge !== null && !isNaN(userAge) ? userAge : computedAge);
 
       // Gender logic: M for Male, F for Female
       const gender = profile.gender === "Male" ? "M" : profile.gender === "Female" ? "F" : "N/A";
@@ -746,7 +1014,3 @@ exports.exportKKProfilesExcelTemplate = async (req, res) => {
     res.status(500).json({ error: 'Failed to export KK Profiling data' });
   }
 };
-
-
-// Use isPWD, isCICL, isIP as needed here
-

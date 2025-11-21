@@ -3,99 +3,204 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="../../css/signup.css">
-    <title>SIGN UP</title>
+    <title>Sign Up - SK Insight</title>
     <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
 </head>
 <body>
-    <div class="sign">
-        <div class="left-side">
-            <div class="container1">
-                <div class="img1">
-                    <img src="../../assets/logo.png" alt="logo" class="logo">
-                </div>
-                <div class="title1">
-                    <h2>SANGGUNIANG KABATAAN</h2>
-                </div>
-                <div class="title2">
-                    <h1>BARANGAY</h1>
-                    <h1>PUTING BATO WEST</h1>
-                </div>
+    <div class="signup-wrapper">
+        <!-- Left Panel (Desktop Only) -->
+        <div class="signup-left-panel">
+            <div class="left-content">
+                <img src="../../assets/logo.png" alt="SK Insight" class="left-logo" />
+                <h2 class="left-title">SANGGUNIANG KABATAAN</h2>
+                <p class="left-subtitle">BARANGAY PUTING BATO WEST</p>
+                <div class="left-accent"></div>
             </div>
         </div>
-    
-        <div class="right-side">
-            <div class="container">
-                <h1 class="text-center text-xl font-bold mb-6">Sign Up</h1>
-                <form id="signupForm">
 
-                    <!-- Username with user icon -->
-                    <div class="relative mb-4">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">
-                            <i class="fa-solid fa-user"></i>
-                        </span>
-                        <input type="text" name="username" placeholder="Username" required
-                            class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 focus:outline-none focus:border-blue-500">
+        <!-- Right Panel (Form) -->
+        <div class="signup-right-panel">
+            <!-- Mobile Header -->
+            <div class="mobile-header-bar">
+                <img src="../../assets/logo.png" alt="SK Insight" class="mobile-logo" />
+            </div>
+
+            <!-- Form Container -->
+            <div class="signup-form-container">
+                <div class="form-header">
+                    <h1>Create Account</h1>
+                    <p class="form-subtitle">Join SK Insight today</p>
+                </div>
+
+                <div class="steps-indicator">
+                    <div class="step active" id="step1-indicator">
+                        <span class="step-number">1</span>
+                        <span class="step-label">Personal</span>
+                    </div>
+                    <div class="step-connector"></div>
+                    <div class="step" id="step2-indicator">
+                        <span class="step-number">2</span>
+                        <span class="step-label">Account</span>
+                    </div>
+                </div>
+
+                <!-- Step 1: Personal Info -->
+                <form id="signupStep1" class="signup-step active">
+                    <div class="form-section">
+                        <!-- First & Middle Name -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="firstName">First Name *</label>
+                                <div class="input-wrapper">
+                                    <i class="icon fa-solid fa-user"></i>
+                                    <input type="text" id="firstName" name="firstName" placeholder="John" required autocomplete="given-name" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="middleName">Middle Name</label>
+                                <div class="input-wrapper">
+                                    <i class="icon fa-solid fa-user"></i>
+                                    <input type="text" id="middleName" name="middleName" placeholder="David" autocomplete="additional-name" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Last Name & Suffix -->
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="lastName">Last Name *</label>
+                                <div class="input-wrapper">
+                                    <i class="icon fa-solid fa-user"></i>
+                                    <input type="text" id="lastName" name="lastName" placeholder="Doe" required autocomplete="family-name" />
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="suffix">Suffix</label>
+                                <div class="input-wrapper">
+                                    <input type="text" id="suffix" name="suffix" placeholder="Jr., Sr." autocomplete="honorific-suffix" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Birthday -->
+                        <div class="form-group full-width">
+                            <label for="birthdayYear">Birthday *</label>
+                            <div class="birthday-selects">
+                                <i class="icon fa-solid fa-calendar"></i>
+                                <div class="birthday-row">
+                                    <div class="custom-select" data-field="birthdayYear">
+                                        <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">Year</button>
+                                        <div class="custom-options" role="listbox"></div>
+                                        <select id="birthdayYear" name="birthdayYear" class="native-select" aria-hidden="true">
+                                            <option value="">Year</option>
+                                        </select>
+                                    </div>
+                                    <div class="custom-select" data-field="birthdayMonth">
+                                        <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">Month</button>
+                                        <div class="custom-options" role="listbox"></div>
+                                        <select id="birthdayMonth" name="birthdayMonth" class="native-select" aria-hidden="true">
+                                            <option value="">Month</option>
+                                            <option value="01">January</option>
+                                            <option value="02">February</option>
+                                            <option value="03">March</option>
+                                            <option value="04">April</option>
+                                            <option value="05">May</option>
+                                            <option value="06">June</option>
+                                            <option value="07">July</option>
+                                            <option value="08">August</option>
+                                            <option value="09">September</option>
+                                            <option value="10">October</option>
+                                            <option value="11">November</option>
+                                            <option value="12">December</option>
+                                        </select>
+                                    </div>
+                                    <div class="custom-select" data-field="birthdayDay">
+                                        <button type="button" class="custom-select-trigger" aria-haspopup="listbox" aria-expanded="false">Day</button>
+                                        <div class="custom-options" role="listbox"></div>
+                                        <select id="birthdayDay" name="birthdayDay" class="native-select" aria-hidden="true">
+                                            <option value="">Day</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Email with envelope icon -->
-                    <div class="relative mb-4">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">
-                            <i class="fa-solid fa-envelope"></i>
-                        </span>
-                        <input type="email" name="email" placeholder="Email" required
-                            class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 focus:outline-none focus:border-blue-500">
+                    <div class="form-actions">
+                        <button type="button" id="nextStep" class="btn btn-primary">
+                            Continue <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Step 2: Account Info -->
+                <form id="signupStep2" class="signup-step">
+                    <div class="form-section">
+                        <!-- Username -->
+                        <div class="form-group full-width">
+                            <label for="username">Username *</label>
+                            <div class="input-wrapper">
+                                <i class="icon fa-solid fa-at"></i>
+                                <input type="text" id="username" name="username" placeholder="johndoe" required autocomplete="username" />
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div class="form-group full-width">
+                            <label for="email">Email Address *</label>
+                            <div class="input-wrapper">
+                                <i class="icon fa-solid fa-envelope"></i>
+                                <input type="email" id="email" name="email" placeholder="john@example.com" required autocomplete="email" />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div class="form-group full-width">
+                            <label for="password">Password *</label>
+                            <div class="input-wrapper">
+                                <i class="icon fa-solid fa-lock"></i>
+                                <input type="password" id="passwordField" name="password" placeholder="••••••••" required autocomplete="new-password" />
+                                <button type="button" id="togglePassword" class="input-toggle" aria-label="Toggle password visibility">
+                                    <i class="fa-solid fa-eye-slash"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Confirm Password -->
+                        <div class="form-group full-width">
+                            <label for="confirmPassword">Confirm Password *</label>
+                            <div class="input-wrapper">
+                                <i class="icon fa-solid fa-lock"></i>
+                                <input type="password" id="confirmPasswordField" name="confirmPassword" placeholder="••••••••" required autocomplete="new-password" />
+                                <button type="button" id="toggleConfirmPassword" class="input-toggle" aria-label="Toggle confirm password visibility">
+                                    <i class="fa-solid fa-eye-slash"></i>
+                                </button>
+                            </div>
+                        </div>
                     </div>
 
-                    <!-- Password with padlock icon and eye toggle -->
-                    <div class="relative mb-4">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">
-                            <i class="fa-solid fa-lock"></i>
-                        </span>
-                        <input type="password" name="password" placeholder="Password" required
-                            id="passwordField"
-                            class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 pr-10 focus:outline-none focus:border-blue-500">
-                        <span id="togglePassword" 
-                            class="absolute inset-y-0 right-3 flex items-center cursor-pointer text-gray-500">
-                            <i class="fa-solid fa-eye-slash"></i>
-                        </span>
-                    </div>
-
-                    <!-- Birthday with calendar icon -->
-                    <div class="relative mb-4">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">
-                            <i class="fa-solid fa-calendar"></i>
-                        </span>
-                        <input type="text" id="birthday" name="birthday" placeholder="YYYY-MM-DD" required
-                            class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 focus:outline-none focus:border-blue-500">
-                    </div>
-
-                    <!-- ID Image with file icon -->
-                    <div class="relative mb-6">
-                        <span class="absolute inset-y-0 left-3 flex items-center text-gray-500">
-                            <i class="fa-solid fa-file-image"></i>
-                        </span>
-                        <input type="file" id="idImage" name="idImage" required
-                            class="border bg-gray-100 border-gray-300 rounded px-3 py-2 w-full pl-10 focus:outline-none focus:border-blue-500">
-                    </div>
-
-                    <!-- Sign up button -->
-                    <div class="mb-6">
-                        <button type="submit" class="w-full bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 transition-colors">
-                            Confirm
+                    <div class="form-actions">
+                        <button type="button" id="prevStep" class="btn btn-secondary">
+                            <i class="fa-solid fa-arrow-left"></i> Back
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            Create Account <i class="fa-solid fa-check"></i>
                         </button>
                     </div>
 
-                    <!-- Sign in link -->
-                    <div class="text-center text-sm text-gray-700">
-                        Already have an account? 
-                        <a href="/Frontend/html/user/login.html" class="text-blue-600 hover:text-blue-800 font-medium">Sign In</a>
+                    <div class="signin-link">
+                        Already have an account? <a href="/Frontend/html/user/login.html">Sign In</a>
                     </div>
                 </form>
+
+                <!-- Sign In Link for Step 1 -->
+                <div class="signin-link" id="step1SignInLink">
+                    Already have an account? <a href="/Frontend/html/user/login.html">Sign In</a>
+                </div>
             </div>
         </div>
     </div>

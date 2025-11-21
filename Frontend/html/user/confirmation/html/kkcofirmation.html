@@ -30,7 +30,10 @@
       <span class="navbar-hamburger" id="navbarHamburger">
         <i class="fa-solid fa-bars"></i>
       </span>
-      <a class="notif" href="../../announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a class="notif" href="../../announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
       <a href="../../userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
     </div>
   </div>
@@ -46,7 +49,7 @@
    
    <div class="card">
   <div class="card-header">
-    <img src="/Frontend/assets/logo.png" alt="Logo" class="card-logo" />
+    <img src="../../../../assets/logo.png" alt="Logo" class="card-logo" />
     <h2>KK Survey Questionnaire</h2>
   </div>
   <h4>THANK YOU</h4>
@@ -55,9 +58,183 @@
     You can view your information by clicking the
     <strong>View Response</strong> button.
   </p>
-  <a href="view-kkpersonal.html" class="btn">View Response</a>
+  <div class="kk-upload-row">
+    <a href="view-kkpersonal.html" class="views">View Response</a>
+    <a href="editKK.html" class="edit">Edit Response</a>
+  </div>
 </div>
 
+  </div>
+
+  <!-- Edit Response Modal (contains the three forms: personal, address, youth) -->
+  <div id="editModalOverlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:9998;"></div>
+  <div id="editModal" style="display:none; position:fixed; inset:40px; z-index:9999; background:#fff; overflow:auto; border-radius:8px; padding:18px;"> 
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+      <h3>Edit Your KK Response</h3>
+      <button id="closeEditModal" style="background:transparent;border:none;font-size:18px;cursor:pointer;">×</button>
+    </div>
+
+    <div id="editSteps">
+      <!-- Step 1: Personal -->
+      <form id="editPersonalForm" style="display:block;">
+        <h4>Personal</h4>
+        <div><label>Last Name:</label><input id="lastname" name="lastname" class="kk-input"></div>
+        <div><label>First Name:</label><input id="firstname" name="firstname" class="kk-input"></div>
+        <div><label>Middle Name:</label><input id="middlename" name="middlename" class="kk-input"></div>
+        <div><label>Suffix:</label><input id="suffix" name="suffix" class="kk-input"></div>
+        <div><label>Gender:</label>
+          <select id="gender" name="gender" class="kk-input">
+            <option value="">Select Gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+        <div><label>Birthday:</label><input id="birthday" name="birthday" type="date" class="kk-input"></div>
+        <div><label>Age:</label><input id="age" name="age" type="number" class="kk-input" readonly></div>
+        <div style="margin-top:12px; display:flex; gap:8px; justify-content:flex-end;">
+          <button type="button" id="personalNext" class="btn">Next</button>
+        </div>
+      </form>
+
+      <!-- Step 2: Address -->
+      <form id="editAddressForm" style="display:none;">
+        <h4>Address & Contact</h4>
+        <div><label>Region:</label><input id="region" name="region" class="kk-input"></div>
+        <div><label>Province:</label><input id="province" name="province" class="kk-input"></div>
+        <div><label>Municipality:</label><input id="municipality" name="municipality" class="kk-input"></div>
+        <div><label>Barangay:</label><input id="barangay" name="barangay" class="kk-input"></div>
+        <div><label>Purok:</label>
+          <select id="purok" name="purok" class="kk-input">
+            <option value="">Select Purok</option>
+            <option value="1">Purok 1</option>
+            <option value="2">Purok 2</option>
+            <option value="3">Purok 3</option>
+            <option value="4">Purok 4</option>
+            <option value="5">Purok 5</option>
+            <option value="6">Purok 6</option>
+            <option value="7.1">Purok 7.1</option>
+            <option value="7.2">Purok 7.2</option>
+            <option value="8">Purok 8</option>
+            <option value="9">Purok 9</option>
+          </select>
+        </div>
+        <div><label>Email:</label><input id="email" name="email" type="email" class="kk-input"></div>
+        <div><label>Contact Number:</label><input id="contactNumber" name="contactNumber" class="kk-input" maxlength="11"></div>
+        <div><label>Civil Status:</label>
+          <select id="civilStatus" name="civilStatus" class="kk-input">
+            <option value="">Select Civil Status</option>
+            <option value="Single">Single</option>
+            <option value="Live-in">Live-in</option>
+            <option value="Married">Married</option>
+            <option value="Unknown">Unknown</option>
+            <option value="Separated">Separated</option>
+            <option value="Annulled">Annulled</option>
+            <option value="Divorced">Divorced</option>
+            <option value="Widowed">Widowed</option>
+          </select>
+        </div>
+        <div style="margin-top:12px; display:flex; gap:8px; justify-content:space-between;">
+          <button type="button" id="addressPrev" class="btn">Previous</button>
+          <button type="button" id="addressNext" class="btn">Next</button>
+        </div>
+      </form>
+
+      <!-- Step 3: Youth -->
+      <form id="editYouthForm" style="display:none;">
+        <h4>Youth & Voting</h4>
+        <div><label>Youth Age Group:</label>
+          <select id="youthAgeGroup" name="youthAgeGroup" class="kk-input">
+            <option value="">Select Age Group</option>
+            <option value="Child Youth">Child Youth</option>
+            <option value="Core Youth">Core Youth</option>
+            <option value="Young Youth">Young Youth</option>
+          </select>
+        </div>
+        <div><label>Youth Classification:</label>
+          <select id="youthClassification" name="youthClassification" class="kk-input">
+            <option value="">Select classification</option>
+            <option value="In School Youth">In School Youth</option>
+            <option value="Out of School Youth">Out of School Youth</option>
+            <option value="Working Youth">Working Youth</option>
+            <option value="Youth with Specific Needs">Youth with Specific Needs</option>
+          </select>
+        </div>
+        <div id="specificNeedsGroup" style="display:none; margin-top:8px;">
+          <label>If Youth with Specific Needs, specify:</label>
+          <select id="specificNeedType" name="specificNeedType" class="kk-input">
+            <option value="">Select Specific Need</option>
+            <option value="Person w/Disability">Person w/Disability</option>
+            <option value="Children in Conflict w/Law">Children in Conflict w/Law</option>
+            <option value="Indigenous People">Indigenous People</option>
+          </select>
+        </div>
+        <div><label>Educational Background:</label>
+          <select id="educationalBackground" name="educationalBackground" class="kk-input">
+            <option value="">Select Educational Background</option>
+            <option value="Elementary Undergraduate">Elementary Undergraduate</option>
+            <option value="Elementary Graduate">Elementary Graduate</option>
+            <option value="High School Undergraduate">High School Undergraduate</option>
+            <option value="High School Graduate">High School Graduate</option>
+            <option value="Vocational Graduate">Vocational Graduate</option>
+            <option value="College Undergraduate">College Undergraduate</option>
+            <option value="College Graduate">College Graduate</option>
+            <option value="Masters Level">Masters Level</option>
+            <option value="Masters Graduate">Masters Graduate</option>
+            <option value="Doctorate Level">Doctorate Level</option>
+            <option value="Doctorate Graduate">Doctorate Graduate</option>
+          </select>
+        </div>
+        <div><label>Work Status:</label>
+          <select id="workStatus" name="workStatus" class="kk-input">
+            <option value="">Select Work Status</option>
+            <option value="Employed">Employed</option>
+            <option value="Unemployed">Unemployed</option>
+            <option value="Self-Employed">Self-Employed</option>
+            <option value="Currently looking for a Job">Currently looking for a Job</option>
+            <option value="Not interested in looking for a Job">Not interested in looking for a Job</option>
+          </select>
+        </div>
+        <div><label>Registered SK Voter:</label>
+          <select id="registeredSKVoter" name="registeredSKVoter" class="kk-input">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div><label>Registered National Voter:</label>
+          <select id="registeredNationalVoter" name="registeredNationalVoter" class="kk-input">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div><label>Voted in Last SK Election:</label>
+          <select id="votedLastSKElection" name="votedLastSKElection" class="kk-input">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div><label>Attended KK Assembly:</label>
+          <select id="attendedKKAssembly" name="attendedKKAssembly" class="kk-input">
+            <option value="">Select</option>
+            <option value="Yes">Yes</option>
+            <option value="No">No</option>
+          </select>
+        </div>
+        <div id="attendanceCountGroup" style="display:none; margin-top:8px;"><label>How many times?</label>
+          <select id="attendanceCount" name="attendanceCount" class="kk-input"><option value="">Select</option><option value="1-2 times">1-2 times</option><option value="3-4 times">3-4 times</option><option value="5 and above">5 and above</option></select>
+        </div>
+        <div id="reasonGroup" style="display:none; margin-top:8px;"><label>Why didn't you attend?</label>
+          <select id="reasonDidNotAttend" name="reasonDidNotAttend" class="kk-input"><option value="">Select</option><option value="There was no KK Assembly">There was no KK Assembly</option><option value="Not interested">Not interested</option></select>
+        </div>
+
+        <div style="margin-top:12px; display:flex; gap:8px; justify-content:space-between;">
+          <button type="button" id="youthPrev" class="btn">Previous</button>
+          <button type="button" id="saveChangesBtn" class="btn">Save Changes</button>
+        </div>
+      </form>
+    </div>
   </div>
 
 
@@ -93,8 +270,10 @@
       </div>
     </footer>
   <script src="../../../../js/token-validation.js"></script>
+    <script src="../../../../js/notification-badge.js" defer></script>
   <script src="../../../../js/kkconfirmation.js"></script>
   <!-- ✅ Add SweetAlert2 -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  
 </body>
 </html>

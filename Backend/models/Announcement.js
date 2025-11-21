@@ -52,6 +52,11 @@ const announcementSchema = new mongoose.Schema({
       ref: "User",
     },
   ],
+  recipient: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    default: null, // null means general/public announcement
+  },
 });
 
 // Auto-inactive logic before save

@@ -1,158 +1,966 @@
 * {
-    box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  --sk-primary: #0A2C59;
+  --sk-accent: #2563EB;
+  --sk-light: #f0f5ff;
+  --sk-muted: #f3f4f6;
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --border-color: #e5e7eb;
+  --success: #10b981;
+  --error: #ef4444;
 }
 
 body {
-    margin: 0;
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(to bottom, #0A2C59 30%, #ffffff 30%);
-    min-height: 100vh;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-}
-.right-side{
-            display: flex;
-        align-items: center;
-        justify-content: center;
-}
-.sign {
-    display: flex;
-    flex-direction: column;
-    width: 100%;
-    height: 100vh;
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #f9fafb;
+  color: var(--text-primary);
+  line-height: 1.6;
 }
 
-.container1 {
-    text-align: center;
-    margin-top: 20px;
-    width: auto; /* remove any width restriction */
+/* ========================================
+   SIGNUP WRAPPER - Layout
+   ======================================== */
+.signup-wrapper {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
 }
 
-.logo {
-    width: 30%;
-    max-width: 100px;
-    height: auto;
-    margin: 0 auto 10px auto;
+/* Left Panel - Desktop Only */
+.signup-left-panel {
+  display: none;
+  width: 50%;
+  background: linear-gradient(135deg, var(--sk-primary) 0%, #0d3a7a 100%);
+  color: #fff;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
 }
 
-.title1 {
-    font-size: 2vh;
-    color: #ffffff;
-    letter-spacing: 1px;
+.signup-left-panel::before {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 50%;
+  top: -200px;
+  right: -200px;
+}
+
+.left-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  max-width: 400px;
+}
+
+.left-logo {
+  width: 120px;
+  height: auto;
+  margin-bottom: 32px;
+  animation: fadeInDown 0.6s ease;
+}
+
+.left-title {
+  font-size: 2rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+  letter-spacing: 1px;
+}
+
+.left-subtitle {
+  font-size: 1.1rem;
+  font-weight: 500;
+  opacity: 0.9;
+  margin-bottom: 24px;
+}
+
+.left-accent {
+  width: 60px;
+  height: 4px;
+  background: var(--sk-accent);
+  margin: 0 auto;
+  border-radius: 2px;
+}
+
+/* Right Panel - Form Area */
+.signup-right-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  overflow-y: auto;
+  padding: 0;
+}
+
+.mobile-header-bar {
+  display: none;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, var(--sk-primary) 0%, #0d3a7a 100%);
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.mobile-logo {
+  width: 40px;
+  height: auto;
+}
+
+/* Form Container */
+.signup-form-container {
+  flex: 1;
+  padding: 40px;
+  max-width: 600px;
+  margin: 0 auto;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-header {
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.form-header h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.form-subtitle {
+  font-size: 1rem;
+  color: var(--text-secondary);
+}
+
+/* ========================================
+   STEPS INDICATOR
+   ======================================== */
+.steps-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 40px;
+  gap: 12px;
+}
+
+.step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  opacity: 0.5;
+  transition: opacity 0.3s ease;
+}
+
+.step.active {
+  opacity: 1;
+}
+
+.step-number {
+  width: 36px;
+  height: 36px;
+  background: var(--sk-muted);
+  border: 2px solid var(--border-color);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: var(--text-secondary);
+  transition: all 0.3s ease;
+}
+
+.step.active .step-number {
+  background: var(--sk-accent);
+  border-color: var(--sk-accent);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.step-label {
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.step.active .step-label {
+  color: var(--sk-accent);
+}
+
+.step-connector {
+  width: 48px;
+  height: 2px;
+  background: var(--border-color);
+}
+
+/* ========================================
+   FORM STYLES
+   ======================================== */
+.signup-step {
+  display: none;
+}
+
+.signup-step.active {
+  display: block;
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.form-section {
+  margin-bottom: 32px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.form-group label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  display: flex;
+  gap: 4px;
+}
+
+/* ========================================
+   INPUT STYLES
+   ======================================== */
+.input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.input-wrapper .icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-secondary);
+  pointer-events: none;
+  font-size: 0.95rem;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  background: #f9fafb;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-primary);
+  transition: all 0.3s ease;
+}
+
+.input-wrapper input::placeholder {
+  color: #d1d5db;
+}
+
+.input-wrapper input:focus {
+  outline: none;
+  background: #fff;
+  border-color: var(--sk-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.input-toggle {
+  position: absolute;
+  right: 12px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s;
+}
+
+.input-toggle:hover {
+  color: var(--sk-accent);
+}
+
+/* ========================================
+   BIRTHDAY SELECTS - MODERN
+   ======================================== */
+.birthday-selects {
+  position: relative;
+  width: 100%;
+}
+
+.birthday-selects .icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  pointer-events: none;
+}
+
+.birthday-row {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr 1fr;
+  gap: 12px;
+  padding-left: 36px;
+}
+
+.custom-select {
+  position: relative;
+}
+
+.custom-select-trigger {
+  width: 100%;
+  padding: 10px 12px;
+  background: #f9fafb;
+  border: 2px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-family: 'Poppins', sans-serif;
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  transition: all 0.3s ease;
+  padding-right: 32px;
+}
+
+.custom-select-trigger:hover {
+  border-color: var(--sk-accent);
+  background: #fff;
+}
+
+.custom-select-trigger:focus {
+  outline: none;
+  border-color: var(--sk-accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+}
+
+.custom-select-trigger::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 12px;
+  height: 12px;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath fill='%230A2C59' d='M3 4.5l3 3 3-3z'/%3E%3C/svg%3E") no-repeat center;
+  pointer-events: none;
+  transition: transform 0.2s;
+}
+
+.custom-select.open .custom-select-trigger::after {
+  transform: translateY(-50%) rotate(180deg);
+}
+
+.custom-options {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  background: #fff;
+  border: 2px solid var(--sk-accent);
+  border-radius: 8px;
+  max-height: 180px;
+  overflow-y: auto;
+  z-index: 100;
+  display: none;
+  padding: 4px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+.custom-select.open .custom-options {
+  display: block;
+  animation: slideDown 0.2s ease;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; transform: translateY(-8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.custom-options .custom-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.custom-options .custom-option:hover {
+  background: var(--sk-light);
+  color: var(--sk-accent);
+}
+
+.custom-options .custom-option[aria-selected="true"] {
+  background: var(--sk-light);
+  color: var(--sk-accent);
+  font-weight: 600;
+}
+
+.custom-options::-webkit-scrollbar {
+  width: 6px;
+}
+
+.custom-options::-webkit-scrollbar-track {
+  background: #f0f0f0;
+  border-radius: 3px;
+}
+
+.custom-options::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+.custom-options::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.native-select {
+  display: none !important;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+.form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+  margin-bottom: 16px;
+}
+
+.btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  font-family: 'Poppins', sans-serif;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--sk-accent) 0%, #1d4ed8 100%);
+  color: #fff;
+  flex: 1;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  background: var(--sk-muted);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.btn-secondary:hover {
+  background: #e5e7eb;
+  border-color: var(--text-secondary);
+}
+
+/* ========================================
+   SIGNIN LINK
+   ======================================== */
+.signin-link {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.signin-link a {
+  color: var(--sk-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+.signin-link a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Show/hide signin link based on step */
+#step1SignInLink {
+  display: none;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  text-align: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #f0f0f0;
+}
+
+#step1SignInLink a {
+  color: var(--sk-accent);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.2s;
+}
+
+#step1SignInLink a:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* Show on Step 1 */
+#signupStep1.active ~ #step1SignInLink {
+  display: block;
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  #step1SignInLink {
+    font-size: 0.82rem;
     margin-top: 10px;
-    line-height: 1.2;
-    word-wrap: break-word;
-    text-align: center;
+    padding-top: 10px;
+  }
 }
 
-.title2 h1 {
-    font-size:2vh;
-    color: #ffffff;
-    margin: 3px 0;
-    line-height: 1.2;
-    word-wrap: break-word;
-    text-align: center;
+@media (max-width: 480px) {
+  #step1SignInLink {
+    font-size: 0.78rem;
+  }
 }
 
-.container {
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+@media (max-width: 768px) {
+  .signup-left-panel {
+    display: none;
+  }
+
+  .mobile-header-bar {
+    display: flex;
+    background: linear-gradient(135deg, var(--sk-primary) 0%, #0d3a7a 100%);
+    position: relative;
+    overflow: hidden;
+     padding: 30px 14px; 
+  }
+
+  /* Decorative element in mobile header */
+  .mobile-header-bar::after {
+    content: '';
+    position: absolute;
+    width: 200px;
+    height: 200px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+    top: -80px;
+    right: -80px;
+  }
+
+  .mobile-logo {
+    position: relative;
+    z-index: 2;
+    width: 44px;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.1));
+  }
+
+  .signup-right-panel {
+    background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+  }
+
+  .signup-form-container {
+    padding: 16px 14px 24px 14px;
+    background: #fff;
+    margin: 12px auto;
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    max-width: 100%;
+    width: calc(100% - 12px);
+  }
+
+  .form-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .form-header h1 {
+    font-size: 1.4rem;
+    margin-bottom: 4px;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--sk-primary) 0%, var(--sk-accent) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .form-subtitle {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  .steps-indicator {
+    margin-bottom: 20px;
+    gap: 10px;
+    padding: 12px;
+    background: var(--sk-light);
+    border-radius: 10px;
+  }
+
+  .step {
+    opacity: 0.4;
+  }
+
+  .step.active {
+    opacity: 1;
+  }
+
+  .step-number {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.15);
+  }
+
+  .step.active .step-number {
+    box-shadow: 0 4px 16px rgba(37, 99, 235, 0.4);
+    animation: pulse 0.6s ease-in-out;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+  }
+
+  .step-connector {
+    width: 20px;
+    background: linear-gradient(90deg, var(--border-color) 0%, var(--sk-accent) 100%);
+  }
+
+  .form-section {
+    margin-bottom: 16px;
+    padding: 8px 0;
+  }
+
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+
+  .form-group {
+    gap: 5px;
+  }
+
+  .form-group label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .input-wrapper input {
+    padding: 9px 10px 9px 32px;
+    font-size: 0.88rem;
+    height: 38px;
+    background: #fafbfc;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .input-wrapper input:active {
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+  }
+
+  .input-wrapper input:focus {
+    background: #fff;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.15);
+    transform: translateY(-1px);
+  }
+
+  .input-wrapper .icon {
+    left: 9px;
+    font-size: 0.82rem;
+    color: var(--sk-accent);
+  }
+
+  .input-toggle {
+    right: 9px;
+    color: var(--sk-accent);
+  }
+
+  /* Birthday improvements */
+  .birthday-row {
+    padding-left: 0;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 6px;
+  }
+
+  .birthday-selects .icon {
+    position: relative;
+    left: 0;
+    top: 0;
+    transform: none;
+    margin-bottom: 5px;
+    display: flex;
+    font-size: 0.82rem;
+    color: var(--sk-accent);
+  }
+
+  .custom-select-trigger {
+    padding: 9px 10px;
+    font-size: 0.88rem;
+    height: 38px;
+    background: #fafbfc;
+    transition: all 0.3s ease;
+  }
+
+  .custom-select-trigger:hover {
+    background: #fff;
+    border-color: var(--sk-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
+  }
+
+  .custom-options {
+    max-height: 160px;
+    padding: 4px;
+    border-radius: 10px;
+  }
+
+  .custom-options .custom-option {
+    padding: 7px 10px;
+    font-size: 0.85rem;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+  }
+
+  .custom-options .custom-option:hover {
+    background: var(--sk-light);
+    transform: translateX(4px);
+  }
+
+  /* Form actions mobile */
+  .form-actions {
+    flex-direction: column-reverse;
+    gap: 10px;
+    margin-top: 16px;
+    margin-bottom: 12px;
+  }
+
+  .btn {
+    padding: 10px 12px;
+    font-size: 0.88rem;
     width: 100%;
-    max-width: 400px;
-    padding: 20px;
-    background-color: white;
-    border-radius: 15px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
-    margin: 9vh 1vh 0 1vh;
+    border-radius: 10px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, var(--sk-accent) 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+  }
+
+  .btn-primary:active {
+    transform: scale(0.98);
+    box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+  }
+
+  .btn-secondary {
+    background: var(--sk-muted);
+    border: 1.5px solid var(--border-color);
+    transition: all 0.3s ease;
+  }
+
+  .btn-secondary:active {
+    background: #e5e7eb;
+    transform: scale(0.98);
+  }
+
+  /* Sign in link */
+  .signin-link {
+    font-size: 0.82rem;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #f0f0f0;
+  }
+
+  .signin-link a {
+    font-weight: 700;
+    position: relative;
+  }
+
+  .signin-link a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--sk-accent);
+    transition: width 0.3s ease;
+  }
+
+  .signin-link a:hover::after {
+    width: 100%;
+  }
 }
 
-.acc {
-    margin-top: 10%;
-    text-align: center;
+@media (max-width: 480px) {
+  .signup-form-container {
+    padding: 14px 12px 20px 12px;
+    margin: 10px auto;
+    width: calc(100% - 10px);
+    border-radius: 14px;
+  }
+
+  .form-header {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
+
+  .form-header h1 {
+    font-size: 1.25rem;
+  }
+
+  .form-subtitle {
+    font-size: 0.78rem;
+  }
+
+  .steps-indicator {
+    margin-bottom: 16px;
+    padding: 10px;
+    border-radius: 8px;
+  }
+
+  .step-number {
+    width: 28px;
+    height: 28px;
+    font-size: 0.75rem;
+  }
+
+  .step-connector {
+    width: 16px;
+  }
+
+  .step-label {
+    font-size: 0.65rem;
+  }
+
+  .form-group label {
+    font-size: 0.78rem;
+  }
+
+  .input-wrapper input,
+  .custom-select-trigger {
+    padding: 8px 9px 8px 28px;
+    font-size: 0.82rem;
+    height: 36px;
+  }
+
+  .input-wrapper .icon,
+  .birthday-selects .icon {
+    left: 7px;
+    font-size: 0.75rem;
+  }
+
+  .btn {
+    padding: 9px 10px;
+    font-size: 0.82rem;
+  }
+
+  .mobile-header-bar {
+    padding: 30px 14px;  /* Increased from 12px 14px */
+  }
+
+  .mobile-logo {
+    width: 48px;  /* Increased from 40px */
+  }
 }
 
-/* Tablet adjustments */
-@media (min-width: 768px) {
-    .logo {
-        width: 100px;
-    }
+@media (max-width: 375px) {
+  .mobile-header-bar {
+    padding: 18px 14px;  /* Extra padding for very small screens */
+  }
 
-    .title1 h2 {
-        font-size: 1rem;
-    }
-
-    .title2 h1 {
-        font-size: 20px;
-    }
-
-    .container {
-        padding: 5vh;
-        margin-top: 6vh;
-    }
-    .right-side{
-        display: flex;
-        justify-content: center;
-        align-items: center;
-    }
+  .mobile-logo {
+    width: 25px;  /* Slightly larger */
+  }
 }
 
-/* Desktop Split Screen (1024px and above) */@media (min-width: 1024px) {
-    body {
-        background: linear-gradient(to right, #0A2C59 50%, #ffffff 50%);
-        flex-direction: row;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0;
-    }
+/* ========================================
+   DESKTOP (1024px+)
+   ======================================== */
+@media (min-width: 1024px) {
+  .signup-left-panel {
+    display: flex;
+  }
 
-    .sign {
-        flex-direction: row;
-        height: 100vh;
-    }
+  .signup-form-container {
+    padding: 60px 40px;
+  }
 
-    .container1 {
-        margin-top: -10%;
-        width: auto; /* Remove width: 50%; */
-        text-align: center;
-    }
+  .form-header h1 {
+    font-size: 2.2rem;
+  }
 
-    .left-side, .right-side {
-        width: 50%;
-        height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+  .form-section {
+    margin-bottom: 32px;
+  }
 
-    .left-side {
-        background-color: #0A2C59;
-        color: white;
-        flex-direction: column;
-        text-align: center;
-    }
+  .form-row {
+    gap: 16px;
+    margin-bottom: 16px;
+  }
 
-    .right-side {
-        background-color: white;
-    }
+  .steps-indicator {
+    margin-bottom: 40px;
+    gap: 12px;
+  }
 
-    .container {
-        margin: 10%;
-        max-width: 400px;
-        padding: 40px;
-    }
-
-    .logo {
-        width: 180px;
-            max-width: 150px;
-        margin: 0 auto 20px auto;
-    }
-
-    .title1 h2 {
-        font-size: 30px;
-        min-width: 400px; 
-    }
-
-    .title2 h1 {
-        font-size: 30px;
-    }
+  .form-actions {
+    margin-top: 32px;
+    margin-bottom: 16px;
+  }
 }

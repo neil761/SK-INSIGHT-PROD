@@ -19,6 +19,9 @@ router.get(
 router.patch("/:id/read", protect, authorizeRoles("admin"), ctrl.markAsRead);
 router.patch("/read-all", protect, authorizeRoles("admin"), ctrl.markAllAsRead);
 router.get('/overdue', ctrl.getOverdueNotifications);
+// ...existing code...
+router.get('/educational/pending', protect, authorizeRoles("admin"), ctrl.getPendingEducationalNotifications);
+// ...existing code...
 router.get('/kk', protect, authorizeRoles("admin"), ctrl.getAllKKNotifications);
 router.get('/kk/new', protect, authorizeRoles("admin"), ctrl.getNewKKNotifications);
 router.get('/kk/unread', protect, authorizeRoles("admin"), ctrl.getUnreadKKNotifications);

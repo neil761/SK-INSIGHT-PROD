@@ -6,10 +6,24 @@
   }
   
   body {
-    background: #eaf2fb;
+    background: #D1E1F5;
     color: #0a1a3a;
     padding-top: 5rem;
   }
+
+/* subtle fixed mask under navbar so content appears to "enter a tunnel" when scrolling */
+body::before {
+  content: "";
+  display: block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 60px; /* match the visual height of the navbar */
+  pointer-events: none;
+  background: linear-gradient(to bottom, #eaf2fb 80%, transparent 100%);
+  z-index: 900; /* below navbar (1000) but above page content */
+}
   
 /* Navbar */
   .navbar {
@@ -27,7 +41,8 @@
     padding: 15px 30px;
     border-radius: 15px;
     box-shadow: 0 8px 20px rgba(0,0,0,0.3);
-    z-index: 1000;
+  /* increase z-index so navbar always appears above page cards (match kkform.css values) */
+  z-index: 1000;
 }
 
 .navbar img {
@@ -119,6 +134,33 @@
   cursor: pointer;
   margin-right: 10px;
 }
+
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+}
+
+
 @media (max-width: 1048px) {
   .navbar-center {
     display: none;
@@ -130,8 +172,16 @@
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar {
-    padding: 10px 15px;
+    padding: 4% 4.8%;
   }
   
   .navbar img {
@@ -182,6 +232,9 @@
     border-radius: 2vh;
     margin: 5% auto; 
     padding: 3%;
+    /* ensure the card doesn't create a stacking context above the fixed navbar */
+    position: relative;
+    z-index: 0;
   }
   
   /* Image */
@@ -344,7 +397,7 @@
   font-size: 16px;
   font-weight: 500;
   border-radius: 12px;
-  box-shadow: 0 6px 24px rgba(10,44,89,0.20), 0 2px 8px rgba(10,44,89,0.15);
+  box-shadow: 0 6px 24px rgba(10, 44, 89, 0.20), 0 2px 8px rgba(10, 44, 89, 0.15);
   border: 1px solid rgba(255, 215, 0, 0.3);
   letter-spacing: 0.3px;
   backdrop-filter: blur(10px);
@@ -549,4 +602,108 @@ a.disabled, button.disabled {
   pointer-events: none;
   opacity: 0.6;
   cursor: not-allowed;
+}
+.verification-strip {
+  position: fixed;
+  top: calc(1rem + 70px); /* 1rem navbar offset + navbar height */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 900px;
+  background: linear-gradient(135deg, #0A2C59 0%, #143d77 100%, #1e4e9e 50%);
+  color: #fff;
+  text-align: center;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(10, 44, 89, 0.20), 0 2px 8px rgba(10, 44, 89, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 1100;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  animation: slideDown 0.4s ease-out;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.verification-strip:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 30px rgba(10, 44, 89, 0.25), 0 4px 12px rgba(10, 44, 89, 0.18);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.verification-strip a {
+  color: #ffd700;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 215, 0, 0.15);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.verification-strip a:hover {
+  color: #fff;
+  background: rgba(255, 215, 0, 0.25);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.verification-strip i {
+  color: #ffd700;
+  font-size: 20px;
+  margin-right: 4px;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
+  }
+}
+
+/* Mobile responsive verification strip */
+@media (max-width: 600px) {
+  .verification-strip {
+    font-size: 14px;
+    padding: 10px 15px;
+    gap: 8px;
+    width: 92%;
+    max-width: 95vw;
+    top: calc(1rem + 56px); /* adjust if navbar is shorter on mobile */
+    border-radius: 10px;
+  }
+  
+  .verification-strip i {
+    font-size: 18px;
+    margin-right: 3px;
+  }
+  
+  .verification-strip a {
+    font-size: 13px;
+    padding: 3px 8px;
+  }
 }

@@ -6,11 +6,13 @@
     <title>USER PROFILE</title>
     <link rel="icon" href="../../assets/logo.png" type="image/x-icon">
     <link rel="stylesheet" href="../../css/userProfile.css  " />
+    <link rel="stylesheet" href="../../css/verifyEmail.css" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.0/css/all.min.css"
     />
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="https://cdn.socket.io/4.7.4/socket.io.min.js"></script>
   </head>
   <body>
     <!-- Navbar -->
@@ -31,13 +33,79 @@
         <span class="navbar-hamburger" id="navbarHamburger">
           <i class="fa-solid fa-bars"></i>
         </span>
-      <a href="./announcement.html"><i class="fa-solid fa-bell bell"></i></a>
+      <a class="notif" href="../user/announcement.html">
+          <i class="fa-solid fa-bell bell"></i>
+          <span class="notif-badge" id="notifBadge" aria-hidden="true"></span>
+        </a>
       <a href="../user/userProfile.html"><i class="fa-solid fa-user bell" style="color: #fff;"></i></a>
       </div>
     </div>
+
+      <div id="verification-strip" class="verification-strip" style="display: none;">
+        <i class="fa-solid fa-circle-info"></i>
+        <span>
+          You need to verify your account to access full features. <a href="../../html/user/userProfile.html">Verify Now</a>
+        </span>
+      </div>
     
 
     <div class="profile-container">
+      <!-- Settings Icon -->
+<span id="settingsIcon" class="settings-icon" title="Settings">
+  <i class="fa-solid fa-gear"></i>
+</span>
+
+<!-- Settings Modal -->
+<div id="settingsModal" class="settings-modal">
+  <div class="settings-modal-content">
+    <span class="close-settings">&times;</span>
+    <div class="settings-tabs">
+      <button class="settings-tab active" data-tab="password">Change Password</button>
+      <button class="settings-tab" data-tab="email">Change Email</button>
+    </div>
+    <div class="settings-tab-content" id="settingsTabPassword">
+      <form id="changePasswordForm">
+        <label>Current Password</label>
+        <input type="password" id="currentPassword" required>
+        <label>New Password</label>
+        <input type="password" id="newPassword" required>
+        <label>Confirm New Password</label>
+        <input type="password" id="confirmNewPassword" required>
+        <button type="submit" class="settings-action-btn">Change Password</button>
+      </form>
+    </div>
+    <div class="settings-tab-content" id="settingsTabEmail" style="display:none;">
+      <!-- Unverified users see ONLY this section -->
+      <div id="unverifiedEmailSection" style="display:none;">
+        <label for="unverifiedNewEmailInput">New Email Address</label>
+        <input type="email" id="unverifiedNewEmailInput" placeholder="Enter new email" />
+        <button id="unverifiedChangeEmailBtn" class="settings-action-btn">Confirm</button>
+      </div>
+      <!-- Verified users see the OTP/change email form -->
+      <form id="changeEmailForm">
+        <label>Current Verified Email</label>
+        <input type="text" id="currentEmail" readonly>
+        <button type="button" id="sendEmailOtpBtn" class="settings-action-btn">Send OTP</button>
+        <div id="emailOtpSection" style="display:none;">
+          <label>Enter OTP</label>
+          <!-- After: empty container, JS will fill -->
+          <div id="emailOtpInputs" style="display:flex;justify-content:center;gap:8px;"></div>
+          <div id="emailOtpTimer" style="margin-top:8px;color:#0A2C59;font-size:0.95rem;text-align:center;"></div>
+          <button type="button" id="verifyEmailOtpBtn" class="settings-action-btn">Verify OTP</button>
+          <div id="resendOtpLink" style="display:none;margin-top:8px;text-align:center;">
+            <a id="changeResendOtp" href="#" style="color:#0A2C59;text-decoration:underline;font-size:0.95rem;">Resend OTP</a>
+            <div id="changeResendInfo" style="display:none;margin-top:6px;color:#0A2C59;font-size:0.95rem;"></div>
+          </div>
+        </div>
+        <div id="newEmailSection" style="display:none;">
+          <label>New Email</label>
+          <input type="email" id="newEmailInput">
+          <button type="submit" class="settings-action-btn">Change Email</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
       <img id="profile-img" alt="User" />
       <h3></h3>
       <p></p>
@@ -74,14 +142,6 @@
       <div class="field">
         <label>Purok</label>
         <input type="text" id="purok" readonly />
-      </div>
-      <div class="field">
-        <label>Email</label>
-        <input type="text" id="email" readonly />
-      </div>
-      <div class="field">
-        <label>Verification Status</label>
-        <input type="text" id="verificationStatus" readonly />
       </div>
       <div class="buttons">
         <button class="verify-btn">Verify Account</button>
@@ -130,7 +190,34 @@
           <a href="./Educational-assistance-user.html" id="educAssistanceNavBtnMobile" class="nav-btn">Educational Assistance</a>
         </div>
 
+        <!-- Verify Email Modal -->
+<div id="verifyEmailModal" class="settings-modal">
+  <div class="settings-modal-content">
+    <span class="close-verify-email" style="cursor:pointer;position:absolute;top:16px;right:24px;font-size:1.5rem;">&times;</span>
+    <h2 style="margin-bottom:12px;">Verify Your Email</h2>
+    <div style="margin-bottom:8px;">
+      <label for="verifyEmailInput">Email Address</label>
+      <input id="verifyEmailInput" type="email" readonly style="width:100%;margin-bottom:8px;">
+    </div>
+    <button id="sendVerifyOtpBtn" class="settings-action-btn" style="margin-bottom:16px;">Send OTP</button>
+
+    <!-- added: OTP section markup expected by verify-email.js -->
+    <div id="verifyOtpSection" style="display:none;">
+      <div id="verifyOtpInputs" style="display:flex;gap:8px;justify-content:center;margin-bottom:12px;"></div>
+
+      <!-- ADDED: timer shown above Verify button -->
+      <div id="verifyOtpTimer" style="margin-bottom:8px;color:#0A2C59;font-size:0.95rem;text-align:center;"></div>
+
+      <button id="verifyOtpBtn" class="settings-action-btn" style="margin-bottom:8px;">Verify Account</button>
+      <div id="verifyResendWrapper" style="text-align:center;margin-top:8px;">
+        <a id="verifyResendOtp" href="#" style="text-decoration:underline;color:#0A2C59;">Resend OTP</a>
+        <div id="verifyResendInfo" style="display:none;margin-top:6px;color:#0A2C59;font-size:0.95rem;"></div>
+      </div>
+    </div>
+  </div>
+</div>
           <script src="../../js/token-validation.js"></script>
-  <script src="../../js/user-profile.js"></script>
+            <script src="../../js/notification-badge.js" defer></script>
+ <script type="module" src="../../js/user-profile.js"></script>
   </body>
 </html>

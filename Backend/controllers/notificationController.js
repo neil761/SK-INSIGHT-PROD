@@ -2,10 +2,9 @@ const Notification = require("../models/Notification");
 const FormStatus = require("../models/FormStatus");
 
 async function getPresentCycle(formName) {
-  const status = await FormStatus.findOne({ formName, isOpen: true }).populate(
-    "cycleId"
-  );
-  if (!status || !status.cycleId) throw new Error("No active form cycle");
+  // Allow "closed but present" cycle (not just open)
+  const status = await FormStatus.findOne({ formName }).sort({ isOpen: -1, updatedAt: -1 }).populate("cycleId");
+  if (!status || !status.cycleId) return null; // <-- Instead of throw, return null
   return status.cycleId;
 }
 
@@ -13,6 +12,7 @@ async function getPresentCycle(formName) {
 exports.getAllNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]); // <-- No cycle, just return empty array
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -34,6 +34,7 @@ exports.getAllNotifications = async (req, res) => {
 exports.getUnreadNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -101,6 +102,7 @@ exports.markAsRead = async (req, res) => {
 exports.markAllAsRead = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json({ message: "No notifications to mark as read" });
     await Notification.updateMany(
       { type: "educational-assistance", cycleId: cycle._id, read: false },
       { $set: { read: true } }
@@ -118,6 +120,7 @@ exports.markAllAsRead = async (req, res) => {
 exports.getReadNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -141,6 +144,7 @@ const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
 exports.getOverdueNotifications = async (req, res) => {
   try {
     const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
     const notifs = await Notification.find({
       type: "educational-assistance",
       cycleId: cycle._id,
@@ -406,5 +410,54 @@ exports.getNewEducationalApplications = async (req, res) => {
   } catch (err) {
     console.error("getNewEducationalApplications error:", err);
     res.status(500).json({ error: "Server error fetching new applications" });
+  }
+};
+
+// Returns all pending applications for present cycle (regardless of notification read status)
+exports.getPendingEducationalNotifications = async (req, res) => {
+  try {
+    const cycle = await getPresentCycle("Educational Assistance");
+    if (!cycle) return res.json([]);
+    // Find all notifications for pending applications in the present cycle
+    const notifs = await Notification.find({
+      type: "educational-assistance",
+      cycleId: cycle._id,
+    })
+      .populate({
+        path: "referenceId",
+        select: "status firstname middlename surname createdAt typeOfBenefit year grade school email",
+        model: "EducationalAssistance",
+        match: { status: "pending" }
+      })
+      .sort({ createdAt: -1 });
+
+    // Only include notifications where the referenced application is still pending
+    const filtered = notifs.filter(n => n.referenceId && n.referenceId.status === "pending");
+
+    // Flatten for frontend
+    const response = filtered.map(n => ({
+      _id: n._id,
+      type: n.type,
+      event: n.event,
+      message: n.message,
+      referenceId: n.referenceId?._id || n.referenceId,
+      cycleId: n.cycleId,
+      createdAt: n.createdAt,
+      read: n.read,
+      status: n.referenceId?.status || "unknown",
+      fullname: n.referenceId
+        ? `${n.referenceId.firstname || ""} ${n.referenceId.middlename || ""} ${n.referenceId.surname || ""}`.trim()
+        : "Unknown",
+      typeOfBenefit: n.referenceId?.typeOfBenefit,
+      year: n.referenceId?.year,
+      grade: n.referenceId?.grade,
+      school: n.referenceId?.school,
+      email: n.referenceId?.email
+    }));
+
+    res.json(response);
+  } catch (err) {
+    console.error("getPendingEducationalNotifications error:", err);
+    res.status(500).json({ error: "Server error fetching notifications" });
   }
 };

@@ -1,3 +1,27 @@
+/* Tab notification badge styles */
+.tab-notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+  z-index: 10;
+}
+
+
+
 /* Reset */
 * {
     margin: 0;
@@ -143,10 +167,29 @@ body {
   font-style: 2rem;
 }
 
-@media (max-width: 600px) {
-    .navbar-left .title {
-        font-size: 1rem;
-    }
+/* Notification badge on top of bell icon */
+.notif {
+  position: relative;
+  display: inline-block;
+}
+.notif-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  background: #ff3b30;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  display: none; /* shown when there are new items */
+  align-items: center;
+  justify-content: center;
+  line-height: 18px;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.2);
 }
 
 @media (max-width: 1048px) {
@@ -168,6 +211,14 @@ body {
 
 /* Mobile navbar optimization */
 @media (max-width: 768px) {
+  .notif-badge {
+    top: -4px;
+    right: -4px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    line-height: 16px;
+  }
   .navbar {
     padding: 10px 15px;
   }
@@ -208,6 +259,71 @@ body {
     align-items: center;
     margin-top: 0;
   }
+  
+    .announcement-heading-container {
+        width: 90%;
+        padding: 15px;
+        margin-top: 13% !important;
+    }
+
+    .announcement-heading-container h2 {
+        font-size: 1.5rem;
+    }
+
+    .announcement-container {
+        width: 90%;
+        padding: 15px;
+    }
+
+    .announcement-table {
+        table-layout: auto; /* Allow table to adjust on mobile */
+    }
+    
+    .announcement-table th:nth-child(1),
+    .announcement-table td:nth-child(1) {
+        width: 30%;
+    }
+
+    .announcement-table th:nth-child(2),
+    .announcement-table td:nth-child(2) {
+        width: 25%;
+    }
+
+    .announcement-table th:nth-child(3),
+    .announcement-table td:nth-child(3) {
+        width: 25%;
+    }
+
+    .announcement-table th:nth-child(4),
+    .announcement-table td:nth-child(4) {
+        width: 20%;
+    }
+
+    /* utility hidden class used by JS to toggle visibility */
+    .hidden { display: none !important; }
+
+    .announcement-table th, 
+    .announcement-table td {
+        font-size: 14px;
+        padding: 10px 5px;
+    }
+
+    .announcement-table a {
+        font-size: 13px;
+    }
+  
+  .footer-container {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 20px;
+  }
+
+  .footer-left,
+  .footer-middle,
+  .footer-right {
+    width: 100%;
+  }
 }
 
 .navbar-mobile-menu {
@@ -222,7 +338,7 @@ body {
   z-index: 2000;
   padding: 18px 12px;
   border-radius: 14px;
-  box-shadow: 0 8px 32px rgba(20,61,119,0.18);
+  box-shadow: 0 8px 32px rgba(20, 61, 119, 0.18);
   border: 1px solid #e3eaf3;
 }
 
@@ -259,7 +375,7 @@ body {
 .announcement-heading-container {
     max-width: 1100px;
     width: 45%;
-    margin: 120px auto 20px auto; 
+    margin: 8% auto 20px auto; 
     padding: 20px 25px;
     /* background: #fff;  */
     color: #000;
@@ -269,7 +385,7 @@ body {
 }
 
 .announcement-heading-container h2 {
-    font-size: 2rem;
+    font-size:  1.5rem;
     font-weight: 700;
 }
 
@@ -294,41 +410,73 @@ body {
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 6px 12px rgba(0, 0, 0, 0.10);
-  padding: 20px;
-  overflow-x: auto;
-  overflow-y: auto;
-
-  /* 👇 Force container to fit 8 rows */
-  height: calc(70px * 8 + 60px) !important;
-  max-height: calc(70px * 8 + 60px) !important;
-  min-height: calc(70px * 8 + 60px) !important;
+  padding: 0; /* Remove padding to align the table properly */
+  overflow: hidden; /* Prevent overflow outside the container */
 }
-
 
 /* Table Styling */
 .announcement-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    margin-top: 1rem;
-    table-layout: fixed; /* Add this to ensure equal column widths */
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed; /* Ensure equal column widths */
 }
 
-.announcement-table th, 
+.announcement-table thead {
+  position: sticky;
+  top: 0; /* Stick the header to the top */
+  background-color: #0A2C59; /* Header background color */
+  color: #fff; /* Header text color */
+  z-index: 1; /* Ensure the header stays above the body content */
+}
+
+.announcement-table th {
+  padding: 1rem;
+  text-align: left;
+  font-weight: bold;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.announcement-table tbody {
+  display: block;
+  overflow-y: auto; /* Enable vertical scrolling */
+}
+
+.announcement-table tbody.no-scroll {
+  max-height: none; /* Remove height restriction */
+  overflow-y: visible; /* Disable scrolling */
+}
+
+.announcement-table tr {
+  display: table; /* Ensure rows behave like table rows */
+  width: 100%; /* Ensure rows span the full width */
+}
+
 .announcement-table td {
-    padding: 1rem;
-    border-bottom: 1px solid #e2e8f0;
-    vertical-align: middle;
-    word-wrap: break-word;
+  padding: 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  vertical-align: middle;
+  word-wrap: break-word;
+}
+
+/* Scrollbar Styling */
+.announcement-table tbody::-webkit-scrollbar {
+  width: 8px;
+}
+
+.announcement-table tbody::-webkit-scrollbar-thumb {
+  background-color: #0A2C59;
+  border-radius: 4px;
+}
+
+.announcement-table tbody::-webkit-scrollbar-track {
+  background-color: #e2e8f0;
 }
 
 /* Equal height for announcement table rows */
 .announcement-table tr {
   height: 70px; /* Adjust as needed */
   vertical-align: middle;
-}
-.announcement-table tr:hover {
-  background-color: #f5f8ff;
 }
 
 /* Pinned announcement styling */
@@ -571,58 +719,24 @@ body {
     }
 }
 
-@media (max-width: 768px) {
-    .announcement-heading-container {
-        width: 90%;
-        padding: 15px;
-    }
-
-    .announcement-heading-container h2 {
-        font-size: 2rem;
-    }
-
-    .announcement-container {
-        width: 90%;
-        padding: 15px;
-    }
-
-    .announcement-table {
-        table-layout: auto; /* Allow table to adjust on mobile */
-    }
-    
-    .announcement-table th:nth-child(1),
-    .announcement-table td:nth-child(1) {
-        width: 30%;
-    }
-
-    .announcement-table th:nth-child(2),
-    .announcement-table td:nth-child(2) {
-        width: 25%;
-    }
-
-    .announcement-table th:nth-child(3),
-    .announcement-table td:nth-child(3) {
-        width: 25%;
-    }
-
-    .announcement-table th:nth-child(4),
-    .announcement-table td:nth-child(4) {
-        width: 20%;
-    }
-
-    .announcement-table th, 
-    .announcement-table td {
-        font-size: 14px;
-        padding: 10px 5px;
-    }
-
-    .announcement-table a {
-        font-size: 13px;
-    }
-}
 
 /* Hide event date column on very small screens (480px and below) */
 @media (max-width: 480px) {
+  .main-content{
+    justify-content: flex-start;
+    margin-top: 15% !important;
+  }
+  .announcement-tabs{
+    gap: 5px !important;
+  }
+  .announcement-tabs1, .announcement-tabs2{
+    gap: 0 ;
+    margin: 0 3px 0 0;
+  } 
+  .tab-btn{
+    font-size: 0.8rem !important;
+  padding: 10px 20px !important;
+  }
     .announcement-table th:nth-child(2),
     .announcement-table td:nth-child(2) {
         display: none; /* Hide event date column */
@@ -643,14 +757,44 @@ body {
     .announcement-table td:nth-child(4) {
         width: 20%; /* Actions column */
     }
+    
+  .footer {
+    padding: 30px 20px 15px;
+  }
+
+  .footer-left h3 {
+    font-size: 18px;
+  }
+
+  .footer-left p {
+    font-size: 14px;
+  }
+
+  .footer-middle h4,
+  .footer-right h4 {
+    font-size: 15px;
+  }
+
+  .footer-middle ul li a,
+  .footer-right ul li a {
+    font-size: 14px;
+  }
+
+  .footer-bottom p {
+    font-size: 12px;
+  }
 }
 
 /* Responsive: Stack announcement cards and buttons on small screens */
 @media (max-width: 600px) {
+  .main-content{
+    justify-content: flex-start;
+    margin-top: 8%;
+  }
   .announcement-heading-container {
     width: 88%;
-    padding: 10px;
-    margin: 120px auto 10px auto;
+    padding: 1%;
+    margin: 1vh auto 10px auto;
   }
 
   .announcement-container {
@@ -663,9 +807,9 @@ body {
     width: 100%;
     margin-bottom: 15px;
     border-radius: 10px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
     padding: 16px;
-    background: #fff;
+    background: #dde9f2;
     display: block;
   }
 
@@ -686,6 +830,7 @@ body {
 
   .announcement-card .card-header .title span {
     font-size: 0.95rem;
+    font-weight: bold;
   }
   .announcement-card .card-header .title i {
     font-size: 0.95rem;
@@ -695,7 +840,9 @@ body {
     padding: 0.2rem 0.5rem;
   }
   .announcement-card .card-meta {
-    font-size: 0.85rem;
+    font-size: 0.75rem;
+    margin-top: 8%;
+    
   }
   .announcement-card .card-meta .meta-row i {
     font-size: 0.9rem;
@@ -714,6 +861,37 @@ body {
   .announcement-table th,
   .announcement-table td {
     font-size: 12.5px;
+  }
+  
+  .tab-notif-badge {
+    top: 0px;
+    right: 0px;
+    min-width: 16px;
+    height: 16px;
+    font-size: 10px;
+    padding: 0 4px;
+  }
+    .navbar-left .title {
+        font-size: 1rem;
+    }
+  .verification-strip {
+    font-size: 14px;
+    padding: 10px 15px;
+    gap: 8px;
+    width: 92%;
+    max-width: 95vw;
+    top: calc(1rem + 56px); /* adjust if navbar is shorter on mobile */
+    border-radius: 10px;
+  }
+  
+  .verification-strip i {
+    font-size: 18px;
+    margin-right: 3px;
+  }
+  
+  .verification-strip a {
+    font-size: 13px;
+    padding: 3px 8px;
   }
 }
 
@@ -842,46 +1020,157 @@ body {
   color: #cfd9e8;
 }
 
-/* Responsive Footer */
-@media (max-width: 768px) {
-  .footer-container {
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: 20px;
-  }
 
-  .footer-left,
-  .footer-middle,
-  .footer-right {
-    width: 100%;
+.verification-strip {
+  position: fixed;
+  top: calc(1rem + 70px); /* 1rem navbar offset + navbar height */
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  max-width: 900px;
+  background: linear-gradient(135deg, #0A2C59 0%, #143d77 100%, #1e4e9e 50%);
+  color: #fff;
+  text-align: center;
+  padding: 14px 20px;
+  font-size: 16px;
+  font-weight: 500;
+  border-radius: 12px;
+  box-shadow: 0 6px 24px rgba(10, 44, 89, 0.20), 0 2px 8px rgba(10, 44, 89, 0.15);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  z-index: 1100;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  animation: slideDown 0.4s ease-out;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.verification-strip:hover {
+  transform: translateX(-50%) translateY(-2px);
+  box-shadow: 0 8px 30px rgba(10, 44, 89, 0.25), 0 4px 12px rgba(10, 44, 89, 0.18);
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
   }
 }
 
-@media (max-width: 480px) {
-  .footer {
-    padding: 30px 20px 15px;
-  }
+.verification-strip a {
+  color: #ffd700;
+  text-decoration: none;
+  font-weight: 600;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: rgba(255, 215, 0, 0.15);
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+}
 
-  .footer-left h3 {
-    font-size: 18px;
-  }
+.verification-strip a:hover {
+  color: #fff;
+  background: rgba(255, 215, 0, 0.25);
+  border-color: rgba(255, 215, 0, 0.5);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
 
-  .footer-left p {
-    font-size: 14px;
-  }
+.verification-strip i {
+  color: #ffd700;
+  font-size: 20px;
+  margin-right: 4px;
+  animation: pulse 2s ease-in-out infinite;
+}
 
-  .footer-middle h4,
-  .footer-right h4 {
-    font-size: 15px;
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+    transform: scale(1);
   }
-
-  .footer-middle ul li a,
-  .footer-right ul li a {
-    font-size: 14px;
-  }
-
-  .footer-bottom p {
-    font-size: 12px;
+  50% {
+    opacity: 0.8;
+    transform: scale(1.05);
   }
 }
+.disabled {
+  pointer-events: none; /* Prevent clicks */
+  opacity: 0.5; /* Make the button look disabled */
+  cursor: not-allowed; /* Change cursor to indicate disabled state */
+}
+
+.announcement-card .card-header .title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem; /* Space between title and status badge */
+  font-size: 1rem;
+  font-weight: 500;
+  color: #0A2C59;
+}
+
+.announcement-card .card-header .title .status-badge {
+  font-size: 0.875rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-weight: 500;
+  background: #e0f2fe;
+  color: #0369a1;
+  margin-left: auto; /* Align badge to the right */
+}
+
+.announcement-tabs, .announcement-tabs1, .announcement-tabs2 {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+}
+.tab-btn {
+  background: #eaf3fa;
+  color: #143d77;
+  border: none;
+  padding: 10px 28px;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+.tab-btn.active {
+  background: #0A2C59;
+  color: #fff;
+}
+.tab-btn:hover:not(.active) {
+  background: #d1e1f5;
+}
+
+.announcement-row-rejected, .announcement-card-rejected {
+  border-left: 6px solid #e74d3c47 !important;
+  background: #fff5f5 !important;
+}
+.announcement-row-approved, .announcement-card-approved {
+  border-left: 6px solid #52dc8c42 !important;
+  background: #f5fff7 !important;
+}
+
+/* Read / Unread visual states */
+.announcement-notread {
+  /* Unread items are slightly highlighted to draw attention */
+  background-color: #fff8e1; /* light golden */
+}
+.announcement-read {
+  /* Read items are neutral / light */
+  background-color: #ffffff;
+}
+
+/* Make sure table rows and cards both use these states */
+.announcement-card.announcement-notread { background-color: #d8dbe4; }
+.announcement-card.announcement-read { background-color: #ffffff; }
+.announcement-table tr.announcement-notread { background-color: #d8dbe4; }
+.announcement-table tr.announcement-read { background-color: #ffffff; }

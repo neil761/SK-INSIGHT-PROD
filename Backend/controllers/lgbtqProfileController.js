@@ -6,7 +6,9 @@ const ExcelJS = require("exceljs");
 const fs = require("fs");
 const path = require("path");
 const Notification = require("../models/Notification"); // <-- Import Notification model
+const Announcement = require("../models/Announcement"); // Add at top if not present
 const mongoose = require("mongoose");
+const cloudinary = require("../config/cloudinaryConfig");
 // ...existing imports...
 // Helper to get demographics from LGBTQProfile only
 async function getDemographics(profile) {
@@ -63,12 +65,53 @@ exports.submitLGBTQProfile = async (req, res) => {
       return res.status(400).json({ success: false, error: "Both front and back ID images are required." });
     }
 
+    // Compute age to store on the LGBTQProfile.
+    // Priority: req.body.age -> req.user.birthday/dateOfBirth -> req.body.birthday/dateOfBirth -> req.user.age
+    function computeAgeFrom(birthday) {
+      if (!birthday) return null;
+      try {
+        const d = new Date(birthday);
+        if (isNaN(d.getTime())) return null;
+        const today = new Date();
+        let a = today.getFullYear() - d.getFullYear();
+        const m = today.getMonth() - d.getMonth();
+        if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+        return a;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    let ageToSave = null;
+    if (req.body && req.body.age) {
+      const n = Number(req.body.age);
+      if (!isNaN(n)) ageToSave = Math.floor(n);
+    }
+    if (ageToSave === null && req.user && (req.user.birthday || req.user.dateOfBirth)) {
+      ageToSave = computeAgeFrom(req.user.birthday || req.user.dateOfBirth);
+    }
+    if (ageToSave === null && req.body && (req.body.birthday || req.body.dateOfBirth)) {
+      ageToSave = computeAgeFrom(req.body.birthday || req.body.dateOfBirth);
+    }
+    if (ageToSave === null && req.user && req.user.age) {
+      const n = Number(req.user.age);
+      if (!isNaN(n)) ageToSave = Math.floor(n);
+    }
+
+    if (ageToSave === null) {
+      // If age couldn't be determined, delete uploaded files and return an error
+      if (req.files?.idImageFront) fs.unlink(req.files.idImageFront[0].path, () => {});
+      if (req.files?.idImageBack) fs.unlink(req.files.idImageBack[0].path, () => {});
+      return res.status(400).json({ success: false, error: "Age is required or could not be determined from birthday." });
+    }
+
     const newProfile = new LGBTQProfile({
       user: userId,
       formCycle: formStatus.cycleId,
       lastname,
       firstname,
       middlename,
+      age: ageToSave,
       sexAssignedAtBirth,
       lgbtqClassification,
       idImageFront: req.files.idImageFront[0].path, // Cloudinary URL
@@ -295,6 +338,16 @@ exports.getMyProfile = async (req, res) => {
 
     // Defensive: ensure .toObject exists
     const enriched = await attachKKInfo(profile);
+    // Also include demographics (birthday, age) from populated user for convenience
+    try {
+      const demographics = await getDemographics(profile);
+      enriched.demographics = demographics;
+      // expose top-level birthday & age for callers that expect them
+      if (demographics && demographics.birthday) enriched.birthday = demographics.birthday;
+      if (demographics && demographics.age !== undefined) enriched.age = demographics.age;
+    } catch (e) {
+      console.warn('Failed to attach demographics to enriched profile', e);
+    }
     res.status(200).json(enriched);
   } catch (error) {
     console.error("getMyProfile error:", error); // <-- Add this for debugging
@@ -327,22 +380,125 @@ exports.updateProfileById = async (req, res) => {
   }
 };
 
+// Update my own profile (user-level) — accepts multipart for idImageFront/idImageBack
+exports.updateMyProfile = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) return res.status(401).json({ error: 'Unauthorized' });
+
+    const profile = await LGBTQProfile.findOne({ user: req.user.id, isDeleted: false });
+    if (!profile) return res.status(404).json({ error: 'Profile not found' });
+
+    // Update simple fields if provided
+    const updatable = ['lastname', 'firstname', 'middlename', 'sexAssignedAtBirth', 'lgbtqClassification'];
+    updatable.forEach((k) => {
+      if (Object.prototype.hasOwnProperty.call(req.body, k) && req.body[k] !== undefined) {
+        profile[k] = req.body[k];
+      }
+    });
+
+    // Helper to extract Cloudinary public_id from stored url
+    function extractPublicId(url) {
+      try {
+        if (!url || typeof url !== 'string') return null;
+        const parts = url.split('/upload/');
+        if (parts.length < 2) return null;
+        let after = parts[1];
+        // remove version prefix if present (v1234567/)
+        after = after.replace(/^v\d+\//, '');
+        // remove extension
+        after = after.replace(/\.[a-zA-Z0-9]+$/, '');
+        return after;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    // Handle _removed flag (may be JSON string or object)
+    if (req.body && req.body._removed) {
+      let removed = req.body._removed;
+      if (typeof removed === 'string') {
+        try { removed = JSON.parse(removed); } catch (e) { /* keep string */ }
+      }
+      if (removed && (removed.front || removed.idImageFront)) {
+        // delete existing cloudinary resource if present
+        if (profile.idImageFront) {
+          const pid = extractPublicId(profile.idImageFront);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy front failed', e); }
+          }
+        }
+        profile.idImageFront = null;
+      }
+      if (removed && (removed.back || removed.idImageBack)) {
+        if (profile.idImageBack) {
+          const pid = extractPublicId(profile.idImageBack);
+          if (pid) {
+            try { await cloudinary.uploader.destroy(pid); } catch (e) { console.warn('Cloudinary destroy back failed', e); }
+          }
+        }
+        profile.idImageBack = null;
+      }
+    }
+
+    // If new files uploaded, replace stored paths
+    if (req.files && req.files.idImageFront && req.files.idImageFront[0]) {
+      // delete old image first if exists
+      if (profile.idImageFront) {
+        const oldPid = extractPublicId(profile.idImageFront);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old front failed', e); }
+        }
+      }
+      profile.idImageFront = req.files.idImageFront[0].path;
+    }
+    if (req.files && req.files.idImageBack && req.files.idImageBack[0]) {
+      if (profile.idImageBack) {
+        const oldPid = extractPublicId(profile.idImageBack);
+        if (oldPid) {
+          try { await cloudinary.uploader.destroy(oldPid); } catch (e) { console.warn('Cloudinary destroy old back failed', e); }
+        }
+      }
+      profile.idImageBack = req.files.idImageBack[0].path;
+    }
+
+    await profile.save();
+    return res.json({ message: 'Profile updated', profile });
+  } catch (err) {
+    console.error('updateMyProfile error:', err);
+    return res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // Delete a profile
 exports.deleteProfileById = async (req, res) => {
   try {
-    const profile = await LGBTQProfile.findById(req.params.id);
+    const profile = await LGBTQProfile.findById(req.params.id).populate("user");
     if (!profile) return res.status(404).json({ error: "Profile not found" });
 
     profile.isDeleted = true;
     profile.deletedAt = new Date();
     await profile.save();
 
-    // New code starts here
+    // Remove related notifications
     await Notification.deleteMany({ referenceId: profile._id });
     if (req.app.get("io")) {
       req.app.get("io").emit("lgbtq-profile:deleted", { id: profile._id });
     }
-    // New code ends here
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "LGBTQ Profiling Form Deleted",
+      content: `The admin has observed that your LGBTQ Profiling form has inaccuracies. As a result, your LGBTQ Profiling form for this cycle has been deleted and moved to the recycle bin. You may submit a new form if the cycle is still open, please make sure all information is accurate.`,
+      category: "LGBTQ Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile moved to recycle bin" });
   } catch (err) {
@@ -353,7 +509,7 @@ exports.deleteProfileById = async (req, res) => {
 // Restore a deleted profile
 exports.restoreProfileById = async (req, res) => {
   try {
-    const profile = await LGBTQProfile.findById(req.params.id);
+    const profile = await LGBTQProfile.findById(req.params.id).populate("user");
     if (!profile || !profile.isDeleted) {
       return res.status(404).json({ error: "Profile not found or not deleted" });
     }
@@ -374,6 +530,21 @@ exports.restoreProfileById = async (req, res) => {
     profile.isDeleted = false;
     profile.deletedAt = null;
     await profile.save();
+
+    // Send announcement to the user
+    const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
+    await Announcement.create({
+      title: "LGBTQ Profiling Form Restored",
+      content: `Your LGBTQ Profiling form for this cycle has been restored.`,
+      category: "LGBTQ Profiling",
+      eventDate: new Date(),
+      expiresAt,
+      createdBy: req.user.id,
+      recipient: profile.user._id, // <-- set recipient
+      isPinned: false,
+      isActive: true,
+      viewedBy: [],
+    });
 
     res.json({ message: "Profile restored" });
   } catch (err) {
@@ -445,17 +616,19 @@ exports.exportProfilesToExcel = async (req, res) => {
     profiles.forEach(profile => {
       const fullName = `${(profile.lastname || '').toUpperCase()}, ${(profile.firstname || '').toUpperCase()} ${(profile.middlename || '').toUpperCase()}${profile.suffix ? ` ${profile.suffix.toUpperCase()}` : ''}`.trim();
 
-      // Extract birthday details and compute age
+      // Prefer stored age in DB; otherwise extract birthday details and compute age
+      const storedAge = (typeof profile.age !== 'undefined' && profile.age !== null) ? Number(profile.age) : null;
       const birthday = profile.user?.birthday ? new Date(profile.user.birthday) : null;
       const birthMonth = birthday ? birthday.getMonth() + 1 : "N/A"; // Months are 0-indexed
       const birthDay = birthday ? birthday.getDate() : "N/A";
       const birthYear = birthday ? birthday.getFullYear() : "N/A";
 
-      // Compute age dynamically
+      // Compute age dynamically only if not stored on profile
       const today = new Date();
-      const age = birthday
+      const computedAge = birthday
         ? today.getFullYear() - birthYear - (today.getMonth() + 1 < birthMonth || (today.getMonth() + 1 === birthMonth && today.getDate() < birthDay) ? 1 : 0)
         : "N/A";
+      const age = (storedAge !== null && !isNaN(storedAge)) ? storedAge : computedAge;
 
       // Sex Assigned at Birth
       const sexAssignedAtBirth = profile.sexAssignedAtBirth || "N/A";

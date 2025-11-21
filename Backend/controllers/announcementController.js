@@ -36,7 +36,10 @@ exports.getAllAnnouncements = async (req, res) => {
       { $set: { isActive: false } }
     );
 
-    const announcements = await Announcement.find({ isActive: true })
+    // Only general announcements (recipient: null)
+    const announcements = await Announcement.find({ 
+        recipient: null
+      })
       .sort({ isPinned: -1, createdAt: -1 })
       .populate("createdBy", "username email");
     res.json({ success: true, announcements });
@@ -118,5 +121,37 @@ exports.viewAnnouncement = async (req, res) => {
     res.json({ success: true, message: "Announcement marked as viewed" });
   } catch (err) {
     res.status(500).json({ success: false, message: "Error marking as viewed", error: err.message });
+  }
+};
+
+// Get my announcements
+exports.getMyAnnouncements = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const now = new Date();
+
+    // Auto-inactive logic for expired announcements
+    await Announcement.updateMany(
+      {
+        isActive: true,
+        $and: [
+          { eventDate: { $lt: now } },
+          { expiresAt: { $lt: now } }
+        ]
+      },
+      { $set: { isActive: false } }
+    );
+
+    // Only announcements directed to the user
+    const announcements = await Announcement.find({
+      isActive: true,
+      recipient: userId
+    })
+      .sort({ isPinned: -1, createdAt: -1 })
+      .populate("createdBy", "username email");
+
+    res.json({ success: true, announcements });
+  } catch (err) {
+    res.status(500).json({ success: false, message: "Error fetching my announcements", error: err.message });
   }
 };

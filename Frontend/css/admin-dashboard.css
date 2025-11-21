@@ -316,7 +316,7 @@
   transition: transform 0.2s, box-shadow 0.2s;
   overflow: hidden;
   min-height: 470px;
-  max-height: 500px;
+  max-height: 600px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -345,7 +345,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+
   width: 100%;
 }
 
@@ -424,90 +424,6 @@
 .content.page-fade-in {
   opacity: 1;
   transition: opacity 180ms cubic-bezier(.4,1.4,.6,1);
-}
-
-.civil-status-card {
-  grid-column: 2 / 3;
-  grid-row: 1 / 2;
-  min-width: 100%;
-  margin: 0 auto;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-start;
-}
-
-.civil-status-summary {
-  width: 100%;
-  background: #f8faff;
-  border-radius: 10px;
-  padding: 0.4rem 0.4rem 1rem 1.2rem;
-  margin-bottom: 0.5rem;
-  box-shadow: 3px 3px 4px rgba(10,44,89,0.04);
-  display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
-}
-
-.civil-status-summary-row {
-  font-weight: 600;
-  margin-bottom: 0.15rem;
-  display: flex;
-  justify-content: center;
-    margin-left: -12px;
-    padding: 0.4rem 0.6rem;
-    border-radius: 8px;
-
-    background: #fef9e7;
-    font-weight: 600;
-    color: #FED600;
-    font-size: 0.8rem;
-}
-
-
-.civil-status-percentages {
-  margin-top: 0.3rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.2rem;
-}
-
-.civil-status-percentages span {
-  font-size: 0.8rem;
-  color: #333;
-}
-
-.civil-status-legend {
-  display: grid;
-  grid-template-columns: 1fr 1fr; /* two columns */
-  gap: 0.5rem 1.2rem;
-  justify-items: start;
-  margin-top: 0.7rem;
-  margin-bottom: 0.8rem;
-}
-
-.civil-status-legend .legend-item {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  font-size: 0.8rem;
-  color: #0A2C59;
-}
-
-.civil-status-legend .legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-#civilStatusDonut {
-  max-width: 160px;
-  max-height: 160px;
-  width: 100% !important;
-  height: auto !important;
-  display: block;
-  margin-bottom: 1.3rem;
-  margin-top: 1rem;
 }
 
 .educational-background-card {
@@ -611,6 +527,19 @@
   color: #0A2C59;
   font-weight: 500;
   margin-bottom: 0.4rem;
+  width: 25vw;
+}
+
+.educational-background-summary-rows {
+  background: #fef9e7;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #FED600;
+  font-weight: 500;
+  margin-bottom: 0.4rem;
+  width: 17vw;
+  padding: 0.5rem 0.2rem;
+  border-radius: 6px;
 }
 
 .educational-background-summary-list {
@@ -1029,165 +958,6 @@ div.chartjs-legend {
 .work-status-summary{
 }
 
-
-.prediction-card {
-  background: #fff;
-  border-radius: 14px;
-  box-shadow: 0 2px 12px rgba(10,44,89,0.04);
-  display: flex;
-  flex-direction: column;
-  padding: 24px 20px 18px 20px;
-  min-height: 700;
-  max-height: 820px;
-}
-
-/* Chart Container */
-.prediction-chart-container {
-  width: 100%;
-  height: 100%;
-}
-
-/* Chart Canvas */
-#predictionChart {
-  width: 100% !important;
-  height: 400px !important; /* Increase chart height */
-  display: block;
-  background: transparent;
-  border-radius: 8px;
-}
-
-/* Numbers on the side */
-/* Numbers on the side */
-.prediction-side {
-  display: grid;
-  grid-template-columns: 2fr 2fr;
-  gap: 1.2rem 2rem;
-  background: #f8faff;
-  border-radius: 12px;
-  padding: 0.9rem;
-  width: 100%;
-  box-sizing: border-box;
-  margin-top: 1.5rem;
-}
-
-
-.prediction-value-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 1.05rem; /* Slightly bigger */
-  margin-bottom: 0.7rem;
-}
-
-.prediction-label {
-  color: #0A2C59;
-  font-weight: 600;
-  min-width: 120px;
-  font-size: 1rem;
-}
-
-.prediction-value {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  font-weight: 700;
-  font-size: 1rem;
-}
-
-.prediction-value.actual { color: #07B0F2; }
-.prediction-value.predicted { color: #FED600; }
-
-.legend-dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 4px;
-}
-
-.legend-dot.actual { background: #07B0F2; }
-.legend-dot.predicted { background: #FED600; }
-
-/* Labels below the chart */
-.prediction-label-row {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding: 0 10px;
-}
-
-.prediction-label-bottom {
-  color: #0A2C59;
-  font-size: 0.95rem;
-  font-weight: 500;
-  flex: 1;
-  text-align: center;
-}
-
-/* Legend at the bottom */
-.prediction-legend {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: -1rem;
-  padding: 0.5rem;
-  background: #fff;
-  border-radius: 8px;
-  justify-content: start;
-}
-
-.prediction-info-grid {
-  width: 100%;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.2rem 2rem;
-  margin-top: 16px;
-  margin-bottom: 8px;
-  padding: 0 10px;
-}
-
-.prediction-info-item {
-  background: #f8faff;
-  border-radius: 8px;
-  padding: 0.7rem 1rem;
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  font-size: 1rem;
-  font-weight: 600;
-  color: #0A2C59;
-  justify-content: flex-start;
-}
-
-.prediction-info-item .legend-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-  margin-right: 6px;
-}
-
-.prediction-info-item .actual { color: #07B0F2; }
-.prediction-info-item .predicted { color: #FED600; }
-
-/* Add to your CSS file */
-.cycle-info-box {
-  background: #fff;
-  border-radius: 8px;
-  display: inline-block;
-  font-size: 0.9rem;
-  color: #1a237e;
-
-}
-.cycle-label {
-  font-weight: 600;
-  color: #07B0F2;
-  margin-right: 8px;
-}
-.cycle-value b {
-  color: #FED600;
-  font-weight: 600;
-  letter-spacing: 1.5px;
-}
 
 /* Add this to your sidebar CSS file */
 /* You can adjust colors, size, and position as needed */
