@@ -230,9 +230,15 @@ function handleEducAssistanceNavClick(event) {
     const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
     const formName = latestCycle?.formName || "Educational Assistance";
     const isFormOpen = latestCycle?.isOpen ?? false;
+    // consider a profile 'present' but also check for explicit rejection markers
     const hasProfile = profileData && profileData._id ? true : false;
+    const statusVal = (profileData && (profileData.status || profileData.decision || profileData.adminDecision || profileData.result)) || '';
+    const isRejected = Boolean(
+      (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
+      (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
+    );
     // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
+    if (!isFormOpen && hasProfile && !isRejected) {
       Swal.fire({
         icon: "info",
         title: `The ${formName} is currently closed`,
@@ -245,8 +251,8 @@ function handleEducAssistanceNavClick(event) {
       });
       return;
     }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
+    // CASE 2: Form closed, user has NO profile OR their previous application was rejected
+    if (!isFormOpen && (!hasProfile || isRejected)) {
       Swal.fire({
         icon: "warning",
         title: `The ${formName} form is currently closed`,
@@ -256,7 +262,7 @@ function handleEducAssistanceNavClick(event) {
       return;
     }
     // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
+    if (isFormOpen && hasProfile && !isRejected) {
       Swal.fire({
         title: `You already applied for ${formName}`,
         text: "Do you want to view your response?",
@@ -269,20 +275,28 @@ function handleEducAssistanceNavClick(event) {
       });
       return;
     }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
+    // CASE 4: Form open, no profile OR profile exists but was rejected → prompt to reapply
+    if (isFormOpen && (!hasProfile || isRejected)) {
+      const message = isRejected
+        ? 'Your previous application was rejected. Would you like to submit a new application?'
+        : `You don't have a profile yet. Please fill out the form to create one.`;
+
       Swal.fire({
         icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
+        title: isRejected ? 'Previous Application Rejected' : 'No profile found',
+        text: message,
+        showCancelButton: true,
+        confirmButtonText: "Go to form",
+        cancelButtonText: "No",
       }).then(result => {
         if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
+          // Clear any local draft for educational assistance (best-effort keys)
+          try {
+            sessionStorage.removeItem('educDraft');
+            sessionStorage.removeItem('educationalDraft');
+            sessionStorage.removeItem('educAssistanceDraft');
+          } catch (e) {}
           window.location.href = "Educational-assistance-user.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
         }
       });
       return;
@@ -321,12 +335,25 @@ function handleEducAssistanceNavClick(event) {
   const educAssistanceNavBtnDesktop = document.querySelector('.navbar-center a[href="./Educational-assistance-user.html"]');
 const educAssistanceNavBtnMobile = document.querySelector('.navbar-mobile-menu a[href="./Educational-assistance-user.html"]');
 
-if (educAssistanceNavBtnDesktop) {
-  educAssistanceNavBtnDesktop.addEventListener('click', handleEducAssistanceNavClick);
+function attachEducHandler(btn) {
+  if (!btn) return;
+  btn.addEventListener('click', function (e) {
+    // Prefer the reusable helper if available (loaded via educRejected.js), otherwise use existing handler
+    if (window.checkAndPromptEducReapply) {
+      try {
+        window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' });
+      } catch (err) {
+        // fallback
+        handleEducAssistanceNavClick(e);
+      }
+    } else {
+      handleEducAssistanceNavClick(e);
+    }
+  });
 }
-if (educAssistanceNavBtnMobile) {
-  educAssistanceNavBtnMobile.addEventListener('click', handleEducAssistanceNavClick);
-}
+
+attachEducHandler(educAssistanceNavBtnDesktop);
+attachEducHandler(educAssistanceNavBtnMobile);
 });
 
 document.addEventListener('DOMContentLoaded', function () {

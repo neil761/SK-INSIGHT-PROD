@@ -50,6 +50,7 @@ body::before {
 .navbar img {
   height: 4vh;
   border-radius: 50%;
+  margin-top: 5%;
 }
 
 .navbar .title {
@@ -203,7 +204,7 @@ body::before {
   }
   
   .navbar img {
-    height: 32px;
+    height: 2rem;
   }
   
   .navbar .title {
@@ -212,7 +213,7 @@ body::before {
   }
   
   .navbar-hamburger {
-    font-size: 1.5rem;
+    font-size: 1.3rem;
     margin-right: 5px;
     display: flex;
     align-items: center;
