@@ -142,7 +142,13 @@ async function showUserModal(userId) {
     const payload = await response.json();
     const user = payload.user || payload;
     const profiles = payload.profiles || {};
+    console.log("Modal profile IDs:", profiles);
 
+    // Resolve profile IDs (prefer answered-latest id, fallback to any-profile id, keep legacy keys)
+    const kkId = profiles.kkAnsweredLatestId || profiles.kkAnyProfileId || profiles.kkProfileId || null;
+    const lgbtqId = profiles.lgbtqAnsweredLatestId || profiles.lgbtqAnyProfileId || profiles.lgbtqProfileId || null;
+    const educId = profiles.educationalAnsweredLatestId || profiles.educationalAnyProfileId || profiles.educationalProfileId || null;
+    
     Swal.fire({
       showCloseButton: true,
       showConfirmButton: false,
@@ -192,7 +198,7 @@ async function showUserModal(userId) {
               <!-- KK Profiling -->
               <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #07B0F2;">
                 <div style="font-weight: 700; color: #0A2C59; font-size: 14px; letter-spacing: 0.2px;">KK Profiling</div>
-                ${profiles.kkProfileId ? `<a href="/Frontend/html/admin/KK-Profile.html?id=${profiles.kkProfileId}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #07B0F2; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
+                ${kkId ? `<a href="#" onclick="window.openProfileTabWithToken('/Frontend/html/admin/KK-Profile.html', '${kkId}'); return false;" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #07B0F2; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
                   <i class="fas fa-arrow-up-right-from-square"></i> View
                 </a>` : `<div style="color: #888; font-size: 13px; font-weight: 500;">Not submitted</div>`}
               </div>
@@ -200,7 +206,7 @@ async function showUserModal(userId) {
               <!-- LGBTQIA+ Profiling -->
               <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #8b5cf6;">
                 <div style="font-weight: 700; color: #0A2C59; font-size: 14px; letter-spacing: 0.2px;">LGBTQIA+ Profiling</div>
-                ${profiles.lgbtqProfileId ? `<a href="/Frontend/html/admin/LGBTQ-Profile.html?id=${profiles.lgbtqProfileId}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #8b5cf6; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
+                ${lgbtqId ? `<a href="#" onclick="window.openProfileTabWithToken('/Frontend/html/admin/LGBTQ-Profile.html', '${lgbtqId}'); return false;" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #8b5cf6; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
                   <i class="fas fa-arrow-up-right-from-square"></i> View
                 </a>` : `<div style="color: #888; font-size: 13px; font-weight: 500;">Not submitted</div>`}
               </div>
@@ -208,7 +214,7 @@ async function showUserModal(userId) {
               <!-- Educational Assistance -->
               <div style="display: flex; flex-direction: column; gap: 10px; padding: 14px; background: #f8fafc; border-radius: 10px; border-left: 4px solid #06b6d4;">
                 <div style="font-weight: 700; color: #0A2C59; font-size: 14px; letter-spacing: 0.2px;">Educational Assistance</div>
-                ${profiles.educationalProfileId ? `<a href="/Frontend/html/admin/Educational-Assistance-admin.html?id=${profiles.educationalProfileId}" target="_blank" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #06b6d4; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
+                ${educId ? `<a href="#" onclick="window.openProfileTabWithToken('/Frontend/html/admin/Educational-Assistance-admin.html', '${educId}'); return false;" style="display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 8px 12px; background: #06b6d4; color: #fff; border: none; border-radius: 8px; text-decoration: none; font-weight: 600; font-size: 13px; cursor: pointer; transition: background 0.2s;">
                   <i class="fas fa-arrow-up-right-from-square"></i> View
                 </a>` : `<div style="color: #888; font-size: 13px; font-weight: 500;">Not submitted</div>`}
               </div>
@@ -227,3 +233,19 @@ async function showUserModal(userId) {
     });
   }
 }
+
+// Helper to open profile tab and transfer session token via BroadcastChannel
+function openProfileTabWithToken(url, profileId) {
+  const tab = window.open(`${url}?id=${encodeURIComponent(profileId)}`, '_blank');
+  const token = sessionStorage.getItem("token");
+  if (token && tab) {
+    const channel = new BroadcastChannel("skinsight-auth");
+    setTimeout(() => {
+      channel.postMessage({ token });
+      channel.close();
+    }, 500);
+  }
+}
+
+// Make helper available globally for modal HTML
+window.openProfileTabWithToken = openProfileTabWithToken;

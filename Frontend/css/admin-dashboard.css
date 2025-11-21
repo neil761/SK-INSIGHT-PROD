@@ -316,7 +316,7 @@
   transition: transform 0.2s, box-shadow 0.2s;
   overflow: hidden;
   min-height: 470px;
-  max-height: 500px;
+  max-height: 600px;
   display: flex;
   flex-direction: column;
   justify-content: flex-start;
@@ -345,7 +345,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+
   width: 100%;
 }
 

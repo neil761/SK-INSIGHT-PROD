@@ -1,4 +1,17 @@
 (function() {
+  if (!sessionStorage.getItem("token")) {
+    const channel = new BroadcastChannel("skinsight-auth");
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.token) {
+        sessionStorage.setItem("token", ev.data.token);
+        channel.close();
+        location.reload();
+      }
+    };
+    setTimeout(() => channel.close(), 3000);
+  }
+})();
+(function() {
   const token = sessionStorage.getItem("token");
   function sessionExpired() {
     Swal.fire({
@@ -957,6 +970,18 @@ clearFilterBtn.addEventListener("click", () => {
 
   // Call badge update on page load
   updateNotifBadge();
+
+    const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id && typeof showApplicantModal === "function") {
+    fetch(`http://localhost:5000/api/educational-assistance/${id}`, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+    })
+    .then(res => res.json())
+    .then(app => {
+      if (app && app._id) showApplicantModal(app);
+    });
+  }
 });
 
 // Remove any duplicate socket initializations and listeners below this point!
