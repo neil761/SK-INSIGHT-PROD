@@ -55,6 +55,8 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     } catch (e) { /* ignore */ }
+
+    // Nothing extra here; attendance/show-hide logic handled separately.
   }
 
   // Initialize visibility on load
@@ -689,6 +691,28 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     } catch (e) { /* ignore */ }
 
+    // Conditional requirement: if user answered they attended KK Assembly,
+    // require `attendanceCount`. If they did NOT attend, require `reasonDidNotAttend`.
+    try {
+      const attendedEl = document.getElementById('attendedKKAssembly');
+      const attendedVal = attendedEl ? String(attendedEl.value || '').trim().toLowerCase() : '';
+      if (attendedVal === 'yes') {
+        const attendanceCountEl = document.getElementById('attendanceCount');
+        const countVal = attendanceCountEl ? String(attendanceCountEl.value || '').trim() : '';
+        if (!countVal) {
+          await Swal.fire('Missing Field', 'Please indicate how many times you attended KK Assembly.', 'warning');
+          return;
+        }
+      } else if (attendedVal === 'no') {
+        const reasonEl = document.getElementById('reasonDidNotAttend');
+        const reasonVal = reasonEl ? String(reasonEl.value || '').trim() : '';
+        if (!reasonVal) {
+          await Swal.fire('Missing Field', 'Please provide a reason why you did not attend KK Assembly.', 'warning');
+          return;
+        }
+      }
+    } catch (e) { /* ignore conditional validation errors */ }
+
     // SweetAlert confirmation before actual submit
     const result = await Swal.fire({
       title: "Are you sure?",
@@ -839,18 +863,22 @@ document.addEventListener('DOMContentLoaded', function() {
           title: "Submitted!",
           text: "Form submitted successfully!",
           icon: "success",
-          showConfirmButton: true, // Show the OK button
-          confirmButtonText: "OK", // Text for the button
-          allowOutsideClick: false, // Prevent closing by clicking outside
-        }).then(() => {
-          // Redirect to the confirmation page when OK is clicked
-          window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
+          showConfirmButton: true,
+          confirmButtonText: "OK",
+          allowOutsideClick: false,
         });
 
-        // Remove sessionStorage data
-        sessionStorage.removeItem('kkProfileStep1');
-        sessionStorage.removeItem('kkProfileStep2');
-        sessionStorage.removeItem('kkProfileStep3');
+        // Remove sessionStorage data for all steps before redirecting
+        try {
+          sessionStorage.removeItem('kkProfileStep1');
+          sessionStorage.removeItem('kkProfileStep2');
+          sessionStorage.removeItem('kkProfileStep3');
+        } catch (e) {
+          // ignore storage errors
+        }
+
+        // Redirect to the confirmation page
+        window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
       } else if (response.status === 409) {
         Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
         return;
