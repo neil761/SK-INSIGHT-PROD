@@ -6,6 +6,7 @@ const path = require("path");
 const asyncHandler = require("express-async-handler");
 const fs = require("fs");
 const mailer = require("../utils/mailer");
+const FormCycle = require("../models/FormCycle");
 const KKProfile = require("../models/KKProfile");
 const LGBTQProfile = require("../models/LGBTQProfile");
 const EducationalAssistance = require("../models/EducationalAssistance");
@@ -64,34 +65,101 @@ const EducationalAssistance = require("../models/EducationalAssistance");
 
   // READ ONE
   exports.getUserById = async (req, res) => {
-    try {
-      const user = await User.findById(req.params.id).select("-password");
-      if (!user) return res.status(404).json({ error: "User not found" });
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    if (!user) return res.status(404).json({ error: "User not found" });
 
-      // Try to find related form documents for this user (if models exist)
-      let kk = null, lgbtq = null, educ = null;
-      try {
-        kk = await KKProfile.findOne({ user: user._id }).select("_id");
-      } catch (e) { /* ignore if model/collection missing */ }
-      try {
-        lgbtq = await LGBTQProfile.findOne({ user: user._id }).select("_id");
-      } catch (e) { /* ignore if model/collection missing */ }
-      try {
-        educ = await EducationalAssistance.findOne({ user: user._id }).select("_id");
-      } catch (e) { /* ignore if model/collection missing */ }
+    // Helper: find latest FormCycle by formName (ignore isActive so closed cycles count)
+    const findLatestCycle = async (formName) => {
+      return await FormCycle.findOne({ formName })
+        .sort({ year: -1, cycleNumber: -1, createdAt: -1 })
+        .lean();
+    };
 
-      return res.json({
-        user,
-        profiles: {
-          kkProfileId: kk ? kk._id : null,
-          lgbtqProfileId: lgbtq ? lgbtq._id : null,
-          educationalProfileId: educ ? educ._id : null
-        }
-      });
-    } catch (err) {
-      res.status(500).json({ error: err.message || "Server error" });
-    }
-  };
+    // Helper: get user's latest profile (any cycle) for a model
+    const findLatestUserProfile = async (Model, userId) => {
+      if (!Model) return null;
+      return await Model.findOne({ user: userId }).sort({ createdAt: -1 }).select("_id formCycle createdAt").lean();
+    };
+
+    // Helper: find profile for a specific cycle
+    const findUserProfileForCycle = async (Model, userId, cycleId) => {
+      if (!Model || !cycleId) return null;
+      const doc = await Model.findOne({ user: userId, formCycle: cycleId }).select("_id").lean();
+      return doc ? String(doc._id) : null;
+    };
+
+    const kkFormName = "KK Profiling";
+    const lgbtqFormName = "LGBTQ Profiling";
+    const educFormName = "Educational Assistance";
+
+    // fetch latest cycles
+    let [kkCycle, lgbtqCycle, educCycle] = await Promise.all([
+      findLatestCycle(kkFormName),
+      findLatestCycle(lgbtqFormName),
+      findLatestCycle(educFormName)
+    ]);
+
+    // fetch user's latest profile entries (any cycle)
+    const [kkLatestProfile, lgbtqLatestProfile, educLatestProfile] = await Promise.all([
+      findLatestUserProfile(KKProfile, user._id),
+      findLatestUserProfile(LGBTQProfile, user._id),
+      findLatestUserProfile(EducationalAssistance, user._id)
+    ]);
+
+    // attempt to find profile that belongs to the latest cycle explicitly
+    const [kkProfileForLatestCycle, lgbtqProfileForLatestCycle, educProfileForLatestCycle] = await Promise.all([
+      findUserProfileForCycle(KKProfile, user._id, kkCycle?._id),
+      findUserProfileForCycle(LGBTQProfile, user._id, lgbtqCycle?._id),
+      findUserProfileForCycle(EducationalAssistance, user._id, educCycle?._id)
+    ]);
+
+    // If there is no server-side latest cycle but the user has a profile, try to derive the cycle info from the profile.formCycle
+    // (useful when cycles exist but maybe not detected due to naming mismatch)
+    const deriveCycleFromProfile = async (profile) => {
+      if (!profile || !profile.formCycle) return null;
+      try {
+        const c = await FormCycle.findById(profile.formCycle).lean();
+        return c || null;
+      } catch (e) { return null; }
+    };
+
+    // If latest cycle is missing but user has a profile, derive it from the profile
+    if (!kkCycle && kkLatestProfile) kkCycle = await deriveCycleFromProfile(kkLatestProfile) || kkCycle;
+    if (!lgbtqCycle && lgbtqLatestProfile) lgbtqCycle = await deriveCycleFromProfile(lgbtqLatestProfile) || lgbtqCycle;
+    if (!educCycle && educLatestProfile) educCycle = await deriveCycleFromProfile(educLatestProfile) || educCycle;
+
+    // Prepare return values:
+    const kkAnsweredLatestId = kkProfileForLatestCycle || (kkLatestProfile ? String(kkLatestProfile._id) : null);
+    const lgbtqAnsweredLatestId = lgbtqProfileForLatestCycle || (lgbtqLatestProfile ? String(lgbtqLatestProfile._id) : null);
+    const educAnsweredLatestId = educProfileForLatestCycle || (educLatestProfile ? String(educLatestProfile._id) : null);
+
+    // Also return any-profile-fallback ids (most recent)
+    const kkAny = await KKProfile.findOne({ user: user._id }).select("_id").lean().catch(()=>null);
+    const lgbtqAny = await LGBTQProfile.findOne({ user: user._id }).select("_id").lean().catch(()=>null);
+    const educAny = await EducationalAssistance.findOne({ user: user._id }).select("_id").lean().catch(()=>null);
+
+    return res.json({
+      user,
+      profiles: {
+        kkLatestCycle: kkCycle ? { cycleId: kkCycle._id, year: kkCycle.year, cycleNumber: kkCycle.cycleNumber, isActive: kkCycle.isActive } : null,
+        kkAnsweredLatestId: kkAnsweredLatestId, // id if user answered the latest-known cycle (or most recent profile)
+        kkAnyProfileId: kkAny ? kkAny._id : null,
+
+        lgbtqLatestCycle: lgbtqCycle ? { cycleId: lgbtqCycle._id, year: lgbtqCycle.year, cycleNumber: lgbtqCycle.cycleNumber, isActive: lgbtqCycle.isActive } : null,
+        lgbtqAnsweredLatestId: lgbtqAnsweredLatestId,
+        lgbtqAnyProfileId: lgbtqAny ? lgbtqAny._id : null,
+
+        educationalLatestCycle: educCycle ? { cycleId: educCycle._id, year: educCycle.year, cycleNumber: educCycle.cycleNumber, isActive: educCycle.isActive } : null,
+        educationalAnsweredLatestId: educAnsweredLatestId,
+        educationalAnyProfileId: educAny ? educAny._id : null
+      }
+    });
+  } catch (err) {
+    console.error("getUserById error:", err); // log full error and stack
+    return res.status(500).json({ error: err.message || "Server error" });
+  }
+};
 
   // UPDATE
   exports.updateUser = async (req, res) => {

@@ -431,7 +431,10 @@ exports.updateProfileById = async (req, res) => {
 exports.deleteProfileById = async (req, res) => {
   try {
     const profile = await KKProfile.findById(req.params.id).populate("user");
-    if (!profile) return res.status(404).json({ error: "Profile not found" });
+    if (!profile) {
+      console.error("Soft delete failed: Profile not found", req.params.id);
+      return res.status(404).json({ error: "Profile not found" });
+    }
 
     // Soft delete: set isDeleted and deletedAt
     profile.isDeleted = true;
@@ -455,7 +458,7 @@ exports.deleteProfileById = async (req, res) => {
       eventDate: new Date(),
       expiresAt,
       createdBy: req.user.id,
-      recipient: profile.user._id, // <-- set recipient
+      recipient: profile.user._id,
       isPinned: false,
       isActive: true,
       viewedBy: [],
@@ -463,6 +466,7 @@ exports.deleteProfileById = async (req, res) => {
 
     res.json({ message: "Profile moved to recycle bin." });
   } catch (err) {
+    console.error("Soft delete error:", err); // <-- Add this line
     res.status(500).json({ error: "Server error" });
   }
 };
@@ -609,6 +613,9 @@ exports.getAllProfiles = async (req, res) => {
     } = req.query;
     let cycleDoc = null;
     let filter = {};
+
+    // Always exclude deleted profiles
+    filter.isDeleted = false;
 
     if (all === "true") {
       if (classification) filter.youthClassification = classification;

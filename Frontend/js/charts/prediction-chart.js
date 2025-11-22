@@ -2,6 +2,56 @@ let lastPredictedCycle = null;
 let lastPredictedYear = null;
 let lastPredictionResult = null;
 export async function renderPredictionChart(year, cycle) {
+  const chartElem = document.getElementById("predictionChart");
+  if (chartElem) {
+    // Show a centered, styled loading spinner and text
+    const parent = chartElem.parentElement;
+    let loader = parent.querySelector(".prediction-loading");
+    if (!loader) {
+      loader = document.createElement("div");
+      loader.className = "prediction-loading";
+      loader.innerHTML = `
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Loading prediction...</div>
+      `;
+      loader.style.position = "absolute";
+      loader.style.top = "50%";
+      loader.style.left = "50%";
+      loader.style.transform = "translate(-50%, -50%)";
+      loader.style.display = "flex";
+      loader.style.flexDirection = "column";
+      loader.style.alignItems = "center";
+      loader.style.justifyContent = "center";
+      loader.style.zIndex = "10";
+      loader.style.background = "rgba(255,255,255,0.85)";
+      loader.style.borderRadius = "16px";
+      loader.style.padding = "32px 48px";
+      loader.style.boxShadow = "0 2px 16px rgba(7,176,242,0.08)";
+      loader.style.minWidth = "220px";
+      loader.style.minHeight = "120px";
+      loader.style.pointerEvents = "none";
+      loader.querySelector(".loader-spinner").style.cssText = `
+        width: 38px; height: 38px; border: 5px solid #e6f7ff; border-top: 5px solid #07B0F2;
+        border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 18px;
+      `;
+      loader.querySelector(".loader-text").style.cssText = `
+        font-size: 1.15rem; font-weight: 600; color: #0A2C59; letter-spacing: 0.02em;
+      `;
+      // Add spinner animation
+      if (!document.getElementById("prediction-spinner-style")) {
+        const style = document.createElement("style");
+        style.id = "prediction-spinner-style";
+        style.innerHTML = `
+          @keyframes spin { 100% { transform: rotate(360deg); } }
+        `;
+        document.head.appendChild(style);
+      }
+      parent.appendChild(loader);
+    }
+    loader.style.display = "flex";
+    chartElem.style.opacity = "0.3";
+  }
+
   const token = sessionStorage.getItem("token");
 
   // Fetch all predictions from the new GET API
@@ -15,24 +65,31 @@ export async function renderPredictionChart(year, cycle) {
     }
   } catch (err) {
     console.error("Failed to fetch predictions:", err);
+    if (chartElem && chartElem.parentElement) {
+      const loader = chartElem.parentElement.querySelector(".prediction-loading");
+      if (loader) loader.querySelector(".loader-text").textContent = "Failed to load prediction.";
+    }
     return;
   }
 
   // Find the prediction to display
   let predictionObj;
   if (year && cycle) {
-    // Find the latest prediction for the selected year/cycle
     predictionObj = predictionsArr
       .filter(p => p.year === Number(year) && p.cycleNumber === Number(cycle))
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   } else {
-    // No filter: show the latest prediction overall
     predictionObj = predictionsArr.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
   }
 
-  // If no prediction found, show empty chart
+  // If no prediction found, show empty chart and keep loader hidden
   if (!predictionObj) {
     renderPredictionChartWithData({ predicted: {}, suggestions: [] }, year, cycle, token);
+    if (chartElem && chartElem.parentElement) {
+      const loader = chartElem.parentElement.querySelector(".prediction-loading");
+      if (loader) loader.style.display = "none";
+      chartElem.style.opacity = "1";
+    }
     return;
   }
 
@@ -40,7 +97,14 @@ export async function renderPredictionChart(year, cycle) {
   const predicted = predictionObj.predictions || {};
   const suggestions = predictionObj.suggestions || [];
 
+  // Render chart and hide loader only after chart is ready
   renderPredictionChartWithData({ predicted, suggestions }, predictionObj.year, predictionObj.cycleNumber, token);
+
+  if (chartElem && chartElem.parentElement) {
+    const loader = chartElem.parentElement.querySelector(".prediction-loading");
+    if (loader) loader.style.display = "none";
+    chartElem.style.opacity = "1";
+  }
 }
 
 function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, token) {
@@ -79,8 +143,9 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
     predictedData = sorted.map(item => item.predicted);
     actualData = sorted.map(item => item.actual);
 
-    // compute threshold = highest actual value (reference)
-    const maxActual = actualData.length ? Math.max(...actualData) : 0;
+    // compute dynamic threshold = 50% of SUM of all predicted values
+    const totalPredicted = predictedData.reduce((s, v) => s + (Number(v) || 0), 0);
+    const thresholdValue = totalPredicted > 0 ? Math.round(totalPredicted * 0.45) : 0;
 
     // Chart.js grouped vertical bar chart
     const canvas = document.getElementById("predictionChart");
@@ -90,7 +155,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
       window.predictionChart.destroy();
     }
 
-    // Plugin to draw threshold line + label
+    // Plugin to draw horizontal dashed threshold line + label
     const thresholdPlugin = {
       id: 'thresholdPlugin',
       afterDatasetsDraw(chart, args, options) {
@@ -100,17 +165,17 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
         const yPixel = y.getPixelForValue(value);
 
         ctx.save();
-        // dashed line
+        // dashed line (broken)
         ctx.beginPath();
-        ctx.setLineDash([6, 6]);
+        ctx.setLineDash([8, 6]);
         ctx.lineWidth = 2;
-        ctx.strokeStyle = options.color || 'rgba(10,44,89,0.18)';
+        ctx.strokeStyle = options.color || 'rgba(255,77,79,0.9)';
         ctx.moveTo(left, yPixel);
         ctx.lineTo(right, yPixel);
         ctx.stroke();
 
         // label box
-        const label = options.label || `Dominant actual: ${value}`;
+        const label = options.label || `Threshold: ${value}`;
         ctx.font = '600 12px Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial';
         const textWidth = ctx.measureText(label).width;
         const padding = 8;
@@ -118,22 +183,21 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
         const rectH = 22;
         const rectX = right - rectW - 8;
         let rectY = yPixel - rectH - 6;
-        // clamp rect inside chart area
         const topLimit = 6;
         if (rectY < topLimit) rectY = topLimit;
 
         // white backdrop for readability
         ctx.fillStyle = options.background || 'rgba(255,255,255,0.95)';
         roundRect(ctx, rectX, rectY, rectW, rectH, 6, true, true);
-        // label text
-        ctx.fillStyle = options.textColor || '#071A40';
+        // label text (use warning color)
+        ctx.fillStyle = options.textColor || '#7f1d1d';
         ctx.fillText(label, rectX + padding, rectY + rectH - 7);
 
         ctx.restore();
       }
     };
 
-    // helper for rounded rect
+    // helper for rounded rect (reuse)
     function roundRect(ctx, x, y, w, h, r, fill, stroke) {
       if (typeof r === 'undefined') r = 5;
       ctx.beginPath();
@@ -147,6 +211,10 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
       if (stroke) ctx.stroke();
     }
 
+    // Build predicted dataset colors: highlight bars that exceed threshold
+    const predictedColors = predictedData.map(v => (Number(v) || 0) > thresholdValue ? '#ff4d4f' : '#FED600');
+    const actualColors = '#07B0F2';
+
     window.predictionChart = new Chart(ctx, {
       type: "bar",
       data: {
@@ -155,7 +223,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
           {
             label: "Actual",
             data: actualData,
-            backgroundColor: "#07B0F2",
+            backgroundColor: actualColors,
             borderRadius: 8,
             barPercentage: 0.7,
             categoryPercentage: 0.8
@@ -163,7 +231,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
           {
             label: "Predicted",
             data: predictedData,
-            backgroundColor: "#FED600",
+            backgroundColor: predictedColors,
             borderRadius: 8,
             barPercentage: 0.7,
             categoryPercentage: 0.8
@@ -177,13 +245,13 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
           legend: { display: false },
           title: { display: false },
           datalabels: { display: false },
-          // pass threshold options here
+          // pass threshold options here (fixed 500)
           thresholdPlugin: {
-            value: maxActual,
-            label: `Dominant actual: ${maxActual}`,
-            color: 'rgba(7,176,242,0.9)',
+            value: thresholdValue,
+            label: thresholdValue > 0 ? `Threshold: ${thresholdValue}` : 'Threshold: 0',
+            color: 'rgba(255,77,79,0.95)',
             background: 'rgba(255,255,255,0.98)',
-            textColor: '#071A40'
+            textColor: '#7f1d1d'
           }
         },
         scales: {
@@ -202,16 +270,15 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
     });
 
     // --- External info rendering ---
-
     // Numbers on the side
     const sideElem = document.querySelector(".prediction-side");
     if (sideElem) {
       sideElem.innerHTML = chartLabels.map((label, idx) => {
-        // mark rows that match the threshold (dominant) or below
-        const isDominant = actualData[idx] === maxActual && maxActual > 0;
+        const isDominant = actualData[idx] === Math.max(...actualData) && Math.max(...actualData) > 0;
         const rowClass = isDominant ? 'dominant' : 'below-threshold';
+        const alertClass = predictedData[idx] > thresholdValue ? 'exceed' : '';
         return `
-        <div class="prediction-value-row ${rowClass}">
+        <div class="prediction-value-row ${rowClass} ${alertClass}">
           <span class="prediction-label">${label}</span>
           <span class="prediction-value actual">
             <span class="legend-dot actual"></span> ${actualData[idx]}
@@ -236,6 +303,21 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
       labelRow.innerHTML = chartLabels.map(label => `
         <span class="prediction-label-bottom">${label}</span>
       `).join("");
+
+      // Warning area: show when any predicted > threshold
+      const exceeding = chartLabels.filter((_, i) => (Number(predictedData[i]) || 0) > thresholdValue);
+      let warnEl = chartArea.querySelector('.prediction-warning');
+      if (exceeding.length > 0) {
+        if (!warnEl) {
+          warnEl = document.createElement('div');
+          warnEl.className = 'prediction-warning';
+          chartArea.insertBefore(warnEl, chartArea.firstChild);
+        }
+        warnEl.innerHTML = `<strong>Focus recommended:</strong> ${exceeding.join(', ')}`;
+        warnEl.style.display = 'block';
+      } else {
+        if (warnEl) warnEl.style.display = 'none';
+      }
     }
 
     // Legend at the bottom (add threshold indicator)
@@ -249,7 +331,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
           <span class="legend-dot predicted"></span> Predicted
         </div>
         <div class="legend-item">
-          <span class="legend-threshold" style="display:inline-block;width:14px;height:2px;background:rgba(7,176,242,0.9);margin-right:8px;border-radius:2px;"></span> Dominant actual (${maxActual})
+          <span class="legend-threshold" style="display:inline-block;width:14px;height:2px;background:rgba(255,77,79,0.95);margin-right:8px;border-radius:2px;"></span> Threshold (${thresholdValue})
         </div>
       `;
     }
@@ -260,10 +342,11 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
       // Arrange info in two columns, two rows
       let html = '';
       for (let i = 0; i < chartLabels.length; i++) {
-        const isDominant = actualData[i] === maxActual && maxActual > 0;
+        const isDominant = actualData[i] === Math.max(...actualData) && Math.max(...actualData) > 0;
         const leftBorder = isDominant ? 'style="border-left-color: rgba(7,176,242,0.65);"' : '';
+        const exceedClass = predictedData[i] > thresholdValue ? 'style="border-left-color: #ff4d4f;"' : '';
         html += `
-          <div class="prediction-info-item" ${leftBorder}>
+          <div class="prediction-info-item" ${isDominant ? leftBorder : exceedClass}>
             <span>${chartLabels[i]}</span>
             <div style="display:flex;gap:8px;align-items:center;">
               <span class="legend-dot actual"></span><span class="actual">${actualData[i]}</span>

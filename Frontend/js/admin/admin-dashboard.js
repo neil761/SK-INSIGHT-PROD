@@ -472,3 +472,58 @@ socket.on("educational-assistance:newSubmission", () => {
 socket.on("educational-assistance:statusChanged", () => {
   fetchDashboardSummaries(); // Update summary boxes in real time
 });
+
+async function toggleCycle(formName) {
+  const token = sessionStorage.getItem("token");
+  if (!token) return;
+
+  const newYear = document.getElementById("yearDropdown").querySelector(".dropdown-button").textContent;
+  const newCycle = document.getElementById("cycleDropdown").querySelector(".dropdown-button").textContent.replace("Cycle ", "");
+
+  // Only proceed if both year and cycle are valid
+  if (!newYear || !newCycle) return;
+
+  const openCycle = document.querySelector(`.cycle-form[data-year="${newYear}"][data-cycle="${newCycle}"]`);
+  const btn = document.querySelector(`.form-action-btn[data-form="${formName}"]`);
+  if (btn) btn.disabled = true; // Disable button
+
+  try {
+    // Close any open cycle forms
+    document.querySelectorAll(".cycle-form").forEach(form => {
+      if (form !== openCycle) form.style.display = "none";
+    });
+
+    // Toggle the selected cycle form
+    if (openCycle) {
+      openCycle.style.display = openCycle.style.display === "block" ? "none" : "block";
+    } else {
+      // If no form is open, open the new one
+      const newForm = document.querySelector(`.cycle-form[data-year="${newYear}"][data-cycle="${newCycle}"]`);
+      if (newForm) newForm.style.display = "block";
+    }
+
+    // If opening a new cycle form, send prediction request
+    if (!openCycle && formName === "KK Profiling") {
+      // Show loading
+      Swal.fire({
+        title: "Generating prediction...",
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+      await fetch("http://localhost:5000/api/cycle-predict", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          year: newYear,
+          cycle: newCycle
+        })
+      });
+      Swal.close();
+    }
+  } finally {
+    if (btn) btn.disabled = false; // Re-enable button
+  }
+}

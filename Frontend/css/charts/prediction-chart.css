@@ -87,6 +87,30 @@
   opacity: 0.95;
 }
 
+/* Warning box when predicted values exceed threshold */
+.prediction-warning {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: #fff7f7;
+  border-left: 4px solid #ff4d4f;
+  color: #7f1d1d;
+  padding: 5px ;
+  border-radius: 10px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  margin-top: 10px;
+  box-shadow: 0 6px 16px rgba(255,77,79,0.06);
+  font-size: 0.8rem;
+}
+
+
+/* Highlight rows in side list where predicted > threshold */
+.prediction-value-row.exceed {
+  border-left: 4px solid #ff4d4f;
+  background: rgba(255,77,79,0.04);
+}
+
 /* Label left column */
 .prediction-label {
   color: var(--text);
@@ -143,7 +167,7 @@
   display: flex;
   gap: 14px;
   align-items: center;
-  margin-top: 10px;
+  margin-top: 0px;
   font-size: 0.88rem;
   color: var(--muted);
 }

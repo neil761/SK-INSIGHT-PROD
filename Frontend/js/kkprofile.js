@@ -1,5 +1,17 @@
 // kkprofile.js
-
+(function() {
+  if (!sessionStorage.getItem("token")) {
+    const channel = new BroadcastChannel("skinsight-auth");
+    channel.onmessage = (ev) => {
+      if (ev.data && ev.data.token) {
+        sessionStorage.setItem("token", ev.data.token);
+        channel.close();
+        location.reload();
+      }
+    };
+    setTimeout(() => channel.close(), 3000);
+  }
+})();
   // 🔹 Redirect to login if no token or token expired
   (function() {
     const token = sessionStorage.getItem("token"); // Only sessionStorage!
@@ -947,6 +959,18 @@
   socket.on("educational-assistance:statusChanged", () => {
     updateNotifBadge();
   });
+
+    const params = new URLSearchParams(window.location.search);
+  const id = params.get("id");
+  if (id && typeof showProfileModal === "function") {
+    fetch(`http://localhost:5000/api/kkprofiling/${id}`, {
+      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+    })
+    .then(res => res.json())
+    .then(profile => {
+      if (profile && profile._id) showProfileModal(profile);
+    });
+  }
 
   }); // <-- This closes the DOMContentLoaded handler
 
