@@ -1053,7 +1053,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Only allow filtering if year and cycle are selected
     if (!selectedYear || !selectedCycle) {
-      alert("Please select both year and cycle before filtering.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing selection',
+        text: 'Please select both year and cycle before filtering.',
+        confirmButtonColor: '#0A2C59',
+      });
       return;
     }
 

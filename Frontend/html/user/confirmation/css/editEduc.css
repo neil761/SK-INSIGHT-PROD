@@ -1022,6 +1022,59 @@ textarea:focus {
   margin-bottom: 10px;
 }
 
+/* Style delete buttons rendered by JS in the table and mobile cards */
+button.remove-sib,
+button.remove-exp {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: #e74c3c;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.14s ease, transform 0.08s ease, box-shadow 0.14s ease;
+  box-shadow: 0 2px 6px rgba(231,76,60,0.08);
+  vertical-align: middle;
+}
+
+button.remove-sib::before,
+button.remove-exp::before {
+  /* Use a trash can glyph for clarity — emoji fallback if FontAwesome unavailable */
+  content: "🗑";
+  font-size: 14px;
+  line-height: 1;
+  opacity: 0.95;
+  margin-right: 4px;
+}
+
+button.remove-sib:hover,
+button.remove-exp:hover {
+  background: #c0392b;
+  transform: translateY(-1px);
+}
+
+/* Mobile card styles: make remove buttons full-width and more prominent */
+.sibling-card .remove-sib,
+.expense-card .remove-exp {
+  display: block;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 6px;
+  text-align: center;
+  margin-top: 10px;
+}
+
+/* Table cell alignment: keep remove button tidy */
+td .remove-sib,
+td .remove-exp {
+  display: inline-block;
+}
+
 .footer {
   background: #0A2C59;
   color: #fff;
