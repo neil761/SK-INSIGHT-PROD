@@ -16,11 +16,38 @@ const ImageModule = require("docxtemplater-image-module-free");
 // Checkbox utility
 function checkbox(value, match) {
   if (value === undefined || value === null) return "☐";
-  // If value is boolean, compare directly
-  if (typeof value === "boolean") return value === match ? "☑" : "☐";
+
+  // If value is an array (multiple saved answers), prefer the most recent one
+  if (Array.isArray(value)) {
+    // pick the last non-empty element if possible
+    for (let i = value.length - 1; i >= 0; i--) {
+      const v = value[i];
+      if (v !== undefined && v !== null && String(v).trim() !== '') {
+        value = v;
+        break;
+      }
+    }
+    // If still an array (all empty), coerce to empty string
+    if (Array.isArray(value)) value = '';
+  }
+
+  // Normalize match to string for comparisons
+  const matchStr = typeof match === 'string' ? match.trim().toLowerCase() : String(match).trim().toLowerCase();
+
+  // If value is boolean, handle common Yes/No matches as well as boolean match
+  if (typeof value === "boolean") {
+    // If match is a boolean, compare directly
+    if (typeof match === 'boolean') return value === match ? "☑" : "☐";
+    // Treat 'yes'/'true' as true and 'no'/'false' as false
+    if (matchStr === 'yes' || matchStr === 'true') return value === true ? "☑" : "☐";
+    if (matchStr === 'no' || matchStr === 'false') return value === false ? "☑" : "☐";
+    // Fallback: compare stringified boolean
+    return String(value).toLowerCase() === matchStr ? "☑" : "☐";
+  }
+
   // If value is not a string, convert to string
   const valStr = typeof value === "string" ? value : String(value);
-  return valStr.trim().toLowerCase() === String(match).trim().toLowerCase() ? "☑" : "☐";
+  return valStr.trim().toLowerCase() === matchStr ? "☑" : "☐";
 }
 
 // Image module setup
@@ -122,6 +149,13 @@ router.get("/export/:id", protect, async (req, res) => {
     // Before doc.render(), add:
     const specificNeedType = profile.specificNeedType || "";
 
+    // Ensure we only render the relevant attendance-related field:
+    // If user currently indicates they attended KK Assembly, ignore any stored reasonDidNotAttend.
+    // If user currently indicates they did NOT attend, ignore any stored attendanceCount.
+    const attendedFlag = Boolean(profile.attendedKKAssembly);
+    const attendanceCountForExport = attendedFlag ? (profile.attendanceCount || "") : "";
+    const reasonDidNotAttendForExport = attendedFlag ? "" : (profile.reasonDidNotAttend || "");
+
     // Render data into template
     doc.render({
       lastname: profile.lastname || "",
@@ -188,18 +222,18 @@ router.get("/export/:id", protect, async (req, res) => {
       look_c: checkbox(profile.workStatus, "Currently looking for a Job"),
       not_c: checkbox(profile.workStatus, "Not interested in looking for a Job"),
 
-      // Attendance Count checkboxes
-      a12_c: checkbox(profile.attendanceCount, "1-2 times"),
-      a34_c: checkbox(profile.attendanceCount, "3-4 times"),
-      a5_c: checkbox(profile.attendanceCount, "5 and above"),
+      // Attendance Count checkboxes (only consider when attendedKKAssembly is true)
+      a12_c: checkbox(attendanceCountForExport, "1-2 times"),
+      a34_c: checkbox(attendanceCountForExport, "3-4 times"),
+      a5_c: checkbox(attendanceCountForExport, "5 and above"),
 
       // had attended kk assembly checkboxes
       vot_yes: checkbox(profile.attendedKKAssembly, "Yes"),
       vot_no: checkbox(profile.attendedKKAssembly, "No"),
 
-      // Reason Did Not Attend checkboxes
-      rno_c: checkbox(profile.reasonDidNotAttend, "There was no KK Assembly"),
-      rnot_c: checkbox(profile.reasonDidNotAttend, "Not interested"),
+      // Reason Did Not Attend checkboxes (only consider when attendedKKAssembly is false)
+      rno_c: checkbox(reasonDidNotAttendForExport, "There was no KK Assembly"),
+      rnot_c: checkbox(reasonDidNotAttendForExport, "Not interested"),
 
       // Registered SK Voter checkboxes
       sk_yes: checkbox(profile.registeredSKVoter, "Yes"),

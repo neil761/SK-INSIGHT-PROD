@@ -141,12 +141,20 @@
   </div>
 
   <div class="card">
-    <label class="label"  for="year">Year:</label>
-    <select class="year" id="year" name="year" required>
-      <option value="">Select Classification</option>
-      <option value="Grade 11">Grade 11</option>
-      <option value="Grade 12">Grade 12</option>
+    <label class="label" for="academicLevel">Academic Level:</label>
+    <select id="academicLevel" name="academicLevel" required>
+      <option value="">Select Level</option>
+      <option value="Senior High School">Senior High School</option>
+      <option value="College">College</option>
     </select>
+    <div id="yearWrapper">
+      <label class="labels"  for="year">Year:</label>
+      <select class="year" id="year" name="year" required>
+        <option value="">Select Classification</option>
+        <option value="Grade 11">Grade 11</option>
+        <option value="Grade 12">Grade 12</option>
+      </select>
+    </div>
   </div>
 
   <div class="card">
@@ -185,8 +193,8 @@
       <thead>
         <tr>
           <th>Name</th>
-          <th>Gender</th>
           <th>Age</th>
+          <th>Gender</th>
           <th>Action</th>
         </tr>
       </thead>

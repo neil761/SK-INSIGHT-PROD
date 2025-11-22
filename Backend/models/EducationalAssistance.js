@@ -38,10 +38,24 @@ const educationalAssistanceSchema = new mongoose.Schema({
   contactNumber: { type: Number, required: true },
   school: { type: String, required: true },
   schoolAddress: { type: String, required: true },
+  academicLevel: {
+    type: String,
+    required: true,
+    enum: ["Senior High School", "College"],
+  },
   year: { 
     type: String, 
     required: true,
-    enum: ["Grade 11", "Grade 12"],
+    enum: [
+      "Grade 11",
+      "Grade 12",
+      "1st year",
+      "2nd year",
+      "3rd year",
+      "4th year",
+      "5th year",
+      "6th year",
+    ],
   },
   typeOfBenefit: {
     type: String,

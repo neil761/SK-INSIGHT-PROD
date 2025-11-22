@@ -108,6 +108,21 @@ exports.submitApplication = async (req, res) => {
       console.log('Voter certificate saved:', data.voter);
     }
 
+    // Ensure academicLevel is present — try to infer from `year` when missing
+    if (!data.academicLevel) {
+      const yearVal = (data.year || "").toString().toLowerCase();
+      if (yearVal.includes("grade")) {
+        data.academicLevel = "Senior High School";
+      } else if (/1st|2nd|3rd|4th|5th|6th/.test(yearVal) || yearVal.includes("year")) {
+        data.academicLevel = "College";
+      }
+    }
+
+    // If still missing, return a helpful 400 error instead of letting Mongoose throw a ValidationError
+    if (!data.academicLevel) {
+      return res.status(400).json({ error: 'academicLevel is required. Please include `academicLevel` or select a Year so it can be inferred.' });
+    }
+
     const presentCycle = await getPresentCycle("Educational Assistance");
     const newApp = new EducationalAssistance({
       ...data,
@@ -193,7 +208,7 @@ exports.updateMyApplication = async (req, res) => {
 
     // Update simple fields if provided in body
     const updatable = [
-      'surname','firstname','middlename','suffix','birthday','placeOfBirth','age','gender','civilstatus','religion','email','contact','schoolname','schooladdress','year','benefittype','fathername','fathercontact','mothername','mothercontact'
+      'surname','firstname','middlename','suffix','birthday','placeOfBirth','age','gender','civilstatus','religion','email','contact','schoolname','schooladdress','academicLevel','year','benefittype','fathername','fathercontact','mothername','mothercontact'
     ];
     updatable.forEach(k => {
       if (Object.prototype.hasOwnProperty.call(req.body, k) && req.body[k] !== undefined) {
@@ -304,6 +319,20 @@ exports.updateMyApplication = async (req, res) => {
         }
       }
       application.voter = req.files.voter[0].path;
+    }
+
+    // Ensure academicLevel exists before saving updated application; try to infer from year if missing
+    if (!application.academicLevel) {
+      const yearVal = (application.year || req.body.year || "").toString().toLowerCase();
+      if (yearVal.includes("grade")) {
+        application.academicLevel = "Senior High School";
+      } else if (/1st|2nd|3rd|4th|5th|6th/.test(yearVal) || yearVal.includes("year")) {
+        application.academicLevel = "College";
+      }
+    }
+
+    if (!application.academicLevel) {
+      return res.status(400).json({ error: 'academicLevel is required for the application. Provide `academicLevel` or a Year so it can be inferred.' });
     }
 
     await application.save();
