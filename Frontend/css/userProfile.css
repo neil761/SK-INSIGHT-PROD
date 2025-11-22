@@ -90,6 +90,38 @@ body {
   background: #f8faff;
   font-size: 1rem;
 }
+
+/* Password toggle container and button: keep the eye vertically centered inside the input */
+.pw-container {
+  position: relative;
+  width: 100%;
+  display: block;
+}
+.pw-container input {
+  box-sizing: border-box; /* ensure padding counts into width */
+  padding-right: 44px; /* space for toggle */
+}
+.pw-toggle {
+  position: absolute;
+  right: 8px;
+  top: 40% !important;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 28px;
+  width: 28px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  color: #143d77;
+  font-size: 1.05rem;
+}
+.pw-toggle:focus {
+  outline: 2px solid rgba(20,61,119,0.18);
+  outline-offset: 2px;
+}
 .settings-action-btn {
   width: 100%;
   padding: 10px;
