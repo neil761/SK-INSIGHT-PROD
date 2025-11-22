@@ -115,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Client-side validation (match backend required fields to avoid server 500)
     const requiredIds = [
       'surname', 'firstName', 'middleName', 'birthday', 'placeOfBirth',
-      'gender', 'civilstatus', 'religion', 'email', 'contact', 'year',
+      'gender', 'civilstatus', 'religion', 'email', 'contact', 'academicLevel', 'year',
       'schoolname', 'schooladdress', 'fathername', 'mothername'
     ];
     for (const id of requiredIds) {
@@ -721,6 +721,84 @@ if (form && savedFormData) {
       }
     }
   });
+
+  // After restoring raw values, ensure year options match academic level and only show year after level selected
+  const academicLevelEl = document.getElementById('academicLevel');
+  const yearEl = document.getElementById('year');
+  const yearWrapper = document.getElementById('yearWrapper');
+  const SHS_YEARS = ['Grade 11', 'Grade 12'];
+  const COLLEGE_YEARS = ['1st year', '2nd year', '3rd year', '4th year', '5th year', '6th year'];
+
+  function populateYearOptions(level, selectedYear) {
+    if (!yearEl) return;
+    yearEl.innerHTML = '<option value="">Select Classification</option>';
+    let options = [];
+    if (level === 'College') options = COLLEGE_YEARS;
+    else if (level === 'Senior High School') options = SHS_YEARS;
+    else options = SHS_YEARS; // default to SHS when unknown
+
+    options.forEach(opt => {
+      const o = document.createElement('option');
+      o.value = opt;
+      o.textContent = opt;
+      if (selectedYear && selectedYear === opt) o.selected = true;
+      yearEl.appendChild(o);
+    });
+  }
+
+  // If academic level has a saved value, use it; otherwise try to infer from saved year
+  const savedAcademic = savedFormData.academicLevel || document.getElementById('academicLevel')?.value || '';
+  const savedYear = savedFormData.year || document.getElementById('year')?.value || '';
+
+  // Initially hide the year wrapper until an academic level is chosen (mirror kkform-youth behaviour)
+  if (yearWrapper) {
+    yearWrapper.style.display = 'none';
+    if (yearEl) yearEl.required = false; // not required until shown
+  }
+
+  if (academicLevelEl) {
+    if (savedAcademic) {
+      academicLevelEl.value = savedAcademic;
+      // show year and populate with saved value
+      if (yearWrapper) yearWrapper.style.display = '';
+      if (yearEl) yearEl.required = true;
+      populateYearOptions(savedAcademic, savedYear);
+    }
+
+    // wire change handler so user selection updates the year list and toggles visibility
+    academicLevelEl.addEventListener('change', function () {
+      const level = this.value;
+      if (!level) {
+        if (yearWrapper) yearWrapper.style.display = 'none';
+        if (yearEl) {
+          yearEl.required = false;
+          yearEl.value = '';
+          yearEl.innerHTML = '<option value="">Select Classification</option>';
+        }
+      } else {
+        if (yearWrapper) yearWrapper.style.display = '';
+        if (yearEl) yearEl.required = true;
+        populateYearOptions(level, '');
+      }
+
+      // persist academic level in sessionStorage draft
+      const dataToSave = JSON.parse(sessionStorage.getItem('educationalAssistanceFormData') || '{}');
+      dataToSave.academicLevel = academicLevelEl.value;
+      sessionStorage.setItem('educationalAssistanceFormData', JSON.stringify(dataToSave));
+    });
+  } else {
+    // ensure year reflects savedYear even if academicLevel element missing
+    if (savedYear && yearEl) {
+      const matching = Array.from(yearEl.options).some(o => o.value === savedYear);
+      if (!matching) {
+        const looksLikeCollege = /\d+(st|nd|rd|th) year/i.test(savedYear) || /1st|2nd|3rd|4th|5th|6th/i.test(savedYear);
+        populateYearOptions(looksLikeCollege ? 'College' : 'Senior High School', savedYear);
+        if (yearCard) yearCard.style.display = '';
+        if (yearEl) yearEl.required = true;
+      }
+    }
+  }
+
 }
 
 

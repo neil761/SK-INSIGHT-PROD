@@ -483,6 +483,10 @@ let applicants = [];
         </div>
         <div class="profile-details-row">
           <div class="profile-detail">
+            <div class="label">Academic Level</div>
+            <div class="value">${freshApp.academicLevel || "-"}</div>
+          </div>
+          <div class="profile-detail">
             <div class="label">Year Level</div>
             <div class="value">${freshApp.year || "-"}</div>
           </div>
