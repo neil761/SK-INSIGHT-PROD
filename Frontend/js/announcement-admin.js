@@ -211,7 +211,18 @@ document.addEventListener("DOMContentLoaded", () => {
     // DELETE
     if (e.target.closest(".btn-delete")) {
       const id = e.target.closest(".btn-delete").dataset.id;
-      if (confirm("Are you sure you want to delete this announcement?")) {
+      // Use SweetAlert2 confirmation
+      const swalResult = await Swal.fire({
+        title: 'Delete announcement?',
+        text: 'Are you sure you want to delete this announcement? This action cannot be undone.',
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#d33',
+        cancelButtonColor: '#3085d6',
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'Cancel'
+      });
+      if (swalResult && swalResult.isConfirmed) {
         try {
           const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
             method: "DELETE",
@@ -220,10 +231,17 @@ document.addEventListener("DOMContentLoaded", () => {
           if (res.ok) {
             // Emit WebSocket event for real-time updates
             emitAnnouncementEvent("deleted", { id });
-            fetchAnnouncements();
+            await fetchAnnouncements();
+            renderCurrentTab();
+            await Swal.fire({ icon: 'success', title: 'Deleted', text: 'Announcement deleted.' });
+          } else {
+            const text = await res.text().catch(()=>null);
+            console.error('Delete failed', text);
+            Swal.fire({ icon: 'error', title: 'Delete failed', text: 'Could not delete announcement.' });
           }
         } catch (err) {
           console.error("Delete error:", err);
+          Swal.fire({ icon: 'error', title: 'Delete failed', text: 'An error occurred while deleting.' });
         }
       }
     }

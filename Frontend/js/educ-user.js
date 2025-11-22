@@ -105,9 +105,10 @@ document.addEventListener('DOMContentLoaded', async function () {
       text: 'Are you sure you want to submit your application? Please confirm that all information is correct.',
       icon: 'question',
       showCancelButton: true,
-      confirmButtonText: 'Yes, submit',
+      confirmButtonText: 'Yes',
       cancelButtonText: 'Cancel',
-      confirmButtonColor: '#0A2C59'
+      confirmButtonColor: '#0A2C59',
+      cancelButtonColor: "#d33",
     });
     if (!confirmResult.isConfirmed) return; // user cancelled
 

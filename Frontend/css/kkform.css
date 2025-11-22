@@ -1143,6 +1143,51 @@ select.form-control:focus {
   color: red;
 }
 
+/* New: inner wrapper to ensure the remove button anchors to the image area */
+.preview-inner {
+  position: relative;
+  display: block;
+  width: 100%;
+  border-radius: 8px;
+  background: #f8fafc;
+  overflow: hidden; /* keep very tall images from spilling out */
+  max-height: 320px; /* fixed visual cap for previews */
+}
+.preview-inner .preview-img {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 320px; /* enforce a visual maximum */
+  object-fit: contain; /* scale tall images without cropping */
+}
+.preview-inner .remove-image-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 5;
+  background: rgba(255,255,255,0.95);
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.12);
+}
+
+/* Ensure image-preview-container also respects the preview constraints */
+.image-preview-container {
+  position: relative;
+  width: 100%;
+}
+.image-preview-container img,
+.image-preview-container .preview-img {
+  max-height: 320px;
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
 .kk-upload-col input[type="file"] {
 width: 100%;
     padding: 10px 14px;
@@ -1299,7 +1344,7 @@ input[type="file"]::-moz-file-select-button {
   }
 }
 .kk-upload-filename {
-  min-width: 37vh;
+  min-width: 26vh;
   margin-left: 12px;
   color: #0A2C59;
   font-weight: bold;
