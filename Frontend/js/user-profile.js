@@ -682,6 +682,70 @@ if (logoutBtn) {
     });
   });
 
+  // --- Password visibility toggles ---
+  // Adds a small eye icon button to toggle password visibility for inputs
+  function attachPasswordToggle(inputId) {
+    const input = document.getElementById(inputId);
+    if (!input) return;
+
+    // Create or reuse a container that will hold the input and the toggle
+    let container = input.closest('.pw-container');
+    if (!container) {
+      container = document.createElement('div');
+      container.className = 'pw-container';
+      // make the container take the same width as the input
+      container.style.display = 'inline-block';
+      container.style.width = input.style.width || getComputedStyle(input).width || '100%';
+      container.style.position = 'relative';
+      input.parentNode.insertBefore(container, input);
+      container.appendChild(input);
+    } else {
+      if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
+    }
+
+    // ensure input has right padding so the button doesn't overlap text
+    const existingPadding = parseInt(window.getComputedStyle(input).paddingRight || '0', 10) || 0;
+    input.style.paddingRight = Math.max(existingPadding, 44) + 'px';
+
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'pw-toggle';
+    btn.setAttribute('aria-pressed', 'false');
+    btn.setAttribute('aria-label', 'Show password');
+    btn.style.position = 'absolute';
+    btn.style.right = '10px';
+    btn.style.top = '50%';
+    btn.style.transform = 'translateY(-50%)';
+    btn.style.border = 'none';
+    btn.style.background = 'transparent';
+    btn.style.cursor = 'pointer';
+    btn.style.color = '#143d77';
+    btn.style.fontSize = '1rem';
+    btn.style.padding = '4px';
+    btn.innerHTML = '<i class="fa-solid fa-eye" aria-hidden="true"></i>';
+
+    btn.addEventListener('click', (ev) => {
+      ev.preventDefault();
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.setAttribute('aria-pressed', 'true');
+        btn.setAttribute('aria-label', 'Hide password');
+        btn.innerHTML = '<i class="fa-solid fa-eye-slash" aria-hidden="true"></i>';
+      } else {
+        input.type = 'password';
+        btn.setAttribute('aria-pressed', 'false');
+        btn.setAttribute('aria-label', 'Show password');
+        btn.innerHTML = '<i class="fa-solid fa-eye" aria-hidden="true"></i>';
+      }
+    });
+
+    // Append the button inside the container so it overlays the input
+    container.appendChild(btn);
+  }
+
+  // Attach toggles for change-password inputs if present
+  ['currentPassword', 'newPassword', 'confirmNewPassword'].forEach(id => attachPasswordToggle(id));
+
   // --- Change Password ---
   document.getElementById("changePasswordForm").addEventListener("submit", async function (e) {
     e.preventDefault();
