@@ -307,13 +307,13 @@
           document.getElementById('header-container').innerHTML = html;
           // After injecting, run the header JS
           const script = document.createElement('script');
-          script.src = '/Frontend/js/admin/header.js';
+          script.src = '../../js/admin/header.js';
           document.body.appendChild(script);
         });
   </script>
  
   <script src="../../js/exports.js"></script>
-    <link rel="stylesheet" href="/Frontend/css/header.css">
+    <link rel="stylesheet" href="../../css/header.css">
     <script>
       // Fade in on load
       const content = document.querySelector('.content');
@@ -374,6 +374,6 @@
         });
       });
     </script>
-    <script src="/Frontend/js/admin/sidebar-notif-badge.js"></script>
+    <script src="../../js/admin/sidebar-notif-badge.js"></script>
 </body>
 </html>
