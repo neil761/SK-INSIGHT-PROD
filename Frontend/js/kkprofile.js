@@ -627,7 +627,12 @@
     filterBtn.addEventListener("click", () => {
       // Require year and cycle for any filter
       if (!currentFilters.year || !currentFilters.cycle) {
-        alert("Please select both year and cycle before filtering.");
+        Swal.fire({
+          icon: 'warning',
+          title: 'Missing selection',
+          text: 'Please select both year and cycle before filtering.',
+          confirmButtonColor: '#0A2C59',
+        });
         return;
       }
       fetchProfiles(currentFilters);
@@ -757,7 +762,12 @@
     filterBtn.addEventListener("click", () => {
       // Require year and cycle for any filter
       if (!currentFilters.year || !currentFilters.cycle) {
-        alert("Please select both year and cycle before filtering.");
+        Swal.fire({
+          icon: 'warning',
+          title: 'Missing selection',
+          text: 'Please select both year and cycle before filtering.',
+          confirmButtonColor: '#0A2C59',
+        });
         return;
       }
       fetchProfiles(currentFilters);

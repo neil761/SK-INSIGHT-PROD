@@ -161,6 +161,12 @@ body::before {
 }
 
 
+.main-content {
+  min-height: 100vh; /* Adjust (e.g. 120vh means 20% taller than screen) */
+  padding: 20px;
+}
+
+
 @media (max-width: 1048px) {
   .navbar-center {
     display: none;
@@ -522,6 +528,10 @@ body::before {
   }
   
   @media (max-width: 480px) {
+    
+  .main-content {
+    min-height: 60vh;
+  }
     .about-card{
     margin-top: 15%;
     width: 95%;

@@ -168,7 +168,12 @@ let applicants = [];
   // Filter logic
   filterBtn.addEventListener("click", () => {
     if (!selectedYear || !selectedCycle) {
-      alert("Please select both year and cycle before filtering.");
+      Swal.fire({
+        icon: 'warning',
+        title: 'Missing selection',
+        text: 'Please select both year and cycle before filtering.',
+        confirmButtonColor: '#0A2C59',
+      });
       return;
     }
     // Call your fetchApplicants or filter logic here, passing selectedYear, selectedCycle, and searchInput.value

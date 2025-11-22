@@ -194,10 +194,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Show confirmation dialog
     const confirmation = await Swal.fire({
       title: "Are you sure?",
-      text: "Do you want to submit this form?",
+      text: 'Are you sure you want to submit your profile? Please confirm that all information is correct.',
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "Yes, submit",
+      confirmButtonText: "Yes",
       cancelButtonText: "Cancel",
       confirmButtonColor: "#0A2C59",
       cancelButtonColor: "#d33",
