@@ -274,10 +274,10 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
               console.info('No previous KK profile available; falling back to user data');
               if (user) {
-                const middleInitial = user.middlename
-                  ? user.middlename.charAt(0).toUpperCase() + "."
-                  : "";
-                const fullName = [user.firstname || user.firstName || "", middleInitial, user.lastname || user.lastname || ""].filter(Boolean).join(' ');
+                const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
+                const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
+                const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+                const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
                 if (fullName) setValue('fullName', fullName);
                 if (user.birthday) setValue('age', calculateAge(user.birthday));
                 if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -288,10 +288,10 @@ document.addEventListener("DOMContentLoaded", function () {
           } catch (e) {
             console.warn('Failed to fetch previous KK profile', e);
             if (user) {
-              const middleInitial = user.middlename
-                ? user.middlename.charAt(0).toUpperCase() + "."
-                : "";
-              const fullName = [user.firstname || user.firstName || "", middleInitial, user.lastname || user.lastname || ""].filter(Boolean).join(' ');
+              const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
+              const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
+              const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+              const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user.birthday) setValue('age', calculateAge(user.birthday));
               if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -1557,8 +1557,14 @@ if (logoutBtn) {
   }
 
   // Educational Assistance Navigation
-  function handleEducAssistanceNavClick(event) {
+  async function handleEducAssistanceNavClick(event) {
     event.preventDefault();
+    if (window.checkAndPromptEducReapply) {
+      try {
+        const r = await window.checkAndPromptEducReapply({ event, redirectUrl: 'Educational-assistance-user.html' });
+        if (r && r.redirected) return;
+      } catch (e) {}
+    }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {

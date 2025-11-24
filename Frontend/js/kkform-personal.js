@@ -45,19 +45,29 @@ document.addEventListener('DOMContentLoaded', async function () {
           const val = (typeof raw === 'string' && raw.includes('T')) ? raw.split('T')[0] : raw;
           if (val && !birthdayInput.value) {
             birthdayInput.value = val;
-            if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+            if (ageInput) {
+              ageInput.value = calculateAge(birthdayInput.value);
+              try { updateRegisteredNationalVoterEligibility(calculateAge(birthdayInput.value)); } catch(e) {}
+            }
           }
         } else {
-          if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+          if (ageInput) {
+            ageInput.value = calculateAge(birthdayInput.value);
+            try { updateRegisteredNationalVoterEligibility(calculateAge(birthdayInput.value)); } catch(e) {}
+          }
         }
       })
       .catch(() => {
-        if (ageInput) ageInput.value = calculateAge(birthdayInput.value);
+        if (ageInput) {
+          ageInput.value = calculateAge(birthdayInput.value);
+          try { updateRegisteredNationalVoterEligibility(calculateAge(birthdayInput.value)); } catch(e) {}
+        }
       });
     } else {
       if (ageInput) {
         const age = calculateAge(birthdayInput.value);
         ageInput.value = age;
+        try { updateRegisteredNationalVoterEligibility(age); } catch(e) {}
       }
     }
   }
@@ -107,10 +117,67 @@ document.addEventListener('DOMContentLoaded', async function () {
     return '';
   }
 
+  // Ensure registered national voter field is false/No and readonly for minors (age <= 17)
+  function updateRegisteredNationalVoterEligibility(age) {
+    if (!registeredNationalVoter) return;
+    const numericAge = Number(age);
+    const isMinor = !isNaN(numericAge) && numericAge <= 17;
+    const opts = Array.from(registeredNationalVoter.options || []);
+    let noOptionIndex = opts.findIndex(o => {
+      const v = (o.value||'').toString().toLowerCase();
+      const t = (o.text||'').toString().toLowerCase();
+      return ['false','no','0','n','none'].includes(v) || t === 'no' || /(^|\s)no(\s|$)/i.test(t);
+    });
+    if (isMinor) {
+      if (noOptionIndex >= 0) {
+        registeredNationalVoter.selectedIndex = noOptionIndex;
+      } else {
+        // create an injected "No" option so there's a concrete selectable value
+        let injected = registeredNationalVoter.querySelector('option[data-injected-no="1"]');
+        if (!injected) {
+          injected = document.createElement('option');
+          injected.value = 'false';
+          injected.text = 'No';
+          injected.setAttribute('data-injected-no','1');
+          registeredNationalVoter.insertBefore(injected, registeredNationalVoter.firstChild);
+        }
+        // select the injected option
+        for (let i = 0; i < registeredNationalVoter.options.length; i++) {
+          if (registeredNationalVoter.options[i].getAttribute('data-injected-no') === '1') {
+            registeredNationalVoter.selectedIndex = i;
+            break;
+          }
+        }
+      }
+      registeredNationalVoter.disabled = true;
+      registeredNationalVoter.classList && registeredNationalVoter.classList.add('readonly');
+    } else {
+      // Re-enable and remove injected option if present
+      registeredNationalVoter.disabled = false;
+      registeredNationalVoter.classList && registeredNationalVoter.classList.remove('readonly');
+      const injected = registeredNationalVoter.querySelector('option[data-injected-no="1"]');
+      if (injected) {
+        const wasSelected = injected.selected;
+        injected.remove();
+        if (wasSelected) {
+          // choose a sensible default: first option with non-empty value
+          let selectedIndex = -1;
+          for (let i = 0; i < registeredNationalVoter.options.length; i++) {
+            const v = (registeredNationalVoter.options[i].value || '').toString();
+            if (v !== '') { selectedIndex = i; break; }
+          }
+          if (selectedIndex >= 0) registeredNationalVoter.selectedIndex = selectedIndex;
+        }
+      }
+    }
+  }
+
   // If we have an age now, set a suggested youthAgeGroup in kkProfileStep3 (do not overwrite existing value)
   try {
     const currentBirthday = (birthdayInput && birthdayInput.value) ? birthdayInput.value : saved.birthday;
     const currentAge = calculateAge(currentBirthday);
+    // Ensure registered national voter state matches current age
+    try { updateRegisteredNationalVoterEligibility(currentAge); } catch(e) {}
     const suggestedGroup = determineYouthAgeGroup(currentAge);
     if (suggestedGroup) {
       const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
@@ -170,6 +237,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   // Save as user types or changes fields
   form.addEventListener('input', saveStep1);
+
+  // When birthday changes update age and enforce voter eligibility rules
+  if (birthdayInput) {
+    birthdayInput.addEventListener('change', function () {
+      const newAge = calculateAge(this.value);
+      if (ageInput) ageInput.value = newAge;
+      try { updateRegisteredNationalVoterEligibility(newAge); } catch(e) {}
+    });
+  }
 });
 
 // Place this at the end of your HTML or in a JS file
@@ -347,6 +423,7 @@ function handleLGBTQProfileNavClick(event) {
 // Educational Assistance Navigation
 function handleEducAssistanceNavClick(event) {
   event.preventDefault();
+  if (window.checkAndPromptEducReapply) { try { window.checkAndPromptEducReapply({ event, redirectUrl: 'Educational-assistance-user.html' }); } catch (e) {} return; }
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
