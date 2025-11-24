@@ -407,8 +407,21 @@ tbody tr:hover {
   transition: background 0.2s;
 }
 
+
+
 .action-btn:hover, .view-btn:hover {
   background: #08305e;
+}
+
+/* Delete button in Rejected tab: make it red */
+.tab-content[data-tab="rejected"] .action-btn.delete-btn,
+.tab-content[data-tab="rejected"] .delete-btn {
+  background: #e74c3c;
+  color: #fff;
+}
+.tab-content[data-tab="rejected"] .action-btn.delete-btn:hover,
+.tab-content[data-tab="rejected"] .delete-btn:hover {
+  background: #c0392b;
 }
 
 /* ----- Tab content ----- */

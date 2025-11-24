@@ -89,10 +89,13 @@ exports.submitKKProfile = async (req, res) => {
       reasonDidNotAttend,
     } = req.body;
 
-    if (attendedKKAssembly === true && !attendanceCount) {
+    // Normalize attendedKKAssembly: frontend may send "true"/"false" strings or booleans.
+    const attendedBool = (attendedKKAssembly === true || attendedKKAssembly === 'true');
+
+    if (attendedBool && !attendanceCount) {
       return res.status(400).json({ error: "Attendance count is required" });
     }
-    if (attendedKKAssembly === false && !reasonDidNotAttend) {
+    if (!attendedBool && !reasonDidNotAttend) {
       return res
         .status(400)
         .json({ error: "Reason for not attending is required" });
@@ -163,12 +166,8 @@ exports.submitKKProfile = async (req, res) => {
       registeredNationalVoter,
       votedLastSKElection,
       attendedKKAssembly,
-      attendanceCount:
-        req.body.attendedKKAssembly === "true" || req.body.attendedKKAssembly === true
-          ? req.body.attendanceCount
-          : undefined,
-      reasonDidNotAttend:
-        attendedKKAssembly === false ? req.body.reasonDidNotAttend : undefined,
+      attendanceCount: attendedBool ? req.body.attendanceCount : undefined,
+      reasonDidNotAttend: attendedBool ? undefined : req.body.reasonDidNotAttend,
 
       // ✅ Save uploaded images if present
       profileImage: req.files?.profileImage ? req.files.profileImage[0].path : null, // Cloudinary URL

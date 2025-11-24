@@ -17,6 +17,8 @@ router.post(
   ctrl.submitApplication
 );
 router.get("/me", protect, ctrl.getMyApplication);
+// Check whether the user's application in the present cycle was rejected
+router.get("/check-rejected", protect, ctrl.checkIfRejected);
 
 // User: update my application (allows replacing/removing uploaded images)
 router.put(

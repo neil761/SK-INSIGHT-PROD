@@ -28,7 +28,20 @@ document.addEventListener('DOMContentLoaded', function() {
 document.addEventListener('DOMContentLoaded', function() {
   // Restore youth step data if available
   const saved = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-  document.getElementById('youthAgeGroup').value = saved.youthAgeGroup || '';
+  // Populate and lock the visible select (disabled) and keep a hidden input in sync
+  const youthAgeSelect = document.getElementById('youthAgeGroup');
+  const youthAgeHidden = document.getElementById('youthAgeGroup_hidden');
+  try {
+    if (youthAgeSelect) {
+      youthAgeSelect.value = saved.youthAgeGroup || '';
+      // Ensure the select stays disabled/read-only for users
+      youthAgeSelect.disabled = true;
+      youthAgeSelect.setAttribute('aria-disabled', 'true');
+    }
+    if (youthAgeHidden) {
+      youthAgeHidden.value = saved.youthAgeGroup || '';
+    }
+  } catch (e) { /* ignore DOM errors */ }
   document.getElementById('youthClassification').value = saved.youthClassification || '';
   // Show specific needs selector when classification requires it
   const youthClassificationEl = document.getElementById('youthClassification');
@@ -258,8 +271,13 @@ document.addEventListener('DOMContentLoaded', function() {
 
   // Save step3 data including specificNeedType
   function saveStep3() {
+    // Use the hidden field for submission because the visible select is disabled
+    const yVal = (document.getElementById('youthAgeGroup_hidden') && document.getElementById('youthAgeGroup_hidden').value) || (document.getElementById('youthAgeGroup') && document.getElementById('youthAgeGroup').value) || '';
+    // keep the visible select in sync (in case code changes it elsewhere)
+    try { if (document.getElementById('youthAgeGroup')) document.getElementById('youthAgeGroup').value = yVal; } catch (e) {}
+
     const step3Data = {
-      youthAgeGroup: document.getElementById('youthAgeGroup').value,
+      youthAgeGroup: yVal,
       youthClassification: document.getElementById('youthClassification').value,
       educationalBackground: document.getElementById('educationalBackground').value,
       workStatus: document.getElementById('workStatus').value,
@@ -636,23 +654,30 @@ document.addEventListener('DOMContentLoaded', function() {
           (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
           (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
         );
+        const isApproved = Boolean(
+          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
+          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
+        );
 
         if (isFormOpen && (!hasProfile || isRejected)) {
-          const title = isRejected ? 'Previous Application Rejected' : 'No profile found';
-          const text = isRejected
-            ? 'Your previous application was rejected. Would you like to submit a new application?'
-            : `You don't have a profile yet. Please fill out the form to create one.`;
-
-          const result = await Swal.fire({ icon: 'info', title, text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
-          if (result && result.isConfirmed) {
+          if (isRejected) {
+            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
             try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
             window.location.href = redirectUrl;
             return { redirected: true, isRejected, hasProfile, isFormOpen };
+          } else {
+            const text = `You don't have a profile yet. Please fill out the form to create one.`;
+            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
+            if (result && result.isConfirmed) {
+              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
+              window.location.href = redirectUrl;
+              return { redirected: true, isRejected, hasProfile, isFormOpen };
+            }
           }
         }
 
-        if (!isFormOpen && hasProfile && !isRejected) {
-          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `but you already have an application. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
+        if (!isFormOpen && hasProfile && isApproved) {
+          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
           if (res2 && res2.isConfirmed) { window.location.href = `./confirmation/html/educConfirmation.html`; return { redirected: true, isRejected, hasProfile, isFormOpen }; }
         }
 
@@ -685,7 +710,13 @@ document.addEventListener('DOMContentLoaded', function() {
       for (const id of requiredIds) {
         const el = document.getElementById(id);
         if (el && String(el.value || '').trim() === '') {
-          await Swal.fire('Missing Field', 'Please fill out all required fields before submitting.', 'warning');
+          await Swal.fire({
+            title: 'Missing Field',
+            text: 'Please fill out all required fields before submitting.',
+            icon: 'warning',
+            showConfirmButton: true,
+            confirmButtonText: 'OK'
+          });
           return;
         }
       }
@@ -700,14 +731,26 @@ document.addEventListener('DOMContentLoaded', function() {
         const attendanceCountEl = document.getElementById('attendanceCount');
         const countVal = attendanceCountEl ? String(attendanceCountEl.value || '').trim() : '';
         if (!countVal) {
-          await Swal.fire('Missing Field', 'Please indicate how many times you attended KK Assembly.', 'warning');
+          await Swal.fire({
+            title: 'Missing Field',
+            text: 'Please indicate how many times you attended KK Assembly.',
+            icon: 'warning',
+            showConfirmButton: true,
+            confirmButtonText: 'OK'
+          });
           return;
         }
       } else if (attendedVal === 'no') {
         const reasonEl = document.getElementById('reasonDidNotAttend');
         const reasonVal = reasonEl ? String(reasonEl.value || '').trim() : '';
         if (!reasonVal) {
-          await Swal.fire('Missing Field', 'Please provide a reason why you did not attend KK Assembly.', 'warning');
+          await Swal.fire({
+            title: 'Missing Field',
+            text: 'Please provide a reason why you did not attend KK Assembly.',
+            icon: 'warning',
+            showConfirmButton: true,
+            confirmButtonText: 'OK'
+          });
           return;
         }
       }
@@ -727,7 +770,21 @@ document.addEventListener('DOMContentLoaded', function() {
 
     if (!result.isConfirmed) return;
 
-    // Show loading SweetAlert after confirmation
+    // Check if profile image is present (either in file input or sessionStorage)
+    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').profileImage);
+
+    if (!hasImage) {
+      await Swal.fire({
+        title: 'Missing Image',
+        text: 'Please upload a profile image before submitting.',
+        icon: 'warning',
+        showConfirmButton: true,
+        confirmButtonText: 'OK'
+      });
+      return;
+    }
+
+    // Show loading SweetAlert after confirmation and after validation
     Swal.fire({
       title: "Submitting...",
       text: "Please wait...",
@@ -737,15 +794,6 @@ document.addEventListener('DOMContentLoaded', function() {
         Swal.showLoading();
       }
     });
-
-    // Check if profile image is present (either in file input or sessionStorage)
-    const hasImage = form.profileImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').profileImage);
-
-    if (!hasImage) {
-      Swal.close();
-      await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
-      return;
-    }
 
     // Collect all data from sessionStorage and this page
     const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');

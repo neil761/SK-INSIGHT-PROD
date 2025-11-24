@@ -98,6 +98,31 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
   }
 
+  // Determine youth age group from calculated age and persist as a suggestion for step3
+  function determineYouthAgeGroup(age) {
+    if (typeof age !== 'number' || isNaN(age)) return '';
+    if (age >= 15 && age <= 17) return 'Child Youth';
+    if (age >= 18 && age <= 24) return 'Core Youth';
+    if (age >= 25 && age <= 30) return 'Young Youth';
+    return '';
+  }
+
+  // If we have an age now, set a suggested youthAgeGroup in kkProfileStep3 (do not overwrite existing value)
+  try {
+    const currentBirthday = (birthdayInput && birthdayInput.value) ? birthdayInput.value : saved.birthday;
+    const currentAge = calculateAge(currentBirthday);
+    const suggestedGroup = determineYouthAgeGroup(currentAge);
+    if (suggestedGroup) {
+      const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+      if (!step3.youthAgeGroup) {
+        step3.youthAgeGroup = suggestedGroup;
+        sessionStorage.setItem('kkProfileStep3', JSON.stringify(step3));
+      }
+    }
+  } catch (e) {
+    // ignore
+  }
+
 
 
   form.addEventListener('submit', function (e) {
@@ -126,6 +151,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         birthday: form.birthday.value
       };
       sessionStorage.setItem('kkProfileStep1', JSON.stringify(data));
+      // Also persist suggested youthAgeGroup from this birthday into step3 if not set
+      try {
+        const age = calculateAge(data.birthday);
+        const suggested = determineYouthAgeGroup(age);
+        if (suggested) {
+          const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+          if (!step3.youthAgeGroup) {
+            step3.youthAgeGroup = suggested;
+            sessionStorage.setItem('kkProfileStep3', JSON.stringify(step3));
+          }
+        }
+      } catch (e) { /* ignore */ }
     } catch (e) {
       // ignore storage errors
     }
@@ -452,23 +489,30 @@ document.addEventListener('DOMContentLoaded', function() {
           (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
           (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
         );
+        const isApproved = Boolean(
+          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
+          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
+        );
 
         if (isFormOpen && (!hasProfile || isRejected)) {
-          const title = isRejected ? 'Previous Application Rejected' : 'No profile found';
-          const text = isRejected
-            ? 'Your previous application was rejected. Would you like to submit a new application?'
-            : `You don't have a profile yet. Please fill out the form to create one.`;
-
-          const result = await Swal.fire({ icon: 'info', title, text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
-          if (result && result.isConfirmed) {
+          if (isRejected) {
+            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
             try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
             window.location.href = redirectUrl;
             return { redirected: true, isRejected, hasProfile, isFormOpen };
+          } else {
+            const text = `You don't have a profile yet. Please fill out the form to create one.`;
+            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
+            if (result && result.isConfirmed) {
+              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
+              window.location.href = redirectUrl;
+              return { redirected: true, isRejected, hasProfile, isFormOpen };
+            }
           }
         }
 
-        if (!isFormOpen && hasProfile && !isRejected) {
-          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `but you already have an application. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
+        if (!isFormOpen && hasProfile && isApproved) {
+          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
           if (res2 && res2.isConfirmed) { window.location.href = `./confirmation/html/educConfirmation.html`; return { redirected: true, isRejected, hasProfile, isFormOpen }; }
         }
 
