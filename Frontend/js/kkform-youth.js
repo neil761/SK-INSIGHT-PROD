@@ -513,6 +513,10 @@ document.addEventListener('DOMContentLoaded', function() {
   // Educational Assistance Navigation
   function handleEducAssistanceNavClick(event) {
     event.preventDefault();
+    if (window.checkAndPromptEducReapply) {
+      try { window.checkAndPromptEducReapply({ event, redirectUrl: 'Educational-assistance-user.html' }); } catch (e) {}
+      return;
+    }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
@@ -1183,45 +1187,66 @@ document.addEventListener('DOMContentLoaded', function() {
   const registeredNationalVoter = document.getElementById('registeredNationalVoter');
   const birthdayInput = document.getElementById('birthday'); // Assuming there's a birthday input field
 
-  if (registeredNationalVoter && birthdayInput) {
-    // Add an event listener to check the age when the birthday changes
-    birthdayInput.addEventListener('change', function () {
-      const birthday = new Date(this.value);
+  function enforceRegisteredNationalVoterByAgeFromBirthday(bdayValue) {
+    try {
+      if (!registeredNationalVoter) return;
+      if (!bdayValue) return;
+      const birthday = new Date(bdayValue);
+      if (isNaN(birthday.getTime())) return;
       const today = new Date();
-      const age = today.getFullYear() - birthday.getFullYear();
+      let age = today.getFullYear() - birthday.getFullYear();
       const monthDiff = today.getMonth() - birthday.getMonth();
       const dayDiff = today.getDate() - birthday.getDate();
- 
-      // Adjust age if the birthday hasn't occurred yet this year
-      if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-        age--;
-      }
-
-      // Set registeredNationalVoter to "No" if age is 17 or below
+      if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) age--;
       if (age <= 17) {
-        registeredNationalVoter.value = 'No';
-        registeredNationalVoter.disabled = true; // Disable the field to prevent changes
+        // Force-select 'No' option if present, otherwise set value and ensure UI shows it
+        try {
+          const opts = Array.from(registeredNationalVoter.options || []);
+          const noOpt = opts.find(o => (o.value||'').toString().toLowerCase() === 'no');
+          if (noOpt) registeredNationalVoter.value = noOpt.value;
+          else {
+            // fallback: create temporary option
+            let injected = registeredNationalVoter.querySelector('option[data-injected-no="1"]');
+            if (!injected) {
+              injected = document.createElement('option');
+              injected.value = 'No';
+              injected.text = 'No';
+              injected.setAttribute('data-injected-no','1');
+              registeredNationalVoter.insertBefore(injected, registeredNationalVoter.firstChild);
+            }
+            // select it
+            for (let i = 0; i < registeredNationalVoter.options.length; i++) {
+              if (registeredNationalVoter.options[i].getAttribute('data-injected-no') === '1') { registeredNationalVoter.selectedIndex = i; break; }
+            }
+          }
+        } catch (e) {
+          registeredNationalVoter.value = 'No';
+        }
+        registeredNationalVoter.disabled = true;
       } else {
-        registeredNationalVoter.disabled = false; // Enable the field for ages above 17
+        registeredNationalVoter.disabled = false;
+        // remove injected option if present
+        const injected = registeredNationalVoter.querySelector('option[data-injected-no="1"]');
+        if (injected) injected.remove();
       }
-    });
+    } catch (e) { /* ignore */ }
+  }
 
-    // Initial check to set the state based on the current value of birthday
-    const birthday = new Date(birthdayInput.value);
-    const today = new Date();
-    const age = today.getFullYear() - birthday.getFullYear();
-    const monthDiff = today.getMonth() - birthday.getMonth();
-    const dayDiff = today.getDate() - birthday.getDate();
+  // If we have a registeredNationalVoter select, prefer calculating age from a local birthday input.
+  if (registeredNationalVoter) {
+    // If there is a birthday input on this page, hook it up
+    if (birthdayInput) {
+      // Add an event listener to check the age when the birthday changes
+      birthdayInput.addEventListener('change', function () { enforceRegisteredNationalVoterByAgeFromBirthday(this.value); });
 
-    if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
-      age--;
-    }
-
-    if (age <= 17) {
-      registeredNationalVoter.value = 'No';
-      registeredNationalVoter.disabled = true;
+      // Initial check to set the state based on the current value of birthday
+      if (birthdayInput.value) enforceRegisteredNationalVoterByAgeFromBirthday(birthdayInput.value);
     } else {
-      registeredNationalVoter.disabled = false;
+      // No birthday input on this page — try retrieving saved birthday from sessionStorage (kkProfileStep1)
+      try {
+        const step1 = JSON.parse(sessionStorage.getItem('kkProfileStep1') || '{}');
+        if (step1 && step1.birthday) enforceRegisteredNationalVoterByAgeFromBirthday(step1.birthday);
+      } catch (e) { /* ignore */ }
     }
   }
 });

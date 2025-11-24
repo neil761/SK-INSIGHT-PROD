@@ -80,8 +80,8 @@
           }).then((result) => {
             if (result.isConfirmed) {
               const target = data.applicationId
-                ? `/Frontend/html/user/confirmation/html/editEduc.html?id=${data.applicationId}`
-                : '/Frontend/html/user/confirmation/html/editEduc.html';
+                ? `/Frontend/html/user/update-rejected.html?id=${data.applicationId}`
+                : '/Frontend/html/user/update-rejected.html';
               console.debug('checkRejected(debug): redirecting to', target);
               window.location.href = target;
             }
@@ -97,8 +97,8 @@
           }).then((result) => {
             if (result.isConfirmed) {
               const target = data.applicationId
-                ? `/Frontend/html/user/confirmation/html/editEduc.html?id=${data.applicationId}`
-                : '/Frontend/html/user/confirmation/html/editEduc.html';
+                ? `/Frontend/html/user/update-rejected.html?id=${data.applicationId}`
+                : '/Frontend/html/user/update-rejected.html';
               console.debug('checkRejected: redirecting to', target);
               window.location.href = target;
             }
