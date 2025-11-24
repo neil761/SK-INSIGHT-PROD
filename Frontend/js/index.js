@@ -237,8 +237,12 @@ function handleEducAssistanceNavClick(event) {
       (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
       (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
     );
+    const isApproved = Boolean(
+      (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
+      (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
+    );
     // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile && !isRejected) {
+    if (!isFormOpen && hasProfile && isApproved) {
       Swal.fire({
         icon: "info",
         title: `The ${formName} is currently closed`,
@@ -253,6 +257,7 @@ function handleEducAssistanceNavClick(event) {
     }
     // CASE 2: Form closed, user has NO profile OR their previous application was rejected
     if (!isFormOpen && (!hasProfile || isRejected)) {
+      // When the form is closed and there is no profile or it was rejected, inform the user they cannot submit now.
       Swal.fire({
         icon: "warning",
         title: `The ${formName} form is currently closed`,
@@ -262,7 +267,7 @@ function handleEducAssistanceNavClick(event) {
       return;
     }
     // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile && !isRejected) {
+    if (isFormOpen && hasProfile && isApproved) {
       Swal.fire({
         title: `You already applied for ${formName}`,
         text: "Do you want to view your response?",
@@ -277,28 +282,28 @@ function handleEducAssistanceNavClick(event) {
     }
     // CASE 4: Form open, no profile OR profile exists but was rejected → prompt to reapply
     if (isFormOpen && (!hasProfile || isRejected)) {
-      const message = isRejected
-        ? 'Your previous application was rejected. Would you like to submit a new application?'
-        : `You don't have a profile yet. Please fill out the form to create one.`;
-
-      Swal.fire({
-        icon: "info",
-        title: isRejected ? 'Previous Application Rejected' : 'No profile found',
-        text: message,
-        showCancelButton: true,
-        confirmButtonText: "Go to form",
-        cancelButtonText: "No",
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Clear any local draft for educational assistance (best-effort keys)
-          try {
-            sessionStorage.removeItem('educDraft');
-            sessionStorage.removeItem('educationalDraft');
-            sessionStorage.removeItem('educAssistanceDraft');
-          } catch (e) {}
-          window.location.href = "Educational-assistance-user.html";
-        }
-      });
+      if (isRejected) {
+        // When their previous application was rejected, inform and immediately redirect to the form to reapply
+        Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' }).then(() => {
+          try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); sessionStorage.removeItem('educAssistanceDraft'); } catch (e) {}
+          window.location.href = "./confirmation/html/editEduc.html";
+        });
+      } else {
+        const message = `You don't have a profile yet. Please fill out the form to create one.`;
+        Swal.fire({
+          icon: "info",
+          title: 'No profile found',
+          text: message,
+          showCancelButton: true,
+          confirmButtonText: "Go to form",
+          cancelButtonText: "No",
+        }).then(result => {
+          if (result.isConfirmed) {
+            try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); sessionStorage.removeItem('educAssistanceDraft'); } catch (e) {}
+            window.location.href = "Educational-assistance-user.html";
+          }
+        });
+      }
       return;
     }
   })

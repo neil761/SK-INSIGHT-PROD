@@ -57,6 +57,55 @@ document.addEventListener('DOMContentLoaded', async function () {
     emailInput.readOnly = true; // Make it non-editable
   }
 
+  // Check latest application status for this user in the present cycle
+  try {
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    if (token) {
+      const appRes = await fetch('http://localhost:5000/api/educational-assistance/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (appRes.ok) {
+        let app = await appRes.json();
+        // If backend returned an array of historical submissions, prefer the latest one
+        if (Array.isArray(app) && app.length > 0) app = app[app.length - 1];
+
+        const statusVal = (app && (app.status || app.decision || app.adminDecision || app.result)) || '';
+        const status = (statusVal || '').toString().toLowerCase();
+
+        // If latest is rejected -> when already on the form page, silently clear drafts and allow continuing.
+        if (/(reject|denied|rejected)/i.test(status) || (app && (app.rejected === true || app.isRejected === true))) {
+          try {
+            sessionStorage.removeItem('educationalAssistanceFormData');
+            sessionStorage.removeItem('educ_siblings');
+            sessionStorage.removeItem('educ_expenses');
+          } catch (e) { /* ignore */ }
+          // If we are on the form page (this script runs on it), do not show an alert — just continue with the cleared draft.
+          // Other pages that call the shared helper will still show the alert+redirect behavior.
+        }
+
+        // If latest is pending or approved (or similar), tell the user they already applied and offer to view response
+        if (/pending|approve|approved|ending/i.test(status) || (app && (app.status === 'pending' || app.status === 'approved'))) {
+          const res = await Swal.fire({
+            icon: 'info',
+            title: 'Application Exists',
+            text: 'You already applied for Educational Assistance for the current cycle. Do you want to view your response?',
+            showCancelButton: true,
+            confirmButtonText: 'View my response',
+            cancelButtonText: 'Stay on form'
+          });
+          if (res.isConfirmed) {
+            window.location.href = 'confirmation/html/educConfirmation.html';
+            return;
+          }
+        }
+      }
+      // if 404 or other non-ok, treat as no application and allow apply
+    }
+  } catch (e) {
+    console.warn('Could not check existing application status', e);
+  }
+
   // Fetch and set the user's birthday
   const birthdayInput = document.getElementById('birthday');
   if (birthdayInput && userDetails?.birthday) {
@@ -403,7 +452,11 @@ document.addEventListener('DOMContentLoaded', async function () {
           </div>
           <div class="expense-field">
             <label>Expected Cost:</label>
-            <input type="number" class="expense-cost" min="0" required value="${expense.expectedCost || ''}">
+            <div class="expense-cost-wrapper">
+              <span class="peso-prefix">₱</span>
+              <input type="number" class="expense-cost" min="0" required value="${expense.expectedCost || ''}">
+              <span class="peso-suffix">.00</span>
+            </div>
           </div>
           <button type="button" class="removeExpenseBtn" data-index="${index}">Remove</button>
         `;
@@ -413,7 +466,13 @@ document.addEventListener('DOMContentLoaded', async function () {
         const expenseRow = document.createElement('tr');
         expenseRow.innerHTML = `
           <td><input type="text" class="expense-item" required value="${escapeHtml(expense.item || '')}"></td>
-          <td><input type="number" class="expense-cost" min="0" required value="${expense.expectedCost || ''}"></td>
+          <td>
+            <div class="expense-cost-wrapper">
+              <span class="peso-prefix">₱</span>
+              <input type="number" class="expense-cost" min="0" required value="${expense.expectedCost || ''}">
+              <span class="peso-suffix">.00</span>
+            </div>
+          </td>
           <td><button type="button" class="removeExpenseBtn" data-index="${index}">Remove</button></td>
         `;
         expensesContainer.appendChild(expenseRow);
@@ -434,6 +493,21 @@ document.addEventListener('DOMContentLoaded', async function () {
     const expensesTableHead = expensesTable.querySelector('thead');
     if (expensesTableHead) expensesTableHead.style.display = isMobile ? 'none' : '';
   }
+
+  // Basic styles for expense-cost wrapper (added via JS to avoid editing CSS files)
+  (function injectExpenseCostStyles() {
+    if (document.getElementById('expense-cost-injected-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'expense-cost-injected-styles';
+    style.textContent = `
+      .expense-cost-wrapper{display:inline-flex;align-items:center;gap:6px}
+      .expense-cost-wrapper .peso-prefix{font-weight:600}
+      .expense-cost-wrapper .peso-suffix{color:#666}
+      .expense-cost-wrapper input.expense-cost{width:120px}
+      @media(max-width:480px){ .expense-cost-wrapper input.expense-cost{width:100px} }
+    `;
+    document.head.appendChild(style);
+  })();
 
   // Restore siblings and expenses on page load
   renderSiblings();
@@ -727,7 +801,7 @@ if (form && savedFormData) {
   const yearEl = document.getElementById('year');
   const yearWrapper = document.getElementById('yearWrapper');
   const SHS_YEARS = ['Grade 11', 'Grade 12'];
-  const COLLEGE_YEARS = ['1st year', '2nd year', '3rd year', '4th year', '5th year', '6th year'];
+  const COLLEGE_YEARS = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
 
   function populateYearOptions(level, selectedYear) {
     if (!yearEl) return;
@@ -765,6 +839,25 @@ if (form && savedFormData) {
       populateYearOptions(savedAcademic, savedYear);
     }
 
+    // Voter requirement: hide parent's voter's certificate for Senior High School
+    const voterInput = document.getElementById('voter');
+    const voterRow = voterInput ? voterInput.closest('tr') : document.querySelector('#voter') ? document.querySelector('#voter').closest('tr') : null;
+    function updateVoterRequirement(level) {
+      const lvl = (level || '').toString().trim();
+      const isSHS = lvl === 'Senior High School' || /senior\s*high/i.test(lvl);
+      if (voterRow) voterRow.style.display = isSHS ? 'none' : '';
+      if (voterInput) {
+        voterInput.required = !isSHS;
+        // clear any file selected when hiding
+        if (isSHS) {
+          try { voterInput.value = ''; const voterFileName = document.getElementById('voterFileName'); if (voterFileName) voterFileName.textContent = ''; } catch (e) {}
+        }
+      }
+    }
+
+    // apply initial visibility based on savedAcademic
+    updateVoterRequirement(savedAcademic || academicLevelEl.value);
+
     // wire change handler so user selection updates the year list and toggles visibility
     academicLevelEl.addEventListener('change', function () {
       const level = this.value;
@@ -780,6 +873,9 @@ if (form && savedFormData) {
         if (yearEl) yearEl.required = true;
         populateYearOptions(level, '');
       }
+
+      // update voter requirement visibility when academic level changes
+      try { updateVoterRequirement(level); } catch (e) { /* ignore */ }
 
       // persist academic level in sessionStorage draft
       const dataToSave = JSON.parse(sessionStorage.getItem('educationalAssistanceFormData') || '{}');
@@ -912,7 +1008,11 @@ if (form && savedFormData) {
         </div>
         <div class="expense-field">
           <label>Expected Cost:</label>
-          <input type="number" class="expense-cost" min="0" required>
+          <div class="expense-cost-wrapper">
+            <span class="peso-prefix">₱</span>
+            <input type="number" class="expense-cost" min="0" required>
+            <span class="peso-suffix">.00</span>
+          </div>
         </div>
         <button type="button" class="removeExpenseBtn">Remove</button>
       `;
@@ -929,7 +1029,13 @@ if (form && savedFormData) {
       const expenseRow = document.createElement('tr');
       expenseRow.innerHTML = `
         <td><input type="text" class="expense-item" required></td>
-        <td><input type="number" class="expense-cost" min="0" required></td>
+        <td>
+          <div class="expense-cost-wrapper">
+            <span class="peso-prefix">₱</span>
+            <input type="number" class="expense-cost" min="0" required>
+            <span class="peso-suffix">.00</span>
+          </div>
+        </td>
         <td><button type="button" class="removeExpenseBtn">Remove</button></td>
       `;
 

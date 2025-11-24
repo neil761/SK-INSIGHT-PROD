@@ -75,7 +75,14 @@ const kkProfileSchema = new mongoose.Schema({
   },
   reasonDidNotAttend: {
     type: String,
-    enum: ["There was no KK Assembly", "Not interested"],
+    // Accept a couple of common phrasings so existing records with slightly
+    // different wording still display in the admin modal.
+    enum: [
+      "There was no KK Assembly",
+      "Not interested",
+      "There are no kk assembly",
+      "There are no KK Assembly"
+    ],
   },
   profileImage: { type: String, required: true },
   signatureImagePath: { type: String },

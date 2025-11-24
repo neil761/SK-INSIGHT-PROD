@@ -84,38 +84,28 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   };
 
-  // Handle time input to close time picker when time is selected
+  // Handle time input: only close picker if user chooses AM/PM or clicks outside
   const timeInput = document.getElementById("time");
-  
-  // Close time picker when time is selected
-  timeInput.addEventListener("change", function() {
-    // Force blur to close the time picker
-    setTimeout(() => {
-      this.blur();
-      // Also trigger a click on the document to ensure picker closes
-      document.body.click();
-    }, 50);
-  });
 
-  // Handle input event for immediate response when typing
-  timeInput.addEventListener("input", function() {
-    // Check if the input has a valid time format
-    if (this.value.match(/^\d{1,2}:\d{2}$/)) {
-      setTimeout(() => {
-        this.blur();
-        document.body.click();
-      }, 100);
+  // Helper: detect if time picker is open (not always possible, but we can use focus/blur)
+  // Close time picker if user clicks outside
+  document.addEventListener("mousedown", function(e) {
+    if (document.activeElement === timeInput && !e.target.closest('input[type="time"]')) {
+      timeInput.blur();
     }
   });
 
-  // Handle click outside to close time picker
-  timeInput.addEventListener("blur", function() {
-    // Additional blur handling if needed
-    setTimeout(() => {
-      if (document.activeElement === this) {
+  // For most browsers, the time input is 24-hour and doesn't have AM/PM, but on some (esp. mobile),
+  // the picker may have AM/PM. We can listen for change and check if the value changed from previous.
+  let lastTimeValue = timeInput.value;
+  timeInput.addEventListener("change", function() {
+    // Only close if the value actually changed (user picked a time, possibly with AM/PM)
+    if (this.value !== lastTimeValue) {
+      lastTimeValue = this.value;
+      setTimeout(() => {
         this.blur();
-      }
-    }, 10);
+      }, 50);
+    }
   });
 
   // Fetch announcements
@@ -139,20 +129,29 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Render table rows (with pin/unpin button)
+  // Render table rows (with pin/unpin button, or only view for expired)
   function renderTable(data) {
     tableBody.innerHTML = "";
     if (!data.length) return;
+    const tab = getCurrentTab && getCurrentTab();
     data.forEach(a => {
       const status = getAnnouncementStatus(a.eventDate || a.scheduledDateTime);
       const tr = document.createElement("tr");
       if (a.isPinned) tr.classList.add("pinned-row");
-      tr.innerHTML = `
-        <td>${a.title}</td>
-        <td>${new Date(a.createdAt).toLocaleDateString()}</td>
-        <td>${a.eventDate ? new Date(a.eventDate).toLocaleString() : "-"}</td>
-        <td>${status}</td>
-        <td>
+      let actionsHtml = "";
+      if (tab === "expired") {
+        // Only show view button for expired announcements
+        actionsHtml = `
+          <button class="btn-view" style="margin: 0 5%" data-id="${a._id}">
+            <i class="fa-solid fa-eye" style="color: #225aa3ff"></i>
+          </button>
+        `;
+      } else {
+        // Add view button to All and Pinned tabs
+        actionsHtml = `
+          <button class="btn-view" style="margin: 0 5%" data-id="${a._id}">
+            <i class="fa-solid fa-eye" style="color: #225aa3ff"></i>
+          </button>
           <button class="btn-edit" style="margin: 0 5%" data-id="${a._id}">
             <i class="fa-solid fa-pen-to-square" style="color: #225aa3ff"></i>
           </button>
@@ -162,6 +161,15 @@ document.addEventListener("DOMContentLoaded", () => {
           <button class="btn-delete" style="margin: 0 5%" data-id="${a._id}">
             <i class="fa-solid fa-trash"></i>
           </button>
+        `;
+      }
+      tr.innerHTML = `
+        <td>${a.title}</td>
+        <td>${new Date(a.createdAt).toLocaleDateString()}</td>
+        <td>${a.eventDate ? new Date(a.eventDate).toLocaleString() : "-"}</td>
+        <td>${status}</td>
+        <td>
+          ${actionsHtml}
         </td>
       `;
       tableBody.appendChild(tr);
@@ -188,16 +196,36 @@ document.addEventListener("DOMContentLoaded", () => {
   // Render correct tab view
   function renderCurrentTab() {
     const tab = getCurrentTab();
-    // Only show active announcements
-    const activeAnnouncements = announcementsData.filter(a => a.isActive !== false);
+    // Exclude expired announcements from All and Pinned tabs
+    const now = new Date();
+    const nonExpired = announcementsData.filter(a => {
+      if (a.isActive === false) return false;
+      const eventDate = new Date(a.eventDate || a.scheduledDateTime);
+      return eventDate >= now;
+    });
+
     if (tab === "pending") {
-      // Show only unpinned and active
-      const unpinned = activeAnnouncements.filter(a => !a.isPinned);
+      // Show only unpinned and non-expired
+      const unpinned = nonExpired.filter(a => !a.isPinned);
       renderTable(unpinned);
     } else if (tab === "approved") {
-      // Show only pinned and active
-      const pinned = activeAnnouncements.filter(a => a.isPinned === true);
+      // Show only pinned and non-expired
+      const pinned = nonExpired.filter(a => a.isPinned === true);
       renderTable(pinned);
+    } else if (tab === "expired") {
+      // Show all expired announcements, most recently expired at the top
+      const expired = announcementsData
+        .filter(a => {
+          const eventDate = new Date(a.eventDate || a.scheduledDateTime);
+          return eventDate < now;
+        })
+        .sort((a, b) => {
+          // Sort by eventDate descending (most recently expired first)
+          const aDate = new Date(a.eventDate || a.scheduledDateTime);
+          const bDate = new Date(b.eventDate || b.scheduledDateTime);
+          return bDate - aDate;
+        });
+      renderTable(expired);
     }
   }
 
@@ -208,10 +236,33 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Handle delete, edit, pin/unpin
   document.addEventListener("click", async (e) => {
+    const tab = getCurrentTab && getCurrentTab();
+    // View action for all tabs
+    if (e.target.closest(".btn-view")) {
+      const id = e.target.closest(".btn-view").dataset.id;
+      // Show the announcement details modal (reuse the view modal logic)
+      const announcement = announcementsData.find(a => a._id === id);
+      if (announcement) {
+        document.getElementById("modalTitle").textContent = (announcement.title || "").toUpperCase();
+        document.getElementById("modalEventDate").textContent = announcement.eventDate ? new Date(announcement.eventDate).toLocaleString() : "-";
+        document.getElementById("modalPostedDate").textContent = announcement.createdAt ? new Date(announcement.createdAt).toLocaleString() : "-";
+        const modalContentEl = document.getElementById("modalContent");
+        if (modalContentEl) {
+          modalContentEl.value = announcement.content || "";
+        }
+        const viewModal = document.getElementById("announcementModal");
+        viewModal.style.display = "flex";
+        // trigger reflow then add show class so CSS transitions apply
+        viewModal.offsetHeight;
+        viewModal.classList.add('show');
+      }
+      if (tab === "expired") return;
+    }
+
     // DELETE
     if (e.target.closest(".btn-delete")) {
       const id = e.target.closest(".btn-delete").dataset.id;
-      // Use SweetAlert2 confirmation
+      // ...existing code...
       const swalResult = await Swal.fire({
         title: 'Delete announcement?',
         text: 'Are you sure you want to delete this announcement? This action cannot be undone.',
@@ -229,7 +280,6 @@ document.addEventListener("DOMContentLoaded", () => {
             headers: { "Authorization": `Bearer ${token}` }
           });
           if (res.ok) {
-            // Emit WebSocket event for real-time updates
             emitAnnouncementEvent("deleted", { id });
             await fetchAnnouncements();
             renderCurrentTab();
@@ -249,6 +299,7 @@ document.addEventListener("DOMContentLoaded", () => {
     // EDIT
     if (e.target.closest(".btn-edit")) {
       const id = e.target.closest(".btn-edit").dataset.id;
+      // ...existing code...
       try {
         const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
           headers: { "Authorization": `Bearer ${token}` }
@@ -294,10 +345,7 @@ document.addEventListener("DOMContentLoaded", () => {
           body: JSON.stringify({ isPinned: !isPinned })
         });
         if (res.ok) {
-          // Emit WebSocket event for real-time updates
           emitAnnouncementEvent(isPinned ? "unpinned" : "pinned", { id, isPinned: !isPinned });
-          
-          // Refetch and re-render the current tab immediately
           await fetchAnnouncements();
           renderCurrentTab();
         } else {
@@ -321,6 +369,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const category = "General";
     const expiresAt = new Date(eventDate.getTime() + 2 * 24 * 60 * 60 * 1000); // +2 days
+
+    // Client-side validation: ensure eventDate is valid and not in the past when creating
+    const now = new Date();
+    if (isNaN(eventDate.getTime())) {
+      await Swal.fire({ icon: 'error', title: 'Invalid Date', text: 'Please provide a valid date and time.' });
+      return;
+    }
+    if (!editingId && eventDate < now) {
+      await Swal.fire({ icon: 'warning', title: "Can't create announcement", text: 'Event date must be in the future.' });
+      return;
+    }
 
     try {
       let url = "http://localhost:5000/api/announcements";
@@ -374,13 +433,22 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Close view modal
-  document.getElementById("closeAnnouncementModal").onclick = function() {
-    document.getElementById("announcementModal").style.display = "none";
-  };
+  // Close view modal (use same show/hide pattern)
+  const closeAnnouncementModalBtn = document.getElementById("closeAnnouncementModal");
+  const announcementModalEl = document.getElementById("announcementModal");
+  function hideAnnouncementModal() {
+    if (!announcementModalEl) return;
+    announcementModalEl.classList.remove('show');
+    setTimeout(() => {
+      announcementModalEl.style.display = 'none';
+    }, 200);
+  }
+  if (closeAnnouncementModalBtn) {
+    closeAnnouncementModalBtn.onclick = hideAnnouncementModal;
+  }
   window.onclick = function(event) {
-    if (event.target == document.getElementById("announcementModal")) {
-      document.getElementById("announcementModal").style.display = "none";
+    if (event.target == announcementModalEl) {
+      hideAnnouncementModal();
     }
   };
 

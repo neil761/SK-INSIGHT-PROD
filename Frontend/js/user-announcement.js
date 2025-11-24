@@ -76,9 +76,24 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
     const data = await res.json();
     const all = data.announcements || [];
-    // Only general announcements (recipient: null)
-    generalAnnouncements = all.filter(a => a.isActive === true && a.recipient === null);
-    expiredAnnouncements = all.filter(a => a.isActive === false && a.recipient === null);
+    // Determine expiration based solely on expiresAt timestamp from the database
+    // Determine expiration based solely on eventDate from the database
+    const now = new Date();
+    generalAnnouncements = all.filter(a => {
+      if (a.recipient !== null) return false;
+      // If there's no eventDate, keep it in general (status will be Unknown)
+      if (!a.eventDate) return true;
+      const ed = new Date(a.eventDate);
+      if (isNaN(ed.getTime())) return true; // malformed date -> treat as general
+      return ed >= now;
+    });
+    expiredAnnouncements = all.filter(a => {
+      if (a.recipient !== null) return false;
+      if (!a.eventDate) return false;
+      const ed = new Date(a.eventDate);
+      if (isNaN(ed.getTime())) return false;
+      return ed < now;
+    });
   }
 
   async function fetchForYou() {
@@ -159,8 +174,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     if (currentTab === 'general') {
       displayAnnouncements = announcements.filter(a => {
-        const exp = new Date(a.expiresAt);
-        return exp >= now;
+        if (!a.eventDate) return true;
+        const ed = new Date(a.eventDate);
+        if (isNaN(ed.getTime())) return true;
+        return ed >= now;
       });
       // Sort by nearest eventDate (soonest first)
       displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
@@ -171,11 +188,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     else if (currentTab === 'expired') {
       displayAnnouncements = announcements.filter(a => {
-        const exp = new Date(a.expiresAt);
-        return exp < now;
+        if (!a.eventDate) return false;
+        const ed = new Date(a.eventDate);
+        if (isNaN(ed.getTime())) return false;
+        return ed < now;
       });
-      // Sort so latest expired (most recent expiresAt) is on top
-      displayAnnouncements.sort((a, b) => new Date(b.expiresAt) - new Date(a.expiresAt));
+      // Sort so latest expired (most recent eventDate) is on top
+      displayAnnouncements.sort((a, b) => new Date(b.eventDate) - new Date(a.eventDate));
     }
     else if (currentTab === 'foryou') {
       displayAnnouncements = announcements.slice().sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -193,7 +212,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         status = "No Expiry";
         dateCol = a.createdAt ? formatDateTime(a.createdAt) : "-";
       } else {
-        status = getAnnouncementStatus(a.expiresAt);
+        status = getAnnouncementStatus(a);
         dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
       }
         const tr = document.createElement("tr");
@@ -259,8 +278,10 @@ if (currentTab === 'foryou') {
 
     if (currentTab === 'general') {
       displayAnnouncements = (announcements || []).filter(a => {
-        const exp = new Date(a.expiresAt);
-        return exp >= now;
+        if (!a.eventDate) return true;
+        const ed = new Date(a.eventDate);
+        if (isNaN(ed.getTime())) return true;
+        return ed >= now;
       });
       displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
       // pinned first
@@ -270,8 +291,10 @@ if (currentTab === 'foryou') {
     }
     else if (currentTab === 'expired') {
       displayAnnouncements = (announcements || []).filter(a => {
-        const exp = new Date(a.expiresAt);
-        return exp < now;
+        if (!a.eventDate) return false;
+        const ed = new Date(a.eventDate);
+        if (isNaN(ed.getTime())) return false;
+        return ed < now;
       });
       displayAnnouncements.sort((a, b) => new Date(a.eventDate) - new Date(b.eventDate));
     }
@@ -291,7 +314,7 @@ if (currentTab === 'foryou') {
         status = "No Expiry";
         dateCol = a.createdAt ? formatDateTime(a.createdAt) : "-";
       } else {
-        status = getAnnouncementStatus(a.expiresAt);
+        status = getAnnouncementStatus(a);
         dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
       }
       const card = document.createElement('div');
@@ -419,11 +442,14 @@ if (currentTab === 'foryou') {
     });
   }
 
-  function getAnnouncementStatus(expiresAt) {
-    if (!expiresAt) return "Unknown";
+  function getAnnouncementStatus(announcement) {
+    if (!announcement) return "Unknown";
+    const eventDate = announcement.eventDate;
+    if (!eventDate) return "Unknown";
+    const ed = new Date(eventDate);
+    if (isNaN(ed.getTime())) return "Unknown";
     const now = new Date();
-    const exp = new Date(expiresAt);
-    return exp >= now ? "Upcoming" : "Expired";
+    return ed >= now ? "Upcoming" : "Expired";
   }
 
   // Initial load: show general tab and update header
@@ -807,23 +833,30 @@ document.addEventListener('DOMContentLoaded', function() {
           (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
           (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
         );
+        const isApproved = Boolean(
+          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
+          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
+        );
 
         if (isFormOpen && (!hasProfile || isRejected)) {
-          const title = isRejected ? 'Previous Application Rejected' : 'No profile found';
-          const text = isRejected
-            ? 'Your previous application was rejected. Would you like to submit a new application?'
-            : `You don't have a profile yet. Please fill out the form to create one.`;
-
-          const result = await Swal.fire({ icon: 'info', title, text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
-          if (result && result.isConfirmed) {
+          if (isRejected) {
+            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
             try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
             window.location.href = redirectUrl;
             return { redirected: true, isRejected, hasProfile, isFormOpen };
+          } else {
+            const text = `You don't have a profile yet. Please fill out the form to create one.`;
+            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
+            if (result && result.isConfirmed) {
+              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
+              window.location.href = redirectUrl;
+              return { redirected: true, isRejected, hasProfile, isFormOpen };
+            }
           }
         }
 
-        if (!isFormOpen && hasProfile && !isRejected) {
-          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `but you already have an application. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
+        if (!isFormOpen && hasProfile && isApproved) {
+          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
           if (res2 && res2.isConfirmed) { window.location.href = `./confirmation/html/educConfirmation.html`; return { redirected: true, isRejected, hasProfile, isFormOpen }; }
         }
 

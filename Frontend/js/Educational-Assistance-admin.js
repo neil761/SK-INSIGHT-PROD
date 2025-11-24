@@ -415,6 +415,9 @@ let applicants = [];
     const backImage = freshApp.backImage || defaultImage;
     const coeImage = freshApp.coeImage || defaultImage;
     const voterImage = freshApp.voter || defaultImage;
+    // Determine whether to show voter's ID in modal. Hide for Senior High School applicants.
+    const academicLevelStr = (freshApp.academicLevel || '').toString();
+    const hideVoter = /senior\s*high/i.test(academicLevelStr);
 
     details.innerHTML = `
       <div class="profile-details-modal">
@@ -589,12 +592,14 @@ let applicants = [];
               <img src="${coeImage}" alt="Certificate of Enrollment" class="id-image clickable-image" data-image-src="${coeImage}" onclick="openImageLightbox('${coeImage}')"/>
             </div>
           </div>
+          ${hideVoter ? '' : `
           <div class="profile-detail">
             <div class="label">Voter's ID</div>
             <div class="id-image-container">
               <img src="${voterImage}" alt="Voter's ID" class="id-image clickable-image" data-image-src="${voterImage}" onclick="openImageLightbox('${voterImage}')"/>
             </div>
           </div>
+          `}
         </div>
 
         <!-- Action Buttons -->

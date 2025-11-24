@@ -160,6 +160,40 @@ exports.submitApplication = async (req, res) => {
   }
 };
 
+// Check if the user's latest application in the present cycle was rejected
+exports.checkIfRejected = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) return res.status(401).json({ error: 'Unauthorized' });
+
+    // Determine present cycle (reuses helper above)
+    const presentCycle = await getPresentCycle("Educational Assistance");
+
+    // Find the most recent application for this user in the present cycle
+    const application = await EducationalAssistance.findOne({
+      user: userId,
+      formCycle: presentCycle._id,
+    }).sort({ createdAt: -1 });
+
+    if (!application) {
+      return res.json({ rejected: false });
+    }
+
+    if (application.status === 'rejected') {
+      return res.json({
+        rejected: true,
+        applicationId: application._id,
+        rejectionReason: application.rejectionReason || null,
+      });
+    }
+
+    return res.json({ rejected: false });
+  } catch (err) {
+    console.error('checkIfRejected error:', err);
+    return res.status(500).json({ error: 'Server error while checking application status' });
+  }
+};
+
 // Get my application
 exports.getMyApplication = async (req, res) => {
   try {
@@ -171,10 +205,11 @@ exports.getMyApplication = async (req, res) => {
     });
 
     // Find application for current user in current cycle
+    // Return the most recent application for the user in the current cycle
     const application = await EducationalAssistance.findOne({
       user: userId,
       formCycle: formStatus?.cycleId,
-    }).populate("user", "username email birthday");
+    }).sort({ createdAt: -1 }).populate("user", "username email birthday");
 
     if (!application) {
       return res
@@ -203,7 +238,8 @@ exports.updateMyApplication = async (req, res) => {
       return res.status(403).json({ error: 'Form is currently closed. Editing submissions is not allowed.' });
     }
 
-    const application = await EducationalAssistance.findOne({ user: userId, formCycle: formStatus.cycleId });
+    // Ensure we operate on the most recent application in the cycle
+    const application = await EducationalAssistance.findOne({ user: userId, formCycle: formStatus.cycleId }).sort({ createdAt: -1 });
     if (!application) return res.status(404).json({ error: 'Application not found' });
 
     // Update simple fields if provided in body

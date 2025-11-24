@@ -90,6 +90,7 @@
         <nav class="tabs">
           <button class="tab-btn active" data-tab="pending"><i class="fas fa-clock"></i> All</button>
           <button class="tab-btn" data-tab="approved"><i class="fa-solid fa-location-pin" ></i> Pinned</button>
+          <button class="tab-btn" data-tab="expired"><i class="fa-solid fa-hourglass-end"></i> Expired</button>
         </nav>
 
         <div class="tables">
@@ -158,14 +159,17 @@
           <div class="modal-meta">
             <span>
               <i class="fas fa-calendar-alt"></i>
-              Event Date: <span id="modalEventDate"></span>
+              <strong style="margin-left:6px;">Event Date:</strong> <span id="modalEventDate" style="margin-left:6px;"></span>
             </span>
             <span style="margin-left:24px;">
               <i class="fas fa-clock"></i>
-              Posted: <span id="modalPostedDate"></span>
+              <strong style="margin-left:6px;">Posted:</strong> <span id="modalPostedDate" style="margin-left:6px;"></span>
             </span>
           </div>
-          <div class="modal-body" id="modalContent"></div>
+          <div class="modal-body">
+            <h3 class="modal-desc-label">Description</h3>
+            <textarea id="modalContent" class="modal-description" readonly></textarea>
+          </div>
         </div>
       </div>
       </div>
