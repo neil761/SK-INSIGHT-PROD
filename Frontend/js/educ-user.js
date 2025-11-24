@@ -783,16 +783,11 @@ const savedFormData = JSON.parse(sessionStorage.getItem('educationalAssistanceFo
 if (form && savedFormData) {
   Array.from(form.elements).forEach(el => {
     if (el.name && savedFormData[el.name] !== undefined) {
-      if (el.type === "checkbox" || el.type === "radio") {
-        el.checked = savedFormData[el.name] === true;
-      } 
-      // ✅ Skip file inputs
-      else if (el.type === "file") {
-        // do nothing for file input
-      } 
-      else {
+      try {
+        // Avoid restoring file inputs via this generic loop
+        if (el.type === 'file') return;
         el.value = savedFormData[el.name];
-      }
+      } catch (e) { /* ignore per-field restore errors */ }
     }
   });
 
@@ -800,17 +795,25 @@ if (form && savedFormData) {
   const academicLevelEl = document.getElementById('academicLevel');
   const yearEl = document.getElementById('year');
   const yearWrapper = document.getElementById('yearWrapper');
+  const JHS_YEARS = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
   const SHS_YEARS = ['Grade 11', 'Grade 12'];
-  const COLLEGE_YEARS = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
 
   function populateYearOptions(level, selectedYear) {
     if (!yearEl) return;
     yearEl.innerHTML = '<option value="">Select Classification</option>';
     let options = [];
-    if (level === 'College') options = COLLEGE_YEARS;
-    else if (level === 'Senior High School') options = SHS_YEARS;
-    else options = SHS_YEARS; // default to SHS when unknown
+    const lvl = (level || '').toString().toLowerCase();
 
+    if (lvl.includes('junior')) {
+      options = JHS_YEARS;
+    } else if (lvl.includes('senior')) {
+      options = SHS_YEARS;
+    } else {
+      // fallback: do not include JHS by default — keep empty so user chooses level first
+      options = [];
+    }
+
+    // ensure selectedYear is present and selected only if it belongs to options
     options.forEach(opt => {
       const o = document.createElement('option');
       o.value = opt;
@@ -818,87 +821,60 @@ if (form && savedFormData) {
       if (selectedYear && selectedYear === opt) o.selected = true;
       yearEl.appendChild(o);
     });
+
+    // If selectedYear was provided but isn't in options, do NOT set it (avoid incorrect restore)
+    if (selectedYear && !options.includes(selectedYear)) {
+      // leave year empty so user selects appropriate year for chosen level
+      yearEl.value = "";
+    }
   }
 
-  // If academic level has a saved value, use it; otherwise try to infer from saved year
+  // Use saved academic + saved year but only set year if it is valid for that level
   const savedAcademic = savedFormData.academicLevel || document.getElementById('academicLevel')?.value || '';
   const savedYear = savedFormData.year || document.getElementById('year')?.value || '';
 
-  // Initially hide the year wrapper until an academic level is chosen (mirror kkform-youth behaviour)
+  // Initially hide the year wrapper until an academic level is chosen (mirror original behaviour)
   if (yearWrapper) {
-    yearWrapper.style.display = 'none';
-    if (yearEl) yearEl.required = false; // not required until shown
+    yearWrapper.style.display = savedAcademic ? '' : 'none';
   }
 
   if (academicLevelEl) {
-    if (savedAcademic) {
-      academicLevelEl.value = savedAcademic;
-      // show year and populate with saved value
-      if (yearWrapper) yearWrapper.style.display = '';
-      if (yearEl) yearEl.required = true;
-      populateYearOptions(savedAcademic, savedYear);
-    }
-
-    // Voter requirement: hide parent's voter's certificate for Senior High School
-    const voterInput = document.getElementById('voter');
-    const voterRow = voterInput ? voterInput.closest('tr') : document.querySelector('#voter') ? document.querySelector('#voter').closest('tr') : null;
-    function updateVoterRequirement(level) {
-      const lvl = (level || '').toString().trim();
-      const isSHS = lvl === 'Senior High School' || /senior\s*high/i.test(lvl);
-      if (voterRow) voterRow.style.display = isSHS ? 'none' : '';
-      if (voterInput) {
-        voterInput.required = !isSHS;
-        // clear any file selected when hiding
-        if (isSHS) {
-          try { voterInput.value = ''; const voterFileName = document.getElementById('voterFileName'); if (voterFileName) voterFileName.textContent = ''; } catch (e) {}
-        }
-      }
-    }
+    // Populate year options using saved academic level, but only restore year when valid
+    populateYearOptions(savedAcademic, savedYear);
 
     // apply initial visibility based on savedAcademic
-    updateVoterRequirement(savedAcademic || academicLevelEl.value);
+    if (savedAcademic) {
+      academicLevelEl.value = savedAcademic;
+      yearWrapper.style.display = '';
+    }
 
-    // wire change handler so user selection updates the year list and toggles visibility
+    // When the user changes academic level, repopulate year options and clear invalid year
     academicLevelEl.addEventListener('change', function () {
-      const level = this.value;
-      if (!level) {
-        if (yearWrapper) yearWrapper.style.display = 'none';
-        if (yearEl) {
-          yearEl.required = false;
-          yearEl.value = '';
-          yearEl.innerHTML = '<option value="">Select Classification</option>';
+      const lvl = academicLevelEl.value || '';
+      populateYearOptions(lvl, ""); // don't force previous year
+      // show year area when a known level chosen
+      yearWrapper.style.display = lvl ? '' : 'none';
+      // clear stored year if it's not valid for new level
+      try {
+        const currentYear = yearEl.value;
+        const allowedYears = lvl.toLowerCase().includes('junior') ? JHS_YEARS :
+                             lvl.toLowerCase().includes('senior') ? SHS_YEARS : [];
+        if (!allowedYears.includes(currentYear)) {
+          yearEl.value = "";
+          // also remove stale saved year from sessionStorage to avoid later restore conflicts
+          const s = JSON.parse(sessionStorage.getItem('educationalAssistanceFormData') || '{}');
+          if (s && s.year) { delete s.year; sessionStorage.setItem('educationalAssistanceFormData', JSON.stringify(s)); }
         }
-      } else {
-        if (yearWrapper) yearWrapper.style.display = '';
-        if (yearEl) yearEl.required = true;
-        populateYearOptions(level, '');
-      }
-
-      // update voter requirement visibility when academic level changes
-      try { updateVoterRequirement(level); } catch (e) { /* ignore */ }
-
-      // persist academic level in sessionStorage draft
-      const dataToSave = JSON.parse(sessionStorage.getItem('educationalAssistanceFormData') || '{}');
-      dataToSave.academicLevel = academicLevelEl.value;
-      sessionStorage.setItem('educationalAssistanceFormData', JSON.stringify(dataToSave));
+      } catch (e) { /* ignore */ }
     });
   } else {
-    // ensure year reflects savedYear even if academicLevel element missing
-    if (savedYear && yearEl) {
-      const matching = Array.from(yearEl.options).some(o => o.value === savedYear);
-      if (!matching) {
-        const looksLikeCollege = /\d+(st|nd|rd|th) year/i.test(savedYear) || /1st|2nd|3rd|4th|5th|6th/i.test(savedYear);
-        populateYearOptions(looksLikeCollege ? 'College' : 'Senior High School', savedYear);
-        if (yearCard) yearCard.style.display = '';
-        if (yearEl) yearEl.required = true;
-      }
-    }
+    if (savedYear && yearEl) { yearEl.value = savedYear; }
   }
-
 }
 
 
-  // Save form data to localStorage on input change
+  // Save form data to sessionStorage on input change (attach only if form exists)
+if (form) {
   form.addEventListener('input', function() {
     const dataToSave = {};
     Array.from(form.elements).forEach(el => {
@@ -917,8 +893,11 @@ if (form && savedFormData) {
   form.addEventListener('submit', function() {
     sessionStorage.removeItem('educationalAssistanceFormData');
   });
+} else {
+  console.warn('educ-user: #educationalAssistanceForm not found — autosave hooks skipped');
+}
 
-  // ensure "Type of Benefiting" defaults to "Applicant" so user doesn't have to input it
+// ensure "Type of Benefiting" defaults to "Applicant" so user doesn't have to input it
   const typeEl = document.getElementById('typeOfBenefiting')
     || document.getElementById('typeOfBenefitting')
     || document.getElementById('benefitType')

@@ -83,7 +83,7 @@ function handleKKProfileNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "./confirmation/html/kkcofirmation.html";
+        if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/kkcofirmation.html";
       });
       return;
     }
@@ -107,7 +107,7 @@ function handleKKProfileNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "./confirmation/html/kkcofirmation.html";
+        if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/kkcofirmation.html";
       });
       return;
     }
@@ -123,14 +123,14 @@ function handleKKProfileNavClick(event) {
       }).then(result => {
         if (result.isConfirmed) {
           // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "kkform-personal.html";
+          window.location.href = "/Frontend/html/user/kkform-personal.html";
         } else if (result.dismiss === Swal.DismissReason.cancel) {
         }
       });
       return;
     }
   })
-  .catch(() => window.location.href = "kkform-personal.html");
+  .catch(() => window.location.href = "/Frontend/html/user/kkform-personal.html");
 }
 
 // LGBTQ+ Profile Navigation
@@ -162,7 +162,7 @@ function handleLGBTQProfileNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "./confirmation/html/lgbtqconfirmation.html";
+        if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/lgbtqconfirmation.html";
       });
       return;
     }
@@ -186,7 +186,7 @@ function handleLGBTQProfileNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "./confirmation/html/lgbtqconfirmation.html";
+        if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/lgbtqconfirmation.html";
       });
       return;
     }
@@ -202,20 +202,70 @@ function handleLGBTQProfileNavClick(event) {
       }).then(result => {
         if (result.isConfirmed) {
           // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "lgbtqform.html";
+          window.location.href = "/Frontend/html/user/lgbtqform.html";
         } else if (result.dismiss === Swal.DismissReason.cancel) {
         }
       });
       return;
     }
   })
-  .catch(() => window.location.href = "lgbtqform.html");
+  .catch(() => window.location.href = "/Frontend/html/user/lgbtqform.html");
 }
 
 // Educational Assistance Navigation
-function handleEducAssistanceNavClick(event) {
+async function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) {
+    Swal.fire({
+      icon: 'warning',
+      title: 'You need to log in first',
+      text: 'Please log in to access Educational Assistance.',
+      confirmButtonText: 'OK'
+    }).then(() => {
+      window.location.href = '/Frontend/html/user/login.html';
+    });
+    return;
+  }
+
+  // Check if the user's latest application was rejected
+  try {
+    const checkRes = await fetch('http://localhost:5000/api/educational-assistance/check-rejected', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    if (checkRes.ok) {
+      const checkData = await checkRes.json();
+      if (checkData.rejected && checkData.applicationId) {
+        // Prompt user to edit/resubmit
+        const result = await Swal.fire({
+          icon: 'error',
+          title: 'Application Rejected',
+          html: `
+            <div>
+              <p>Your Educational Assistance application was rejected.</p>
+              <p>Reason: <b>${checkData.rejectionReason || "No reason provided"}</b></p>
+              <p>You may edit and resubmit your application.</p>
+            </div>
+          `,
+          showCancelButton: true,
+          confirmButtonText: "Edit & Resubmit",
+          cancelButtonText: "Cancel",
+          confirmButtonColor: "#07B0F2",
+          cancelButtonColor: "#0A2C59"
+        });
+        if (result.isConfirmed) {
+          window.location.href = `/Frontend/html/user/confirmation/html/editEducRejected.html?id=${checkData.applicationId}`;
+          return;
+        }
+        // If cancelled, do nothing
+        return;
+      }
+    }
+  } catch (err) {
+    console.error('Error checking rejected application:', err);
+    // fallback to normal flow
+  }
+
   Promise.all([
     fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
       headers: { Authorization: `Bearer ${token}` }
@@ -251,7 +301,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes, view my response",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "./confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/educConfirmation.html";
       });
       return;
     }
@@ -276,7 +326,7 @@ function handleEducAssistanceNavClick(event) {
         confirmButtonText: "Yes",
         cancelButtonText: "No"
       }).then(result => {
-        if (result.isConfirmed) window.location.href = "./confirmation/html/educConfirmation.html";
+        if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/educConfirmation.html";
       });
       return;
     }
@@ -284,9 +334,9 @@ function handleEducAssistanceNavClick(event) {
     if (isFormOpen && (!hasProfile || isRejected)) {
       if (isRejected) {
         // When their previous application was rejected, inform and immediately redirect to the form to reapply
-        Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' }).then(() => {
+        Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the resubmission page.' }).then(() => {
           try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); sessionStorage.removeItem('educAssistanceDraft'); } catch (e) {}
-          window.location.href = "./confirmation/html/editEduc.html";
+          window.location.href = "/Frontend/html/user/confirmation/html/editEducRejected.html";
         });
       } else {
         const message = `You don't have a profile yet. Please fill out the form to create one.`;
@@ -300,14 +350,14 @@ function handleEducAssistanceNavClick(event) {
         }).then(result => {
           if (result.isConfirmed) {
             try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); sessionStorage.removeItem('educAssistanceDraft'); } catch (e) {}
-            window.location.href = "Educational-assistance-user.html";
+            window.location.href = "/Frontend/html/user/Educational-assistance-user.html";
           }
         });
       }
       return;
     }
   })
-  .catch(() => window.location.href = "Educational-assistance-user.html");
+  .catch(() => window.location.href = "/Frontend/html/user/Educational-assistance-user.html");
 }
 
 // ✅ Attach event listeners properly
@@ -337,30 +387,58 @@ function handleEducAssistanceNavClick(event) {
     lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
   }
 
-  const educAssistanceNavBtnDesktop = document.querySelector('.navbar-center a[href="./Educational-assistance-user.html"]');
-const educAssistanceNavBtnMobile = document.querySelector('.navbar-mobile-menu a[href="./Educational-assistance-user.html"]');
+  // Replace previous educational-assistance attach logic with a single reliable handler
+(function attachEducReapplyHandler() {
+  const desktopBtn = document.getElementById('educAssistanceNavBtnDesktop');
+  const mobileBtn = document.getElementById('educAssistanceNavBtnMobile');
 
-function attachEducHandler(btn) {
-  if (!btn) return;
-  btn.addEventListener('click', function (e) {
-    // Prefer the reusable helper if available (loaded via educRejected.js), otherwise use existing handler
-    if (window.checkAndPromptEducReapply) {
-      try {
-        window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' });
-      } catch (err) {
-        // fallback
-        handleEducAssistanceNavClick(e);
+  async function onEducClick(e) {
+    e.preventDefault();
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    // If not logged in, delegate to existing handler (which will show login)
+    if (!token) return handleEducAssistanceNavClick(e);
+
+    // Try check-rejected first
+    try {
+      const res = await fetch('http://localhost:5000/api/educational-assistance/check-rejected', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const json = await res.json().catch(() => ({}));
+        if (json && json.rejected && json.applicationId) {
+          const reason = json.rejectionReason || 'No reason provided';
+          const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Application Rejected',
+            html: `<p>Your Educational Assistance application was rejected.</p><p><strong>Reason:</strong> ${reason}</p><p>Do you want to edit and resubmit?</p>`,
+            showCancelButton: true,
+            confirmButtonText: 'Edit & Resubmit',
+            cancelButtonText: 'Cancel',
+            confirmButtonColor: '#07B0F2',
+            cancelButtonColor: '#0A2C59'
+          });
+          if (result.isConfirmed) {
+            // Redirect to resubmit page with id
+            window.location.href = `/Frontend/html/user/confirmation/html/editEducRejected.html?id=${json.applicationId}`;
+            return;
+          }
+          // user cancelled; do nothing
+          return;
+        }
       }
-    } else {
-      handleEducAssistanceNavClick(e);
+    } catch (err) {
+      console.debug('check-rejected failed', err);
+      // fallthrough to normal behavior
     }
-  });
-}
 
-attachEducHandler(educAssistanceNavBtnDesktop);
-attachEducHandler(educAssistanceNavBtnMobile);
-});
+    // If not rejected or check failed, proceed with normal flow
+    handleEducAssistanceNavClick(e);
+  }
 
+  if (desktopBtn) desktopBtn.addEventListener('click', onEducClick);
+  if (mobileBtn) mobileBtn.addEventListener('click', onEducClick);
+})();
+  
 document.addEventListener('DOMContentLoaded', function () {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   const verificationStrip = document.getElementById('verification-strip');
@@ -409,4 +487,5 @@ document.addEventListener('DOMContentLoaded', function () {
         console.error('Failed to fetch user verification status.');
       });
   }
+});
 });

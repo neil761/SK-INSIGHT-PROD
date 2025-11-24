@@ -33,6 +33,19 @@ router.put(
   ctrl.updateMyApplication
 );
 
+// Add this route (place near other /me routes)
+router.post(
+  "/me/resubmit/:id",
+  protect,
+  uploadEducational.fields([
+    { name: "frontImage", maxCount: 1 },
+    { name: "backImage", maxCount: 1 },
+    { name: "coeImage", maxCount: 1 },
+    { name: "voter", maxCount: 1 },
+  ]),
+  ctrl.resubmitApplication
+);
+
 // ===== Admin Routes =====
 router.get("/", protect, authorizeRoles("admin"), ctrl.getAllApplications);
 router.get(

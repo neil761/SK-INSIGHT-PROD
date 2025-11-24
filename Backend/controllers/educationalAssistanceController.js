@@ -863,3 +863,203 @@ exports.exportApplicationsToExcel = async (req, res) => {
     res.status(500).json({ message: "Failed to export applications" });
   }
 };
+
+exports.resubmitApplication = async (req, res) => {
+  try {
+    const userId = req.user && req.user.id;
+    if (!userId) return res.status(401).json({ error: "Unauthorized" });
+
+    const appId = req.params.id;
+    const application = await EducationalAssistance.findById(appId).populate("user", "email username");
+    if (!application) return res.status(404).json({ error: "Application not found" });
+    if (application.user && String(application.user._id) !== String(userId)) {
+      return res.status(403).json({ error: "You may only resubmit your own application" });
+    }
+    if (application.status !== "rejected") {
+      return res.status(400).json({ error: "Only rejected applications can be resubmitted" });
+    }
+
+    // Parse arrays if strings
+    if (typeof req.body.siblings === "string") {
+      try { req.body.siblings = JSON.parse(req.body.siblings); } catch (e) { /* ignore */ }
+    }
+    if (typeof req.body.expenses === "string") {
+      try { req.body.expenses = JSON.parse(req.body.expenses); } catch (e) { /* ignore */ }
+    }
+
+    // Fields to compare / update
+    const updatableFields = [
+      "surname","firstname","middlename","placeOfBirth","age","sex",
+      "civilStatus","religion","email","contactNumber","school","schoolAddress",
+      "academicLevel","year","fatherName","fatherPhone","motherName","motherPhone"
+    ];
+
+    // Helper: simple deep-equal-ish for arrays/objects
+    const isSame = (a, b) => {
+      try {
+        return JSON.stringify(a || null) === JSON.stringify(b || null);
+      } catch (e) { return false; }
+    };
+
+    // detect changes
+    let changed = false;
+    for (const k of updatableFields) {
+      const incoming = req.body[k];
+      const existing = application[k];
+      if (incoming !== undefined) {
+        // normalize numbers/strings
+        const inc = (typeof existing === "number") ? Number(incoming) : incoming;
+        if (!isSame(inc, existing)) {
+          changed = true;
+          application[k] = inc;
+        }
+      }
+    }
+
+    // siblings / expenses arrays
+    if (req.body.siblings !== undefined) {
+      if (!isSame(req.body.siblings, application.siblings)) {
+        changed = true;
+        application.siblings = Array.isArray(req.body.siblings) ? req.body.siblings : [];
+      }
+    }
+    if (req.body.expenses !== undefined) {
+      if (!isSame(req.body.expenses, application.expenses)) {
+        changed = true;
+        application.expenses = Array.isArray(req.body.expenses) ? req.body.expenses : [];
+      }
+    }
+
+    // Handle file removals indicated by _removed flag (same format as updateMyApplication)
+    let removed = req.body._removed;
+    if (removed && typeof removed === "string") {
+      try { removed = JSON.parse(removed); } catch (e) { /* ignore */ }
+    }
+    function extractPublicId(url) {
+      try {
+        if (!url || typeof url !== "string") return null;
+        const parts = url.split('/upload/');
+        if (parts.length < 2) return null;
+        let after = parts[1];
+        after = after.replace(/^v\d+\//, '');
+        after = after.replace(/\.[a-zA-Z0-9]+$/, '');
+        return after;
+      } catch (e) { return null; }
+    }
+    // track if files changed
+    if (removed && (removed.front || removed.frontImage)) {
+      if (application.frontImage) {
+        const pid = extractPublicId(application.frontImage);
+        if (pid) {
+          try { await cloudinary.uploader.destroy(pid); } catch (e) { /* ignore */ }
+        }
+      }
+      application.frontImage = null;
+      changed = true;
+    }
+    if (removed && (removed.back || removed.backImage)) {
+      if (application.backImage) {
+        const pid = extractPublicId(application.backImage);
+        if (pid) {
+          try { await cloudinary.uploader.destroy(pid); } catch (e) { /* ignore */ }
+        }
+      }
+      application.backImage = null;
+      changed = true;
+    }
+    if (removed && (removed.coe || removed.coeImage)) {
+      if (application.coeImage) {
+        const pid = extractPublicId(application.coeImage);
+        if (pid) {
+          try { await cloudinary.uploader.destroy(pid); } catch (e) { /* ignore */ }
+        }
+      }
+      application.coeImage = null;
+      changed = true;
+    }
+    if (removed && (removed.voter || removed.voterImage)) {
+      if (application.voter) {
+        const pid = extractPublicId(application.voter);
+        if (pid) {
+          try { await cloudinary.uploader.destroy(pid); } catch (e) { /* ignore */ }
+        }
+      }
+      application.voter = null;
+      changed = true;
+    }
+
+    // Handle newly uploaded files (replace old => delete old cloudinary if present)
+    if (req.files?.frontImage?.[0]) {
+      if (application.frontImage) {
+        const oldPid = extractPublicId(application.frontImage);
+        if (oldPid) { try { await cloudinary.uploader.destroy(oldPid); } catch (e) {} }
+      }
+      application.frontImage = req.files.frontImage[0].path;
+      changed = true;
+    }
+    if (req.files?.backImage?.[0]) {
+      if (application.backImage) {
+        const oldPid = extractPublicId(application.backImage);
+        if (oldPid) { try { await cloudinary.uploader.destroy(oldPid); } catch (e) {} }
+      }
+      application.backImage = req.files.backImage[0].path;
+      changed = true;
+    }
+    if (req.files?.coeImage?.[0]) {
+      if (application.coeImage) {
+        const oldPid = extractPublicId(application.coeImage);
+        if (oldPid) { try { await cloudinary.uploader.destroy(oldPid); } catch (e) {} }
+      }
+      application.coeImage = req.files.coeImage[0].path;
+      changed = true;
+    }
+    if (req.files?.voter?.[0]) {
+      if (application.voter) {
+        const oldPid = extractPublicId(application.voter);
+        if (oldPid) { try { await cloudinary.uploader.destroy(oldPid); } catch (e) {} }
+      }
+      application.voter = req.files.voter[0].path;
+      changed = true;
+    }
+
+    if (!changed) {
+      return res.status(400).json({ error: "No changes detected. Please modify something to resubmit." });
+    }
+
+    // Apply resubmission metadata
+    application.status = "pending";
+    application.rejectionReason = null;
+    application.resubmissionCount = (application.resubmissionCount || 0) + 1;
+    application.createdAt = new Date(); // treat as new submission time
+    // Mark as unread for admins so it appears in admin queue/notifications again
+    application.isRead = false;
+    
+    await application.save();
+
+    // Create notification for admin
+    const notif = new Notification({
+      type: "educational-assistance",
+      event: "resubmission",
+      message: `User ${userId} resubmitted Educational Assistance application`,
+      referenceId: application._id,
+      cycleId: application.formCycle,
+      createdAt: new Date(),
+      read: false,
+    });
+    await notif.save();
+
+    if (req.app.get("io")) {
+      req.app.get("io").emit("educational-assistance:resubmitted", {
+        id: application._id,
+        user: userId,
+        createdAt: application.createdAt,
+        status: application.status,
+      });
+    }
+
+    return res.json({ message: "Application resubmitted successfully", application });
+  } catch (err) {
+    console.error("resubmitApplication error:", err);
+    return res.status(500).json({ error: "Server error while resubmitting application" });
+  }
+};
