@@ -800,7 +800,9 @@ exports.exportApplicationsToExcel = async (req, res) => {
     let applications = await EducationalAssistance.find({
       formCycle: cycleDoc._id,
       status: "approved" // Only export approved applications
-    }).populate("user", "username email birthday sex address");
+    })
+    // populate user including contact fields (try both possible field names)
+    .populate("user", "username email birthday sex address contactNumber contactNo");
 
     if (!applications.length) {
       return res.status(404).json({ error: "No profiling found for this cycle" });
@@ -830,11 +832,11 @@ exports.exportApplicationsToExcel = async (req, res) => {
       // Gender
       const gender = app.sex || "N/A";
 
-      // Email
-      const email = app.user?.email || "N/A";
+      // Email (prefer application then user)
+      const email = app.email || app.user?.email || "N/A";
 
-      // Contact No.  
-      const contactNo = app.contactNo || app.user?.contactNo || "N/A";
+      // Contact No.  (prefer application.contactNumber/contactNo then user.contactNumber/contactNo)
+      const contactNo = (app.contactNumber || app.contactNo) || (app.user && (app.user.contactNumber || app.user.contactNo)) || "N/A";
 
       // School
       const school = app.school || "N/A";

@@ -225,12 +225,36 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!res.ok) throw new Error(`Error ${res.status}`);
       const data = await res.json();
 
-      const visibleProfiles = data.filter(p => !p.isDeleted);
+      // Filter out deleted profiles and sort newest -> oldest
+      const visibleProfiles = (Array.isArray(data) ? data : [])
+        .filter(p => !p.isDeleted)
+        .sort((a, b) => {
+          const ta = getProfileTimestamp(a);
+          const tb = getProfileTimestamp(b);
+          return tb - ta; // newest first
+        });
       allProfiles = visibleProfiles;
       renderProfiles(visibleProfiles);
     } catch (err) {
       console.error("❌ Error fetching profiles:", err);
     }
+  }
+
+  // Helper: determine most reliable timestamp for a profile
+  function getProfileTimestamp(p) {
+    // prefer explicit submittedAt or createdAt or displayData.createdAt
+    const t = p?.submittedAt || p?.createdAt || p?.displayData?.submittedAt || p?.displayData?.createdAt || null;
+    if (t) {
+      const d = new Date(t);
+      if (!isNaN(d)) return d.getTime();
+    }
+    // fallback to ObjectId timestamp
+    try {
+      if (p && p._id && typeof p._id === "string" && p._id.length >= 8) {
+        return parseInt(p._id.substring(0, 8), 16) * 1000;
+      }
+    } catch (e) {}
+    return 0;
   }
 
   const PROFILES_PER_PAGE = 30;
@@ -750,7 +774,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       const row = document.createElement("tr");
       row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id);
+      row.setAttribute('data-id', p._id); // Ensure this is set correctly
       row.innerHTML = `
         <td>${startIdx + i + 1}</td>
         <td>${formattedName}</td>

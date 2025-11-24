@@ -211,43 +211,81 @@ exports.getAllProfiles = async (req, res) => {
     let cycleDoc = null;
     let filter = {};
 
+    // Always exclude soft-deleted profiles
+    filter.isDeleted = false;
+
     if (all === "true") {
       if (sexAssignedAtBirth) filter.sexAssignedAtBirth = sexAssignedAtBirth;
       if (lgbtqClassification) filter.lgbtqClassification = lgbtqClassification;
-    } else {
-      if (year && cycle) {
-        cycleDoc = await FormCycle.findOne({
-          formName: "LGBTQIA+ Profiling",
-          year: Number(year),
-          cycleNumber: Number(cycle),
-        });
-        if (!cycleDoc) {
-          return res.status(404).json({ error: "Specified cycle not found" });
-        }
-      } else {
-        try {
-          cycleDoc = await getPresentCycle("LGBTQIA+ Profiling");
-        } catch (err) {
-          return res.status(404).json({ error: err.message });
-        }
-      }
-      filter.formCycle = cycleDoc._id;
-      if (sexAssignedAtBirth) filter.sexAssignedAtBirth = sexAssignedAtBirth;
-      if (lgbtqClassification) filter.lgbtqClassification = lgbtqClassification;
+      if (purok) filter.purok = purok;
+      // return all matching (across cycles)
+      const profilesAll = await LGBTQProfile.find(filter)
+        .populate("formCycle")
+        .populate("user", "username email birthday age");
+      // enrich like before
+      const enrichedAll = profilesAll.map(profile => {
+        const demographics = {
+          lastname: profile.lastname,
+          firstname: profile.firstname,
+          middlename: profile.middlename,
+          birthday: profile.user?.birthday,
+          age: profile.user?.age,
+          sexAssignedAtBirth: profile.sexAssignedAtBirth,
+        };
+        return {
+          ...profile.toObject(),
+          demographics,
+          displayData: {
+            residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
+            age: demographics.age || "N/A",
+            lgbtqClassification: profile.lgbtqClassification || "N/A",
+            sexAssignedAtBirth: profile.sexAssignedAtBirth || "N/A",
+            birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A",
+            idImage: profile.idImage || null
+          }
+        };
+      });
+      return res.json(enrichedAll);
     }
+
+    // If specific year & cycle requested, use that exact cycle
+    if (year && cycle) {
+      cycleDoc = await FormCycle.findOne({
+        formName: "LGBTQIA+ Profiling",
+        year: Number(year),
+        cycleNumber: Number(cycle),
+      });
+      if (!cycleDoc) {
+        return res.status(404).json({ error: "Specified cycle not found" });
+      }
+    } else {
+      // No specific cycle requested: choose the latest cycle available for this form
+      // This returns the most recent cycle even if it's closed
+      cycleDoc = await FormCycle.findOne({ formName: "LGBTQIA+ Profiling" })
+        .sort({ year: -1, cycleNumber: -1 })
+        .exec();
+      if (!cycleDoc) {
+        return res.status(404).json({ error: "No cycles found for LGBTQIA+ Profiling" });
+      }
+    }
+
+    filter.formCycle = cycleDoc._id;
+    if (sexAssignedAtBirth) filter.sexAssignedAtBirth = sexAssignedAtBirth;
+    if (lgbtqClassification) filter.lgbtqClassification = lgbtqClassification;
+    if (purok) filter.purok = purok;
 
     const profiles = await LGBTQProfile.find(filter)
       .populate("formCycle")
       .populate("user", "username email birthday age");
 
-    // Enrich each profile with displayData
+    // Enrich each profile with displayData (same as before)
     const enriched = profiles.map(profile => {
       const demographics = {
         lastname: profile.lastname,
         firstname: profile.firstname,
         middlename: profile.middlename,
-        birthday: profile.user?.birthday, // <-- reference user
-        age: profile.user?.age,           // <-- reference user
+        birthday: profile.user?.birthday,
+        age: profile.user?.age,
         sexAssignedAtBirth: profile.sexAssignedAtBirth,
       };
       return {
@@ -255,7 +293,7 @@ exports.getAllProfiles = async (req, res) => {
         demographics,
         displayData: {
           residentName: `${demographics.firstname || ""} ${demographics.middlename ? demographics.middlename + " " : ""}${demographics.lastname || ""}`.trim() || "N/A",
-          age: demographics.age || "N/A", // <-- from user
+          age: demographics.age || "N/A",
           lgbtqClassification: profile.lgbtqClassification || "N/A",
           sexAssignedAtBirth: profile.sexAssignedAtBirth || "N/A",
           birthday: demographics.birthday ? new Date(demographics.birthday).toISOString().split("T")[0] : "N/A",
@@ -266,6 +304,7 @@ exports.getAllProfiles = async (req, res) => {
 
     res.json(enriched);
   } catch (err) {
+    console.error("getAllProfiles (LGBTQ) error:", err);
     res.status(500).json({ error: "Server error" });
   }
 };

@@ -187,13 +187,35 @@
 
         if (!res.ok) throw new Error(`Error ${res.status}`);
         const data = await res.json();
-        // Filter out deleted profiles
-        const visibleProfiles = data.filter(p => !p.isDeleted);
+        // Filter out deleted profiles and sort newest -> oldest
+        const visibleProfiles = (Array.isArray(data) ? data : [])
+          .filter(p => !p.isDeleted)
+          .sort((a, b) => {
+            const ta = getProfileTimestamp(a);
+            const tb = getProfileTimestamp(b);
+            return tb - ta; // newest first
+          });
         allProfiles = visibleProfiles;
         renderProfiles(visibleProfiles); // render table
       } catch (err) {
         console.error("❌ Error fetching profiles:", err);
       }
+    }
+    // Helper: determine most reliable timestamp for a profile
+    function getProfileTimestamp(p) {
+      // prefer explicit submittedAt or createdAt, fall back to ObjectId timestamp
+      const t = p?.submittedAt || p?.createdAt || p?.user?.submittedAt || null;
+      if (t) {
+        const d = new Date(t);
+        if (!isNaN(d)) return d.getTime();
+      }
+      // fallback: derive timestamp from Mongo ObjectId
+      try {
+        if (p && p._id && typeof p._id === "string" && p._id.length >= 8) {
+          return parseInt(p._id.substring(0, 8), 16) * 1000;
+        }
+      } catch (e) {}
+      return 0;
     }
 
     function capitalize(str) {

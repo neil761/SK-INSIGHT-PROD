@@ -8,9 +8,9 @@
   <!-- Add this in your <head> -->
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
-  <link rel="stylesheet" href="/Frontend/css/Educational-Assistance-admin.css">
-  <link rel="stylesheet" href="/Frontend/css/header.css">
-  <link rel="stylesheet" href="/Frontend/css/lightbox.css">
+  <link rel="stylesheet" href="../../css/Educational-Assistance-admin.css">
+  <link rel="stylesheet" href="../../css/header.css">
+  <link rel="stylesheet" href="../../css/lightbox.css">
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
 </head>
 <body>
@@ -18,7 +18,7 @@
   <div class="sidebar">
     <h3 class="text-2xl font-normal">Sangguniang Kabataan</h3>
     <div class="logos">
-      <img src="/Frontend/assets/logo.png" alt="logo" class="logo">
+      <img src="../../assets/logo.png" alt="logo" class="logo">
       <div class="title-container">
         <p class="text-lg font-semibold">SK Officials</p>
         <p class="admin">Admin</p>
@@ -208,7 +208,7 @@
   <div class="modal-content modern-modal">
     <div class="modern-modal-header">
       <div class="profile-header">
-        <img src="/Frontend/assets/default-profile.jpg" alt="Profile" />
+        <img src="../../assets/default-profile.jpg" alt="Profile" />
         <div class="profile-name" id="profileName"></div>
       </div>
       <button class="modern-modal-close" title="Close">&times;</button>
@@ -250,7 +250,7 @@
   </div>
 </div>
  </div>
- <script src="/Frontend/js/lightbox.js"></script>
+ <script src="../../js/lightbox.js"></script>
 
   <script src="../../js/Educational-Assistance-admin.js"></script>
   <script>
@@ -260,7 +260,7 @@
           document.getElementById('header-container').innerHTML = html;
           // After injecting, run the header JS
           const script = document.createElement('script');
-          script.src = '/Frontend/js/admin/header.js';
+          script.src = '../../js/admin/header.js';
           document.body.appendChild(script);
         });
   </script>
@@ -299,6 +299,6 @@
         }
       });
     </script>
-    <script src="/Frontend/js/admin/sidebar-notif-badge.js"></script>
+    <script src="../../js/admin/sidebar-notif-badge.js"></script>
 </body>
 </html>
