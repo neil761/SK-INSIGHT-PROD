@@ -4,6 +4,17 @@ const Announcement = require("../models/Announcement");
 exports.createAnnouncement = async (req, res) => {
   try {
     const { title, content, category, eventDate, expiresAt, isPinned } = req.body;
+    // Validate eventDate: do not allow creating announcements with past eventDate
+    if (eventDate) {
+      const ed = new Date(eventDate);
+      if (isNaN(ed.getTime())) {
+        return res.status(400).json({ success: false, message: "Invalid eventDate" });
+      }
+      const now = new Date();
+      if (ed < now) {
+        return res.status(400).json({ success: false, message: "Event date must be in the future" });
+      }
+    }
     const announcement = await Announcement.create({
       title,
       content,

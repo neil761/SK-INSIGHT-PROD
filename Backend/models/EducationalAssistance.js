@@ -41,7 +41,7 @@ const educationalAssistanceSchema = new mongoose.Schema({
   academicLevel: {
     type: String,
     required: true,
-    enum: ["Senior High School", "College"],
+    enum: ["Senior High School", "Junior High School"],
   },
   year: { 
     type: String, 
@@ -49,12 +49,10 @@ const educationalAssistanceSchema = new mongoose.Schema({
     enum: [
       "Grade 11",
       "Grade 12",
-      "1st year",
-      "2nd year",
-      "3rd year",
-      "4th year",
-      "5th year",
-      "6th year",
+      "Grade 7",
+      "Grade 8",
+      "Grade 9",
+      "Grade 10",
     ],
   },
   typeOfBenefit: {

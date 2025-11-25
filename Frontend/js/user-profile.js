@@ -274,10 +274,10 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
               console.info('No previous KK profile available; falling back to user data');
               if (user) {
-                const middleInitial = user.middlename
-                  ? user.middlename.charAt(0).toUpperCase() + "."
-                  : "";
-                const fullName = [user.firstname || user.firstName || "", middleInitial, user.lastname || user.lastname || ""].filter(Boolean).join(' ');
+                const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
+                const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
+                const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+                const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
                 if (fullName) setValue('fullName', fullName);
                 if (user.birthday) setValue('age', calculateAge(user.birthday));
                 if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -288,10 +288,10 @@ document.addEventListener("DOMContentLoaded", function () {
           } catch (e) {
             console.warn('Failed to fetch previous KK profile', e);
             if (user) {
-              const middleInitial = user.middlename
-                ? user.middlename.charAt(0).toUpperCase() + "."
-                : "";
-              const fullName = [user.firstname || user.firstName || "", middleInitial, user.lastname || user.lastname || ""].filter(Boolean).join(' ');
+              const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
+              const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
+              const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+              const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user.birthday) setValue('age', calculateAge(user.birthday));
               if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -1557,8 +1557,14 @@ if (logoutBtn) {
   }
 
   // Educational Assistance Navigation
-  function handleEducAssistanceNavClick(event) {
+  async function handleEducAssistanceNavClick(event) {
     event.preventDefault();
+    if (window.checkAndPromptEducReapply) {
+      try {
+        const r = await window.checkAndPromptEducReapply({ event, redirectUrl: 'Educational-assistance-user.html' });
+        if (r && r.redirected) return;
+      } catch (e) {}
+    }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
@@ -1699,23 +1705,30 @@ if (logoutBtn) {
           (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
           (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
         );
+        const isApproved = Boolean(
+          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
+          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
+        );
 
         if (isFormOpen && (!hasProfile || isRejected)) {
-          const title = isRejected ? 'Previous Application Rejected' : 'No profile found';
-          const text = isRejected
-            ? 'Your previous application was rejected. Would you like to submit a new application?'
-            : `You don't have a profile yet. Please fill out the form to create one.`;
-
-          const result = await Swal.fire({ icon: 'info', title, text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
-          if (result && result.isConfirmed) {
+          if (isRejected) {
+            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
             try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
             window.location.href = redirectUrl;
             return { redirected: true, isRejected, hasProfile, isFormOpen };
+          } else {
+            const text = `You don't have a profile yet. Please fill out the form to create one.`;
+            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
+            if (result && result.isConfirmed) {
+              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
+              window.location.href = redirectUrl;
+              return { redirected: true, isRejected, hasProfile, isFormOpen };
+            }
           }
         }
 
-        if (!isFormOpen && hasProfile && !isRejected) {
-          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `but you already have an application. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
+        if (!isFormOpen && hasProfile && isApproved) {
+          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
           if (res2 && res2.isConfirmed) { window.location.href = `./confirmation/html/educConfirmation.html`; return { redirected: true, isRejected, hasProfile, isFormOpen }; }
         }
 

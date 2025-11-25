@@ -37,7 +37,11 @@
     (list||[]).forEach(a => {
       const isActive = (a.isActive === undefined) ? true : Boolean(a.isActive);
       if (!isActive) return;
-      if (a.expiresAt) { const exp = Date.parse(a.expiresAt); if (!isNaN(exp) && exp < now) return; }
+      // Determine expiration based on eventDate primarily, fall back to expiresAt
+      const eventTime = a.eventDate ? Date.parse(a.eventDate) : NaN;
+      if (!isNaN(eventTime) && eventTime < now) return;
+      const expireTime = a.expiresAt ? Date.parse(a.expiresAt) : NaN;
+      if (!isNaN(expireTime) && expireTime < now) return;
       if (!userId) count++; else if (!isViewedByUser(a, userId)) count++;
     });
     return count;

@@ -17,6 +17,8 @@ router.post(
   ctrl.submitApplication
 );
 router.get("/me", protect, ctrl.getMyApplication);
+// Check whether the user's application in the present cycle was rejected
+router.get("/check-rejected", protect, ctrl.checkIfRejected);
 
 // User: update my application (allows replacing/removing uploaded images)
 router.put(
@@ -29,6 +31,19 @@ router.put(
     { name: "voter", maxCount: 1 },
   ]),
   ctrl.updateMyApplication
+);
+
+// Add this route (place near other /me routes)
+router.post(
+  "/me/resubmit/:id",
+  protect,
+  uploadEducational.fields([
+    { name: "frontImage", maxCount: 1 },
+    { name: "backImage", maxCount: 1 },
+    { name: "coeImage", maxCount: 1 },
+    { name: "voter", maxCount: 1 },
+  ]),
+  ctrl.resubmitApplication
 );
 
 // ===== Admin Routes =====

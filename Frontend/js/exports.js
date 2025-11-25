@@ -324,16 +324,8 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       });
       if (!result.isConfirmed) return;
-    } else if (yearCycleCount >= 3) {
-      Swal.fire({
-        icon: "error",
-        title: "Cannot Open New Cycle",
-        text: "Maximum of 3 cycles per year allowed. Please wait until next year to open a new cycle.",
-        confirmButtonColor: "#0A2C59"
-      });
-      return;
     } else {
-      // Opening a new cycle: warn user
+      // Opening a new cycle: warn user (no per-year limit)
       const result = await Swal.fire({
         icon: "info",
         title: "Open New Cycle?",
@@ -341,7 +333,6 @@ document.addEventListener("DOMContentLoaded", () => {
           <b>Are you sure you want to open a new cycle?</b><br>
           <ul style="text-align:left; margin: 1em 0 0 1.5em;">
             <li>A new cycle will allow new submissions for this form.</li>
-            <li>Only 3 cycles are allowed per year.</li>
           </ul>
         `,
         showCancelButton: true,

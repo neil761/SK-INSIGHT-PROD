@@ -254,7 +254,7 @@
     
     /* Modal Styles */
     .modal {
-      display: none;
+      display: none; /* <-- Only display: none here! */
       position: fixed;
       top: 0;
       left: 0;
@@ -263,8 +263,6 @@
       background: rgba(0, 0, 0, 0.5);
       backdrop-filter: blur(5px);
       z-index: 1000;
-      /* Center content vertically and horizontally */
-      display: none;
       align-items: center;
       justify-content: center;
     }
@@ -681,7 +679,8 @@
 .history-card-body { color:#222; font-size:0.95rem; }
 
 /* modal small adjustments */
-#historyModal { align-items: center; justify-content: center; }
+/* REMOVE forced display:flex for #historyModal — keep centering only */
+#historyModal { align-items: center; justify-content: center; /* display controlled by .modal and JS */ }
 #historyModal .modal-content { width: 90%; max-width: 1000px; border-radius: 10px; }
 
 /* Enhanced history modal styling to match SK INSIGHT design */
@@ -761,7 +760,8 @@
   .history-table tbody td { white-space: normal; }
 }
 #historyModal .modal-content { /* keep previous rule for compatibility */ }
-#historyModal { /* ensure centering */ display: flex; }
+#historyModal { /* ensure centering */ /* display: none is inherited from .modal; JS will set inline style to 'flex' when opening */ }
+
 /* Added styles to improve history table readability */
 .history-form-badge {
   display:inline-block;

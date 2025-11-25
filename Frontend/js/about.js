@@ -283,7 +283,7 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   // Educational Assistance Navigation
-  function handleEducAssistanceNavClick(event) {
+  async function handleEducAssistanceNavClick(event) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (!token) {
@@ -296,6 +296,40 @@ document.addEventListener('DOMContentLoaded', function () {
         window.location.href = '/Frontend/html/user/login.html';
       });
       return;
+    }
+    // Early check: see if the user's latest application was rejected.
+    // If rejected, prompt to update and redirect to the edit page.
+    try {
+      const apiBase = 'http://localhost:5000';
+      const checkUrl = `${apiBase}/api/educational-assistance/check-rejected`;
+      const checkRes = await fetch(checkUrl, {
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
+      });
+      if (checkRes && checkRes.ok) {
+        const checkData = await checkRes.json().catch(() => ({}));
+        const rejected = checkData && (checkData.rejected === true || checkData.rejected === 'true' || checkData.rejected === '1' || /reject/i.test(String(checkData.status || checkData.result || '')));
+        if (rejected) {
+          const reason = checkData.rejectionReason || checkData.reason || 'Your previous application was rejected by the admin.';
+          const result = await Swal.fire({
+            icon: 'warning',
+            title: 'Previous Application Rejected',
+            text: reason,
+            showCancelButton: true,
+            confirmButtonText: 'Update Response',
+            cancelButtonText: 'Cancel'
+          });
+          if (result && result.isConfirmed) {
+            // Clear any draft keys to avoid stale data
+            try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); } catch (e) {}
+            // Redirect to edit page (relative to this page)
+            window.location.href = 'confirmation/html/editEduc.html';
+            return;
+          }
+        }
+      }
+    } catch (err) {
+      console.debug('earlyRejectedCheck error', err);
+      // If the check fails, continue to the normal flow below
     }
     Promise.all([
       fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
@@ -438,38 +472,30 @@ document.addEventListener('DOMContentLoaded', function () {
           (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
           (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
         );
+        const isApproved = Boolean(
+          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
+          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
+        );
 
         if (isFormOpen && (!hasProfile || isRejected)) {
-          const title = isRejected ? 'Previous Application Rejected' : 'No profile found';
-          const text = isRejected
-            ? 'Your previous application was rejected. Would you like to submit a new application?'
-            : `You don't have a profile yet. Please fill out the form to create one.`;
-
-          const result = await Swal.fire({
-            icon: 'info',
-            title,
-            text,
-            showCancelButton: true,
-            confirmButtonText: 'Go to form',
-            cancelButtonText: 'No'
-          });
-
-          if (result && result.isConfirmed) {
+          if (isRejected) {
+            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
             try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
             window.location.href = redirectUrl;
             return { redirected: true, isRejected, hasProfile, isFormOpen };
+          } else {
+            const text = `You don't have a profile yet. Please fill out the form to create one.`;
+            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
+            if (result && result.isConfirmed) {
+              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
+              window.location.href = redirectUrl;
+              return { redirected: true, isRejected, hasProfile, isFormOpen };
+            }
           }
         }
 
-        if (!isFormOpen && hasProfile && !isRejected) {
-          const res2 = await Swal.fire({
-            icon: 'info',
-            title: `The ${formName} is currently closed`,
-            text: `but you already have an application. Do you want to view your response?`,
-            showCancelButton: true,
-            confirmButtonText: 'Yes, view my response',
-            cancelButtonText: 'No'
-          });
+        if (!isFormOpen && hasProfile && isApproved) {
+          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
           if (res2 && res2.isConfirmed) {
             window.location.href = `./confirmation/html/educConfirmation.html`;
             return { redirected: true, isRejected, hasProfile, isFormOpen };
