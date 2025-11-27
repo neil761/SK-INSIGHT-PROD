@@ -1,3 +1,9 @@
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 document.addEventListener('DOMContentLoaded', function() {
   // if (!validateTokenAndRedirect("Educational Assistance Confirmation")) {
   //   return;
@@ -50,28 +56,26 @@ document.addEventListener('DOMContentLoaded', function() {
       );
 
       if (isApproved) {
-        // Remove any edit buttons
-        document.querySelectorAll('.kk-upload-row .edit').forEach(el => el.remove());
-
-        // Add an approved badge/text with check icon if not already present
-        const container = document.querySelector('.kk-upload-row');
-        if (container && !container.querySelector('.approved-text')) {
-          const span = document.createElement('span');
-          span.className = 'approved-text';
-          // Use FontAwesome check icon followed by text
-          span.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true" style="margin-right:8px;"></i> Approved';
-          span.setAttribute('role', 'status');
-          span.setAttribute('aria-label', 'Approved');
-          // Inline styling to match existing buttons visually
-          span.style.display = 'inline-flex';
-          span.style.alignItems = 'center';
-          span.style.padding = '8px 14px';
-          span.style.borderRadius = '6px';
-          span.style.color = '#28a745';
-          span.style.fontWeight = '600';
-          span.style.marginLeft = '8px';
-          container.appendChild(span);
-        }
+        // For each upload row: remove edit buttons and add an approved badge/text
+        const containers = Array.from(document.querySelectorAll('.kk-upload-row'));
+        containers.forEach(container => {
+          container.querySelectorAll('.edit').forEach(el => el.remove());
+          if (container && !container.querySelector('.approved-text')) {
+            const span = document.createElement('span');
+            span.className = 'approved-text';
+            span.innerHTML = '<i class="fa-solid fa-check" aria-hidden="true" style="margin-right:8px; color: #28a745;"></i> Approved';
+            span.setAttribute('role', 'status');
+            span.setAttribute('aria-label', 'Approved');
+            span.style.display = 'inline-flex';
+            span.style.alignItems = 'center';
+            span.style.padding = '8px 14px';
+            span.style.borderRadius = '6px';
+            span.style.color = '#28a745';
+            span.style.fontWeight = '600';
+            span.style.marginLeft = '8px';
+            container.appendChild(span);
+          }
+        });
       }
     } catch (e) {
       console.warn('Could not determine profile approval status', e);
