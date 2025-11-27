@@ -605,6 +605,18 @@ try {
   try { loadDraft(); } catch (e) { /* ignore */ }
   try { if (typeof toggleRequirementRows === 'function') toggleRequirementRows(); } catch(e) {}
 
+  // Capture the original form snapshot so we can detect whether the user made any changes
+  // Use a stable stringify to avoid key order differences.
+  function stableStringify(obj) {
+    if (obj === null || obj === undefined) return JSON.stringify(obj);
+    if (typeof obj !== 'object') return JSON.stringify(obj);
+    if (Array.isArray(obj)) return '[' + obj.map(stableStringify).join(',') + ']';
+    const keys = Object.keys(obj).sort();
+    return '{' + keys.map(k => JSON.stringify(k) + ':' + stableStringify(obj[k])).join(',') + '}';
+  }
+
+  const ORIGINAL_SNAPSHOT = stableStringify(collectDraft());
+
   // Validate required fields (exclude siblings) before allowing submit
   function humanizeId(id) {
     // convert camelCase / lower_snake to Title Case for user-friendly message
@@ -817,6 +829,17 @@ try {
     e.preventDefault();
     // Validate required fields (siblings are excluded from this check)
     try { if (!validateForm()) return; } catch (err) { console.error('validateForm error', err); }
+
+    // Prevent resubmitting if nothing was changed compared to the initial snapshot
+    try {
+      const currentSnapshot = stableStringify(collectDraft());
+      if (currentSnapshot === ORIGINAL_SNAPSHOT) {
+        Swal.fire({ icon: 'info', title: 'No changes detected', text: 'You have not changed any fields or files. Please modify your application before resubmitting.' });
+        return;
+      }
+    } catch (err) {
+      console.warn('Could not compare form snapshot', err);
+    }
 
     const fd = new FormData();
 
