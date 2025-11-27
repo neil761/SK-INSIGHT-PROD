@@ -1,5 +1,11 @@
 async function verifyOtp(email, otp) {
-  const verifyRes = await fetch('http://localhost:5000/api/users/verify/confirm', {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
+  const verifyRes = await fetch(`${API_BASE}/api/users/verify/confirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, otp })
@@ -123,7 +129,7 @@ export function setupVerifyEmail(user) {
       didOpen: () => Swal.showLoading()
     });
     try {
-      const res = await fetch('http://localhost:5000/api/users/verify/send', {
+      const res = await fetch(`${API_BASE}/api/users/verify/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: verifyEmailInput.value })
@@ -213,7 +219,7 @@ export function setupVerifyEmail(user) {
     }
     verifyOtpBtn.disabled = true;
     try {
-      const res = await fetch('http://localhost:5000/api/users/verify/confirm', {
+      const res = await fetch(`${API_BASE}/api/users/verify/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: verifyEmailInput.value, otp })
@@ -259,7 +265,7 @@ export function setupVerifyEmail(user) {
       didOpen: () => Swal.showLoading()
     });
     try {
-      const res = await fetch('http://localhost:5000/api/users/verify/send', {
+      const res = await fetch(`${API_BASE}/api/users/verify/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: verifyEmailInput.value })

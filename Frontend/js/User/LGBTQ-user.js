@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // runtime-configurable API base. In production inject `window.API_BASE = 'https://sk-insight.online'`.
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // if (!validateTokenAndRedirect("LGBTQ+ Form")) {
   //   return;
   // }
@@ -133,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Autofill birthday and name fields from /api/users/me when token is available
   if (token && birthdayInput) {
-    fetch("http://localhost:5000/api/users/me", {
+    fetch(`${API_BASE}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -222,7 +228,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const formData = new FormData(form);
-      const res = await fetch("http://localhost:5000/api/lgbtqprofiling", {
+      const res = await fetch(`${API_BASE}/api/lgbtqprofiling`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -272,10 +278,10 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -351,10 +357,10 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -430,10 +436,10 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
+      fetch(`${API_BASE}/api/educational-assistance/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -529,10 +535,10 @@ document.addEventListener("DOMContentLoaded", () => {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])

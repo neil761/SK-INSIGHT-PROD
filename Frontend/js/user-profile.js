@@ -3,6 +3,11 @@ import { setupVerifyEmail } from './verify-email.js';
 // Token validation helper function
 
 document.addEventListener("DOMContentLoaded", function () {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // OTP lockout check on page load
   const unlockAt = localStorage.getItem('otpLockoutUntil');
   if (unlockAt && Date.now() < unlockAt) {
@@ -51,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch User Info
   (async function () {
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -218,7 +223,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch KKProfile Data (Full Name, Gender, etc.)
     try {
-      const kkRes = await fetch("http://localhost:5000/api/kkprofiling/me", {
+      const kkRes = await fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (kkRes.ok) {
@@ -250,8 +255,8 @@ document.addEventListener("DOMContentLoaded", function () {
         // If no KK profile for current cycle (404), try to fetch the user's most recent previous profile
         if (kkRes.status === 404) {
           console.info('No KK profile for current cycle; attempting to fetch previous cycle profile');
-          try {
-            const prevRes = await fetch('http://localhost:5000/api/kkprofiling/me/previous', { headers: { Authorization: `Bearer ${token}` } });
+            try {
+            const prevRes = await fetch(`${API_BASE}/api/kkprofiling/me/previous`, { headers: { Authorization: `Bearer ${token}` } });
             if (prevRes.ok) {
               const prev = await prevRes.json();
               // populate fields from previous profile
@@ -267,7 +272,7 @@ document.addEventListener("DOMContentLoaded", function () {
               const profileImg = document.getElementById('profile-img');
               if (profileImg && prev.profileImage) {
                 const imageUrl = prev.profileImage;
-                const resolved = imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000/${imageUrl}`;
+                const resolved = imageUrl.startsWith('http') ? imageUrl : `${API_BASE}/${imageUrl}`;
                 prevProfileImageUrl = resolved;
                 profileImg.src = resolved;
               }
@@ -317,14 +322,14 @@ document.addEventListener("DOMContentLoaded", function () {
       if (prevProfileImageUrl && profileImg) {
         profileImg.src = prevProfileImageUrl;
       } else {
-      const imgRes = await fetch("http://localhost:5000/api/kkprofiling/me/image", {
+      const imgRes = await fetch(`${API_BASE}/api/kkprofiling/me/image`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (imgRes.ok) {
         const { imageUrl } = await imgRes.json();
         if (profileImg) {
           if (imageUrl) {
-            profileImg.src = imageUrl.startsWith("http") ? imageUrl : `http://localhost:5000/${imageUrl}`;
+            profileImg.src = imageUrl.startsWith("http") ? imageUrl : `${API_BASE}/${imageUrl}`;
           } else {
             // No KK profile image, use default
             profileImg.src = "../../assets/default-profile.jpg";
@@ -371,7 +376,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
         try {
-          const res = await fetch("http://localhost:5000/api/users/change-email/unverified", {
+          const res = await fetch(`${API_BASE}/api/users/change-email/unverified`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ newEmail })
@@ -413,7 +418,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
         try {
-          const res = await fetch("http://localhost:5000/api/users/change-email", {
+          const res = await fetch(`${API_BASE}/api/users/change-email`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -511,7 +516,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function checkOtpSendLockout() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -548,7 +553,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function checkVerificationOtpLockout(email) {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -763,7 +768,7 @@ if (logoutBtn) {
     }
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/change-password", {
+      const res = await fetch(`${API_BASE}/api/users/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -865,7 +870,7 @@ if (logoutBtn) {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     let userData;
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -900,7 +905,7 @@ if (logoutBtn) {
     });
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/change-email/send-otp", {
+      const res = await fetch(`${API_BASE}/api/users/change-email/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
       });
@@ -1014,7 +1019,7 @@ if (logoutBtn) {
     verifyEmailOtpBtn.disabled = true;
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/change-email/verify-otp", {
+      const res = await fetch(`${API_BASE}/api/users/change-email/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ otp })
@@ -1053,7 +1058,7 @@ if (logoutBtn) {
     verifyEmailOtpBtn.disabled = true;
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/change-email", {
+      const res = await fetch(`${API_BASE}/api/users/change-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ newEmail, otp: verifiedOtpValue })
@@ -1263,7 +1268,7 @@ if (logoutBtn) {
         didOpen: () => Swal.showLoading()
       });
       try {
-        const res = await fetch("http://localhost:5000/api/users/change-email/send-otp", {
+        const res = await fetch(`${API_BASE}/api/users/change-email/send-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
         });
@@ -1336,7 +1341,7 @@ if (logoutBtn) {
   async function checkResendLockoutOnOpen() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -1364,7 +1369,7 @@ if (logoutBtn) {
   }
 
   // Connect to Socket.IO server
-  const socket = io('http://localhost:5000'); // adjust port if needed
+  const socket = io(API_BASE); // connect using runtime API_BASE
 
   // Join room for this user (use email or userId)
   const userEmail = user?.email; // get user's email from profile
@@ -1403,10 +1408,10 @@ if (logoutBtn) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -1482,10 +1487,10 @@ if (logoutBtn) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -1567,10 +1572,10 @@ if (logoutBtn) {
     }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
+      fetch(`${API_BASE}/api/educational-assistance/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -1678,7 +1683,7 @@ if (logoutBtn) {
         redirectUrl = 'Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();

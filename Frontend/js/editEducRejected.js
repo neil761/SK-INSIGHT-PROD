@@ -1,3 +1,9 @@
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:5000'
+  : 'https://sk-insight.online';
+
 function getAppIdFromUrl() {
   const params = new URLSearchParams(window.location.search);
   return params.get("id");
@@ -5,7 +11,13 @@ function getAppIdFromUrl() {
 
 async function fetchLatestRejectedId(token) {
   try {
-    const res = await fetch("http://localhost:5000/api/educational-assistance/check-rejected", {
+    const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+      ? window.API_BASE
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
+    const res = await fetch(`${API_BASE}/api/educational-assistance/check-rejected`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) return null;
@@ -38,7 +50,13 @@ document.addEventListener("DOMContentLoaded", async () => {
   // This route returns the latest application in the present cycle for the authenticated user
   let app;
   try {
-    const res = await fetch(`http://localhost:5000/api/educational-assistance/me`, {
+    const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+      ? window.API_BASE
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
+    const res = await fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) throw new Error("not found");
@@ -425,7 +443,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     Swal.fire({ title: "Submitting...", allowOutsideClick: false, didOpen: () => Swal.showLoading() });
     try {
-      const res = await fetch(`http://localhost:5000/api/educational-assistance/me/resubmit/${appId}`, {
+      const res = await fetch(`${API_BASE}/api/educational-assistance/me/resubmit/${appId}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` }, // don't set Content-Type for FormData
         body: fd

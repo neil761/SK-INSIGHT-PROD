@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', function () {
+        const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+            ? window.API_BASE
+            : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+                ? 'http://localhost:5000'
+                : 'https://sk-insight.online';
     const form = document.getElementById('loginForm');
     form.addEventListener('submit', async function (e) {
         e.preventDefault();
@@ -13,7 +18,7 @@ document.addEventListener('DOMContentLoaded', function () {
         });
 
         try {
-            const res = await fetch('http://localhost:5000/api/auth/forgot-password', {
+                const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email })
@@ -69,7 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             .join('');
 
                         if (otpCode.length === 6) {
-                            const verifyRes = await fetch('http://localhost:5000/api/auth/verify-otp', {
+                                const verifyRes = await fetch(`${API_BASE}/api/auth/verify-otp`, {
                                 method: 'POST',
                                 headers: { 'Content-Type': 'application/json' },
                                 body: JSON.stringify({ email, otpCode })
@@ -115,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
                                         const newPassword = document.getElementById('newPassword').value;
 
                                         // Send new password to backend
-                                        const resetRes = await fetch('http://localhost:5000/api/auth/verify-otp-reset', {
+                                            const resetRes = await fetch(`${API_BASE}/api/auth/reset-password`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ email, otpCode, newPassword })

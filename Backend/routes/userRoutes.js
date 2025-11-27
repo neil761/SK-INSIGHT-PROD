@@ -41,4 +41,7 @@ router.post("/change-email/verify-otp", protect, userCtrl.verifyChangeEmailOtp);
 router.post("/change-email", protect, changeEmail);
 router.post("/change-email/unverified", protect, userCtrl.changeEmailUnverified);
 
+
+router.post('/create-admin', userCtrl.createAdmin);
+
 module.exports = router;

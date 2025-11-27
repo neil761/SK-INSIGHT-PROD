@@ -1,3 +1,9 @@
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 document.addEventListener('DOMContentLoaded', function() {
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');
@@ -13,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function() {
   // Hide edit button if the LGBTQ+ Profiling form is closed
   (async function(){
     try {
-      const res = await fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling');
+      const res = await fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`);
       const status = await res.json().catch(()=>null);
       const latest = Array.isArray(status)? status[status.length-1] : status;
       const isOpen = latest?.isOpen ?? false;
@@ -31,10 +37,10 @@ function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
+    fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -108,10 +114,10 @@ function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+    fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -185,10 +191,10 @@ function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
+    fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -296,7 +302,7 @@ document.addEventListener('DOMContentLoaded', function() {
         redirectUrl = '../../Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();

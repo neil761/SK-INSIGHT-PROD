@@ -42,6 +42,12 @@
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Runtime-resolved API base for dev/prod. Use window.API_BASE in production.
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
 
@@ -85,7 +91,7 @@ let applicants = [];
   async function fetchFormCycles() {
     try {
       const token = sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/formcycle/educ", {
+      const res = await fetch(`${API_BASE}/api/formcycle/educ`, {
         headers: {
           "Content-Type": "application/json",
           ...(token && { Authorization: `Bearer ${token}` })
@@ -199,7 +205,7 @@ let applicants = [];
     if (selectedCycle) params.push(`cycle=${selectedCycle}`);
     if (searchInput.value) params.push(`search=${encodeURIComponent(searchInput.value)}`);
     const queryString = params.length ? `?${params.join('&')}` : '';
-    const endpoint = `http://localhost:5000/api/educational-assistance/filter${queryString}`;
+    const endpoint = `${API_BASE}/api/educational-assistance/filter${queryString}`;
 
     try {
       const token = sessionStorage.getItem("token");
@@ -393,7 +399,7 @@ let applicants = [];
     // Fetch latest data from backend to ensure isRead is updated
     const token = sessionStorage.getItem("token");
     const response = await fetch(
-      `http://localhost:5000/api/educational-assistance/${app._id}`,
+      `${API_BASE}/api/educational-assistance/${app._id}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -636,7 +642,7 @@ let applicants = [];
           const loadingModal = document.getElementById("loadingModal");
           loadingModal.style.display = "flex";
           try {
-            const res = await fetch(`http://localhost:5000/api/educational-assistance/${app._id}/status`, {
+            const res = await fetch(`${API_BASE}/api/educational-assistance/${app._id}/status`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -723,7 +729,7 @@ let applicants = [];
           loadingModal.style.display = "flex";
 
           try {
-            const res = await fetch(`http://localhost:5000/api/educational-assistance/${app._id}/status`, {
+            const res = await fetch(`${API_BASE}/api/educational-assistance/${app._id}/status`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -816,7 +822,7 @@ function attachDeleteHandlers() {
       if (confirm.isConfirmed) {
         try {
           const token = sessionStorage.getItem("token");
-          await fetch(`http://localhost:5000/api/educational-assistance/${appId}`, {
+          await fetch(`${API_BASE}/api/educational-assistance/${appId}`, {
             method: "DELETE",
             headers: {
               Authorization: `Bearer ${token}`
@@ -893,7 +899,7 @@ clearFilterBtn.addEventListener("click", () => {
   async function fetchNotifications() {
     const token = sessionStorage.getItem("token");
     // Fetch all pending notifications (regardless of read)
-    const res = await fetch('http://localhost:5000/api/notifications/educational/pending', {
+    const res = await fetch(`${API_BASE}/api/notifications/educational/pending`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     let allNotifs = await res.json();
@@ -960,8 +966,8 @@ clearFilterBtn.addEventListener("click", () => {
   });
 
   // --- SOCKET.IO REALTIME ARRIVAL ---
-  // Only ONE socket connection and listeners!
-  const socket = io("http://localhost:5000", { transports: ["websocket"] });
+  // Only ONE socket connection and listeners! socket will use the API_BASE defined above
+  const socket = io(API_BASE, { transports: ["websocket"] });
 
   // Real-time badge update and toast
   socket.on("educational-assistance:newSubmission", () => {
@@ -986,16 +992,16 @@ clearFilterBtn.addEventListener("click", () => {
   updateNotifBadge();
 
     const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  if (id && typeof showApplicantModal === "function") {
-    fetch(`http://localhost:5000/api/educational-assistance/${id}`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-    })
-    .then(res => res.json())
-    .then(app => {
-      if (app && app._id) showApplicantModal(app);
-    });
-  }
+    const id = params.get("id");
+    if (id && typeof showApplicantModal === "function") {
+      fetch(`${API_BASE}/api/educational-assistance/${id}`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+      })
+      .then(res => res.json())
+      .then(app => {
+        if (app && app._id) showApplicantModal(app);
+      });
+    }
 });
 
 // Remove any duplicate socket initializations and listeners below this point!
@@ -1004,7 +1010,7 @@ clearFilterBtn.addEventListener("click", () => {
 async function updateNotifBadge() {
   const token = sessionStorage.getItem("token");
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/educational/pending/count', {
+    const res = await fetch(`${API_BASE}/api/notifications/educational/pending/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();

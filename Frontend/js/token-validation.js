@@ -43,6 +43,11 @@ function hasValidToken() {
 // Automatically validate on page load for any file that includes this script.
 // If you need some pages to be public, hide the validation there or remove the script tag.
 document.addEventListener('DOMContentLoaded', () => {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // Only run if the validation function and SweetAlert (Swal) are available
   if (typeof validateTokenAndRedirect === 'function' && typeof Swal !== 'undefined') {
     validateTokenAndRedirect();

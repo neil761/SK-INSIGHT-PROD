@@ -16,7 +16,13 @@ document.addEventListener('DOMContentLoaded', function() {
   // Hide edit button if the form cycle is closed
   (async function(){
     try {
-      const res = await fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance');
+        const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+          ? window.API_BASE
+          : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+            ? 'http://localhost:5000'
+            : 'https://sk-insight.online';
+
+        const res = await fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`);
       const status = await res.json().catch(()=>null);
       const latest = Array.isArray(status)? status[status.length-1] : status;
       const isOpen = latest?.isOpen ?? false;
@@ -33,7 +39,7 @@ document.addEventListener('DOMContentLoaded', function() {
     try {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token) return;
-      const profileRes = await fetch('http://localhost:5000/api/educational-assistance/me', { headers: { Authorization: `Bearer ${token}` } });
+        const profileRes = await fetch(`${API_BASE}/api/educational-assistance/me`, { headers: { Authorization: `Bearer ${token}` } });
       const profile = await profileRes.json().catch(()=>null);
       if (!profile) return;
 
@@ -78,10 +84,10 @@ function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -157,10 +163,10 @@ function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+        fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+        fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -236,10 +242,10 @@ function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+        fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
+        fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])

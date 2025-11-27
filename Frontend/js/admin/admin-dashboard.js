@@ -5,6 +5,8 @@ import { renderYouthClassificationBar } from '../charts/youth-classification-cha
 import { renderWorkStatusBar } from '../charts/work-status-chart.js';
 
 // --- Session check on page load ---
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://localhost:5000' : 'https://sk-insight.online';
+// NOTE: using per-file API_BASE keeps a localhost fallback for dev and uses sk-insight.online in prod
 (function() {
   const token = sessionStorage.getItem("token"); // <-- Use only sessionStorage
   function sessionExpired() {
@@ -54,7 +56,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function fetchCycles() {
     const token = sessionStorage.getItem("token");
     // Remove alert and redirect, session check is now global
-    const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+    const res = await fetch(`${API_BASE}/api/formcycle/kk`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) {
@@ -205,7 +207,7 @@ function renderCivilStatusDonutFromAPI(year, cycle) {
 
   const token = sessionStorage.getItem("token");
   if (!token) return;
-  let url = "http://localhost:5000/api/kkprofiling";
+  let url = `${API_BASE}/api/kkprofiling`;
   if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })
     .then(res => {
@@ -411,7 +413,7 @@ async function fetchDashboardSummaries() {
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
   // User Accounts (Unfiltered)
-  fetch("http://localhost:5000/api/users", { headers })
+  fetch(`${API_BASE}/api/users`, { headers })
     .then(res => res.json())
     .then(data => {
       document.getElementById("userAccountCount").textContent = Array.isArray(data) ? data.length : "0";
@@ -421,7 +423,7 @@ async function fetchDashboardSummaries() {
     });
 
   // KK Profiling (Unfiltered for summary box)
-  fetch("http://localhost:5000/api/kkprofiling", { headers })
+  fetch(`${API_BASE}/api/kkprofiling`, { headers })
     .then(res => res.json())
     .then(data => {
       // Filter out deleted profiles
@@ -433,7 +435,7 @@ async function fetchDashboardSummaries() {
     });
 
   // LGBTQ Profiling (Unfiltered)
-  fetch("http://localhost:5000/api/lgbtqprofiling", { headers })
+  fetch(`${API_BASE}/api/lgbtqprofiling`, { headers })
     .then(res => res.json())
     .then(data => {
       document.getElementById("lgbtqProfilingCount").textContent = Array.isArray(data) ? data.length : "0";
@@ -444,8 +446,8 @@ async function fetchDashboardSummaries() {
 
   // Educational Assistance (Unfiltered)
   Promise.all([
-    fetch("http://localhost:5000/api/educational-assistance/status?status=pending", { headers }).then(res => res.json()),
-    fetch("http://localhost:5000/api/educational-assistance/status?status=accepted", { headers }).then(res => res.json())
+    fetch(`${API_BASE}/api/educational-assistance/status?status=pending`, { headers }).then(res => res.json()),
+    fetch(`${API_BASE}/api/educational-assistance/status?status=accepted`, { headers }).then(res => res.json())
   ]).then(([pending, accepted]) => {
     const total = (Array.isArray(pending) ? pending.length : 0) + (Array.isArray(accepted) ? accepted.length : 0);
     document.getElementById("educationalAssistanceCount").textContent = total;
@@ -454,7 +456,7 @@ async function fetchDashboardSummaries() {
 
 // --- SOCKET.IO REALTIME ARRIVAL ---
 // Only ONE socket connection and listeners!
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
+const socket = io(API_BASE, { transports: ["websocket"] });
 
 socket.on("educational-assistance:newSubmission", () => {
   Swal.fire({
@@ -510,7 +512,7 @@ async function toggleCycle(formName) {
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
-      await fetch("http://localhost:5000/api/cycle-predict", {
+      await fetch(`${API_BASE}/api/cycle-predict`, {
         method: "POST",
         headers: {
           "Authorization": `Bearer ${token}`,

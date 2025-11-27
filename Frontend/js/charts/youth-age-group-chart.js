@@ -1,4 +1,10 @@
 
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 export async function renderYouthAgeGroupBar(year, cycle) {
   const categories = ["Child Youth", "Core Youth", "Young Youth"];
   const colors = ["#07B0F2", "#FED600", "#0A2C59"];
@@ -7,7 +13,7 @@ export async function renderYouthAgeGroupBar(year, cycle) {
   if (!token) return;
 
   try {
-    let url = "http://localhost:5000/api/kkprofiling";
+    let url = `${API_BASE}/api/kkprofiling`;
     if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
 
     const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });

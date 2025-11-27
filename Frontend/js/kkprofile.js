@@ -1,4 +1,10 @@
 // kkprofile.js
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 (function() {
   if (!sessionStorage.getItem("token")) {
     const channel = new BroadcastChannel("skinsight-auth");
@@ -67,7 +73,7 @@
     // Fetch cycles and populate year dropdown
     async function fetchCycles() {
       try {
-        const res = await fetch("http://localhost:5000/api/formcycle/kk", {
+        const res = await fetch(`${API_BASE}/api/formcycle/kk`, {
           headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
         if (!res.ok) throw new Error("Failed to fetch cycles");
@@ -175,8 +181,8 @@
         // Build query string properly
         const query = new URLSearchParams(params).toString();
         const url = query
-          ? `http://localhost:5000/api/kkprofiling?${query}`
-          : `http://localhost:5000/api/kkprofiling`;
+          ? `${API_BASE}/api/kkprofiling?${query}`
+          : `${API_BASE}/api/kkprofiling`;
 
 
         const res = await fetch(url, {
@@ -284,7 +290,7 @@
       document.querySelectorAll(".view-btn").forEach((btn) =>
         btn.addEventListener("click", async () => {
           const res = await fetch(
-            `http://localhost:5000/api/kkprofiling/${btn.dataset.id}`,
+            `${API_BASE}/api/kkprofiling/${btn.dataset.id}`,
             {
               headers: {
                 Authorization: `Bearer ${sessionStorage.getItem("token")}`,
@@ -310,7 +316,7 @@
             cancelButtonText: "No"
           });
           if (result.isConfirmed) {
-            const res = await fetch(`http://localhost:5000/api/kkprofiling/${id}`, {
+            const res = await fetch(`${API_BASE}/api/kkprofiling/${id}`, {
               method: "DELETE",
               headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
             });
@@ -525,7 +531,7 @@
         cancelButtonText: "No",
       });
       if (result.isConfirmed) {
-        const res = await fetch(`http://localhost:5000/api/kkprofiling/${currentProfileId}`, {
+        const res = await fetch(`${API_BASE}/api/kkprofiling/${currentProfileId}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
@@ -569,7 +575,7 @@
     });
 
     try {
-      const res = await fetch(`http://localhost:5000/api/kkprofiling/export/${profileId}`, {
+      const res = await fetch(`${API_BASE}/api/kkprofiling/export/${profileId}`, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -885,13 +891,13 @@
     async function fetchNotifications() {
       const token = sessionStorage.getItem("token");
       // Fetch new profiles (within 24 hours)
-      const newRes = await fetch('http://localhost:5000/api/notifications/kk/new', {
+      const newRes = await fetch(`${API_BASE}/api/notifications/kk/new`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const newNotifs = await newRes.json();
 
       // Fetch unread profiles (older than 24 hours, still unread)
-      const unreadRes = await fetch('http://localhost:5000/api/notifications/kk/unread', {
+      const unreadRes = await fetch(`${API_BASE}/api/notifications/kk/unread`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       const unreadNotifs = await unreadRes.json();
@@ -947,7 +953,7 @@
 
     // Always show the unread notification badge on page load
     updateNotifBadge();
-    const socket = io("http://localhost:5000", { transports: ["websocket"] });
+    const socket = io(API_BASE, { transports: ["websocket"] });
 
 
     // Move socket event handlers inside DOMContentLoaded
@@ -995,7 +1001,7 @@
     const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   if (id && typeof showProfileModal === "function") {
-    fetch(`http://localhost:5000/api/kkprofiling/${id}`, {
+    fetch(`${API_BASE}/api/kkprofiling/${id}`, {
       headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
     })
     .then(res => res.json())
@@ -1008,8 +1014,8 @@
 
 async function updateNotifBadge() {
   const token = sessionStorage.getItem("token");
-  try {
-    const res = await fetch('http://localhost:5000/api/notifications/kk/unread/count', {
+    try {
+    const res = await fetch(`${API_BASE}/api/notifications/kk/unread/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();

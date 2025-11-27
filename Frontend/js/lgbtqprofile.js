@@ -1,4 +1,9 @@
 // lgbtqprofile.js
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
 (function() {
   if (!sessionStorage.getItem("token")) {
     const channel = new BroadcastChannel("skinsight-auth");
@@ -80,7 +85,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Fetch cycles for LGBTQ
   async function fetchCycles() {
     try {
-      const res = await fetch("http://localhost:5000/api/formcycle/lgbtq", {
+      const res = await fetch(`${API_BASE}/api/formcycle/lgbtq`, {
         headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
       });
       if (!res.ok) throw new Error("Failed to fetch cycles");
@@ -205,7 +210,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // 🔹 Fetch profiles
   async function fetchProfiles(params = {}) {
     try {
-      let url = "http://localhost:5000/api/lgbtqprofiling";
+      let url = `${API_BASE}/api/lgbtqprofiling`;
       const queryObj = {};
 
       if (params.year) queryObj.year = params.year;
@@ -316,7 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          `${API_BASE}/api/lgbtqprofiling/${btn.dataset.id}`,
           {
             headers: {
               Authorization: `Bearer ${sessionStorage.getItem("token")}`,
@@ -357,7 +362,7 @@ document.addEventListener("DOMContentLoaded", () => {
           cancelButtonText: "No"
         });
         if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+          const res = await fetch(`${API_BASE}/api/lgbtqprofiling/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
           });
@@ -476,7 +481,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          `${API_BASE}/api/lgbtqprofiling/${btn.dataset.id}`,
           {
             headers: {
               Authorization: `Bearer ${sessionStorage.getItem("token")}`,
@@ -517,7 +522,7 @@ document.addEventListener("DOMContentLoaded", () => {
           cancelButtonText: "No"
         });
         if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+          const res = await fetch(`${API_BASE}/api/lgbtqprofiling/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
           });
@@ -636,7 +641,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          `${API_BASE}/api/lgbtqprofiling/${btn.dataset.id}`,
           {
             headers: {
               Authorization: `Bearer ${sessionStorage.getItem("token")}`,
@@ -797,7 +802,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.querySelectorAll(".view-btn").forEach((btn) =>
       btn.addEventListener("click", async () => {
         const res = await fetch(
-          `http://localhost:5000/api/lgbtqprofiling/${btn.dataset.id}`,
+          `${API_BASE}/api/lgbtqprofiling/${btn.dataset.id}`,
           {
             headers: {
               Authorization: `Bearer ${sessionStorage.getItem("token")}`,
@@ -838,7 +843,7 @@ document.addEventListener("DOMContentLoaded", () => {
           cancelButtonText: "No"
         });
         if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+          const res = await fetch(`${API_BASE}/api/lgbtqprofiling/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
           });
@@ -1034,7 +1039,7 @@ document.addEventListener("DOMContentLoaded", () => {
         cancelButtonText: "No",
       });
       if (result.isConfirmed) {
-        const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${p._id}`, {
+        const res = await fetch(`${API_BASE}/api/lgbtqprofiling/${p._id}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` },
         });
@@ -1112,7 +1117,7 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchProfiles({});
 
   // --- Real-time update with socket.io ---
-  const socket = io("http://localhost:5000", { transports: ["websocket"] });
+  const socket = io(API_BASE, { transports: ["websocket"] });
 
   socket.on("lgbtq-profile:newSubmission", () => {
     updateLGBTQNotifBadge();
@@ -1157,7 +1162,7 @@ socket.on("educational-assistance:newSubmission", () => {
   const params = new URLSearchParams(window.location.search);
   const id = params.get("id");
   if (id && typeof showProfileModal === "function") {
-    fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
+    fetch(`${API_BASE}/api/lgbtqprofiling/${id}`, {
       headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
     })
     .then(res => res.json())
@@ -1200,13 +1205,13 @@ notifTabs.forEach(tab => {
 async function fetchNotifications() {
   const token = sessionStorage.getItem("token");
   // Fetch new LGBTQ profiles (within 24 hours)
-  const newRes = await fetch('http://localhost:5000/api/notifications/lgbtq/new', {
+  const newRes = await fetch(`${API_BASE}/api/notifications/lgbtq/new`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const newNotifs = await newRes.json();
 
   // Fetch unread LGBTQ profiles (older than 24 hours, still unread)
-  const unreadRes = await fetch('http://localhost:5000/api/notifications/lgbtq/unread', {
+  const unreadRes = await fetch(`${API_BASE}/api/notifications/lgbtq/unread`, {
     headers: { Authorization: `Bearer ${token}` }
   });
   const unreadNotifs = await unreadRes.json();
@@ -1262,7 +1267,7 @@ document.addEventListener('click', function(e) {
 async function updateNotifBadge() {
   const token = sessionStorage.getItem("token");
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/lgbtq/unread/count', {
+    const res = await fetch(`${API_BASE}/api/notifications/lgbtq/unread/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -1296,7 +1301,7 @@ async function updateNotifBadge() {
 async function updateLGBTQNotifBadge() {
   const token = sessionStorage.getItem("token");
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/lgbtq/unread/count', {
+    const res = await fetch(`${API_BASE}/api/notifications/lgbtq/unread/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();

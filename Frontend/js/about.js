@@ -15,12 +15,19 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 
+  // Runtime API base (use `window.API_BASE` in production pages to override)
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
   // Check user verification status
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   let isVerified = false;
 
   if (token) {
-    fetch('http://localhost:5000/api/users/me', {
+    fetch(`${API_BASE}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => response.json())
@@ -118,10 +125,10 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -208,10 +215,10 @@ document.addEventListener('DOMContentLoaded', function () {
       return;
     }
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -300,7 +307,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Early check: see if the user's latest application was rejected.
     // If rejected, prompt to update and redirect to the edit page.
     try {
-      const apiBase = 'http://localhost:5000';
+      const apiBase = API_BASE;
       const checkUrl = `${apiBase}/api/educational-assistance/check-rejected`;
       const checkRes = await fetch(checkUrl, {
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -332,10 +339,10 @@ document.addEventListener('DOMContentLoaded', function () {
       // If the check fails, continue to the normal flow below
     }
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
+      fetch(`${API_BASE}/api/educational-assistance/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -443,7 +450,7 @@ document.addEventListener('DOMContentLoaded', function () {
         redirectUrl = 'Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();

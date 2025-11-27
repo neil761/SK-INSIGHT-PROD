@@ -30,6 +30,13 @@
 })();
 
 document.addEventListener("DOMContentLoaded", () => {
+  // dynamic API base for deploy vs local development
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
   const tableBody = document.querySelector(".tables table tbody");
   const token = sessionStorage.getItem("token"); // <-- Use only sessionStorage
   const modal = document.getElementById("myModal");
@@ -111,7 +118,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Fetch announcements
   async function fetchAnnouncements() {
     try {
-      const res = await fetch("http://localhost:5000/api/announcements", {
+      const res = await fetch(`${API_BASE}/api/announcements`, {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
@@ -275,7 +282,7 @@ document.addEventListener("DOMContentLoaded", () => {
       });
       if (swalResult && swalResult.isConfirmed) {
         try {
-          const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+          const res = await fetch(`${API_BASE}/api/announcements/${id}`, {
             method: "DELETE",
             headers: { "Authorization": `Bearer ${token}` }
           });
@@ -301,7 +308,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const id = e.target.closest(".btn-edit").dataset.id;
       // ...existing code...
       try {
-        const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+        const res = await fetch(`${API_BASE}/api/announcements/${id}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Failed to fetch announcement");
@@ -336,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const id = btn.dataset.id;
       const isPinned = btn.classList.contains("pinned");
       try {
-        const res = await fetch(`http://localhost:5000/api/announcements/${id}/pin`, {
+        const res = await fetch(`${API_BASE}/api/announcements/${id}/pin`, {
           method: "PATCH",
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -382,11 +389,11 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     try {
-      let url = "http://localhost:5000/api/announcements";
+      let url = `${API_BASE}/api/announcements`;
       let method = "POST";
 
       if (editingId) {
-        url = `http://localhost:5000/api/announcements/${editingId}`;
+        url = `${API_BASE}/api/announcements/${editingId}`;
         method = "PUT";
       }
 
@@ -465,9 +472,15 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   fetchAnnouncements();
-});
+  });
 
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
+  const SOCKET_API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
+  const socket = io(SOCKET_API_BASE, { transports: ["websocket"] });
 
 socket.on("educational-assistance:newSubmission", (data) => {
   Swal.fire({

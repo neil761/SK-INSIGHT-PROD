@@ -1,6 +1,11 @@
 // =========================
 // ANNOUNCEMENT SECTION
 // =========================
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
 
 document.addEventListener("DOMContentLoaded", async () => {
   const tableBody = document.querySelector(".announcement-table tbody");
@@ -11,6 +16,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const modalCreatedDate = modal.querySelector(".created-date");
   const modalDescription = modal.querySelector(".description-box");
   const closeModalBtn = modal.querySelector(".close-modal");
+
+  // using top-level `API_BASE`
 
   let cardsContainer = document.querySelector(".announcement-cards");
   if (!cardsContainer) {
@@ -32,7 +39,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) return;
       const data = await res.json().catch(() => null);
       // API may return { user: {...} } or the user object directly
@@ -71,7 +78,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function fetchGeneralAndExpired() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/api/announcements", {
+    const res = await fetch(`${API_BASE}/api/announcements`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -98,7 +105,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function fetchForYou() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/api/announcements/myannouncements", {
+    const res = await fetch(`${API_BASE}/api/announcements/myannouncements`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -112,7 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token || !id) return;
-      const res = await fetch(`http://localhost:5000/api/announcements/${id}/view`, {
+      const res = await fetch(`${API_BASE}/api/announcements/${id}/view`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       });
@@ -356,7 +363,7 @@ if (currentTab === 'foryou') {
         }
         try {
           const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-          const res = await fetch(`http://localhost:5000/api/announcements/${a._id}`, {
+          const res = await fetch(`${API_BASE}/api/announcements/${a._id}`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           if (!res.ok) throw new Error("Announcement not found");
@@ -398,7 +405,7 @@ if (currentTab === 'foryou') {
       const id = e.target.closest(".view-btn").dataset.id;
       try {
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-        const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+        const res = await fetch(`${API_BASE}/api/announcements/${id}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Announcement not found");
@@ -458,7 +465,7 @@ if (currentTab === 'foryou') {
   await renderTabAnnouncements();
 
   // WebSocket updates (optional, keep your logic here)
-  const socket = io("http://localhost:5000", { transports: ["websocket"] });
+  const socket = io(API_BASE, { transports: ["websocket"] });
   socket.on("announcement:created", renderTabAnnouncements);
   socket.on("announcement:updated", renderTabAnnouncements);
   socket.on("announcement:deleted", renderTabAnnouncements);
@@ -537,10 +544,10 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -616,10 +623,10 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -695,10 +702,10 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
+      fetch(`${API_BASE}/api/educational-assistance/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -806,7 +813,7 @@ document.addEventListener('DOMContentLoaded', function() {
         redirectUrl = 'Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
@@ -876,7 +883,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const verificationStrip = document.getElementById('verification-strip');
 
   if (token) {
-    fetch('http://localhost:5000/api/users/me', {
+    fetch(`${API_BASE}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => response.json())

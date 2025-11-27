@@ -5,6 +5,13 @@
   - Handles profile/signature preview and base64 storage.
 */
 
+// dynamic API base for deploy vs local development
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:5000'
+  : 'https://sk-insight.online';
+
 document.addEventListener('DOMContentLoaded', function () {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return; // nothing to do when not logged in
@@ -113,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Populate fields using returned profile object
   async function populateFromServer() {
     try {
-      const res = await fetch('http://localhost:5000/api/kkprofiling/me', {
+      const res = await fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -350,7 +357,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // If no direct URL, try the dedicated endpoint
         if (!imageUrl) {
           try {
-            const imgRes = await fetch('http://localhost:5000/api/kkprofiling/me/image', {
+            const imgRes = await fetch(`${API_BASE}/api/kkprofiling/me/image`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             if (imgRes.ok) {
@@ -372,9 +379,9 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             // If the value looks like a path with uploads/..., use it as-is; otherwise assume it's the profile uploads filename
             if (imageUrl.includes('uploads')) {
-              resolved = imageUrl.startsWith('/') ? (`http://localhost:5000${imageUrl}`) : (`http://localhost:5000/${imageUrl}`);
+              resolved = imageUrl.startsWith('/') ? (`${API_BASE}${imageUrl}`) : (`${API_BASE}/${imageUrl}`);
             } else {
-              resolved = `http://localhost:5000/uploads/profile/${imageUrl}`;
+              resolved = `${API_BASE}/uploads/profile/${imageUrl}`;
             }
           }
 
@@ -403,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             // strip any path and use uploads/signatures/<filename>
             const fname = signatureUrl.replace(/^.*[\\\/]/, '');
-            resolvedSig = `http://localhost:5000/uploads/signatures/${fname}`;
+            resolvedSig = `${API_BASE}/uploads/signatures/${fname}`;
           }
 
           const sigPreview = document.getElementById('signatureImagePreview');
@@ -532,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (hasNewSignatureImage) formData.append('signatureImage', base64ToFile(finalStep3.signatureImage, 'signature.png'));
           if (hasNewIdImage) formData.append('idImage', base64ToFile(finalStep3.idImage, 'id.jpg'));
 
-          const url = `http://localhost:5000/api/kkprofiling/${_kkProfileId}`;
+          const url = `${API_BASE}/api/kkprofiling/${_kkProfileId}`;
           const res = await fetch(url, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token}` },
@@ -585,7 +592,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         });
 
-        const url = `http://localhost:5000/api/kkprofiling/${_kkProfileId}`;
+        const url = `${API_BASE}/api/kkprofiling/${_kkProfileId}`;
         const res = await fetch(url, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -633,7 +640,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('signatureImage', base64ToFile(finalStep3.signatureImage, 'signature.png'));
       }
 
-      const res = await fetch('http://localhost:5000/api/kkprofiling', {
+      const res = await fetch(`${API_BASE}/api/kkprofiling`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -926,7 +933,7 @@ document.addEventListener('DOMContentLoaded', function () {
         redirectUrl = '../../Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
@@ -996,10 +1003,10 @@ function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
+    fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -1075,10 +1082,10 @@ function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+    fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -1154,10 +1161,10 @@ function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
+    fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])

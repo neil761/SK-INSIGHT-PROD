@@ -1,4 +1,9 @@
 (function () {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // Notification badge helper: update navbar badge and per-tab badges (general / for-you)
   async function getJsonSafe(res) {
     try { return await res.json(); } catch (e) { return null; }
@@ -9,7 +14,7 @@
   async function fetchCurrentUser(token) {
     if (!token) return null;
     try {
-      const res = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) return null;
       const data = await getJsonSafe(res);
       return data && (data.user || data.userData || data) || null;
@@ -66,8 +71,8 @@
     let generalList=[], personalList=[];
     try {
       const [gRes,pRes] = await Promise.all([
-        fetch('http://localhost:5000/api/announcements', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:5000/api/announcements/myannouncements', { headers: { Authorization: `Bearer ${token}` } })
+        fetch(`${API_BASE}/api/announcements`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/announcements/myannouncements`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
       const gData = await getJsonSafe(gRes); const pData = await getJsonSafe(pRes);
       generalList = extractAnnouncementsFromResponse(gData).filter(a => (a.recipient == null || a.recipient === undefined));

@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', function() {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // if (!validateTokenAndRedirect("KK Youth Form")) {
   //   return;
   // }
@@ -357,11 +362,11 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
+          headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
+          headers: { Authorization: `Bearer ${token}` }
       })
     ])
     .then(async ([cycleRes, profileRes]) => {
@@ -436,11 +441,11 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
+          headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
+          headers: { Authorization: `Bearer ${token}` }
       })
     ])
     .then(async ([cycleRes, profileRes]) => {
@@ -519,11 +524,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
+          headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
-        headers: { Authorization: `Bearer ${token}` }
+      fetch(`${API_BASE}/api/educational-assistance/me`, {
+          headers: { Authorization: `Bearer ${token}` }
       })
     ])
     .then(async ([cycleRes, profileRes]) => {
@@ -631,7 +636,7 @@ document.addEventListener('DOMContentLoaded', function() {
         redirectUrl = 'Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
@@ -641,7 +646,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
       try {
         const cycleUrl = `${apiBase}/api/formcycle/status?formName=${encodeURIComponent(formName)}`;
-        const profileUrl = `${apiBase}/api/educational-assistance/me`;
+          const profileUrl = `${apiBase}/api/educational-assistance/me`;
         const [cycleRes, profileRes] = await Promise.all([
           fetch(cycleUrl, { headers: { Authorization: `Bearer ${token}` } }),
           fetch(profileUrl, { headers: { Authorization: `Bearer ${token}` } })
@@ -882,7 +887,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     try {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/kkprofiling', {
+      const response = await fetch(`${API_BASE}/api/kkprofiling`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -899,7 +904,7 @@ document.addEventListener('DOMContentLoaded', function() {
               middlename: step1.middlename || step1.middleName || ''
             };
             if (namesPayload.lastname || namesPayload.firstname || namesPayload.middlename) {
-              await fetch('http://localhost:5000/api/users/me', {
+              await fetch(`${API_BASE}/api/users/me`, {
                 method: 'PATCH',
                 headers: {
                   'Content-Type': 'application/json',

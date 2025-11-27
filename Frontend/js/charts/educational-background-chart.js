@@ -1,5 +1,11 @@
 Chart.defaults.plugins.legend.display = false;
 
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 export function renderEducationalBackgroundBar(year, cycle) {
   const categories = [
     "Elementary Undergraduate", "Elementary Graduate",
@@ -16,7 +22,7 @@ export function renderEducationalBackgroundBar(year, cycle) {
   const token = sessionStorage.getItem("token");
   if (!token) return;
 
-  let url = "http://localhost:5000/api/kkprofiling";
+  let url = `${API_BASE}/api/kkprofiling`;
   if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
 
   fetch(url, { headers: { Authorization: `Bearer ${token}` } })

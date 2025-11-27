@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+      ? window.API_BASE
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:5000'
+        : 'https://sk-insight.online';
     // Stepper logic
     const step1 = document.getElementById('signupStep1');
     const step2 = document.getElementById('signupStep2');
@@ -376,7 +381,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       try {
-        const response = await fetch('http://localhost:5000/api/users/smart/register', {
+        const response = await fetch(`${API_BASE}/api/users/smart/register`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", async function () {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
   // if (!validateTokenAndRedirect("KK Address Profile")) {
   //   return;
   // }
@@ -10,7 +16,7 @@ document.addEventListener("DOMContentLoaded", async function () {
   // =========================
   if (token) {
     try {
-      const res = await fetch("http://localhost:5000/api/kkprofiling/me", {
+      const res = await fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
@@ -55,10 +61,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+        fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+        fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -139,10 +145,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
       const [cycleRes, profileRes] = await Promise.all([
         fetch(
-          "http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling",
+          `${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
-        fetch("http://localhost:5000/api/lgbtqprofiling/me/profile", {
+        fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -229,10 +235,10 @@ document.addEventListener("DOMContentLoaded", async function () {
     try {
       const [cycleRes, profileRes] = await Promise.all([
         fetch(
-          "http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance",
+          `${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`,
           { headers: { Authorization: `Bearer ${token}` } }
         ),
-        fetch("http://localhost:5000/api/educational-assistance/me", {
+        fetch(`${API_BASE}/api/educational-assistance/me`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
       ]);
@@ -366,7 +372,7 @@ document.addEventListener("DOMContentLoaded", async function () {
         redirectUrl = '../../Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();

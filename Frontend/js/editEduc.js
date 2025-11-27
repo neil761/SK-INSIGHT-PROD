@@ -8,6 +8,13 @@
 */
 
 document.addEventListener('DOMContentLoaded', function () {
+  // dynamic API base for deploy vs local development
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return;
 
@@ -359,7 +366,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // populate form from server
   async function populate() {
     try {
-      const res = await fetch('http://localhost:5000/api/educational-assistance/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/api/educational-assistance/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) return;
       const data = await res.json();
 
@@ -398,7 +405,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (birthdayInput) birthdayInput.value = birthday ? (birthday.split ? birthday.split('T')[0] : birthday) : '';
 
         // Fetch user profile to prefer its authoritative values (if any)
-        const userRes = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+        const userRes = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
         if (userRes && userRes.ok) {
           const userData = await userRes.json();
 
@@ -623,7 +630,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (hasNewCOE) fd.append('coeImage', base64ToFile(coeState.base64, 'coe.png'));
         if (hasNewVoter) fd.append('voter', base64ToFile(voterState.base64, 'voter.png'));
 
-        const res = await fetch('http://localhost:5000/api/educational-assistance/me', { method: 'PUT', headers: { Authorization: `Bearer ${token}` }, body: fd });
+        const res = await fetch(`${API_BASE}/api/educational-assistance/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` }, body: fd });
         const txt = await res.text();
         if (!res.ok) throw new Error(txt || 'Update failed');
         try { Swal.close(); } catch (e) {}
@@ -632,7 +639,7 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       } else {
         // JSON PUT - send normalized payload
-        const jsonRes = await fetch('http://localhost:5000/api/educational-assistance/me', { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(normalized) });
+        const jsonRes = await fetch(`${API_BASE}/api/educational-assistance/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(normalized) });
         const j = await jsonRes.json().catch(()=>null);
         if (!jsonRes.ok) throw new Error((j && j.error) || 'Update failed');
         try { Swal.close(); } catch (e) {}
@@ -681,10 +688,10 @@ function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
+    fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -760,10 +767,10 @@ function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+    fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -839,10 +846,10 @@ function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
+    fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
