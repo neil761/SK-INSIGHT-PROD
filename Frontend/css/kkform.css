@@ -463,76 +463,8 @@ body {
     margin-left: auto;
     margin-right: auto;
   }
-  .swal2-popup {
-    width: 90% !important;
-    max-width: 380px !important;
-    padding: 25px 20px !important;
-    font-size: 0.9rem !important;
-  }
-
-  .swal2-title {
-    font-size: 1.3rem !important;
-    padding: 0 0 12px !important;
-  }
-
-  .swal2-html-container {
-    font-size: 0.9rem !important;
-    margin: 0.8em 0 !important;
-  }
-
-  .swal2-icon {
-    width: 60px !important;
-    height: 60px !important;
-    margin: 15px auto !important;
-  }
-
-  .swal2-confirm,
-  .swal2-cancel {
-    font-size: 0.9rem !important;
-    padding: 10px 25px !important;
-    min-width: 100px !important;
-  }
-
-  .swal2-actions {
-    gap: 12px !important;
-    margin-top: 20px !important;
-    flex-wrap: nowrap !important;
-    
-    justify-content: center !important;
-  }
-  
-  /* Reduce overall icon size so the check/cross fit nicely */
-  .swal2-icon.swal2-success,
-  .swal2-icon.swal2-error {
-    width: 70px !important;
-    height: 70px !important;
-    margin: 0 auto !important;
-  }
-
-  /* Thin the stroke and scale the check/cross lines */
-  .swal2-success .swal2-success-line-tip,
-  .swal2-success .swal2-success-line-long,
-  .swal2-success .swal2-success-ring {
-    stroke-width: 4 !important;
-  }
-
-  .swal2-error .swal2-x-mark-line-left,
-  .swal2-error .swal2-x-mark-line-right {
-    stroke-width: 4 !important;
-  }
-
-  /* Slightly scale the path elements to visually center the mark */
-  .swal2-success .swal2-success-line-tip,
-  .swal2-success .swal2-success-line-long,
-  .swal2-error .swal2-x-mark-line-left,
-  .swal2-error .swal2-x-mark-line-right {
-    transform-origin: center center;
-    transform: scale(0.88);
-  }
-
-  /* Keep the title and text readable */
-  .swal2-title { font-size: 1.15rem !important; }
-  .swal2-html-container { font-size: 0.95rem !important; }
+  /* SweetAlert2 uses its own default styling. Removed page-specific overrides so
+     KK edit page matches default appearance (same as editLg). */
 
 
   

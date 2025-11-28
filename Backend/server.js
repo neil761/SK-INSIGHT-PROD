@@ -23,12 +23,33 @@ require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
+// Allow frontend origins (when credentials are used, origin must be explicit, not '*')
+const FRONTEND_WHITELIST = [
+  'http://127.0.0.1:5504',
+  'http://localhost:5504',
+  process.env.FRONTEND_URL,
+].filter(Boolean);
+
 const io = socketio(server, {
-  cors: { origin: "*" },
+  cors: { origin: FRONTEND_WHITELIST, credentials: true },
 });
 
 // Middleware
-app.use(cors());
+// Configure CORS to allow credentials and only specific origins
+const corsOptions = {
+  origin: function (origin, callback) {
+    // allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    if (FRONTEND_WHITELIST.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
 app.use(express.json()); // for JSON bodies
 app.use(express.urlencoded({ extended: true })); // for form-data and urlencoded
 
