@@ -1,9 +1,11 @@
+// Expose API_BASE at top-level so all handlers can use it
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 document.addEventListener('DOMContentLoaded', async function() {
-  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
-    ? window.API_BASE
-    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:5000'
-      : 'https://sk-insight.online';
   // if (!validateTokenAndRedirect("Educational Assistance Profile")) {
   //   return;
   // }
@@ -92,12 +94,122 @@ if (birthdayInput && data.birthday) {
     document.getElementById('contact').value = data.contactNumber || '';
     document.getElementById('schoolname').value = data.school || '';
     document.getElementById('schooladdress').value = data.schoolAddress || '';
-    document.getElementById('year').value = data.year || '';
+    // Populate the Academic Level from backend data if present (handle multiple possible field names)
+    try {
+      const acadEl = document.getElementById('academicLevel');
+      const acadVal = (data.academicLevel || data.academiclevel || data.academic_level || data.academic || (data.user && data.user.academicLevel) || '').toString();
+      if (acadEl && acadVal) {
+        try { acadEl.value = acadVal; } catch (e) { acadEl.selectedIndex = 0; }
+      }
+    } catch (e) { /* ignore */ }
+    // Replace year input with a select/dropdown when an Academic Level exists
+    (function setupYearDropdown() {
+      const JHS_YEARS = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
+      const SHS_YEARS = ['Grade 11', 'Grade 12'];
+
+      const acadEl = document.getElementById('academicLevel');
+      const existingYearEl = document.getElementById('year');
+
+      function populateYearOptions(level, selectedYear, targetSelect) {
+        if (!targetSelect) return;
+        targetSelect.innerHTML = '<option value="">Select Classification</option>';
+        const lvl = (level || '').toString().toLowerCase();
+        let options = [];
+        if (lvl.includes('junior')) options = JHS_YEARS;
+        else if (lvl.includes('senior')) options = SHS_YEARS;
+
+        options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt;
+          o.textContent = opt;
+          if (selectedYear && selectedYear === opt) o.selected = true;
+          targetSelect.appendChild(o);
+        });
+
+        // If selectedYear is provided but not in options, leave blank
+        if (selectedYear && options.indexOf(selectedYear) === -1) {
+          try { targetSelect.value = ''; } catch (e) {}
+        }
+      }
+
+      // If there is an academic level element, prefer showing a select for year
+      if (existingYearEl) {
+        // If existing is an input, replace it with a select preserving id/name/class
+        if (acadEl && existingYearEl.tagName && existingYearEl.tagName.toLowerCase() === 'input') {
+          const select = document.createElement('select');
+          select.id = existingYearEl.id;
+          if (existingYearEl.name) select.name = existingYearEl.name;
+          select.className = existingYearEl.className || '';
+          // insert after academic level if possible
+          if (acadEl.parentNode) {
+            if (acadEl.nextSibling) acadEl.parentNode.insertBefore(select, acadEl.nextSibling);
+            else acadEl.parentNode.appendChild(select);
+            // remove old input
+            existingYearEl.parentNode && existingYearEl.parentNode.removeChild(existingYearEl);
+          } else {
+            existingYearEl.parentNode.replaceChild(select, existingYearEl);
+          }
+
+          const lvl = (acadEl && acadEl.value) ? acadEl.value : (data.academicLevel || '');
+          populateYearOptions(lvl, data.year || '', select);
+
+          // if academic level changes (unlikely in view page), update options
+          try { if (acadEl) acadEl.addEventListener('change', () => populateYearOptions(acadEl.value, '', select)); } catch (e) {}
+        } else if (existingYearEl.tagName && existingYearEl.tagName.toLowerCase() === 'select') {
+          // Already a select: just populate options based on academic level or data
+          const lvl = (acadEl && acadEl.value) ? acadEl.value : (data.academicLevel || '');
+          populateYearOptions(lvl, data.year || '', existingYearEl);
+        } else {
+          // fallback: keep as input and just set value
+          try { existingYearEl.value = data.year || ''; } catch (e) {}
+        }
+      } else {
+        // No existing #year element: create a disabled select to display the value
+        const select = document.createElement('select');
+        select.id = 'year';
+        select.name = 'year';
+        select.className = '';
+        const lvl = (acadEl && acadEl.value) ? acadEl.value : (data.academicLevel || '');
+        populateYearOptions(lvl, data.year || '', select);
+        // append it near academic level if possible, otherwise to the form
+        if (acadEl && acadEl.parentNode) {
+          if (acadEl.nextSibling) acadEl.parentNode.insertBefore(select, acadEl.nextSibling);
+          else acadEl.parentNode.appendChild(select);
+        } else {
+          const formEl = document.getElementById('educationalAssistanceForm') || document.body;
+          formEl.appendChild(select);
+        }
+      }
+    })();
     document.getElementById('benefittype').value = data.typeOfBenefit || '';
     document.getElementById('fathername').value = data.fatherName || '';
     document.getElementById('fathercontact').value = data.fatherPhone || '';
     document.getElementById('mothername').value = data.motherName || '';
     document.getElementById('mothercontact').value = data.motherPhone || '';
+
+    // If Academic Level is Senior High School, hide the Parent's Voter's Certificate row
+    try {
+      const acadEl = document.getElementById('academicLevel');
+      const acadVal = (acadEl && acadEl.value) ? acadEl.value.toString().toLowerCase() : (data.academicLevel || '').toString().toLowerCase();
+      const voterCol = document.getElementById('voterUploadColumn');
+      const viewVoter = document.getElementById('viewVoter');
+      if (acadVal && acadVal.includes('senior')) {
+        // hide the entire table row that contains the voter certificate
+        try {
+          const tr = voterCol ? (voterCol.closest ? voterCol.closest('tr') : voterCol.parentElement) : null;
+          if (tr) tr.style.display = 'none';
+        } catch (e) {}
+        if (viewVoter) viewVoter.style.display = 'none';
+      } else {
+        try {
+          const tr = voterCol ? (voterCol.closest ? voterCol.closest('tr') : voterCol.parentElement) : null;
+          if (tr) tr.style.display = '';
+        } catch (e) {}
+        if (viewVoter) viewVoter.style.display = '';
+      }
+    } catch (e) {
+      /* ignore */
+    }
 
     // Siblings table
     const siblingsBody = document.getElementById('siblingsTableBody');
@@ -218,6 +330,55 @@ if (viewVoter) {
   } catch (err) {
     console.error('Failed to fetch Educational Assistance data:', err);
   }
+});
+
+// Make all form fields read-only (but keep navigation/preview buttons enabled)
+function makeAllFieldsReadOnly() {
+  try {
+    const skipSelectors = ['#doneBtn','[data-done]','[data-action="done"]','.view-btn','#viewFront','#viewBack','#viewCOE','#viewVoter'];
+    const skip = el => {
+      try {
+        if (!el) return false;
+        if (el.matches) {
+          for (const s of skipSelectors) if (el.matches(s)) return true;
+        }
+      } catch (e) {}
+      return false;
+    };
+
+    // Inputs and textareas -> readonly (but keep view/preview buttons clickable)
+    document.querySelectorAll('input, textarea').forEach(el => {
+      if (skip(el)) return;
+      // file inputs should be disabled to prevent selection
+      if (el.type === 'file') {
+        el.disabled = true;
+      } else {
+        el.readOnly = true;
+      }
+      // remove from tab order
+      try { el.tabIndex = -1; } catch (e) {}
+    });
+
+    // selects and buttons (except done/preview) -> disabled
+    document.querySelectorAll('select, button').forEach(el => {
+      if (skip(el)) return;
+      try { el.disabled = true; } catch (e) {}
+    });
+
+    // Keep Done navigation (if present) enabled so the user can proceed
+    const doneBtn = document.querySelector('#doneBtn') || document.querySelector('[data-done]') || document.querySelector('[data-action="done"]');
+    if (doneBtn) {
+      try { doneBtn.disabled = false; doneBtn.tabIndex = 0; } catch (e) {}
+    }
+  } catch (err) {
+    console.warn('makeAllFieldsReadOnly error', err);
+  }
+}
+
+// Call the helper after DOM is ready and the form is populated.
+document.addEventListener('DOMContentLoaded', () => {
+  // small delay to ensure any async population completed
+  setTimeout(makeAllFieldsReadOnly, 50);
 });
 
 document.addEventListener('DOMContentLoaded', function() {

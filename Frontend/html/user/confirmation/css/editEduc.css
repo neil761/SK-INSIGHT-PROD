@@ -133,6 +133,15 @@ body {
     color: #143d77;
 }
 
+.labels {
+    display: block;
+    font-weight: 600;
+    margin-top: 5%;
+    margin: 1%;
+    font-size: 1rem;
+    color: #143d77;
+}
+
 .allow{
   margin-top: 3%;
   color: red;
