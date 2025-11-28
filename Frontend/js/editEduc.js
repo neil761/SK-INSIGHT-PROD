@@ -130,17 +130,47 @@ document.addEventListener('DOMContentLoaded', function () {
     btnEl.addEventListener('click', () => {
       state.removed = true;
       state.base64 = null;
+
       if (inputEl) {
         try { inputEl.value = ''; } catch (e) {}
-        // show upload label again if present (e.g., frontLabel)
-        const label = document.getElementById(`${inputEl.id}Label`);
-        if (label) label.style.display = 'inline-flex';
+
+        // try to find the existing label; if missing, create a simple upload label so user can re-upload
+        // prefer existing label ids like 'frontLabel', 'backLabel', 'coeLabel', 'voterLabel'
+        const preferredId = inputEl.id.replace(/Image$/i, '') + 'Label';
+        let label = document.getElementById(preferredId) || document.getElementById(`${inputEl.id}Label`);
+        if (!label) {
+          try {
+            // create a label that matches page styles (.upload-plus) and uses FontAwesome plus icon
+            label = document.createElement('label');
+            label.id = preferredId;
+            label.htmlFor = inputEl.id;
+            label.className = 'upload-plus';
+            label.innerHTML = '<i class="fa-solid fa-plus"></i>';
+            // append into the same cell as the input (fallback to parent/body)
+            const container = inputEl.parentElement || inputEl.parentNode;
+            if (container) container.appendChild(label); else document.body.appendChild(label);
+          } catch (e) { /* ignore create error */ }
+        }
+
+        // persist the removed state so reloads reflect the user's action until they save
+        try { localStorage.setItem(`educ_remove_${inputEl.id}`, '1'); } catch (e) { /* ignore */ }
+
+        // ensure the label is visible and the input is enabled
+        try { if (label) label.style.display = 'inline-flex'; } catch (e) {}
+        try { inputEl.disabled = false; } catch (e) {}
+        // ensure the table row is visible so the label is reachable
+        try {
+          const tr = inputEl.closest ? inputEl.closest('tr') : (inputEl.parentElement && inputEl.parentElement.parentElement);
+          if (tr) tr.style.display = '';
+        } catch (e) {}
       }
+
       if (fileNameElId) {
         showFileName(fileNameElId, '');
         const fn = document.getElementById(fileNameElId);
         if (fn) fn.style.display = 'none';
       }
+
       Swal.fire({ icon: 'success', title: 'Removed', text: 'Image marked for removal.' });
     });
   }
@@ -309,7 +339,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!f) return;
     if (!validateImageFile(f)) { Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); frontInput.value = ''; return; }
     const fr = new FileReader();
-    fr.onload = () => { frontState.base64 = fr.result; frontState.removed = false; showFileName('frontFileName', f.name); };
+    fr.onload = () => { frontState.base64 = fr.result; frontState.removed = false; showFileName('frontFileName', f.name); try { localStorage.removeItem('educ_remove_frontImage'); } catch (e) {} };
     fr.readAsDataURL(f);
     fr.onloadend = () => {
       // hide upload label and show filename
@@ -325,7 +355,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!f) return;
     if (!validateImageFile(f)) { Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); backInput.value = ''; return; }
     const fr = new FileReader();
-    fr.onload = () => { backState.base64 = fr.result; backState.removed = false; showFileName('backFileName', f.name); };
+    fr.onload = () => { backState.base64 = fr.result; backState.removed = false; showFileName('backFileName', f.name); try { localStorage.removeItem('educ_remove_backImage'); } catch (e) {} };
     fr.readAsDataURL(f);
     fr.onloadend = () => {
       const label = document.getElementById('backLabel');
@@ -339,7 +369,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!f) return;
     if (!validateImageFile(f)) { Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); coeInput.value = ''; return; }
     const fr = new FileReader();
-    fr.onload = () => { coeState.base64 = fr.result; coeState.removed = false; showFileName('coeFileName', f.name); };
+    fr.onload = () => { coeState.base64 = fr.result; coeState.removed = false; showFileName('coeFileName', f.name); try { localStorage.removeItem('educ_remove_coeImage'); } catch (e) {} };
     fr.readAsDataURL(f);
     fr.onloadend = () => {
       const label = document.getElementById('coeLabel');
@@ -353,7 +383,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (!f) return;
     if (!validateImageFile(f)) { Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); voterInput.value = ''; return; }
     const fr = new FileReader();
-    fr.onload = () => { voterState.base64 = fr.result; voterState.removed = false; showFileName('voterFileName', f.name); };
+    fr.onload = () => { voterState.base64 = fr.result; voterState.removed = false; showFileName('voterFileName', f.name); try { localStorage.removeItem('educ_remove_voter'); } catch (e) {} };
     fr.readAsDataURL(f);
     fr.onloadend = () => {
       const label = document.getElementById('voterLabel');
@@ -385,12 +415,104 @@ document.addEventListener('DOMContentLoaded', function () {
       setIfExists('contact', data.contact || '');
       setIfExists('schoolname', data.school || data.schoolname || '');
       setIfExists('schooladdress', data.schooladdress || '');
-      setIfExists('year', data.year || '');
+        // Set academic level from server (handle several possible field names)
+        try {
+          const acadVal = (data.academicLevel || data.academiclevel || data.academic_level || data.academic || data.level || '').toString();
+          const acadEl = document.getElementById('academicLevel');
+          if (acadEl && acadVal) {
+            try { acadEl.value = acadVal; } catch (e) { /* ignore */ }
+          }
+        } catch (e) { /* ignore */ }
+
+        // Populate year select based on academic level and set selected value
+        try {
+          const yearEl = document.getElementById('year');
+          const acadEl = document.getElementById('academicLevel');
+          const JHS_YEARS = ['Grade 7','Grade 8','Grade 9','Grade 10'];
+          const SHS_YEARS = ['Grade 11','Grade 12'];
+          const lvl = (acadEl && acadEl.value) ? acadEl.value.toString().toLowerCase() : (data.academicLevel || '').toString().toLowerCase();
+          if (yearEl && yearEl.tagName && yearEl.tagName.toLowerCase() === 'select') {
+            // rebuild options according to detected level
+            yearEl.innerHTML = '<option value="">Select Classification</option>';
+            const opts = lvl.includes('junior') ? JHS_YEARS : (lvl.includes('senior') ? SHS_YEARS : []);
+            opts.forEach(o => {
+              const el = document.createElement('option'); el.value = o; el.textContent = o; yearEl.appendChild(el);
+            });
+            // set selected if present and valid
+            if (data.year && opts.indexOf(data.year) !== -1) {
+              yearEl.value = data.year;
+            }
+            // show/hide yearWrapper same as form logic
+            const yearWrapper = document.getElementById('yearWrapper');
+            if (yearWrapper) yearWrapper.style.display = opts.length ? '' : 'none';
+            // Update year options live when academic level changes
+            try {
+              if (acadEl) {
+                acadEl.addEventListener('change', function () {
+                  try {
+                    const newLvl = (acadEl.value || '').toString().toLowerCase();
+                    const newOpts = newLvl.includes('junior') ? JHS_YEARS : (newLvl.includes('senior') ? SHS_YEARS : []);
+                    yearEl.innerHTML = '<option value="">Select Classification</option>';
+                    newOpts.forEach(o => { const e = document.createElement('option'); e.value = o; e.textContent = o; yearEl.appendChild(e); });
+                    if (yearWrapper) yearWrapper.style.display = newOpts.length ? '' : 'none';
+                  } catch (ie) { /* ignore */ }
+                });
+              }
+            } catch (e) { /* ignore */ }
+          } else if (yearEl) {
+            // if it's an input, set raw value
+            yearEl.value = data.year || '';
+          }
+        } catch (e) { /* ignore */ }
       setIfExists('benefittype', data.benefittype || data.typeOfBenefit || '');
       setIfExists('fathername', data.fathername || '');
       setIfExists('fathercontact', data.fathercontact || '');
       setIfExists('mothername', data.mothername || '');
       setIfExists('mothercontact', data.mothercontact || '');
+
+      // Hide Parent's voter's certificate row when Academic Level is Senior High
+      try {
+        function toggleVoterRowByLevel(level) {
+          const lvl = (level || '').toString().toLowerCase();
+          const voterInput = document.getElementById('voter');
+          const viewVoter = document.getElementById('viewVoter');
+          const deleteVoter = document.getElementById('deleteVoter');
+          const voterFileName = document.getElementById('voterFileName');
+          const voterLabel = document.getElementById('voterLabel');
+          // Find the table row containing the voter input or file name
+          const tr = voterInput ? (voterInput.closest ? voterInput.closest('tr') : (voterInput.parentElement && voterInput.parentElement.parentElement)) : (voterFileName ? (voterFileName.closest ? voterFileName.closest('tr') : null) : null);
+          if (lvl.includes('senior')) {
+            if (tr) tr.style.display = 'none';
+            if (viewVoter) viewVoter.style.display = 'none';
+            if (deleteVoter) deleteVoter.style.display = 'none';
+            if (voterFileName) voterFileName.style.display = 'none';
+            if (voterLabel) voterLabel.style.display = 'none';
+          } else {
+            // show the row and controls
+            if (tr) tr.style.display = '';
+            if (viewVoter) viewVoter.style.display = '';
+            if (deleteVoter) deleteVoter.style.display = '';
+            // determine whether a file is present and restore proper display for filename/label
+            try {
+              const hasFileInState = (typeof voterState !== 'undefined') && voterState && !voterState.removed && !!voterState.base64;
+              const hasFileInInput = voterInput && voterInput.files && voterInput.files.length;
+              const hasFileInName = voterFileName && voterFileName.textContent && voterFileName.textContent.trim();
+              const hasVoter = !!(hasFileInState || hasFileInInput || hasFileInName);
+              if (voterFileName) voterFileName.style.display = hasVoter ? 'inline-block' : 'none';
+              if (voterLabel) voterLabel.style.display = hasVoter ? 'none' : 'inline-flex';
+            } catch (e) {
+              if (voterFileName) voterFileName.style.display = '';
+              if (voterLabel) voterLabel.style.display = '';
+            }
+          }
+        }
+
+        const acadEl = document.getElementById('academicLevel');
+        const detected = (acadEl && acadEl.value) ? acadEl.value : (data.academicLevel || data.academiclevel || '');
+        toggleVoterRowByLevel(detected);
+        // Attach change listener so switching level during edit updates visibility
+        if (acadEl) acadEl.addEventListener('change', function () { toggleVoterRowByLevel(acadEl.value); });
+      } catch (e) { /* ignore */ }
 
       // Determine birthday preference similar to view-educ.js:
       // 1) application.user.birthday (if populated)
@@ -491,19 +613,27 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       }
 
+      // Honor locally persisted "removed" flags so reloads reflect client deletion until saved
+      try {
+        if (frontInput && localStorage.getItem('educ_remove_frontImage')) { frontState.removed = true; frontState.base64 = null; }
+        if (backInput && localStorage.getItem('educ_remove_backImage')) { backState.removed = true; backState.base64 = null; }
+        if (coeInput && localStorage.getItem('educ_remove_coeImage')) { coeState.removed = true; coeState.base64 = null; }
+        if (voterInput && localStorage.getItem('educ_remove_voter')) { voterState.removed = true; voterState.base64 = null; }
+      } catch (e) { /* ignore localStorage access */ }
+
       // Toggle upload labels/file name visibility based on existing images
       const frontLabel = document.getElementById('frontLabel');
       const frontFN = document.getElementById('frontFileName');
-      if (frontState.base64) { if (frontLabel) frontLabel.style.display = 'none'; if (frontFN) frontFN.style.display = 'inline-block'; }
+      if (frontState.base64 && !frontState.removed) { if (frontLabel) frontLabel.style.display = 'none'; if (frontFN) frontFN.style.display = 'inline-block'; } else { if (frontLabel) frontLabel.style.display = 'inline-flex'; if (frontFN) frontFN.style.display = 'none'; }
       const backLabel = document.getElementById('backLabel');
       const backFN = document.getElementById('backFileName');
-      if (backState.base64) { if (backLabel) backLabel.style.display = 'none'; if (backFN) backFN.style.display = 'inline-block'; }
+      if (backState.base64 && !backState.removed) { if (backLabel) backLabel.style.display = 'none'; if (backFN) backFN.style.display = 'inline-block'; } else { if (backLabel) backLabel.style.display = 'inline-flex'; if (backFN) backFN.style.display = 'none'; }
       const coeLabel = document.getElementById('coeLabel');
       const coeFN = document.getElementById('coeFileName');
-      if (coeState.base64) { if (coeLabel) coeLabel.style.display = 'none'; if (coeFN) coeFN.style.display = 'inline-block'; }
+      if (coeState.base64 && !coeState.removed) { if (coeLabel) coeLabel.style.display = 'none'; if (coeFN) coeFN.style.display = 'inline-block'; } else { if (coeLabel) coeLabel.style.display = 'inline-flex'; if (coeFN) coeFN.style.display = 'none'; }
       const voterLabel = document.getElementById('voterLabel');
       const voterFN = document.getElementById('voterFileName');
-      if (voterState.base64) { if (voterLabel) voterLabel.style.display = 'none'; if (voterFN) voterFN.style.display = 'inline-block'; }
+      if (voterState.base64 && !voterState.removed) { if (voterLabel) voterLabel.style.display = 'none'; if (voterFN) voterFN.style.display = 'inline-block'; } else { if (voterLabel) voterLabel.style.display = 'inline-flex'; if (voterFN) voterFN.style.display = 'none'; }
 
       // siblings (array of { name, gender, age })
       try {
@@ -528,11 +658,20 @@ document.addEventListener('DOMContentLoaded', function () {
     ev.preventDefault();
 
     try {
-      const confirmed = await Swal.fire({ title: 'Save changes?', icon: 'question', showCancelButton: true, confirmButtonText: 'Save', cancelButtonText: 'Cancel', confirmButtonColor: '#0A2C59' });
+      const confirmed = await Swal.fire({
+        title: 'Save changes?',
+        icon: 'question',
+        showCancelButton: true,
+        showConfirmButton: true,
+        confirmButtonText: 'Save',
+        cancelButtonText: 'Cancel',
+        confirmButtonColor: '#0A2C59',
+        focusConfirm: true
+      });
       if (!confirmed || !confirmed.isConfirmed) return;
     } catch (e) { console.warn('Swal failed, proceeding'); }
 
-    try { Swal.fire({ title: 'Saving...', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading(), showConfirmButton: false }); } catch (e) {}
+    // NOTE: moved showing of the "Saving..." loading modal until after validation
 
     // gather payload
     const payload = {
@@ -562,6 +701,53 @@ document.addEventListener('DOMContentLoaded', function () {
       // collect siblings and expenses from table
       const siblings = readSiblingsFromTable();
       const expenses = readExpensesFromTable();
+
+      // Validate required uploaded documents before proceeding
+      try {
+        const acadEl = document.getElementById('academicLevel');
+        const acadVal = (acadEl && acadEl.value) ? acadEl.value.toString().toLowerCase() : (data && (data.academicLevel || data.academiclevel) ? (data.academicLevel || data.academiclevel).toString().toLowerCase() : '');
+        const voterRequired = !(acadVal && acadVal.includes('senior'));
+
+        const filePresent = (state, inputEl) => {
+          // present if there's a base64 stored and not removed, or if input has files
+          if (!state) state = {};
+          if (state.removed) return false;
+          if (state.base64) return true;
+          if (inputEl && inputEl.files && inputEl.files.length) return true;
+          return false;
+        };
+
+        const missing = [];
+        if (!filePresent(frontState, frontInput)) missing.push('Front ID (School ID - Front)');
+        if (!filePresent(backState, backInput)) missing.push('Back ID (School ID - Back)');
+        if (!filePresent(coeState, coeInput)) missing.push('Certificate of Enrollment');
+        if (voterRequired && !filePresent(voterState, voterInput)) missing.push("Parent's Voter's Certificate");
+
+        if (missing.length) {
+          try { Swal.close(); } catch (e) {}
+          await Swal.fire({
+            icon: 'warning',
+            title: 'Missing Requirements',
+            html: `<p>Please upload the following required documents before saving:</p><ul style="text-align:left">${missing.map(m=>`<li>${m}</li>`).join('')}</ul>`,
+            showConfirmButton: true,
+            confirmButtonText: 'OK'
+          });
+          return;
+        }
+
+      // All validations passed — show the saving/loading modal now
+      try {
+        try { Swal.close(); } catch (e) {}
+        Swal.fire({
+          title: 'Saving...',
+          allowOutsideClick: false,
+          allowEscapeKey: false,
+          didOpen: () => Swal.showLoading(),
+          showConfirmButton: false,
+          showCancelButton: false
+        });
+      } catch (e) {}
+      } catch (e) { /* ignore validation errors and proceed */ }
 
   const hasNewFront = !!frontState.base64 && String(frontState.base64).startsWith('data:');
       const hasNewBack = !!backState.base64 && String(backState.base64).startsWith('data:');
@@ -634,6 +820,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const txt = await res.text();
         if (!res.ok) throw new Error(txt || 'Update failed');
         try { Swal.close(); } catch (e) {}
+        // clear persisted removal flags now that changes were saved
+        try { localStorage.removeItem('educ_remove_frontImage'); localStorage.removeItem('educ_remove_backImage'); localStorage.removeItem('educ_remove_coeImage'); localStorage.removeItem('educ_remove_voter'); } catch (e) {}
         await Swal.fire({ icon: 'success', title: 'Saved', text: 'Application updated.' });
         window.location.href = 'educConfirmation.html';
         return;
@@ -643,6 +831,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const j = await jsonRes.json().catch(()=>null);
         if (!jsonRes.ok) throw new Error((j && j.error) || 'Update failed');
         try { Swal.close(); } catch (e) {}
+        try { localStorage.removeItem('educ_remove_frontImage'); localStorage.removeItem('educ_remove_backImage'); localStorage.removeItem('educ_remove_coeImage'); localStorage.removeItem('educ_remove_voter'); } catch (e) {}
         await Swal.fire({ icon: 'success', title: 'Saved', text: 'Application updated.' });
         window.location.href = 'educConfirmation.html';
         return;
