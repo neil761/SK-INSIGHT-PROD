@@ -20,6 +20,8 @@ router.post(
 );
 
 router.get("/me/profile", protect, ctrl.getMyProfile);
+// Return profile for active cycle or most recent fallback
+router.get("/me/recent", protect, ctrl.getMyRecentProfile);
 
 // Update my profile (user-level) - allow multipart so users can replace id images
 router.put(

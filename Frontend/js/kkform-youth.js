@@ -1,9 +1,11 @@
+// Ensure `API_BASE` is available to all handlers in this file.
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'))
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+
 document.addEventListener('DOMContentLoaded', function() {
-  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
-    ? window.API_BASE
-    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
-      ? 'http://localhost:5000'
-      : 'https://sk-insight.online';
   // if (!validateTokenAndRedirect("KK Youth Form")) {
   //   return;
   // }
@@ -48,6 +50,14 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   } catch (e) { /* ignore DOM errors */ }
   document.getElementById('youthClassification').value = saved.youthClassification || '';
+  // Helper to map saved boolean/true/false values to 'Yes'/'No' for selects
+  function mapYesNoFromSaved(v) {
+    if (v === true || String(v).toLowerCase() === 'true') return 'Yes';
+    if (v === false || String(v).toLowerCase() === 'false') return 'No';
+    if (String(v).trim().toLowerCase() === 'yes') return 'Yes';
+    if (String(v).trim().toLowerCase() === 'no') return 'No';
+    return '';
+  }
   // Show specific needs selector when classification requires it
   const youthClassificationEl = document.getElementById('youthClassification');
   const specificNeedsGroup = document.getElementById('specificNeedsGroup');
@@ -90,9 +100,124 @@ document.addEventListener('DOMContentLoaded', function() {
   }
   document.getElementById('educationalBackground').value = saved.educationalBackground || '';
   document.getElementById('workStatus').value = saved.workStatus || '';
-  document.getElementById('registeredSKVoter').value = saved.registeredSKVoter || '';
-  document.getElementById('registeredNationalVoter').value = saved.registeredNationalVoter || '';
-  document.getElementById('attendedKKAssembly').value = saved.attendedKKAssembly || '';
+  // Normalize saved yes/no booleans into 'Yes'/'No' strings for the selects
+  const savedRegisteredSK = mapYesNoFromSaved(saved.registeredSKVoter) || (saved.registeredSKVoter || '');
+  const savedRegisteredNational = mapYesNoFromSaved(saved.registeredNationalVoter) || (saved.registeredNationalVoter || '');
+  const savedAttended = mapYesNoFromSaved(saved.attendedKKAssembly) || (saved.attendedKKAssembly || '');
+  try { if (document.getElementById('registeredSKVoter')) document.getElementById('registeredSKVoter').value = savedRegisteredSK; } catch (e) {}
+  try { if (document.getElementById('registeredNationalVoter')) document.getElementById('registeredNationalVoter').value = savedRegisteredNational; } catch (e) {}
+  try { if (document.getElementById('attendedKKAssembly')) document.getElementById('attendedKKAssembly').value = savedAttended; } catch (e) {}
+
+  // Prefill youth-step fields from most recent KK profile (active or fallback).
+  // Uses cached `kkRecentProfile` in sessionStorage when available.
+  (async () => {
+    try {
+      const cacheKey = 'kkRecentProfile';
+      let recent = null;
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        try { recent = JSON.parse(cached); } catch (e) { recent = null; }
+      }
+      if (!recent) {
+        const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+        if (!token) return;
+        const r = await fetch(`${API_BASE}/api/kkprofiling/me/recent`, { headers: { Authorization: `Bearer ${token}` } });
+        if (r.ok) { recent = await r.json().catch(() => null); if (recent) sessionStorage.setItem(cacheKey, JSON.stringify(recent)); }
+      }
+      if (!recent) return;
+      const p = recent.profile || recent;
+      if (!p) return;
+
+      const saved3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
+
+      function fillIfEmpty(elId, savedKey, value) {
+        if (value === null || value === undefined || value === '') return false;
+        const el = document.getElementById(elId);
+        if (!el) return false;
+        // Only treat a saved value as "present" if it's a non-empty string.
+        const savedVal = saved3 ? saved3[savedKey] : undefined;
+        if ((typeof savedVal === 'string' && savedVal !== '') || (el.value && el.value !== '')) return false;
+        el.value = value;
+        saved3[savedKey] = value;
+        return true;
+      }
+
+      // Normalize boolean/true/false values into 'Yes'/'No' strings for selects
+      function yesNo(v) {
+        if (v === true || v === 'true' || String(v).toLowerCase() === 'true') return 'Yes';
+        if (v === false || v === 'false' || String(v).toLowerCase() === 'false') return 'No';
+        if (String(v).trim().toLowerCase() === 'yes') return 'Yes';
+        if (String(v).trim().toLowerCase() === 'no') return 'No';
+        return '';
+      }
+
+      // youthAgeGroup may be stored in a hidden field
+      const ageGroupHidden = document.getElementById('youthAgeGroup_hidden');
+      if (p.youthAgeGroup && (!saved3.youthAgeGroup) && ageGroupHidden && (!ageGroupHidden.value || ageGroupHidden.value === '')) {
+        ageGroupHidden.value = p.youthAgeGroup;
+        saved3.youthAgeGroup = p.youthAgeGroup;
+      }
+
+      fillIfEmpty('youthClassification', 'youthClassification', p.youthClassification);
+      fillIfEmpty('educationalBackground', 'educationalBackground', p.educationalBackground);
+      fillIfEmpty('workStatus', 'workStatus', p.workStatus);
+      fillIfEmpty('registeredSKVoter', 'registeredSKVoter', yesNo(p.registeredSKVoter));
+      fillIfEmpty('registeredNationalVoter', 'registeredNationalVoter', yesNo(p.registeredNationalVoter));
+      fillIfEmpty('votedLastSKElection', 'votedLastSKElection', yesNo(p.votedLastSKElection));
+      fillIfEmpty('attendedKKAssembly', 'attendedKKAssembly', yesNo(p.attendedKKAssembly));
+
+      // Prefill attendanceCount only if attendedKKAssembly is true/Yes
+      const attended = yesNo(p.attendedKKAssembly);
+      if ((attended === 'Yes' || attended === true) && p.attendanceCount && (!saved3.attendanceCount)) {
+        saved3.attendanceCount = p.attendanceCount;
+      }
+      // Prefill reasonDidNotAttend only if attendedKKAssembly is No/false
+      if ((attended === 'No' || attended === false) && p.reasonDidNotAttend && (!saved3.reasonDidNotAttend)) {
+        saved3.reasonDidNotAttend = p.reasonDidNotAttend;
+      }
+
+      // Profile & signature images: copy remote URLs into sessionStorage so preview can render
+      try {
+        const profileUrl = p.profileImage || p.profileImagePath || p.profile_image || null;
+        if (profileUrl && !saved3.profileImage) {
+          saved3.profileImage = profileUrl;
+          // derive a sensible filename
+          try { saved3.profileImageName = saved3.profileImageName || (profileUrl.split('/').pop() || '').split('?')[0]; } catch (e) { /* ignore */ }
+        }
+        const sigUrl = p.signatureImagePath || p.signatureImage || p.signature || null;
+        if (sigUrl && !saved3.signatureImage) {
+          saved3.signatureImage = sigUrl;
+          try { saved3.signatureImageName = saved3.signatureImageName || (sigUrl.split('/').pop() || '').split('?')[0]; } catch (e) { /* ignore */ }
+        }
+      } catch (e) { /* ignore image copy errors */ }
+
+      try { sessionStorage.setItem('kkProfileStep3', JSON.stringify(saved3)); } catch (e) { /* ignore */ }
+
+      // If we wrote remote images into sessionStorage, render them now (support http(s) URLs)
+      try {
+        if (saved3.profileImage) renderProfileImage(saved3.profileImage);
+        if (saved3.signatureImage) renderSignatureImage(saved3.signatureImage);
+      } catch (e) { /* ignore preview render errors */ }
+
+      // Ensure dependent UI reflects prefilled values
+      try {
+        updateAttendanceVisibility();
+      } catch (e) { /* ignore */ }
+      try {
+        const rsk = document.getElementById('registeredSKVoter');
+        const voted = document.getElementById('votedLastSKElection');
+        if (rsk) {
+          // If registeredSKVoter is Yes, ensure votedLastSKElection is set to the prefilled value
+          if (rsk.value === 'Yes' && voted && voted.value !== yesNo(p.votedLastSKElection)) {
+            voted.value = yesNo(p.votedLastSKElection);
+          }
+          rsk.dispatchEvent(new Event('change'));
+        }
+      } catch (e) { /* ignore */ }
+    } catch (err) {
+      console.warn('Failed to fetch recent KK profile for youth:', err);
+    }
+  })();
 
   // Show/hide attendance related fields and toggle required attribute
   const attendedEl = document.getElementById('attendedKKAssembly');
@@ -271,28 +396,35 @@ document.addEventListener('DOMContentLoaded', function() {
 
   const youthForm = document.getElementById('youthForm');
 
-  // 🔹 Autosave on any input change
-  youthForm.addEventListener('input', saveStep3);
+  // 🔹 Autosave on any input change (guard existence)
+  if (youthForm && typeof saveStep3 === 'function') {
+    youthForm.addEventListener('input', saveStep3);
+  }
 
   // Save step3 data including specificNeedType
   function saveStep3() {
     // Use the hidden field for submission because the visible select is disabled
     const yVal = (document.getElementById('youthAgeGroup_hidden') && document.getElementById('youthAgeGroup_hidden').value) || (document.getElementById('youthAgeGroup') && document.getElementById('youthAgeGroup').value) || '';
     // keep the visible select in sync (in case code changes it elsewhere)
-    try { if (document.getElementById('youthAgeGroup')) document.getElementById('youthAgeGroup').value = yVal; } catch (e) {}
+    try { const yg = document.getElementById('youthAgeGroup'); if (yg) yg.value = yVal; } catch (e) {}
+
+    // helper to safely get element value
+    function val(id) {
+      try { return (document.getElementById(id) && document.getElementById(id).value) || ''; } catch (e) { return ''; }
+    }
 
     const step3Data = {
       youthAgeGroup: yVal,
-      youthClassification: document.getElementById('youthClassification').value,
-      educationalBackground: document.getElementById('educationalBackground').value,
-      workStatus: document.getElementById('workStatus').value,
-      specificNeedType: document.getElementById('specificNeedType').value,
-      registeredSKVoter: document.getElementById('registeredSKVoter').value,
-      registeredNationalVoter: document.getElementById('registeredNationalVoter').value,
-      votedLastSKElection: document.getElementById('votedLastSKElection').value,
-      attendedKKAssembly: document.getElementById('attendedKKAssembly').value,
-      attendanceCount: document.getElementById('attendanceCount').value,
-      reasonDidNotAttend: document.getElementById('reasonDidNotAttend').value
+      youthClassification: val('youthClassification'),
+      educationalBackground: val('educationalBackground'),
+      workStatus: val('workStatus'),
+      specificNeedType: val('specificNeedType'),
+      registeredSKVoter: val('registeredSKVoter'),
+      registeredNationalVoter: val('registeredNationalVoter'),
+      votedLastSKElection: val('votedLastSKElection'),
+      attendedKKAssembly: val('attendedKKAssembly'),
+      attendanceCount: val('attendanceCount'),
+      reasonDidNotAttend: val('reasonDidNotAttend')
     };
 
     // Keep existing saved images
@@ -343,288 +475,9 @@ document.addEventListener('DOMContentLoaded', function() {
   // Final submit
   
 
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function(e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
-
-  // KK Profile Navigation
-  function handleKKProfileNavClick(event) {
-    event.preventDefault();
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
-          headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch(`${API_BASE}/api/kkprofiling/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "KK Profiling";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileRes.ok && profileData && profileData._id;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have a ${formName} profile. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
-        });
-        return;
-      }
-      // CASE 4: Form open, no profile → Show SweetAlert and go to form
-      if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "kkform-personal.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-    })
-    .catch(() => window.location.href = "kkform-personal.html");
-  }
-
-  // LGBTQ+ Profile Navigation
-  function handleLGBTQProfileNavClick(event) {
-    event.preventDefault();
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
-          headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
-          headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have a ${formName} profile. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-      // CASE 4: Form open, no profile → Show SweetAlert and go to form
-      if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "lgbtqform.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-    })
-    .catch(() => window.location.href = "lgbtqform.html");
-  }
-
-  // Educational Assistance Navigation
-  function handleEducAssistanceNavClick(event) {
-    event.preventDefault();
-    if (window.checkAndPromptEducReapply) {
-      try { window.checkAndPromptEducReapply({ event, redirectUrl: 'Educational-assistance-user.html' }); } catch (e) {}
-      return;
-    }
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
-          headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch(`${API_BASE}/api/educational-assistance/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "Educational Assistance";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have an application. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new application at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already applied for ${formName}`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-        });
-        return;
-      }
-      // CASE 4: Form open, no profile → Show SweetAlert and go to form
-      if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "Educational-assistance-user.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-    })
-    .catch(() => window.location.href = "Educational-assistance-user.html");
-  }
-
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
-
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-
-    // Educational Assistance - prefer reusable helper when available
-  function attachEducHandler(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      if (window.checkAndPromptEducReapply) {
-        try { window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' }); }
-        catch (err) { handleEducAssistanceNavClick(e); }
-      } else {
-        handleEducAssistanceNavClick(e);
-      }
-    });
-  }
-
-  attachEducHandler(document.getElementById('educAssistanceNavBtnDesktop'));
-  attachEducHandler(document.getElementById('educAssistanceNavBtnMobile'));
+  // Navigation (hamburger + nav button handlers) is centralized in `navbar.js`.
+  // This page no longer attaches its own nav handlers; `navbar.js` will call
+  // `window.checkAndPromptEducReapply` when needed.
 
   // Embed educRejected helper so this page can prompt to reapply if needed
   (function () {
@@ -872,17 +725,43 @@ document.addEventListener('DOMContentLoaded', function() {
     if (form.profileImage.files.length > 0) {
       formData.append('profileImage', form.profileImage.files[0]);
     } else if (step3.profileImage) {
-      // Fallback: convert Base64 from sessionStorage into a File
-      const file = base64ToFile(step3.profileImage, "profile.png");
-      formData.append('profileImage', file);
+      // Fallback: support remote URLs or base64 data URLs stored in sessionStorage
+      try {
+        const imgVal = step3.profileImage;
+        if (/^https?:\/\//i.test(imgVal)) {
+          const filename = step3.profileImageName || (imgVal.split('/').pop() || 'profile.jpg').split('?')[0];
+          const resp = await fetch(imgVal);
+          const blob = await resp.blob();
+          const file = new File([blob], filename, { type: blob.type || 'image/jpeg' });
+          formData.append('profileImage', file);
+        } else if (String(imgVal).startsWith('data:')) {
+          const file = base64ToFile(imgVal, step3.profileImageName || 'profile.png');
+          formData.append('profileImage', file);
+        }
+      } catch (e) {
+        console.debug('kkform-youth: failed to attach profile image from sessionStorage', e);
+      }
     }
 
     // Add signature image file if selected
     if (form.signatureImage && form.signatureImage.files.length > 0) {
       formData.append('signatureImage', form.signatureImage.files[0]);
     } else if (step3.signatureImage) {
-      const file = base64ToFile(step3.signatureImage, "signature.png");
-      formData.append('signatureImage', file);
+      try {
+        const imgVal = step3.signatureImage;
+        if (/^https?:\/\//i.test(imgVal)) {
+          const filename = step3.signatureImageName || (imgVal.split('/').pop() || 'signature.png').split('?')[0];
+          const resp = await fetch(imgVal);
+          const blob = await resp.blob();
+          const file = new File([blob], filename, { type: blob.type || 'image/png' });
+          formData.append('signatureImage', file);
+        } else if (String(imgVal).startsWith('data:')) {
+          const file = base64ToFile(imgVal, step3.signatureImageName || 'signature.png');
+          formData.append('signatureImage', file);
+        }
+      } catch (e) {
+        console.debug('kkform-youth: failed to attach signature image from sessionStorage', e);
+      }
     }
 
     try {
@@ -892,7 +771,13 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
+      // Close loading
       Swal.close();
+
+      // Try to parse JSON body (if any) to show helpful error messages
+      let body = null;
+      try { body = await response.json(); } catch (e) { try { body = await response.text(); } catch (_) { body = null; } }
+
       if (response.ok) {
         // Try to update user name fields on the backend so /api/users/me reflects submitted names
         try {
@@ -936,36 +821,31 @@ document.addEventListener('DOMContentLoaded', function() {
 
         // Redirect to the confirmation page
         window.location.href = '../../html/user/confirmation/html/kkcofirmation.html';
-      } else if (response.status === 409) {
-        Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
         return;
-      } else if (response.status === 403) {
-        let error;
-        try {
-          error = await response.json();
-        } catch {
-          error = { error: await response.text() };
-        }
-        // Show SweetAlert for age/access restriction
-        Swal.fire({
-          icon: "error",
-          title: "Not Eligible",
-          text: error.error || error.message || "You are not eligible to submit this form due to age restrictions.",
-          confirmButtonColor: "#0A2C59"
-        });
-        return;
-      } else {
-        let error;
-        try {
-          error = await response.json();
-        } catch {
-          error = { message: await response.text() };
-        }
-        Swal.fire("Error", error.message || 'Something went wrong', "error");
       }
+
+      // Non-OK: show helpful message including status and backend body when available
+      console.error('kkform-youth submit failed', { status: response.status, body });
+
+      if (response.status === 409) {
+        await Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
+        return;
+      }
+
+      if (response.status === 403) {
+        const msg = (body && (body.error || body.message)) || 'You are not eligible to submit this form due to access/age restrictions.';
+        await Swal.fire({ icon: 'error', title: 'Not Eligible', text: msg, confirmButtonColor: '#0A2C59' });
+        return;
+      }
+
+      // For validation or other server errors, display server-provided details when available
+      const serverMsg = (body && (body.error || body.message)) || (typeof body === 'string' ? body : null) || `Server responded with status ${response.status}`;
+      await Swal.fire({ icon: 'error', title: 'Submission Failed', text: serverMsg });
     } catch (error) {
+      // Network or unexpected error
+      console.error('kkform-youth network/exception during submit', error);
       Swal.close();
-      Swal.fire("Error", "Failed to submit form", "error");
+      await Swal.fire({ icon: 'error', title: 'Submission Error', text: `Failed to submit form: ${error && error.message ? error.message : 'Network or unexpected error'}` });
     }
   });
 
@@ -1037,16 +917,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function renderProfileImage(base64Image) {
-    // ✅ Check MIME
-    const allowed = base64Image.startsWith('data:image/png') ||
-                    base64Image.startsWith('data:image/jpeg');
-
+  function renderProfileImage(imgSrc) {
     const imgEl = document.getElementById('profileImagePreview');
     const outer = document.getElementById('imagePreviewContainerFront');
     const removeStatic = document.getElementById('removeImageBtnFront');
 
-    if (!allowed) {
+    const isData = typeof imgSrc === 'string' && imgSrc.startsWith('data:image/');
+    const isRemote = typeof imgSrc === 'string' && /^https?:\/\//i.test(imgSrc);
+
+    if (!isData && !isRemote) {
       const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.profileImage;
       sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
@@ -1057,11 +936,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (imgEl) {
-      imgEl.src = base64Image;
+      imgEl.src = imgSrc;
       imgEl.style.display = 'block';
       imgEl.style.cursor = 'pointer';
       imgEl.onclick = function () {
-        Swal.fire({ imageUrl: base64Image, imageAlt: 'Profile Image', showConfirmButton: false, showCloseButton: true, width: 400 });
+        Swal.fire({ imageUrl: imgSrc, imageAlt: 'Profile Image', showConfirmButton: false, showCloseButton: true, width: 400 });
       };
     }
     if (outer) outer.style.display = 'block';
@@ -1069,11 +948,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Save to sessionStorage so it persists across navigation
     const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-    current.profileImage = base64Image;
-    // ensure we don't overwrite an existing filename when rendering from other sources
-    if (!current.profileImageName) {
-      current.profileImageName = current.profileImageName || '';
-    }
+    current.profileImage = imgSrc;
     sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
     // Restore filename display if present
     const filenameDisplay = document.getElementById('profileImageFilename');
@@ -1122,13 +997,15 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  function renderSignatureImage(base64Image) {
-    const allowed = base64Image.startsWith('data:image/png') || base64Image.startsWith('data:image/jpeg');
+  function renderSignatureImage(imgSrc) {
     const imgEl = document.getElementById('signatureImagePreview');
     const outer = document.getElementById('imagePreviewContainerBack');
     const removeStatic = document.getElementById('removeImageBtnBack');
 
-    if (!allowed) {
+    const isData = typeof imgSrc === 'string' && imgSrc.startsWith('data:image/');
+    const isRemote = typeof imgSrc === 'string' && /^https?:\/\//i.test(imgSrc);
+
+    if (!isData && !isRemote) {
       const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
       delete current.signatureImage;
       sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
@@ -1139,19 +1016,16 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     if (imgEl) {
-      imgEl.src = base64Image;
+      imgEl.src = imgSrc;
       imgEl.style.display = 'block';
       imgEl.style.cursor = 'pointer';
-      imgEl.onclick = function () { Swal.fire({ imageUrl: base64Image, imageAlt: 'Signature Image', showConfirmButton: false, showCloseButton: true, width: 400 }); };
+      imgEl.onclick = function () { Swal.fire({ imageUrl: imgSrc, imageAlt: 'Signature Image', showConfirmButton: false, showCloseButton: true, width: 400 }); };
     }
     if (outer) outer.style.display = 'block';
     if (removeStatic) removeStatic.style.display = 'inline-block';
 
     const current = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
-    current.signatureImage = base64Image;
-    if (!current.signatureImageName) {
-      current.signatureImageName = current.signatureImageName || '';
-    }
+    current.signatureImage = imgSrc;
     sessionStorage.setItem('kkProfileStep3', JSON.stringify(current));
     const filenameDisplay = document.getElementById('signatureImageFilename');
     if (filenameDisplay && current.signatureImageName) { filenameDisplay.textContent = current.signatureImageName; filenameDisplay.style.display = 'inline-block'; }

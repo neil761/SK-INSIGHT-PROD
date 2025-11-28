@@ -80,8 +80,6 @@ const kkProfileSchema = new mongoose.Schema({
     enum: [
       "There was no KK Assembly",
       "Not interested",
-      "There are no kk assembly",
-      "There are no KK Assembly"
     ],
   },
   profileImage: { type: String, required: true },

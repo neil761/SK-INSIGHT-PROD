@@ -524,6 +524,46 @@ exports.getMyLatestProfile = async (req, res) => {
   }
 };
 
+// GET /api/kkprofiling/me/recent
+// Return profile for active cycle if available, otherwise the most recent non-deleted profile
+exports.getMyRecentProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    let cycleDoc = null;
+    try {
+      cycleDoc = await getPresentCycle('KK Profiling');
+    } catch (e) {
+      cycleDoc = null;
+    }
+
+    let profile = null;
+    if (cycleDoc && cycleDoc._id) {
+      profile = await KKProfile.findOne({ user: userId, formCycle: cycleDoc._id, isDeleted: false })
+        .populate('formCycle')
+        .populate('user', 'username email birthday age');
+    }
+
+    if (profile) {
+      return res.status(200).json({ profile, isForActiveCycle: true });
+    }
+
+    const latest = await KKProfile.findOne({ user: userId, isDeleted: false })
+      .sort({ submittedAt: -1 })
+      .populate('formCycle')
+      .populate('user', 'username email birthday age');
+
+    if (latest) {
+      return res.status(200).json({ profile: latest, isForActiveCycle: false });
+    }
+
+    return res.status(404).json({ error: 'No KK profile found.' });
+  } catch (err) {
+    console.error('getMyRecentProfile error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // GET /api/kkprofiling/me/image
 exports.getProfileImage = async (req, res) => {
   try {

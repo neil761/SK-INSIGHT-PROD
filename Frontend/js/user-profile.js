@@ -149,12 +149,31 @@ document.addEventListener("DOMContentLoaded", function () {
           if (shouldDisable) {
             el.classList.add('disabled');
             el.setAttribute('aria-disabled', 'true');
-            // For anchors, prevent navigation via href by setting role/button
-            el.style.pointerEvents = 'auto'; // keep pointer to allow click handler to show warning
+            // Attach a blocking click handler to prevent other listeners (navbar.js) from running
+            if (!el.__unverifiedHandlerAttached) {
+              el.addEventListener('click', function (e) {
+                // Prevent default navigation and stop other handlers (including navbar.js)
+                try {
+                  e.preventDefault();
+                  e.stopImmediatePropagation();
+                } catch (err) {}
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+              el.__unverifiedHandlerAttached = true;
+            }
           } else {
             el.classList.remove('disabled');
             el.removeAttribute('aria-disabled');
-            el.style.pointerEvents = '';
+            // Remove the blocking handler if present
+            if (el.__unverifiedHandlerAttached) {
+              // We cannot remove anonymous listener; mark prevents future double-attach and leave existing listener harmless
+              el.__unverifiedHandlerAttached = false;
+            }
           }
         });
       })();
@@ -637,20 +656,6 @@ if (logoutBtn) {
 }
 // ...existing code...
 
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function (e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    // Ensure the dropdown menu hides when clicking outside of it
-    document.addEventListener('click', function (e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
 
   // --- SETTINGS ICON & MODAL ---
   const settingsIcon = document.getElementById("settingsIcon");
@@ -1646,32 +1651,9 @@ if (logoutBtn) {
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }
   // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
-
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-
-    // Educational Assistance - prefer reusable helper when available
-  function attachEducHandler(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      if (window.checkAndPromptEducReapply) {
-        try { window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' }); }
-        catch (err) { handleEducAssistanceNavClick(e); }
-      } else {
-        handleEducAssistanceNavClick(e);
-      }
-    });
-  }
-
-  attachEducHandler(document.getElementById('educAssistanceNavBtnDesktop'));
-  attachEducHandler(document.getElementById('educAssistanceNavBtnMobile'));
+  // Nav buttons are handled centrally by `navbar.js`.
+  // The page exposes the handler functions (e.g. `handleKKProfileNavClick`) which
+  // `navbar.js` will call when available. Avoid binding here to prevent double-handling.
 
   // Embed educRejected helper so this page can prompt to reapply if needed
   (function () {

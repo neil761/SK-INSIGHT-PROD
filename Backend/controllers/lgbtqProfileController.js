@@ -394,6 +394,62 @@ exports.getMyProfile = async (req, res) => {
   }
 };
 
+// GET /api/lgbtqprofiling/me/recent
+// Return profile for active cycle if available, otherwise the most recent non-deleted profile
+exports.getMyRecentProfile = async (req, res) => {
+  try {
+    if (!req.user || !req.user.id) return res.status(401).json({ error: 'Unauthorized' });
+
+    let cycleDoc = null;
+    try {
+      cycleDoc = await getPresentCycle('LGBTQIA+ Profiling');
+    } catch (e) {
+      cycleDoc = null;
+    }
+
+    let profile = null;
+    if (cycleDoc && cycleDoc._id) {
+      profile = await LGBTQProfile.findOne({ user: req.user.id, formCycle: cycleDoc._id, isDeleted: false })
+        .populate('user', 'username email birthday age');
+    }
+
+    if (profile) {
+      const enriched = await attachKKInfo(profile);
+      try {
+        const demographics = await getDemographics(profile);
+        enriched.demographics = demographics;
+        if (demographics && demographics.birthday) enriched.birthday = demographics.birthday;
+        if (demographics && demographics.age !== undefined) enriched.age = demographics.age;
+      } catch (e) {
+        console.warn('Failed to attach demographics to enriched profile', e);
+      }
+      return res.status(200).json({ profile: enriched, isForActiveCycle: true });
+    }
+
+    const latest = await LGBTQProfile.findOne({ user: req.user.id, isDeleted: false })
+      .sort({ createdAt: -1 })
+      .populate('user', 'username email birthday age');
+
+    if (latest) {
+      const enriched = await attachKKInfo(latest);
+      try {
+        const demographics = await getDemographics(latest);
+        enriched.demographics = demographics;
+        if (demographics && demographics.birthday) enriched.birthday = demographics.birthday;
+        if (demographics && demographics.age !== undefined) enriched.age = demographics.age;
+      } catch (e) {
+        console.warn('Failed to attach demographics to enriched profile', e);
+      }
+      return res.status(200).json({ profile: enriched, isForActiveCycle: false });
+    }
+
+    return res.status(404).json({ error: 'No profile found for this user' });
+  } catch (err) {
+    console.error('getMyRecentProfile error:', err);
+    res.status(500).json({ error: 'Server error' });
+  }
+};
+
 // Update a profile
 exports.updateProfileById = async (req, res) => {
   try {
@@ -424,7 +480,13 @@ exports.updateMyProfile = async (req, res) => {
   try {
     if (!req.user || !req.user.id) return res.status(401).json({ error: 'Unauthorized' });
 
-    const profile = await LGBTQProfile.findOne({ user: req.user.id, isDeleted: false });
+    // Find the most present (active) cycle for LGBTQIA+ Profiling
+    const formStatus = await FormStatus.findOne({ formName: "LGBTQIA+ Profiling", isOpen: true });
+    if (!formStatus || !formStatus.cycleId) {
+      return res.status(404).json({ error: "No active cycle found." });
+    }
+    // Only update the profile for the present cycle
+    const profile = await LGBTQProfile.findOne({ user: req.user.id, formCycle: formStatus.cycleId, isDeleted: false });
     if (!profile) return res.status(404).json({ error: 'Profile not found' });
 
     // Update simple fields if provided
