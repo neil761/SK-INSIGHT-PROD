@@ -7,6 +7,15 @@ const mailer = require("../utils/mailer");
 
 const getResetPasswordEmail = require("../utils/templates/resetPasswordEmail");
 
+// Helper: convert a name to Title Case (first letter uppercase, rest lowercase)
+function titleCase(str) {
+  if (!str || typeof str !== 'string') return '';
+  return str
+    .trim()
+    .toLowerCase()
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
 // POST /api/auth/login
 exports.loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -62,16 +71,45 @@ exports.loginUser = async (req, res) => {
 
 // POST /api/auth/signup
 exports.registerUser = async (req, res) => {
-  const { username, email, password, role } = req.body;
+  const { username, email, password, role, firstName, middleName, lastName, suffix, birthday } = req.body;
 
   try {
+    // Validate password strength on server too: min 8 chars, uppercase, number, special char
+    const pw = password || '';
+    const strongPw = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+    if (!strongPw.test(pw)) {
+      return res.status(400).json({ error: 'Password must be at least 8 characters long and include an uppercase letter, a number, and a special character' });
+    }
+
     // Check if email already exists
     const existingUser = await User.findOne({ email });
     if (existingUser)
       return res.status(400).json({ error: "Email already in use" });
 
-    // Create and save new user
-    const user = new User({ username, email, password, role: role || "user" });
+    // Normalize name fields (Title Case) before saving
+    const fn = titleCase(firstName || '');
+    const mn = titleCase(middleName || '');
+    const ln = titleCase(lastName || '');
+    const sx = titleCase(suffix || '');
+
+    // Create and save new user (include normalized name fields and birthday if provided)
+    const userData = {
+      username,
+      email,
+      password,
+      role: role || "user",
+      firstName: fn,
+      middleName: mn,
+      lastName: ln,
+      suffix: sx,
+    };
+    if (birthday) {
+      // attempt to parse birthday if provided
+      const bd = new Date(birthday);
+      if (!isNaN(bd.getTime())) userData.birthday = bd;
+    }
+
+    const user = new User(userData);
     await user.save();
 
     // Generate JWT

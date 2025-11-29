@@ -8,6 +8,14 @@ document.addEventListener('DOMContentLoaded', async function() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   if (!token) return;
 
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   try {
     const res = await fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }

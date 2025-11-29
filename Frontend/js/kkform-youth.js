@@ -10,6 +10,14 @@ document.addEventListener('DOMContentLoaded', function() {
   //   return;
   // }
 
+    if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   const educationalBackground = document.getElementById('educationalBackground');
 
   if (!educationalBackground) {

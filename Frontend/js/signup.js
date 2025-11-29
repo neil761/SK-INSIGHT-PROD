@@ -89,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   row.textContent = String(d);
                   dayCustom.optionsContainer.appendChild(row);
                 }
-            }
+                }
         }
         setDays(31);
 
@@ -339,6 +339,19 @@ document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({ icon: 'error', title: 'Password Mismatch', text: 'Passwords do not match.' });
         return;
       }
+      // Strong password requirement: min 8 chars, at least one uppercase, one number, one special char
+      try {
+        const pwd = step2.elements['password'].value || '';
+        const strongPw = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        if (!strongPw.test(pwd)) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Weak password',
+            html: 'Password must be at least 8 characters long and include at least one uppercase letter, one number, and one special character.'
+          });
+          return;
+        }
+      } catch (e) { /* ignore and proceed */ }
       
       // Gather all data
       saveStep2ToSession();

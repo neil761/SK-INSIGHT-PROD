@@ -18,6 +18,16 @@ const API_BASE =
 
 // Re-open DOMContentLoaded for attaching nav handlers and helpers that also use `API_BASE`.
 document.addEventListener('DOMContentLoaded', function () {
+
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return;
   let _profileId = null;

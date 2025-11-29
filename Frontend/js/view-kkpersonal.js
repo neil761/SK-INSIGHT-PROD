@@ -47,8 +47,13 @@ document.addEventListener('DOMContentLoaded', async function() {
   }
 
   // Hamburger menu code
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
   // Navbar behavior is centralized in `navbar.js`.
   // Local hamburger/menu listeners removed to avoid duplicate bindings.
 

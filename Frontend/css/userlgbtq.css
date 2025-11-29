@@ -831,6 +831,10 @@ body {
     font-weight: bold;
 }
 
+/* show filename placeholder only when .visible is present */
+.kk-upload-filename { display: none; }
+.kk-upload-filename.visible { display: inline-block; /* or flex if you prefer */ }
+
 .kk-upload-btn:hover { background: #1a4c9c; }
 .kk-upload-filename {
 display: inline-block;
@@ -846,6 +850,7 @@ display: inline-block;
     line-height: 1.2;
     white-space: nowrap;
     overflow: hidden;
+    border-radius: 8px;
     text-overflow: ellipsis;
     vertical-align: middle;
 }
@@ -853,7 +858,6 @@ display: inline-block;
   position: absolute;
   left: -9999px; /* keep native input available but out of sight */
   width: 1px;
-  .kk-upload-filename.visible { display: inline-block; }
   height: 1px;
   opacity: 0;
 }
