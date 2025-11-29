@@ -225,6 +225,43 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     // Append normalized contact numbers as strings (preserve leading zeroes)
     formData.append('contactNumber', contactDigits);
+
+    // --- Requirements images check ---
+    // Ensure visible requirement file inputs have an uploaded image (or existing saved file)
+    try {
+      const requirementIds = ['frontImage', 'backImage', 'coeImage', 'voter'];
+      const missing = [];
+      const friendly = { frontImage: 'Front ID (Student ID - Front)', backImage: 'Back ID (Student ID - Back)', coeImage: 'Certificate of Enrollment (COE)', voter: "Parent's Voter's Certificate" };
+      for (const id of requirementIds) {
+        const input = document.getElementById(id);
+        // find a probe element to determine visibility (input, label, or file-name)
+        let probe = input || document.getElementById(id + 'Label') || document.getElementById(id + 'FileName') || document.getElementById(id + 'Url');
+        if (!probe) continue; // nothing to check on this page
+
+        // Determine computed visibility (safer than checking inline style)
+        let visible = true;
+        try {
+          const row = probe.closest ? probe.closest('tr') || probe : probe;
+          const cs = window.getComputedStyle(row);
+          visible = !(cs && (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0'));
+        } catch (e) { visible = true; }
+        if (!visible) continue; // not visible -> not required
+
+        // check for an uploaded file in input OR existing server URL/data-url OR displayed filename
+        const hasFileInInput = input && input.files && input.files.length > 0;
+        const hiddenUrlEl = document.getElementById(id + 'Url');
+        const hasHiddenUrl = hiddenUrlEl && hiddenUrlEl.value && hiddenUrlEl.value.trim();
+        const hasDataUrl = input && input.dataset && input.dataset.url;
+        const fnameEl = document.getElementById(id + 'FileName');
+        const hasFileName = fnameEl && fnameEl.textContent && fnameEl.textContent.trim();
+        if (!(hasFileInInput || hasHiddenUrl || hasDataUrl || hasFileName)) missing.push(friendly[id] || id);
+      }
+      if (missing.length > 0) {
+        const listHtml = '<ul style="text-align:left;margin:0.25rem 0 0 1rem;">' + missing.map(m => `<li>${m}</li>`).join('') + '</ul>';
+        await Swal.fire({ icon: 'warning', title: 'Missing Requirements', html: `Please upload the following required documents before submitting:${listHtml}` });
+        return;
+      }
+    } catch (e) { /* ignore check failures and continue */ }
     formData.append('school', document.getElementById('schoolname')?.value || '');
     formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
     formData.append('year', document.getElementById('year')?.value || '');
@@ -272,8 +309,15 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     formData.append('expenses', JSON.stringify(expenses));
 
-    // Append file inputs (requirements)
-    const fileInputs = ['frontImage', 'backImage', 'coeImage', 'voter'];
+    // Append file inputs (requirements). Exclude parent's voter certificate for Senior High students
+    const fileInputs = ['frontImage', 'backImage', 'coeImage'];
+    try {
+      const acadVal = (document.getElementById('academicLevel') && document.getElementById('academicLevel').value) ? document.getElementById('academicLevel').value : '';
+      if (!/senior\s*high/i.test(acadVal)) {
+        fileInputs.push('voter');
+      }
+    } catch (e) { /* ignore and include voter by default below */ }
+
     for (const inputId of fileInputs) {
       const input = document.getElementById(inputId);
       if (input && input.files && input.files.length > 0) {
@@ -858,6 +902,40 @@ if (form && savedFormData) {
       yearWrapper.style.display = '';
     }
 
+    // Helper: hide/show voter ID requirement when academic level is Senior High
+    function isSeniorHigh(level) {
+      return /senior\s*high/i.test((level || '').toString());
+    }
+
+    function toggleVoterVisibility(level) {
+      try {
+        const label = document.getElementById('voterLabel');
+        const input = document.getElementById('voter');
+        const viewIcon = document.getElementById('viewVoter');
+        const deleteIcon = document.getElementById('deleteVoter');
+        // find enclosing table row if present
+        let row = null;
+        if (label) row = label.closest && label.closest('tr');
+        if (!row && viewIcon) row = viewIcon.closest && viewIcon.closest('tr');
+        // Determine desired state
+        const hide = isSeniorHigh(level);
+        if (row) row.style.display = hide ? 'none' : '';
+        // If hiding, also clear file input and filename UI so it isn't submitted
+        if (hide) {
+          if (input) { try { input.value = ''; } catch (e) {} }
+          const fname = document.getElementById('voterFileName'); if (fname) { fname.textContent = ''; fname.classList.remove('visible'); }
+          if (viewIcon) viewIcon.style.display = 'none';
+          if (deleteIcon) deleteIcon.style.display = 'none';
+        } else {
+          if (viewIcon) viewIcon.style.display = '';
+          if (deleteIcon) deleteIcon.style.display = '';
+        }
+      } catch (e) { /* ignore errors toggling voter row */ }
+    }
+
+    // Apply initial voter visibility based on restored or current value
+    try { toggleVoterVisibility(savedAcademic || academicLevelEl.value || ''); } catch (e) {}
+
     // When the user changes academic level, repopulate year options and clear invalid year
     academicLevelEl.addEventListener('change', function () {
       const lvl = academicLevelEl.value || '';
@@ -876,6 +954,8 @@ if (form && savedFormData) {
           if (s && s.year) { delete s.year; sessionStorage.setItem('educationalAssistanceFormData', JSON.stringify(s)); }
         }
       } catch (e) { /* ignore */ }
+      // Toggle voter requirement visibility when academic level changes
+      try { toggleVoterVisibility(lvl); } catch (e) { }
     });
   } else {
     if (savedYear && yearEl) { yearEl.value = savedYear; }
