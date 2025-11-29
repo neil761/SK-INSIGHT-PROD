@@ -292,19 +292,20 @@ body::before {
   }
   
   @media (max-width: 600px) {
-    .about-card {
-    }
   
     .about-left img {
-      width: 180px;             
+      width: 100px;  
+      margin-bottom: 5px;           
     }
+
   
     .about-right h2 {
-      font-size: 22px;
+      font-size: 20px;
+      margin-bottom: 10px;
     }
   
     .about-right p {
-      font-size: 15px;
+      font-size: 12px;
       line-height: 1.6;
     }
   }
@@ -533,7 +534,7 @@ body::before {
     min-height: 60vh;
   }
     .about-card{
-    margin-top: 15%;
+    margin-top: 10%;
     width: 95%;
     max-width: 300px;
     padding: 5%;
