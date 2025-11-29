@@ -2,6 +2,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // if (!validateTokenAndRedirect("KK Confirmation")) {
   //   return;
   // }
+
+    if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
   
   const hamburger = document.getElementById('navbarHamburger');
   const mobileMenu = document.getElementById('navbarMobileMenu');

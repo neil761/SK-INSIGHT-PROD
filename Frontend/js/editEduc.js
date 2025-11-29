@@ -15,6 +15,15 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     : 'https://sk-insight.online';
 
 document.addEventListener('DOMContentLoaded', function () {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return;
 

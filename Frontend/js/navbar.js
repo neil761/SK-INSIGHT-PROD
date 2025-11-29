@@ -7,19 +7,41 @@ document.addEventListener('DOMContentLoaded', function () {
       : 'https://sk-insight.online';
 
   // Mobile menu toggle
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function (e) {
+  // Mobile menu toggle logic extracted into an initializer so other pages can
+  // call it (in case scripts load in different orders).
+  function initNavbarHamburger() {
+    const hamburger = document.getElementById('navbarHamburger');
+    const mobileMenu = document.getElementById('navbarMobileMenu');
+    if (!hamburger || !mobileMenu) return;
+    // remove any previous handlers to avoid double-binding
+    try {
+      hamburger.replaceWith(hamburger.cloneNode(true));
+    } catch (e) {
+      // ignore if replace fails
+    }
+    const newHamburger = document.getElementById('navbarHamburger') || hamburger;
+    newHamburger.addEventListener('click', function (e) {
       e.stopPropagation();
       mobileMenu.classList.toggle('active');
     });
+    // Ensure clicking outside closes the menu
     document.addEventListener('click', function (e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
+      try {
+        if (!(newHamburger.contains(e.target)) && !mobileMenu.contains(e.target)) {
+          mobileMenu.classList.remove('active');
+        }
+      } catch (err) {
+        // ignore
       }
     });
   }
+
+  // Expose initializer for pages that want to call it explicitly
+  if (typeof window !== 'undefined') window.initNavbarHamburger = initNavbarHamburger;
+  // Also initialize immediately so the hamburger works even if other
+  // page scripts attempted to call `initNavbarHamburger` before this
+  // file loaded (handles different script load orders).
+  try { initNavbarHamburger(); } catch (e) { /* ignore init errors */ }
 
   // Show login strip if not logged in and disable nav buttons
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');

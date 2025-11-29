@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', function() {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
+
   const form = document.getElementById('addressForm');
   const saved = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
     const API_BASE = (typeof window !== 'undefined' && window.API_BASE)

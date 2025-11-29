@@ -1,4 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
+
   // runtime-configurable API base. In production inject `window.API_BASE = 'https://sk-insight.online'`.
   const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     ? window.API_BASE
@@ -649,7 +659,7 @@ document.getElementById('removeImageBtnFront').addEventListener('click', functio
   document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
   try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageFront; delete existing.idImageFrontName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
-  const nameEl = document.getElementById('idImageFrontFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+  const nameEl = document.getElementById('idImageFrontFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
 });
 
 // Back ID image preview
@@ -711,7 +721,7 @@ document.getElementById('removeImageBtnBack').addEventListener('click', function
   document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
   try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageBack; delete existing.idImageBackName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
-  const nameEl = document.getElementById('idImageBackFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+  const nameEl = document.getElementById('idImageBackFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
 });
 
 // --- View (enlarge) previews using SweetAlert (adds a close button) ---

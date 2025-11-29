@@ -1,4 +1,14 @@
 document.addEventListener('DOMContentLoaded', async function () {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
+
   const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     ? window.API_BASE
     : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')

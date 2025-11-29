@@ -18,6 +18,15 @@ async function fetchLatestRejectedId(token) {
 }
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
 // Load `check-rejected.js` dynamically so pages don't require an HTML script include.
 try {
   if (!window.__checkRejectedLoaderAdded) {

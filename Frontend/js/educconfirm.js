@@ -5,6 +5,15 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     : 'https://sk-insight.online';
 
 document.addEventListener('DOMContentLoaded', function() {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   // if (!validateTokenAndRedirect("Educational Assistance Confirmation")) {
   //   return;
   // }
