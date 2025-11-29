@@ -8,6 +8,14 @@ document.addEventListener('DOMContentLoaded', function() {
   // Navbar and navigation logic is now handled by shared navbar.js
   // All local hamburger/nav button code removed for maintainability.
 
+    if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   // Hide edit button if the LGBTQ+ Profiling form is closed
   (async function(){
     try {

@@ -1,19 +1,14 @@
 document.addEventListener('DOMContentLoaded', function () {
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-
-  // Handle mobile menu toggle
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function (e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function (e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
+  // Initialize navbar hamburger/menu from the centralized `navbar.js` handler
+  // If `navbar.js` exposes `initNavbarHamburger`, call it. Otherwise fall back
+  // to a small local handler so the menu still works.
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
       }
-    });
-  }
+  } 
 
   // Runtime API base (use `window.API_BASE` in production pages to override)
   const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
@@ -111,12 +106,23 @@ document.addEventListener('DOMContentLoaded', function () {
 
 
   // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
+  // Ensure fallback handlers exist if navbar.js hasn't registered them yet
+  if (typeof window.handleKKProfileNavClick !== 'function') {
+    window.handleKKProfileNavClick = function (e) {
+      try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch (err) {}
+      // Default behavior: navigate to KK personal form
+      window.location.href = './kkform-personal.html';
+    };
+  }
 
   // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
+  if (typeof window.handleLGBTQProfileNavClick !== 'function') {
+    window.handleLGBTQProfileNavClick = function (e) {
+      try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch (err) {}
+      window.location.href = './lgbtqform.html';
+    };
+  }
+  // `navbar.js` will bind the nav buttons and prefer `window.handle...` if present.
 
   // Educational Assistance - attach via helper if available
   function attachEducHandler(btn) {
@@ -126,10 +132,20 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
           window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' });
         } catch (err) {
-          handleEducAssistanceNavClick(e);
+          if (typeof window.handleEducAssistanceNavClick === 'function') {
+            window.handleEducAssistanceNavClick(e);
+          } else {
+            try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch (err2) {}
+            window.location.href = './Educational-assistance-user.html';
+          }
         }
       } else {
-        handleEducAssistanceNavClick(e);
+        if (typeof window.handleEducAssistanceNavClick === 'function') {
+          window.handleEducAssistanceNavClick(e);
+        } else {
+          try { if (e && typeof e.preventDefault === 'function') e.preventDefault(); } catch (err2) {}
+          window.location.href = './Educational-assistance-user.html';
+        }
       }
     });
   }

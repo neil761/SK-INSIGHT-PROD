@@ -65,3 +65,4 @@ if (document.readyState === 'loading') {
 } else {
   initIndexVerification();
 }
+

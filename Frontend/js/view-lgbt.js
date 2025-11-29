@@ -12,6 +12,14 @@ document.addEventListener('DOMContentLoaded', async function() {
   const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   
 
+    if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   try {
     const res = await fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
       headers: { Authorization: `Bearer ${token}` }

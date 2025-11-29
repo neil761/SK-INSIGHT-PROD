@@ -8,6 +8,15 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     : 'https://sk-insight.online';
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   const tableBody = document.querySelector(".announcement-table tbody");
   const tableHead = document.querySelector(".announcement-table thead tr");
   const modal = document.getElementById("announcementModal");

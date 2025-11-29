@@ -227,6 +227,15 @@ document.addEventListener("DOMContentLoaded", function () {
       if (el) el.value = value || "";
     }
 
+    // Helper: convert to Title Case (first letter uppercase, rest lowercase per word)
+    function titleCase(str) {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
     // Helper: calculate age from birthday
     function calculateAge(birthday) {
       if (!birthday) return "";
@@ -248,17 +257,13 @@ document.addEventListener("DOMContentLoaded", function () {
       if (kkRes.ok) {
         const kkProfile = await kkRes.json();
 
-        // Construct full name: firstname middle initial lastname
+        // Construct full name: firstname middle initial lastname (normalized to Title Case)
+        const firstNameNorm = titleCase(kkProfile.firstname || '');
         const middleInitial = kkProfile.middlename
-          ? kkProfile.middlename.charAt(0).toUpperCase() + "."
+          ? titleCase(kkProfile.middlename).charAt(0) + "."
           : "";
-        const fullName = [
-          kkProfile.firstname || "",
-          middleInitial,
-          kkProfile.lastname || ""
-        ]
-          .filter(Boolean)
-          .join(" ");
+        const lastNameNorm = titleCase(kkProfile.lastname || '');
+        const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(" ");
         setValue("fullName", fullName);
 
         // ✅ Age comes from User's birthday
@@ -279,8 +284,10 @@ document.addEventListener("DOMContentLoaded", function () {
             if (prevRes.ok) {
               const prev = await prevRes.json();
               // populate fields from previous profile
-              const middleInitial = prev.middlename ? prev.middlename.charAt(0).toUpperCase() + '.' : '';
-              const fullName = [prev.firstname || '', middleInitial, prev.lastname || ''].filter(Boolean).join(' ');
+              const firstNameNorm = titleCase(prev.firstname || '');
+              const middleInitial = prev.middlename ? titleCase(prev.middlename).charAt(0) + '.' : '';
+              const lastNameNorm = titleCase(prev.lastname || '');
+              const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user && user.birthday) setValue('age', calculateAge(user.birthday));
               if (prev.gender) setValue('gender', prev.gender);
@@ -298,9 +305,9 @@ document.addEventListener("DOMContentLoaded", function () {
             } else {
               console.info('No previous KK profile available; falling back to user data');
               if (user) {
-                const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
-                const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
-                const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+                const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
+                const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
+                const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
                 const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
                 if (fullName) setValue('fullName', fullName);
                 if (user.birthday) setValue('age', calculateAge(user.birthday));
@@ -309,12 +316,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (user.civilstatus || user.civilStatus) setValue('civilStatus', user.civilstatus || user.civilStatus);
               }
             }
-          } catch (e) {
+            } catch (e) {
             console.warn('Failed to fetch previous KK profile', e);
             if (user) {
-              const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
-              const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
-              const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+              const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
+              const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
+              const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
               const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user.birthday) setValue('age', calculateAge(user.birthday));
