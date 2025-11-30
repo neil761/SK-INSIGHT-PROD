@@ -453,6 +453,11 @@ body::before {
   .card{
     padding: 20px 25px 40px 25px;
   }
+
+  .card-header {
+
+  margin-bottom: 10px;
+}
   .card h2{
     font-size: 1.2rem;
     margin-top: 2%;

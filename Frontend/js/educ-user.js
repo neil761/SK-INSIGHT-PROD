@@ -339,64 +339,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Append normalized contact numbers as strings (preserve leading zeroes)
-    formData.append('contactNumber', contactDigits);
-
-    // --- Requirements images check ---
-    // Ensure visible requirement file inputs have an uploaded image (or existing saved file)
-    try {
-      // Determine required files based on academic level: Senior High does not require parent's voter certificate
-      const acadValForReq = (document.getElementById('academicLevel') && document.getElementById('academicLevel').value) ? document.getElementById('academicLevel').value : '';
-      const requirementIds = ['frontImage', 'backImage', 'coeImage'];
-      if (!/senior\s*high/i.test(acadValForReq)) {
-        requirementIds.push('voter');
-      }
-      const missing = []; // will hold objects {id, name}
-      const friendly = { frontImage: 'Front ID (Student ID - Front)', backImage: 'Back ID (Student ID - Back)', coeImage: 'Certificate of Enrollment (COE)', voter: "Parent's Voter's Certificate" };
-      for (const id of requirementIds) {
-        const input = document.getElementById(id);
-        // find a probe element to determine visibility (input, label, or file-name)
-        let probe = input || document.getElementById(id + 'Label') || document.getElementById(id + 'FileName') || document.getElementById(id + 'Url');
-        if (!probe) continue; // nothing to check on this page
-
-        // Determine computed visibility (safer than checking inline style)
-        let visible = true;
-        try {
-          const row = probe.closest ? probe.closest('tr') || probe : probe;
-          const cs = window.getComputedStyle(row);
-          visible = !(cs && (cs.display === 'none' || cs.visibility === 'hidden' || cs.opacity === '0'));
-        } catch (e) { visible = true; }
-        if (!visible) continue; // not visible -> not required
-
-        // check for an uploaded file in input OR existing server URL/data-url OR displayed filename
-        const hasFileInInput = input && input.files && input.files.length > 0;
-        const hiddenUrlEl = document.getElementById(id + 'Url');
-        const hasHiddenUrl = hiddenUrlEl && hiddenUrlEl.value && hiddenUrlEl.value.trim();
-        const hasDataUrl = input && input.dataset && input.dataset.url;
-        const fnameEl = document.getElementById(id + 'FileName');
-        const hasFileName = fnameEl && fnameEl.textContent && fnameEl.textContent.trim();
-        if (!(hasFileInInput || hasHiddenUrl || hasDataUrl || hasFileName)) missing.push({ id, name: friendly[id] || id });
-      }
-
-      if (missing.length > 0) {
-        // Show inline tooltip warning anchored to the first missing requirement file
-        const first = missing[0];
-        const target = document.getElementById(first.id) || document.getElementById(first.id + 'Label') || document.getElementById(first.id + 'FileName');
-        const inputEl = document.getElementById(first.id);
-        const message = (inputEl && inputEl.type === 'file') ? 'Please upload the required file.' : `Please fill the ${first.name} field.`;
-        if (target) {
-          showInlineFieldWarning(target, message, 6000);
-        }
-        return;
-      }
-    } catch (e) { /* ignore check failures and continue */ }
+    formData.append('contactNumber', String(contactDigits)); // Ensure it's sent as string
     formData.append('school', document.getElementById('schoolname')?.value || '');
     formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
     formData.append('year', document.getElementById('year')?.value || '');
     formData.append('typeOfBenefit', typeValue); // <-- use this name
     formData.append('fatherName', document.getElementById('fathername')?.value || '');
-  formData.append('fatherPhone', fatherDigits || '');
+  formData.append('fatherPhone', String(fatherDigits || '')); // Ensure it's sent as string
     formData.append('motherName', document.getElementById('mothername')?.value || '');
-  formData.append('motherPhone', motherDigits || '');
+  formData.append('motherPhone', String(motherDigits || '')); // Ensure it's sent as string
 
     // siblings & expenses as before
     const siblings = [];

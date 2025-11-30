@@ -373,8 +373,8 @@ document.addEventListener('DOMContentLoaded', function () {
             try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); sessionStorage.removeItem('educAssistanceDraft'); } catch (e) {}
             window.location.href = "/Frontend/html/user/confirmation/html/editEducRejected.html";
           } else {
-            const message = `You don't have a profile yet. Please fill out the form to create one.`;
-            const result = await Swal.fire({ icon: "info", title: 'No profile found', text: message, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" });
+            const message = `You don't have an application yet. Please fill out the form to create one.`;
+            const result = await Swal.fire({ icon: "info", title: 'No application found', text: message, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" });
             if (result.isConfirmed) {
               try { sessionStorage.removeItem('educDraft'); sessionStorage.removeItem('educationalDraft'); sessionStorage.removeItem('educAssistanceDraft'); } catch (e) {}
               window.location.href = "/Frontend/html/user/Educational-assistance-user.html";

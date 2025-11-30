@@ -171,6 +171,7 @@ body::before {
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 20px;
+  text-align: justify;
 }
 
 .views, .edit {
@@ -432,6 +433,11 @@ body::before {
     text-align: center;
     gap: 20px;
   }
+
+      .card-header {
+
+  margin-bottom: 5px;
+}
 
   .footer-left,
   .footer-middle,

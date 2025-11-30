@@ -924,6 +924,31 @@ clearFilterBtn.addEventListener("click", () => {
     // --- Render lists as before ---
     renderNotifList(notifListNew, newNotifs, false);
     renderNotifList(notifListOverdue, overdueNotifs, true);
+
+    // --- Update bell and sidebar badges based on what's in the modal ---
+    try {
+      const totalPending = Array.isArray(allNotifs) ? allNotifs.length : 0;
+      const bellBadge = document.getElementById('notifBadge');
+      const sidebarBadge = document.getElementById('sidebarEducNotifBadge');
+      if (bellBadge) {
+        if (totalPending > 0) {
+          bellBadge.textContent = totalPending;
+          bellBadge.style.display = 'inline-block';
+        } else {
+          bellBadge.style.display = 'none';
+        }
+      }
+      if (sidebarBadge) {
+        if (totalPending > 0) {
+          sidebarBadge.textContent = totalPending;
+          sidebarBadge.style.display = 'inline-block';
+        } else {
+          sidebarBadge.style.display = 'none';
+        }
+      }
+    } catch (e) {
+      // ignore badge update errors
+    }
   }
 
   function renderNotifList(container, notifs, isOverdue) {
