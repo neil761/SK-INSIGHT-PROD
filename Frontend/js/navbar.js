@@ -181,8 +181,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Age restriction: prefer account-level age from /api/users/me so users without a profile are still checked
         try {
           const accountAge = await fetchAccountAge(token);
-          if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+          if (accountAge !== null && (accountAge < 15 || accountAge > 30)) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 to 30 years old can access this form.' });
             return;
           }
           // Fallback: if no account age, try profile-derived age as before
@@ -250,8 +250,8 @@ document.addEventListener('DOMContentLoaded', function () {
         // Age restriction: prefer account-level age from /api/users/me so users without a profile are still checked
         try {
           const accountAge = await fetchAccountAge(token);
-          if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+          if (accountAge !== null && (accountAge < 15 || accountAge > 30)) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 to 30 years old can access this form.' });
             return;
           }
           // Fallback: if no account age, try profile-derived age as before
@@ -270,7 +270,7 @@ document.addEventListener('DOMContentLoaded', function () {
               }
             }
           }
-          if (ageVal !== null && ageVal >= 11 && ageVal <= 14) {
+          if (ageVal !== null && ageVal >= 11 && ageVal <= 14 ) {
             await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
             return;
           }
@@ -314,6 +314,15 @@ document.addEventListener('DOMContentLoaded', function () {
         if (res) window.location.href = '/Frontend/html/user/login.html';
         return;
       }
+
+      // Age restriction: Educational Assistance only for 15-30 years old
+      try {
+        const accountAge = await fetchAccountAge(token);
+        if (accountAge !== null && (accountAge < 15 || accountAge > 30)) {
+          await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 to 30 years old can access this form.' });
+          return;
+        }
+      } catch (ageErr) { /* ignore age check errors */ }
 
       // Check if the user's latest application was rejected
       try {

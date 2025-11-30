@@ -627,6 +627,38 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Show or hide the table header based on screen size
     const expensesTableHead = expensesTable.querySelector('thead');
     if (expensesTableHead) expensesTableHead.style.display = isMobile ? 'none' : '';
+    // Attach input handlers for expense cost fields
+    attachExpenseHandlers(expensesContainer);
+
+    // Attach handlers to expense cost inputs so decimals are disallowed and .00 remains as suffix
+    function attachExpenseHandlers(container) {
+      const root = container || document;
+      root.querySelectorAll('input.expense-cost').forEach(input => {
+        // Prevent entering decimal characters and non-digits
+        input.addEventListener('keydown', function (e) {
+          // allow navigation keys, backspace, delete
+          const allowed = ['Backspace','ArrowLeft','ArrowRight','Delete','Tab'];
+          if (allowed.includes(e.key)) return;
+          // Prevent '.' and ',' and any non-digit
+          if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+          }
+        });
+
+        // On input, strip any non-digits (handle paste)
+        input.addEventListener('input', function (e) {
+          const cleaned = String(this.value).replace(/[^0-9]/g, '');
+          if (this.value !== cleaned) this.value = cleaned;
+        });
+
+        // On blur, coerce to integer (remove fractional part) and leave .00 suffix visible
+        input.addEventListener('blur', function () {
+          if (!this.value) return;
+          const n = parseInt(this.value, 10);
+          this.value = isNaN(n) ? '' : String(n);
+        });
+      });
+    }
   }
 
   // Basic styles for expense-cost wrapper (added via JS to avoid editing CSS files)
@@ -635,11 +667,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     const style = document.createElement('style');
     style.id = 'expense-cost-injected-styles';
     style.textContent = `
-      .expense-cost-wrapper{display:inline-flex;align-items:center;gap:6px}
-      .expense-cost-wrapper .peso-prefix{font-weight:600}
-      .expense-cost-wrapper .peso-suffix{color:#666}
-      .expense-cost-wrapper input.expense-cost{width:120px}
-      @media(max-width:480px){ .expense-cost-wrapper input.expense-cost{width:100px} }
+      /* Place peso sign and .00 visually inside the input */
+      .expense-cost-wrapper{ position:relative; display:inline-block; }
+      .expense-cost-wrapper input.expense-cost{ box-sizing:border-box; padding-left:28px; padding-right:34px; width:120px; }
+      .expense-cost-wrapper .peso-prefix{ position:absolute; left:8px; top:50%; transform:translateY(-50%); font-weight:600; pointer-events:none; }
+      .expense-cost-wrapper .peso-suffix{ position:absolute; right:8px; top:50%; transform:translateY(-50%); color:#666; pointer-events:none; }
+      /* In card (mobile) layout, make cost input match the full width of the expense item */
+      .expense-card .expense-cost-wrapper { display:block; width:100%; }
+      .expense-card .expense-cost-wrapper input.expense-cost { width:100%; }
+      /* Make remove button occupy full row width */
+      .removeExpenseBtn { width:100%; display:block; padding:8px; margin-top:10px; }
+      @media(max-width:480px){ .expense-cost-wrapper input.expense-cost{ width:100px } }
     `;
     document.head.appendChild(style);
   })();
@@ -1205,19 +1243,7 @@ if (form) {
 
 // All nav handler implementations removed; navigation is now handled by navbar.js
 
-document.addEventListener('DOMContentLoaded', function() {
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
 
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-});
 
 // remove the stray removal at file bottom (do not clear saved data on load)
 // localStorage.removeItem('educationalAssistanceFormData');

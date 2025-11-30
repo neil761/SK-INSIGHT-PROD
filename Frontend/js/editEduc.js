@@ -87,6 +87,11 @@ document.addEventListener('DOMContentLoaded', function () {
   const coeState = { base64: null, removed: false };
   const voterState = { base64: null, removed: false };
 
+  // store original data to track changes
+  let originalData = {};
+  let originalSiblings = [];
+  let originalExpenses = [];
+
   // inputs
   const frontInput = document.getElementById('frontImage');
   const backInput = document.getElementById('backImage');
@@ -247,23 +252,65 @@ document.addEventListener('DOMContentLoaded', function () {
         const costVal = e.cost || e.expectedCost || '';
         card.innerHTML = `
           <div class="expense-field"><label>Description</label><input type="text" class="exp-desc" value="${descVal}"></div>
-          <div class="expense-field"><label>Expected Cost</label><input type="number" class="exp-cost" value="${costVal}" min="0" step="0.01"></div>
+          <div class="expense-field"><label>Expected Cost</label>
+            <div class="expense-cost-wrapper">
+              <span class="peso-prefix">₱</span>
+              <input type="number" class="exp-cost" value="${costVal}" min="0">
+              <span class="peso-suffix">.00</span>
+            </div>
+          </div>
           <div><button type="button" class="remove-exp">Remove</button></div>
         `;
         expensesTableBody.appendChild(card);
         card.querySelector('.remove-exp').addEventListener('click', () => card.remove());
+        attachExpenseHandlers(card);
       } else {
         const tr = document.createElement('tr');
         const descVal = e.description || e.desc || e.item || '';
         const costVal = e.cost || e.expectedCost || '';
         tr.innerHTML = `
           <td><input type="text" class="exp-desc" value="${descVal}"></td>
-          <td><input type="number" class="exp-cost" value="${costVal}" min="0" step="0.01"></td>
+          <td>
+            <div class="expense-cost-wrapper">
+              <span class="peso-prefix">₱</span>
+              <input type="number" class="exp-cost" value="${costVal}" min="0">
+              <span class="peso-suffix">.00</span>
+            </div>
+          </td>
           <td><button type="button" class="remove-exp">Remove</button></td>
         `;
         expensesTableBody.appendChild(tr);
         tr.querySelector('.remove-exp').addEventListener('click', () => tr.remove());
+        attachExpenseHandlers(tr);
       }
+    });
+  }
+
+  // Helper: attach input handlers for expense cost fields
+  function attachExpenseHandlers(container) {
+    const root = container || expensesTableBody;
+    root.querySelectorAll('input.exp-cost').forEach(input => {
+      // Prevent entering decimal characters and non-digits
+      input.addEventListener('keydown', function (e) {
+        const allowed = ['Backspace','ArrowLeft','ArrowRight','Delete','Tab'];
+        if (allowed.includes(e.key)) return;
+        if (!/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+
+      // On input, strip any non-digits (handle paste)
+      input.addEventListener('input', function (e) {
+        const cleaned = String(this.value).replace(/[^0-9]/g, '');
+        if (this.value !== cleaned) this.value = cleaned;
+      });
+
+      // On blur, coerce to integer (remove fractional part)
+      input.addEventListener('blur', function () {
+        if (!this.value) return;
+        const n = parseInt(this.value, 10);
+        this.value = isNaN(n) ? '' : String(n);
+      });
     });
   }
 
@@ -278,6 +325,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const existing = readExpensesFromTable() || [];
     existing.push({ description: '', cost: '' });
     renderExpenses(existing);
+    attachExpenseHandlers(expensesTableBody);
   });
 
   function readSiblingsFromTable() {
@@ -636,16 +684,118 @@ document.addEventListener('DOMContentLoaded', function () {
       try {
         const siblings = Array.isArray(data.siblings) ? data.siblings : (data.siblings ? JSON.parse(data.siblings) : []);
         renderSiblings(siblings || []);
-      } catch (e) { renderSiblings([]); }
+        // Store original siblings for change tracking
+        originalSiblings = JSON.parse(JSON.stringify(siblings || []));
+      } catch (e) { renderSiblings([]); originalSiblings = []; }
 
       // expenses (array of { description, cost })
       try {
         const expenses = Array.isArray(data.expenses) ? data.expenses : (data.expenses ? JSON.parse(data.expenses) : []);
         renderExpenses(expenses || []);
-      } catch (e) { renderExpenses([]); }
+        // Store original expenses for change tracking
+        originalExpenses = JSON.parse(JSON.stringify(expenses || []));
+      } catch (e) { renderExpenses([]); originalExpenses = []; }
+
+      // Store original form data for change tracking
+      originalData = {
+        surname: (document.getElementById('surname') || {}).value || '',
+        firstname: (document.getElementById('firstName') || {}).value || '',
+        middlename: (document.getElementById('middleName') || {}).value || '',
+        suffix: (document.getElementById('suffix') || {}).value || '',
+        birthday: (document.getElementById('birthday') || {}).value || '',
+        placeOfBirth: (document.getElementById('placeOfBirth') || {}).value || '',
+        age: (document.getElementById('age') || {}).value || '',
+        gender: (document.getElementById('gender') || {}).value || '',
+        civilstatus: (document.getElementById('civilstatus') || {}).value || '',
+        religion: (document.getElementById('religion') || {}).value || '',
+        email: (document.getElementById('email') || {}).value || '',
+        contact: (document.getElementById('contact') || {}).value || '',
+        schoolname: (document.getElementById('schoolname') || {}).value || '',
+        schooladdress: (document.getElementById('schooladdress') || {}).value || '',
+        year: (document.getElementById('year') || {}).value || '',
+        benefittype: (document.getElementById('benefittype') || {}).value || '',
+        fathername: (document.getElementById('fathername') || {}).value || '',
+        fathercontact: (document.getElementById('fathercontact') || {}).value || '',
+        mothername: (document.getElementById('mothername') || {}).value || '',
+        mothercontact: (document.getElementById('mothercontact') || {}).value || ''
+      };
+
+      // Initial state: disable submit button since form just loaded (no changes yet)
+      updateSubmitButtonState();
 
     } catch (e) {
       console.warn('populate educational failed', e);
+    }
+  }
+
+  // Function to check if form has changes
+  function hasChanges() {
+    // Check if any form fields changed
+    const currentPayload = {
+      surname: (document.getElementById('surname') || {}).value || '',
+      firstname: (document.getElementById('firstName') || {}).value || '',
+      middlename: (document.getElementById('middleName') || {}).value || '',
+      suffix: (document.getElementById('suffix') || {}).value || '',
+      birthday: (document.getElementById('birthday') || {}).value || '',
+      placeOfBirth: (document.getElementById('placeOfBirth') || {}).value || '',
+      age: (document.getElementById('age') || {}).value || '',
+      gender: (document.getElementById('gender') || {}).value || '',
+      civilstatus: (document.getElementById('civilstatus') || {}).value || '',
+      religion: (document.getElementById('religion') || {}).value || '',
+      email: (document.getElementById('email') || {}).value || '',
+      contact: (document.getElementById('contact') || {}).value || '',
+      schoolname: (document.getElementById('schoolname') || {}).value || '',
+      schooladdress: (document.getElementById('schooladdress') || {}).value || '',
+      year: (document.getElementById('year') || {}).value || '',
+      benefittype: (document.getElementById('benefittype') || {}).value || '',
+      fathername: (document.getElementById('fathername') || {}).value || '',
+      fathercontact: (document.getElementById('fathercontact') || {}).value || '',
+      mothername: (document.getElementById('mothername') || {}).value || '',
+      mothercontact: (document.getElementById('mothercontact') || {}).value || ''
+    };
+
+    // Check if any field changed
+    for (const key in originalData) {
+      if (currentPayload[key] !== originalData[key]) {
+        return true;
+      }
+    }
+
+    // Check if image states changed
+    if (frontState.removed || backState.removed || coeState.removed || voterState.removed) return true;
+    if (frontState.base64 && String(frontState.base64).startsWith('data:')) return true;
+    if (backState.base64 && String(backState.base64).startsWith('data:')) return true;
+    if (coeState.base64 && String(coeState.base64).startsWith('data:')) return true;
+    if (voterState.base64 && String(voterState.base64).startsWith('data:')) return true;
+
+    // Check if siblings changed
+    const currentSiblings = readSiblingsFromTable() || [];
+    if (JSON.stringify(currentSiblings) !== JSON.stringify(originalSiblings)) {
+      return true;
+    }
+
+    // Check if expenses changed
+    const currentExpenses = readExpensesFromTable() || [];
+    if (JSON.stringify(currentExpenses) !== JSON.stringify(originalExpenses)) {
+      return true;
+    }
+
+    return false;
+  }
+
+  // Function to update submit button state
+  function updateSubmitButtonState() {
+    const submitBtn = document.querySelector('button[type="submit"]');
+    if (!submitBtn) return;
+
+    if (hasChanges()) {
+      submitBtn.disabled = false;
+      submitBtn.style.opacity = '1';
+      submitBtn.style.cursor = 'pointer';
+    } else {
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = '0.5';
+      submitBtn.style.cursor = 'not-allowed';
     }
   }
 
@@ -653,6 +803,18 @@ document.addEventListener('DOMContentLoaded', function () {
   const form = document.getElementById('educationalAssistanceForm');
   if (form) form.addEventListener('submit', async function (ev) {
     ev.preventDefault();
+
+    // Check if there are any changes before allowing submission
+    if (!hasChanges()) {
+      await Swal.fire({
+        icon: 'warning',
+        title: 'No Changes Made',
+        text: 'You didn\'t change anything. Please make some changes before updating.',
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59'
+      });
+      return;
+    }
 
     try {
       const confirmed = await Swal.fire({
@@ -839,6 +1001,40 @@ document.addEventListener('DOMContentLoaded', function () {
       await Swal.fire({ icon: 'error', title: 'Save failed', text: String(err.message || err) });
     }
   });
+
+  // Inject CSS for expense cost wrapper with peso sign and .00
+  (function injectExpenseCostStyles() {
+    if (document.getElementById('editeduc-expense-cost-injected-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'editeduc-expense-cost-injected-styles';
+    style.textContent = `
+      /* Place peso sign and .00 visually inside the input */
+      .expense-cost-wrapper{ position:relative; display:inline-block; }
+      .expense-cost-wrapper input.exp-cost{ box-sizing:border-box; padding-left:28px; padding-right:34px; width:120px; }
+      .expense-cost-wrapper .peso-prefix{ position:absolute; left:8px; top:50%; transform:translateY(-50%); font-weight:600; pointer-events:none; }
+      .expense-cost-wrapper .peso-suffix{ position:absolute; right:8px; top:50%; transform:translateY(-50%); color:#666; pointer-events:none; }
+      /* In card (mobile) layout, make cost input match the full width of the expense item */
+      .expense-card .expense-cost-wrapper { display:block; width:100%; }
+      .expense-card .expense-cost-wrapper input.exp-cost { width:100%; }
+    `;
+    document.head.appendChild(style);
+  })();
+
+  // Attach change listeners to all form fields to track changes
+  if (form) {
+    // Track input changes
+    form.addEventListener('input', updateSubmitButtonState);
+    form.addEventListener('change', updateSubmitButtonState);
+  }
+
+  // Also monitor image state changes by watching the delete buttons
+  if (deleteFront || deleteBack || deleteCOE || deleteVoter) {
+    const observer = () => updateSubmitButtonState();
+    if (deleteFront) deleteFront.addEventListener('click', observer);
+    if (deleteBack) deleteBack.addEventListener('click', observer);
+    if (deleteCOE) deleteCOE.addEventListener('click', observer);
+    if (deleteVoter) deleteVoter.addEventListener('click', observer);
+  }
 
   populate();
 });
