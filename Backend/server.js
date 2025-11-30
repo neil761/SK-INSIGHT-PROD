@@ -23,33 +23,46 @@ require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
-// Allow frontend origins (when credentials are used, origin must be explicit, not '*')
-const FRONTEND_WHITELIST = [
-  'http://127.0.0.1:5504',
-  'http://localhost:5504',
-  process.env.FRONTEND_URL,
-].filter(Boolean);
+// Configure allowed frontend origins.
+// For deployment, set `FRONTEND_WHITELIST` to a comma-separated list of allowed origins
+// e.g. FRONTEND_WHITELIST="https://example.com,https://www.example.com"
+// Or set `ALLOW_ALL_ORIGINS=true` to reflect any request origin (note: this will
+// still echo the request origin back so cookies/credentials can work).
+const defaultLocalOrigins = ['http://127.0.0.1:5504', 'http://localhost:5504'];
+const envList = process.env.FRONTEND_WHITELIST
+  ? process.env.FRONTEND_WHITELIST.split(',').map((s) => s.trim()).filter(Boolean)
+  : [];
+const FRONTEND_WHITELIST = Array.from(new Set([...defaultLocalOrigins, ...envList, process.env.FRONTEND_URL].filter(Boolean)));
 
 const io = socketio(server, {
-  cors: { origin: FRONTEND_WHITELIST, credentials: true },
+  cors: { origin: function(origin, callback) {
+      // If no origin (curl, mobile apps, same-origin requests) allow it
+      if (!origin) return callback(null, true);
+      // If environment requests allowing all origins, reflect the origin back
+      if (process.env.ALLOW_ALL_ORIGINS === 'true') return callback(null, true);
+      // Otherwise only allow origins in the whitelist
+      if (FRONTEND_WHITELIST.indexOf(origin) !== -1) return callback(null, true);
+      return callback(new Error('Not allowed by CORS'));
+    }, credentials: true },
 });
 
 // Middleware
 // Configure CORS to allow credentials and only specific origins
 const corsOptions = {
   origin: function (origin, callback) {
-    // allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    if (FRONTEND_WHITELIST.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
+    if (process.env.ALLOW_ALL_ORIGINS === 'true') return callback(null, true);
+    if (FRONTEND_WHITELIST.indexOf(origin) !== -1) return callback(null, true);
+    return callback(new Error('Not allowed by CORS'));
   },
   credentials: true,
 };
 
 app.use(cors(corsOptions));
+
+// Log effective CORS configuration for debugging
+console.log('CORS whitelist:', FRONTEND_WHITELIST);
+console.log('ALLOW_ALL_ORIGINS:', process.env.ALLOW_ALL_ORIGINS === 'true' ? 'true' : 'false');
 app.use(express.json()); // for JSON bodies
 app.use(express.urlencoded({ extended: true })); // for form-data and urlencoded
 
