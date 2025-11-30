@@ -41,7 +41,7 @@
   }
 })();
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
   // Runtime-resolved API base for dev/prod. Use window.API_BASE in production.
   const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     ? window.API_BASE
@@ -235,6 +235,21 @@ let applicants = [];
     const pendingApps = sortByNewest(data.filter(app => app.status === "pending"));
     const approvedApps = sortByNewest(data.filter(app => app.status === "approved"));
     const rejectedApps = sortByNewest(data.filter(app => app.status === "rejected"));
+
+    // Update tab button counts
+    const pendingBtn = document.querySelector('.tab-btn[data-tab="pending"]');
+    const approvedBtn = document.querySelector('.tab-btn[data-tab="approved"]');
+    const rejectedBtn = document.querySelector('.tab-btn[data-tab="rejected"]');
+    
+    if (pendingBtn) {
+      pendingBtn.innerHTML = `<i class="fas fa-clock"></i> Pending <span style="background: #ff6b6b; color: white; border-radius: 12px; padding: 2px 8px; font-size: 12px; margin-left: 6px; font-weight: 600;">${pendingApps.length}</span>`;
+    }
+    if (approvedBtn) {
+      approvedBtn.innerHTML = `<i class="fas fa-check-circle"></i> Approved <span style="background: #51cf66; color: white; border-radius: 12px; padding: 2px 8px; font-size: 12px; margin-left: 6px; font-weight: 600;">${approvedApps.length}</span>`;
+    }
+    if (rejectedBtn) {
+      rejectedBtn.innerHTML = `<i class="fas fa-times-circle"></i> Rejected <span style="background: #ffa94d; color: white; border-radius: 12px; padding: 2px 8px; font-size: 12px; margin-left: 6px; font-weight: 600;">${rejectedApps.length}</span>`;
+    }
 
     // Search filter
     const searchTerm = searchInput.value.toLowerCase();
@@ -1013,8 +1028,34 @@ clearFilterBtn.addEventListener("click", () => {
     updateNotifBadge();
   });
 
-  // Call badge update on page load
-  updateNotifBadge();
+  // Define updateNotifBadge function inside the listener so it has access to API_BASE
+  async function updateNotifBadge() {
+    const token = sessionStorage.getItem("token");
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications/educational/pending/count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const count = data.count || 0;
+      const badge = document.getElementById('notifBadge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update notification badge:', err);
+      const badge = document.getElementById('notifBadge');
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
+  // Call badge update on page load and set up polling
+  await updateNotifBadge();
+  setInterval(updateNotifBadge, 10000);
 
     const params = new URLSearchParams(window.location.search);
     const id = params.get("id");
@@ -1028,29 +1069,3 @@ clearFilterBtn.addEventListener("click", () => {
       });
     }
 });
-
-// Remove any duplicate socket initializations and listeners below this point!
-
-// --- Add or ensure this function exists ---
-async function updateNotifBadge() {
-  const token = sessionStorage.getItem("token");
-  try {
-    const res = await fetch(`${API_BASE}/api/notifications/educational/pending/count`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    const count = data.count || 0;
-    const badge = document.getElementById('notifBadge');
-    if (badge) {
-      if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline-block';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-  } catch (err) {
-    const badge = document.getElementById('notifBadge');
-    if (badge) badge.style.display = 'none';
-  }
-}
