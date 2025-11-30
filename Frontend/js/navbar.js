@@ -201,8 +201,8 @@ document.addEventListener('DOMContentLoaded', function () {
               }
             }
           }
-          if (ageVal !== null && ageVal >= 11 && ageVal <= 14) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+          if (ageVal !== null && (ageVal < 15 || ageVal > 30)) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 to 30 years old can access this form.' });
             return;
           }
         } catch (ageErr) { /* ignore age check errors */ }
@@ -270,8 +270,8 @@ document.addEventListener('DOMContentLoaded', function () {
               }
             }
           }
-          if (ageVal !== null && ageVal >= 11 && ageVal <= 14 ) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+          if (ageVal !== null && (ageVal < 15 || ageVal > 30) ) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 to 30 years old can access this form.' });
             return;
           }
         } catch (ageErr) { /* ignore age check errors */ }
@@ -315,11 +315,11 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
-      // Age restriction: Educational Assistance only for 15-30 years old
+      // Age restriction: only 11-30 years old can apply
       try {
         const accountAge = await fetchAccountAge(token);
-        if (accountAge !== null && (accountAge < 15 || accountAge > 30)) {
-          await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 to 30 years old can access this form.' });
+        if (accountAge !== null && (accountAge < 11 || accountAge > 30)) {
+          await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 11 to 30 years old can apply for Educational Assistance.' });
           return;
         }
       } catch (ageErr) { /* ignore age check errors */ }
