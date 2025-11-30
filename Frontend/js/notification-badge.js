@@ -51,6 +51,9 @@
     (list||[]).forEach(a => {
       const isActive = (a.isActive === undefined) ? true : Boolean(a.isActive);
       if (!isActive) return;
+      // Check if eventDate has passed (announcement has expired)
+      if (a.eventDate) { const ed = Date.parse(a.eventDate); if (!isNaN(ed) && ed < now) return; }
+      // Check if expiresAt has passed
       if (a.expiresAt) { const exp = Date.parse(a.expiresAt); if (!isNaN(exp) && exp < now) return; }
       if (!userId) count++; else if (!isViewedByUser(a, userId)) count++;
     });

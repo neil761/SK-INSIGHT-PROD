@@ -79,6 +79,11 @@ if (window.io) {
 }
 
 (async function updateEducationalBadge() {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
   const badgeEl = document.getElementById('sidebarEducNotifBadge');
   if (!badgeEl) return;
   const token = sessionStorage.getItem('token') || '';

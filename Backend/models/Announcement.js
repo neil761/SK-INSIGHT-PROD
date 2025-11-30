@@ -36,7 +36,8 @@ const announcementSchema = new mongoose.Schema({
   },
   expiresAt: {
     type: Date,
-    required: true,
+    required: false,
+    default: null,
   },
   isPinned: {
     type: Boolean,
