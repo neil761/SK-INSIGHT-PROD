@@ -97,6 +97,32 @@ document.addEventListener('DOMContentLoaded', function () {
     if (m) m.addEventListener('click', onClick);
   }
 
+  // Helper: try to fetch `/api/users/me` to determine account birthday/age
+  async function fetchAccountAge(token) {
+    if (!token) return null;
+    try {
+      const res = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+      if (!res.ok) return null;
+      const u = await res.json().catch(() => null);
+      if (!u) return null;
+      if (typeof u.age !== 'undefined' && u.age !== null) return Number(u.age);
+      if (u.birthday) {
+        const bd = (u.birthday.split ? u.birthday.split('T')[0] : u.birthday);
+        const d = new Date(bd);
+        if (!isNaN(d)) {
+          const today = new Date();
+          let a = today.getFullYear() - d.getFullYear();
+          const m = today.getMonth() - d.getMonth();
+          if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+          return a;
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+    return null;
+  }
+
   // Bind KK and LGBTQ navs to page-provided handlers when available
   bindNavButton('kkProfileNavBtnDesktop', 'kkProfileNavBtnMobile', 'handleKKProfileNavClick');
   bindNavButton('lgbtqProfileNavBtnDesktop', 'lgbtqProfileNavBtnMobile', 'handleLGBTQProfileNavClick');
@@ -152,6 +178,34 @@ document.addEventListener('DOMContentLoaded', function () {
         ]);
         const cycleData = await cycleRes.json().catch(() => null);
         const profileData = await profileRes.json().catch(() => ({}));
+        // Age restriction: prefer account-level age from /api/users/me so users without a profile are still checked
+        try {
+          const accountAge = await fetchAccountAge(token);
+          if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            return;
+          }
+          // Fallback: if no account age, try profile-derived age as before
+          let ageVal = null;
+          if (profileData) {
+            if (typeof profileData.age !== 'undefined' && profileData.age !== null) ageVal = Number(profileData.age);
+            else if (profileData.birthday) {
+              const bd = (profileData.birthday.split ? profileData.birthday.split('T')[0] : profileData.birthday);
+              const d = new Date(bd);
+              if (!isNaN(d)) {
+                const today = new Date();
+                let a = today.getFullYear() - d.getFullYear();
+                const m = today.getMonth() - d.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+                ageVal = a;
+              }
+            }
+          }
+          if (ageVal !== null && ageVal >= 11 && ageVal <= 14) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            return;
+          }
+        } catch (ageErr) { /* ignore age check errors */ }
         const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
         const formName = latestCycle?.formName || "KK Profiling";
         const isFormOpen = latestCycle?.isOpen ?? false;
@@ -193,6 +247,34 @@ document.addEventListener('DOMContentLoaded', function () {
         ]);
         const cycleData = await cycleRes.json().catch(() => null);
         const profileData = await profileRes.json().catch(() => ({}));
+        // Age restriction: prefer account-level age from /api/users/me so users without a profile are still checked
+        try {
+          const accountAge = await fetchAccountAge(token);
+          if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            return;
+          }
+          // Fallback: if no account age, try profile-derived age as before
+          let ageVal = null;
+          if (profileData) {
+            if (typeof profileData.age !== 'undefined' && profileData.age !== null) ageVal = Number(profileData.age);
+            else if (profileData.birthday) {
+              const bd = (profileData.birthday.split ? profileData.birthday.split('T')[0] : profileData.birthday);
+              const d = new Date(bd);
+              if (!isNaN(d)) {
+                const today = new Date();
+                let a = today.getFullYear() - d.getFullYear();
+                const m = today.getMonth() - d.getMonth();
+                if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
+                ageVal = a;
+              }
+            }
+          }
+          if (ageVal !== null && ageVal >= 11 && ageVal <= 14) {
+            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            return;
+          }
+        } catch (ageErr) { /* ignore age check errors */ }
         const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
         const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
         const isFormOpen = latestCycle?.isOpen ?? false;

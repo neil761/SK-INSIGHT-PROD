@@ -111,16 +111,17 @@ document.addEventListener('DOMContentLoaded', function() {
       barangay: form.barangay.value.trim(),
       purok: form.purok.value.trim(),
       email: form.email.value.trim(),
-      contactNumber: form.contactNumber.value.trim(),
+      // normalize contact number to digits only for validation/storage
+      contactNumber: (form.contactNumber.value || '').toString().trim().replace(/\D/g, ''),
       civilStatus: form.civilStatus.value
     };
 
-    // Validate contact number length
-    if (data.contactNumber.length !== 11) {
+    // Validate contact number: must be exactly 11 digits and start with '09'
+    if (data.contactNumber.length !== 11 || !data.contactNumber.startsWith('09')) {
       Swal.fire({
         icon: 'error',
         title: 'Invalid Contact Number',
-        text: 'Contact number must be exactly 11 digits.',
+        text: "Contact number must be 11 digits and start with '09' (e.g. 09171234567).",
       });
       return;
     }

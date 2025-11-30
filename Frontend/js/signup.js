@@ -363,11 +363,23 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `${step1Data.birthdayYear}-${step1Data.birthdayMonth}-${step1Data.birthdayDay}` 
         : '';
       
+      // Helper: Title-case a name (First letter uppercase, rest lowercase)
+      function titleCase(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(' ');
+      }
+
       const payload = {
-        firstName: step1Data.firstName || '',
-        middleName: step1Data.middleName || '',
-        lastName: step1Data.lastName || '',
-        suffix: step1Data.suffix || '',
+        firstName: titleCase(step1Data.firstName || ''),
+        middleName: titleCase(step1Data.middleName || ''),
+        lastName: titleCase(step1Data.lastName || ''),
+        suffix: titleCase(step1Data.suffix || ''),
         birthday: birthday,
         username: step2Data.username || '',
         email: step2Data.email || '',
@@ -428,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (data && data.code === 'email_exists') alertText = 'This email is already registered.';
           if (data && data.code === 'username_exists') alertText = 'This username is already taken.';
           if (data && data.code === 'birthday_invalid') alertText = 'Invalid birthday format.';
-          if (data && data.code === 'age_not_allowed') alertText = 'Only users aged 15 to 30 are allowed to sign up.';
+          if (data && data.code === 'age_not_allowed') alertText = 'Only users aged 11 to 30 are allowed to sign up.';
 
           Swal.fire({ 
             icon: 'error', 

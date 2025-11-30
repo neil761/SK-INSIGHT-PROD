@@ -431,9 +431,9 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
     console.log('Computed age:', computedAge);
 
     // Only allow age 15-30 inclusive
-    if (computedAge < 15 || computedAge > 30) {
+    if (computedAge < 11 || computedAge > 30) {
       return res.status(400).json({
-        message: "Only users aged 15 to 30 are allowed to sign up.",
+        message: "Only users aged 11 to 30 are allowed to sign up.",
         code: "age_not_allowed"
       });
     }

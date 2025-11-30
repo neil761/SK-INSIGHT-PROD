@@ -59,6 +59,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     return;
   }
 
+
+
   // Fetch and set the user's email
   const emailInput = document.getElementById('email');
   if (!emailInput) {
@@ -157,6 +159,107 @@ document.addEventListener('DOMContentLoaded', async function () {
     return age;
   }
 
+  // Helper: show inline tooltip-style warning anchored to a field and highlight its row
+  function showInlineFieldWarning(targetEl, message, autoDismissMs = 6000) {
+    try {
+      if (!targetEl) return;
+      // remove existing tooltip if any
+      const existing = document.getElementById('inlineMissingTooltip');
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+      const row = targetEl.closest ? (targetEl.closest('tr') || targetEl) : targetEl;
+      if (row && row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      if (row) {
+        row.style.outline = '2px solid rgba(255,165,0,0.7)';
+        row.setAttribute('data-missing-highlight', 'true');
+      }
+
+      const tip = document.createElement('div');
+      tip.id = 'inlineMissingTooltip';
+      tip.textContent = message;
+      tip.style.cssText = 'position:absolute;background:#fff;border:1px solid #f0ad4e;color:#333;padding:10px 12px;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,0.12);z-index:2147483647;font-size:13px;max-width:320px';
+      document.body.appendChild(tip);
+
+      // position tooltip relative to target
+      const rect = targetEl.getBoundingClientRect();
+      const tipRect = tip.getBoundingClientRect();
+      let left = rect.left + window.scrollX + (rect.width - tipRect.width) / 2;
+      if (left < 8) left = 8;
+      let top = rect.top + window.scrollY - tipRect.height - 10;
+      if (top < window.scrollY + 8) top = rect.bottom + window.scrollY + 10;
+      tip.style.left = `${Math.round(left)}px`;
+      tip.style.top = `${Math.round(top)}px`;
+
+      // Make the target focusable if it isn't
+      let prevTab = null;
+      let addedTab = false;
+      try {
+        if (typeof targetEl.tabIndex === 'number' && targetEl.tabIndex < 0) {
+          prevTab = targetEl.getAttribute('tabindex');
+          targetEl.setAttribute('tabindex', '-1');
+          addedTab = true;
+        } else if (typeof targetEl.tabIndex === 'undefined' || targetEl.tabIndex === null) {
+          // some elements may not expose tabIndex; ensure focusable
+          prevTab = targetEl.getAttribute && targetEl.getAttribute('tabindex');
+          targetEl.setAttribute && targetEl.setAttribute('tabindex', '-1');
+          addedTab = true;
+        }
+      } catch (e) { /* ignore tabindex manipulation errors */ }
+
+      // Keep focus on the target until the user interacts (input/keydown/click outside)
+      let userInteracted = false;
+
+      const onUserInteract = () => {
+        userInteracted = true;
+        cleanup();
+      };
+
+      const onBlur = (ev) => {
+        if (userInteracted) return;
+        // re-focus after a short delay to avoid focus race conditions
+        setTimeout(() => {
+          try { if (!userInteracted && typeof targetEl.focus === 'function') targetEl.focus({ preventScroll: true }); } catch (e) {}
+        }, 20);
+      };
+
+      const onDocClick = (ev) => {
+        // if click is inside target or tip, treat it as interaction
+        if (targetEl.contains && targetEl.contains(ev.target)) return;
+        if (tip.contains && tip.contains(ev.target)) return;
+        onUserInteract();
+      };
+
+      function cleanup() {
+        try { if (tip && tip.parentNode) tip.parentNode.removeChild(tip); } catch (e) {}
+        try { if (row) { row.style.outline = ''; row.removeAttribute('data-missing-highlight'); } } catch (e) {}
+        try { targetEl.removeEventListener('blur', onBlur, true); } catch (e) {}
+        try { targetEl.removeEventListener('input', onUserInteract, true); } catch (e) {}
+        try { targetEl.removeEventListener('keydown', onUserInteract, true); } catch (e) {}
+        try { document.removeEventListener('click', onDocClick, true); } catch (e) {}
+        try { tip.removeEventListener('click', onUserInteract); } catch (e) {}
+        if (addedTab) {
+          try {
+            if (prevTab !== null && prevTab !== undefined) targetEl.setAttribute('tabindex', prevTab);
+            else targetEl.removeAttribute && targetEl.removeAttribute('tabindex');
+          } catch (e) {}
+        }
+        try { clearTimeout(autoTimeout); } catch (e) {}
+      }
+
+      tip.addEventListener('click', onUserInteract);
+      targetEl.addEventListener('input', onUserInteract, true);
+      targetEl.addEventListener('keydown', onUserInteract, true);
+      targetEl.addEventListener('blur', onBlur, true);
+      document.addEventListener('click', onDocClick, true);
+
+      const autoTimeout = setTimeout(() => { if (!userInteracted) cleanup(); }, autoDismissMs);
+
+      // attempt to focus the target (prevent scrolling since we've already scrolled the row)
+      try { if (typeof targetEl.focus === 'function') targetEl.focus({ preventScroll: true }); } catch (e) {}
+    } catch (e) { /* ignore failures showing inline tooltip */ }
+  }
+
   // Set default benefit type
   document.getElementById('benefittype').value = 'Educational Assistance';
 
@@ -177,17 +280,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!confirmResult.isConfirmed) return; // user cancelled
 
     // Client-side validation (match backend required fields to avoid server 500)
-    const requiredIds = [
-      'surname', 'firstName', 'middleName', 'birthday', 'placeOfBirth',
-      'gender', 'civilstatus', 'religion', 'email', 'contact', 'academicLevel', 'year',
-      'schoolname', 'schooladdress', 'fathername', 'mothername'
-    ];
-    for (const id of requiredIds) {
-      const el = document.getElementById(id);
-      if (!el || !el.value || !el.value.toString().trim()) {
-        return Swal.fire('Missing field', `Please fill the ${id} field.`, 'warning');
-      }
-    }
+
 
   // Ensure typeOfBenefiting is present and default to Applicant
     const typeEl = document.getElementById('typeOfBenefiting') || document.getElementById('benefittype');
@@ -213,14 +306,36 @@ document.addEventListener('DOMContentLoaded', async function () {
     const fatherDigits = normalize(fatherRaw);
     const motherDigits = normalize(motherRaw);
 
-    if (contactDigits.length !== 11) {
-      return Swal.fire({ icon: 'warning', title: 'Invalid Contact', text: 'Please enter an 11-digit contact number for Applicant. You can include spaces or dashes and they will be accepted.' });
+    if (contactDigits.length !== 11 || !contactDigits.startsWith('09')) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Invalid Contact Number',
+        text: "Contact number must be 11 digits and start with '09' (e.g. 09171234567).",
+      });
+      try { const t = document.getElementById('contact'); if (t && typeof t.focus === 'function') t.focus(); } catch (e) {}
+      return;
     }
-    if (fatherDigits && fatherDigits.length !== 11) {
-      return Swal.fire({ icon: 'warning', title: 'Invalid Father Contact', text: 'Please enter an 11-digit contact number for Father, or leave it empty.' });
+    if (fatherDigits) {
+      if (fatherDigits.length !== 11 || !fatherDigits.startsWith('09')) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Invalid Contact Number',
+          text: "Please enter an 11-digit contact number for Father that starts with '09', or leave it empty.",
+        });
+        try { const t = document.getElementById('fathercontact'); if (t && typeof t.focus === 'function') t.focus(); } catch (e) {}
+        return;
+      }
     }
-    if (motherDigits && motherDigits.length !== 11) {
-      return Swal.fire({ icon: 'warning', title: 'Invalid Mother Contact', text: 'Please enter an 11-digit contact number for Mother, or leave it empty.' });
+    if (motherDigits) {
+      if (motherDigits.length !== 11 || !motherDigits.startsWith('09')) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Invalid Contact Number',
+          text: "Please enter an 11-digit contact number for Mother that starts with '09', or leave it empty.",
+        });
+        try { const t = document.getElementById('mothercontact'); if (t && typeof t.focus === 'function') t.focus(); } catch (e) {}
+        return;
+      }
     }
 
     // Append normalized contact numbers as strings (preserve leading zeroes)
@@ -229,8 +344,13 @@ document.addEventListener('DOMContentLoaded', async function () {
     // --- Requirements images check ---
     // Ensure visible requirement file inputs have an uploaded image (or existing saved file)
     try {
-      const requirementIds = ['frontImage', 'backImage', 'coeImage', 'voter'];
-      const missing = [];
+      // Determine required files based on academic level: Senior High does not require parent's voter certificate
+      const acadValForReq = (document.getElementById('academicLevel') && document.getElementById('academicLevel').value) ? document.getElementById('academicLevel').value : '';
+      const requirementIds = ['frontImage', 'backImage', 'coeImage'];
+      if (!/senior\s*high/i.test(acadValForReq)) {
+        requirementIds.push('voter');
+      }
+      const missing = []; // will hold objects {id, name}
       const friendly = { frontImage: 'Front ID (Student ID - Front)', backImage: 'Back ID (Student ID - Back)', coeImage: 'Certificate of Enrollment (COE)', voter: "Parent's Voter's Certificate" };
       for (const id of requirementIds) {
         const input = document.getElementById(id);
@@ -254,11 +374,18 @@ document.addEventListener('DOMContentLoaded', async function () {
         const hasDataUrl = input && input.dataset && input.dataset.url;
         const fnameEl = document.getElementById(id + 'FileName');
         const hasFileName = fnameEl && fnameEl.textContent && fnameEl.textContent.trim();
-        if (!(hasFileInInput || hasHiddenUrl || hasDataUrl || hasFileName)) missing.push(friendly[id] || id);
+        if (!(hasFileInInput || hasHiddenUrl || hasDataUrl || hasFileName)) missing.push({ id, name: friendly[id] || id });
       }
+
       if (missing.length > 0) {
-        const listHtml = '<ul style="text-align:left;margin:0.25rem 0 0 1rem;">' + missing.map(m => `<li>${m}</li>`).join('') + '</ul>';
-        await Swal.fire({ icon: 'warning', title: 'Missing Requirements', html: `Please upload the following required documents before submitting:${listHtml}` });
+        // Show inline tooltip warning anchored to the first missing requirement file
+        const first = missing[0];
+        const target = document.getElementById(first.id) || document.getElementById(first.id + 'Label') || document.getElementById(first.id + 'FileName');
+        const inputEl = document.getElementById(first.id);
+        const message = (inputEl && inputEl.type === 'file') ? 'Please upload the required file.' : `Please fill the ${first.name} field.`;
+        if (target) {
+          showInlineFieldWarning(target, message, 6000);
+        }
         return;
       }
     } catch (e) { /* ignore check failures and continue */ }
@@ -300,11 +427,9 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     if (expenses.length === 0) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'Missing Expenses',
-        text: 'Please provide at least one fee or expense.',
-      });
+      const target = document.getElementById('addExpenseBtn') || document.getElementById('expensesTable') || document.getElementById('expensesTableBody');
+      showInlineFieldWarning(target || document.getElementById('addExpenseBtn'), 'Please provide at least one fee or expense.');
+      return;
     }
 
     formData.append('expenses', JSON.stringify(expenses));
@@ -921,15 +1046,21 @@ if (form && savedFormData) {
         const hide = isSeniorHigh(level);
         if (row) row.style.display = hide ? 'none' : '';
         // If hiding, also clear file input and filename UI so it isn't submitted
-        if (hide) {
-          if (input) { try { input.value = ''; } catch (e) {} }
-          const fname = document.getElementById('voterFileName'); if (fname) { fname.textContent = ''; fname.classList.remove('visible'); }
-          if (viewIcon) viewIcon.style.display = 'none';
-          if (deleteIcon) deleteIcon.style.display = 'none';
-        } else {
-          if (viewIcon) viewIcon.style.display = '';
-          if (deleteIcon) deleteIcon.style.display = '';
+        if (input) {
+          try {
+            // Toggle the required attribute so native validation doesn't try to focus hidden inputs
+            input.required = !hide;
+            if (!hide) input.setAttribute('required', ''); else input.removeAttribute('required');
+            // Clear value when hiding to avoid accidental submission
+            if (hide) input.value = '';
+          } catch (e) { /* ignore input toggling errors */ }
         }
+        const fname = document.getElementById('voterFileName');
+        if (fname) {
+          if (hide) { fname.textContent = ''; fname.classList.remove('visible'); }
+        }
+        if (viewIcon) viewIcon.style.display = hide ? 'none' : '';
+        if (deleteIcon) deleteIcon.style.display = hide ? 'none' : '';
       } catch (e) { /* ignore errors toggling voter row */ }
     }
 
