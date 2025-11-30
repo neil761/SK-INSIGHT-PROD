@@ -52,20 +52,10 @@
       // Skip inactive announcements
       const isActive = (a.isActive === undefined) ? true : Boolean(a.isActive);
       if (!isActive) return;
-
-      // Exclude announcements that have an eventDate in the past (treat as expired)
-      if (a.eventDate) {
-        const ed = Date.parse(a.eventDate);
-        if (!isNaN(ed) && ed < now) return;
-      }
-
-      // Also respect an explicit expiresAt field if provided
-      if (a.expiresAt) {
-        const exp = Date.parse(a.expiresAt);
-        if (!isNaN(exp) && exp < now) return;
-      }
-
-      // Count as unread when not viewed by the user (or if no user context)
+      // Check if eventDate has passed (announcement has expired)
+      if (a.eventDate) { const ed = Date.parse(a.eventDate); if (!isNaN(ed) && ed < now) return; }
+      // Check if expiresAt has passed
+      if (a.expiresAt) { const exp = Date.parse(a.expiresAt); if (!isNaN(exp) && exp < now) return; }
       if (!userId) count++; else if (!isViewedByUser(a, userId)) count++;
     });
     return count;
