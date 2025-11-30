@@ -395,6 +395,36 @@ textarea:focus {
         background-color: #072147;
     }
 
+    /* Refresh Button */
+    .refresh-btn {
+        min-width: 120px;
+        min-height: 40px;
+        padding: 12px 30px !important;
+        background-color: #6c757d;
+        color: white;
+        font-size: 15px;
+        font-weight: bold;
+        border: none;
+        border-radius: 7px;
+        cursor: pointer;
+        text-decoration: none;
+        margin-left: 10px;
+        transition: background-color 0.3s ease;
+    }
+
+    .refresh-btn:hover {
+        background-color: #5a6268;
+    }
+
+    .refresh-btn i {
+        margin-right: 6px;
+    }
+
+    .refresh-btn:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
     /* Announcement Boxes */
     .announcement-heading-container,
     .announcement-container {

@@ -224,15 +224,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     // Append normalized contact numbers as strings (preserve leading zeroes)
-    formData.append('contactNumber', contactDigits);
+    formData.append('contactNumber', String(contactDigits)); // Ensure it's sent as string
     formData.append('school', document.getElementById('schoolname')?.value || '');
     formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
     formData.append('year', document.getElementById('year')?.value || '');
     formData.append('typeOfBenefit', typeValue); // <-- use this name
     formData.append('fatherName', document.getElementById('fathername')?.value || '');
-  formData.append('fatherPhone', fatherDigits || '');
+  formData.append('fatherPhone', String(fatherDigits || '')); // Ensure it's sent as string
     formData.append('motherName', document.getElementById('mothername')?.value || '');
-  formData.append('motherPhone', motherDigits || '');
+  formData.append('motherPhone', String(motherDigits || '')); // Ensure it's sent as string
 
     // siblings & expenses as before
     const siblings = [];

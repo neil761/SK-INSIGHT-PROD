@@ -400,12 +400,26 @@ document.addEventListener('DOMContentLoaded', async function () {
         yearWrapper.style.display = acadVal ? '' : 'none';
       }
 
+      // Hide voter certificate row if Senior High School
+      function toggleVoterCertificateRow(level) {
+        const voterRow = Array.from(document.querySelectorAll('.requirements-table tbody tr')).find(row => 
+          row.textContent.includes("Parent's Voter's Certificate")
+        );
+        if (voterRow) {
+          const isJHS = (level || '').toLowerCase().includes('junior');
+          voterRow.style.display = isJHS ? '' : 'none';
+        }
+      }
+
+      toggleVoterCertificateRow(acadVal);
+
       // update year options when academic level changes (defensive)
       if (acadEl) {
         acadEl.addEventListener('change', function () {
           const lvl = acadEl.value || '';
           populateYearOptions(lvl, '', yearEl);
           if (yearWrapper) yearWrapper.style.display = lvl ? '' : 'none';
+          toggleVoterCertificateRow(lvl);
         });
       }
     } catch (e) { /* ignore */ }

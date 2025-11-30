@@ -651,6 +651,16 @@ exports.updateApplicationStatus = async (req, res) => {
       });
     }
 
+    // Remove or mark notifications for this application when status is no longer pending
+    try {
+      if (app.status !== 'pending') {
+        // Delete any pending notifications related to this application so they don't remain in admin queues
+        await require('../models/Notification').deleteMany({ referenceId: app._id, type: 'educational-assistance' });
+      }
+    } catch (notifErr) {
+      console.error('Failed to update/delete notifications for application status change:', notifErr);
+    }
+
     // --- CREATE ANNOUNCEMENT FOR THE USER ---
     if (["approved", "rejected"].includes(status) && app.user && app.user._id) {
       let title, content;
@@ -1036,17 +1046,37 @@ exports.resubmitApplication = async (req, res) => {
     
     await application.save();
 
-    // Create notification for admin
-    const notif = new Notification({
-      type: "educational-assistance",
-      event: "resubmission",
-      message: `User ${userId} resubmitted Educational Assistance application`,
-      referenceId: application._id,
-      cycleId: application.formCycle,
-      createdAt: new Date(),
-      read: false,
-    });
-    await notif.save();
+    // Update existing notifications for this application instead of creating duplicates.
+    try {
+      const updateResult = await Notification.updateMany(
+        { referenceId: application._id, type: 'educational-assistance' },
+        {
+          $set: {
+            event: 'resubmission',
+            message: `User ${userId} resubmitted Educational Assistance application`,
+            cycleId: application.formCycle,
+            createdAt: new Date(),
+            read: false,
+          },
+        }
+      );
+
+      // If no existing notifications were updated, create a fresh one
+      if (!updateResult.matchedCount && !updateResult.modifiedCount) {
+        const notif = new Notification({
+          type: "educational-assistance",
+          event: "resubmission",
+          message: `User ${userId} resubmitted Educational Assistance application`,
+          referenceId: application._id,
+          cycleId: application.formCycle,
+          createdAt: new Date(),
+          read: false,
+        });
+        await notif.save();
+      }
+    } catch (notifErr) {
+      console.error('Failed to update/create resubmission notification:', notifErr);
+    }
 
     if (req.app.get("io")) {
       req.app.get("io").emit("educational-assistance:resubmitted", {

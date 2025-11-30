@@ -35,7 +35,7 @@ const educationalAssistanceSchema = new mongoose.Schema({
   },
   religion: { type: String, required: true },
   email: { type: String, required: true },
-  contactNumber: { type: Number, required: true },
+  contactNumber: { type: String, required: true },
   school: { type: String, required: true },
   schoolAddress: { type: String, required: true },
   academicLevel: {

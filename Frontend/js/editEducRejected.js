@@ -387,8 +387,10 @@ try {
   function setFileUI(slot, url) {
     const label = document.getElementById(`${slot}Label`); // the plus label element
     const input = document.getElementById(`${slot}Image`) || document.getElementById(slot);
-    const viewBtn = document.getElementById(`view${capitalize(slot)}`);
-    const deleteBtn = document.getElementById(`delete${capitalize(slot)}`);
+    // Handle special case where slot is 'coe' but button IDs use 'COE' (all caps)
+    const capitalizedSlot = slot === 'coe' ? 'COE' : (slot.charAt(0).toUpperCase() + slot.slice(1));
+    const viewBtn = document.getElementById(`view${capitalizedSlot}`);
+    const deleteBtn = document.getElementById(`delete${capitalizedSlot}`);
     const fileNameSpan = document.getElementById(`${slot}FileName`);
     const hiddenFieldId = `${slot}Url`;
 
@@ -438,31 +440,67 @@ try {
       }
     }
 
+    // Ensure view and delete buttons are properly bound (use event listener instead of onclick)
+    function attachViewClickHandler(btn, previewUrl) {
+      if (!btn) return;
+      // Remove any existing listeners by cloning (clean slate)
+      try {
+        const newBtn = btn.cloneNode(true);
+        if (btn.parentNode) btn.parentNode.replaceChild(newBtn, btn);
+        btn = newBtn;
+      } catch (e) { /* ignore */ }
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openPreview(previewUrl);
+      });
+    }
+
+    function attachDeleteClickHandler(btn) {
+      if (!btn) return;
+      // Remove any existing listeners by cloning (clean slate)
+      try {
+        const newBtn = btn.cloneNode(true);
+        if (btn.parentNode) btn.parentNode.replaceChild(newBtn, btn);
+        btn = newBtn;
+      } catch (e) { /* ignore */ }
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // mark removed and clear server-side url; restore plus
+        removed[slot] = true;
+        revokeObjectUrl();
+        hidden.value = '';
+        if (input) input.value = '';
+        showPlus();
+        // Refresh button states
+        const freshViewBtn = document.getElementById(`view${capitalizedSlot}`);
+        const freshDeleteBtn = document.getElementById(`delete${capitalizedSlot}`);
+        if (freshViewBtn) freshViewBtn.style.display = 'none';
+        if (freshDeleteBtn) freshDeleteBtn.style.display = 'none';
+        try { saveDraft(); } catch (e) { /* ignore */ }
+      });
+    }
+
     if (url) {
       const fname = getFileNameFromUrl(url);
       showFilename(fname);
-      if (viewBtn) {
-        viewBtn.style.display = 'inline-block';
-        viewBtn.onclick = () => openPreview(url); // server URL preview
+      const currentViewBtn = document.getElementById(`view${capitalizedSlot}`);
+      const currentDeleteBtn = document.getElementById(`delete${capitalizedSlot}`);
+      if (currentViewBtn) {
+        currentViewBtn.style.display = 'inline-block';
+        attachViewClickHandler(currentViewBtn, url); // server URL preview
       }
-      if (deleteBtn) {
-        deleteBtn.style.display = 'inline-block';
-        deleteBtn.onclick = () => {
-          // mark removed and clear server-side url; restore plus
-          removed[slot] = true;
-          revokeObjectUrl();
-          hidden.value = '';
-          if (input) input.value = '';
-          showPlus();
-          if (viewBtn) viewBtn.style.display = 'none';
-          if (deleteBtn) deleteBtn.style.display = 'none';
-          try { saveDraft(); } catch (e) { /* ignore */ }
-        };
+      if (currentDeleteBtn) {
+        currentDeleteBtn.style.display = 'inline-block';
+        attachDeleteClickHandler(currentDeleteBtn);
       }
     } else {
       showPlus();
-      if (viewBtn) viewBtn.style.display = 'none';
-      if (deleteBtn) deleteBtn.style.display = 'none';
+      const currentViewBtn = document.getElementById(`view${capitalizedSlot}`);
+      const currentDeleteBtn = document.getElementById(`delete${capitalizedSlot}`);
+      if (currentViewBtn) currentViewBtn.style.display = 'none';
+      if (currentDeleteBtn) currentDeleteBtn.style.display = 'none';
     }
 
     // When user picks a new file, show filename and allow delete and keep view icon to preview local file
@@ -477,15 +515,23 @@ try {
           showFilename(f.name);
           removed[slot] = false;
           hidden.value = ''; // clear server url because user selected a new file
-          if (deleteBtn) deleteBtn.style.display = 'inline-block';
-          if (viewBtn) {
-            viewBtn.style.display = 'inline-block';
-            viewBtn.onclick = () => openPreview(objUrl);
+          const currentDeleteBtn = document.getElementById(`delete${capitalizedSlot}`);
+          const currentViewBtn = document.getElementById(`view${capitalizedSlot}`);
+          if (currentDeleteBtn) {
+            currentDeleteBtn.style.display = 'inline-block';
+            attachDeleteClickHandler(currentDeleteBtn);
+          }
+          if (currentViewBtn) {
+            currentViewBtn.style.display = 'inline-block';
+            attachViewClickHandler(currentViewBtn, objUrl);
           }
           try { saveDraft(); } catch (e) { /* ignore */ }
         } else {
           showPlus();
-          if (viewBtn) viewBtn.style.display = 'none';
+          const currentViewBtn = document.getElementById(`view${capitalizedSlot}`);
+          const currentDeleteBtn = document.getElementById(`delete${capitalizedSlot}`);
+          if (currentViewBtn) currentViewBtn.style.display = 'none';
+          if (currentDeleteBtn) currentDeleteBtn.style.display = 'none';
           try { saveDraft(); } catch (e) { /* ignore */ }
         }
       });
@@ -614,6 +660,20 @@ try {
   try { loadDraft(); } catch (e) { /* ignore */ }
   try { if (typeof toggleRequirementRows === 'function') toggleRequirementRows(); } catch(e) {}
 
+  // Re-initialize file UI after draft load to ensure buttons are properly bound after refresh
+  setTimeout(() => {
+    try {
+      const frontUrl = document.getElementById("frontUrl")?.value || app.frontImage || null;
+      const backUrl = document.getElementById("backUrl")?.value || app.backImage || null;
+      const coeUrl = document.getElementById("coeUrl")?.value || app.coeImage || null;
+      const voterUrl = document.getElementById("voterUrl")?.value || app.voter || null;
+      setFileUI("front", frontUrl);
+      setFileUI("back", backUrl);
+      setFileUI("coe", coeUrl);
+      setFileUI("voter", voterUrl);
+    } catch (e) { /* ignore */ }
+  }, 100);
+
   // Capture the original form snapshot so we can detect whether the user made any changes
   // Use a stable stringify to avoid key order differences.
   function stableStringify(obj) {
@@ -710,7 +770,15 @@ try {
         if (visible) {
           const hasFile = (fileInput && fileInput.files && fileInput.files.length > 0);
           const hasUrl = hidden && hidden.value && String(hidden.value).trim() !== '';
-          if (!hasFile && !hasUrl) reqMissing.push(reqSlots[slot]);
+          // STRICT VALIDATION: file is missing if:
+          // 1. No new file selected AND no existing server URL, OR
+          // 2. User explicitly removed the file (removed[slot]=true) without uploading replacement
+          if (!hasFile && !hasUrl) {
+            reqMissing.push(reqSlots[slot]);
+          } else if (removed[slot] && !hasFile) {
+            // User deleted the file but didn't upload a replacement
+            reqMissing.push(`${reqSlots[slot]} (was removed without replacement)`);
+          }
         }
       });
       if (reqMissing.length) {
@@ -883,6 +951,10 @@ try {
       let val = el.value;
       // normalize empty strings to undefined (so backend doesn't treat as change)
       if (val === "") val = undefined;
+      // For contact/phone numbers, normalize and ensure sent as string to preserve leading zeros
+      if (val !== undefined && (map[fid] === 'contactNumber' || map[fid] === 'fatherPhone' || map[fid] === 'motherPhone')) {
+        val = String(val).replace(/\D/g, ''); // Strip non-digits and convert to string
+      }
       if (val !== undefined) fd.append(map[fid], val);
     });
 
