@@ -58,33 +58,45 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
         console.warn('Socket emit failed:', e);
       }
 
-      // Create a public announcement about the form being closed (follow Educational Assistance pattern)
+      // Create personal announcement for all users about the form being closed (no expiry)
       try {
         const title = `${formName} Closed`;
-        const content = `${formName} (Cycle ${lastCycle.cycleNumber}, ${lastCycle.year})`;
+        const content = `${formName} (Cycle ${lastCycle.cycleNumber}, ${lastCycle.year}) has been closed.`;
         const expiresAt = null; // keep announcement permanent (no expiry)
         const createdBy = (req.user && (req.user.id || req.user._id)) ? (req.user.id || req.user._id) : null;
-        // Use future eventDate so it stays in General tab and doesn't expire immediately
+        // Use future eventDate so it doesn't expire immediately
         const eventDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year in future
-        const ann = await Announcement.create({
-          title,
-          content,
-          category: formName === 'Educational Assistance' ? 'Educational Assistance' : 'Other',
-          eventDate,
-          expiresAt,
-          createdBy,
-          recipient: null,
-          isPinned: false,
-          isActive: true,
-          viewedBy: [],
-        });
+        
+        // Get all users to send announcement to each
+        const User = require("../models/User");
+        const allUsers = await User.find({}, '_id').lean();
+        
+        for (const user of allUsers) {
+          try {
+            await Announcement.create({
+              title,
+              content,
+              category: formName === 'Educational Assistance' ? 'Educational Assistance' : 'Other',
+              eventDate,
+              expiresAt,
+              createdBy,
+              recipient: user._id, // Send to each user so it appears in their "For You" tab
+              isPinned: false,
+              isActive: true,
+              viewedBy: [],
+            });
+          } catch (userAnnErr) {
+            console.error(`Failed to create announcement for user ${user._id}:`, userAnnErr);
+          }
+        }
+        
         // Emit announcement created event for realtime clients
         try {
           const io2 = req.app && req.app.get && req.app.get('io');
-          if (io2) io2.emit('announcement:created', { id: ann._id, category: ann.category });
+          if (io2) io2.emit('announcement:created', { id: 'form-close', category: formName });
         } catch (ee) {/* ignore */}
       } catch (annErr) {
-        console.error('Failed to create form-close announcement:', annErr);
+        console.error('Failed to create form-close announcements:', annErr);
       }
 
       return res.json({ message: "Form closed", cycleId: lastCycle._id });
@@ -136,32 +148,44 @@ router.put("/toggle", protect, authorizeRoles("admin"), async (req, res) => {
       console.warn('Socket emit failed:', e);
     }
 
-    // Create a public announcement about the form being opened (follow Educational Assistance pattern)
+    // Create personal announcement for all users about the form being opened (no expiry)
     try {
       const title = `${formName} Opened`;
-      const content = `${formName} (Cycle ${newCycle.cycleNumber}, ${newCycle.year}) has been opened by ${req.user ? (req.user.email || req.user.name || 'an administrator') : 'an administrator'}. Applicants may now submit.`;
+      const content = `${formName} (Cycle ${newCycle.cycleNumber}, ${newCycle.year}) is now open. Applicants may now submit.`;
       const expiresAt = null; // keep announcement permanent (no expiry)
       const createdBy = (req.user && (req.user.id || req.user._id)) ? (req.user.id || req.user._id) : null;
-      // Use future eventDate so it stays in General tab and doesn't expire immediately
+      // Use future eventDate so it doesn't expire immediately
       const eventDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year in future
-      const annOpen = await Announcement.create({
-        title,
-        content,
-        category: formName === 'Educational Assistance' ? 'Educational Assistance' : 'Other',
-        eventDate,
-        expiresAt,
-        createdBy,
-        recipient: null,
-        isPinned: false,
-        isActive: true,
-        viewedBy: [],
-      });
+      
+      // Get all users to send announcement to each
+      const User = require("../models/User");
+      const allUsers = await User.find({}, '_id').lean();
+      
+      for (const user of allUsers) {
+        try {
+          await Announcement.create({
+            title,
+            content,
+            category: formName === 'Educational Assistance' ? 'Educational Assistance' : 'Other',
+            eventDate,
+            expiresAt,
+            createdBy,
+            recipient: user._id, // Send to each user so it appears in their "For You" tab
+            isPinned: false,
+            isActive: true,
+            viewedBy: [],
+          });
+        } catch (userAnnErr) {
+          console.error(`Failed to create announcement for user ${user._id}:`, userAnnErr);
+        }
+      }
+      
       try {
         const io3 = req.app && req.app.get && req.app.get('io');
-        if (io3) io3.emit('announcement:created', { id: annOpen._id, category: annOpen.category });
+        if (io3) io3.emit('announcement:created', { id: 'form-open', category: formName });
       } catch (ee) {/* ignore */}
     } catch (annErr) {
-      console.error('Failed to create form-open announcement:', annErr);
+      console.error('Failed to create form-open announcements:', annErr);
     }
 
     res.json({
