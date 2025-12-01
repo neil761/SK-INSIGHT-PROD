@@ -80,7 +80,16 @@ document.addEventListener('DOMContentLoaded', async function() {
         ? data.profileImage
         : `${API_BASE}/uploads/profile/${data.profileImage}`;
       document.getElementById('idImagePreview').innerHTML =
-        `<img src="${imageUrl}" alt="Profile Image" style="width:220px;border-radius:10px;">`;
+        `<img id="kky_profile_img" src="${imageUrl}" alt="Profile Image" style="width:220px;border-radius:10px;cursor:pointer;">`;
+      // Attach click to open global preview (fallback if global helper missing)
+      try {
+        const img = document.getElementById('kky_profile_img');
+        if (img) img.addEventListener('click', () => {
+          try {
+            Swal.fire({ imageUrl: imageUrl, imageAlt: 'Profile Image', showConfirmButton: false, showCloseButton: true, width: 600 });
+          } catch (e) { window.open(imageUrl, '_blank'); }
+        });
+      } catch (e) { /* ignore */ }
     }
 
     // Signature image preview (if exists)
@@ -89,7 +98,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         ? data.signatureImagePath
         : `${API_BASE}/uploads/signatures/${data.signatureImagePath.replace(/^.*[\\/]/, '')}`;
       document.getElementById('signaturePreview').innerHTML =
-        `<img src="${signatureUrl}" alt="Signature Image" style="width:220px;border-radius:10px;">`;
+        `<img id="kky_signature_img" src="${signatureUrl}" alt="Signature Image" style="width:220px;border-radius:10px;cursor:pointer;">`;
+      try {
+        const sig = document.getElementById('kky_signature_img');
+        if (sig) sig.addEventListener('click', () => {
+          try {
+            Swal.fire({ imageUrl: signatureUrl, imageAlt: 'Signature Image', showConfirmButton: false, showCloseButton: true, width: 600 });
+          } catch (e) { window.open(signatureUrl, '_blank'); }
+        });
+      } catch (e) { /* ignore */ }
     }
   } catch (err) {
     console.error('Failed to fetch KKProfile data:', err);
@@ -198,7 +215,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         ? data.profileImage
         : `${API_BASE}/uploads/profile/${data.profileImage}`;
       document.getElementById('idImagePreview').innerHTML =
-        `<img src="${imageUrl}" alt="Profile Image" style="width:220px;border-radius:10px;">`;
+        `<img id="kky_profile_img_2" src="${imageUrl}" alt="Profile Image" style="width:220px;border-radius:10px;cursor:pointer;">`;
+      try {
+        const img2 = document.getElementById('kky_profile_img_2');
+        if (img2) img2.addEventListener('click', () => {
+          try {
+            Swal.fire({ imageUrl: imageUrl, imageAlt: 'Profile Image', showConfirmButton: false, showCloseButton: true, width: 600 });
+          } catch (e) { window.open(imageUrl, '_blank'); }
+        });
+      } catch (e) { /* ignore */ }
     }
 
     // Signature image preview (if exists)
@@ -207,7 +232,15 @@ document.addEventListener('DOMContentLoaded', async function() {
         ? data.signatureImagePath
         : `${API_BASE}/uploads/signatures/${data.signatureImagePath.replace(/^.*[\\/]/, '')}`;
       document.getElementById('signaturePreview').innerHTML =
-        `<img src="${signatureUrl}" alt="Signature Image" style="width:220px;border-radius:10px;">`;
+        `<img id="kky_signature_img_2" src="${signatureUrl}" alt="Signature Image" style="width:220px;border-radius:10px;cursor:pointer;">`;
+      try {
+        const sig2 = document.getElementById('kky_signature_img_2');
+        if (sig2) sig2.addEventListener('click', () => {
+          try {
+            Swal.fire({ imageUrl: signatureUrl, imageAlt: 'Signature Image', showConfirmButton: false, showCloseButton: true, width: 600 });
+          } catch (e) { window.open(signatureUrl, '_blank'); }
+        });
+      } catch (e) { /* ignore */ }
     }
   } catch (err) {
     console.error('Failed to fetch KKProfile data:', err);
@@ -224,6 +257,36 @@ document.addEventListener('DOMContentLoaded', function () {
     });
   }
 });
+
+// Helper to open the shared/global image preview modal. Uses global `showImagePreview` if present,
+// otherwise falls back to a simple modal target (`#imagePreviewModal` / `#previewImg`).
+function openGlobalImagePreview(src) {
+  try {
+    if (typeof window !== 'undefined' && typeof window.showImagePreview === 'function') {
+      window.showImagePreview(src);
+      return;
+    }
+  } catch (e) {}
+
+  try {
+    const modal = document.getElementById('imagePreviewModal');
+    const previewImg = document.getElementById('previewImg');
+    if (!previewImg || !modal) {
+      // If modal or preview element does not exist, open the image in a new tab as a fallback
+      if (src) window.open(src, '_blank');
+      return;
+    }
+
+    // Track blob/object URL to allow revocation if needed
+    if (typeof src === 'string' && src.startsWith('blob:')) {
+      try { previewImg.dataset.objectUrl = src; } catch (e) {}
+    }
+    previewImg.src = src;
+    try { modal.style.display = 'flex'; } catch (e) {}
+  } catch (e) {
+    if (src) window.open(src, '_blank');
+  }
+}
 
 // Centralize navbar wiring: remove page-local nav listeners (if any) and let navbar.js bind handlers.
 document.addEventListener('DOMContentLoaded', function () {

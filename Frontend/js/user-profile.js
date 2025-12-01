@@ -711,8 +711,8 @@ if (logoutBtn) {
       container = document.createElement('div');
       container.className = 'pw-container';
       // make the container take the same width as the input
-      container.style.display = 'inline-block';
-      container.style.width = input.style.width || getComputedStyle(input).width || '100%';
+      container.style.display = 'block';
+      container.style.width = '100%';
       container.style.position = 'relative';
       input.parentNode.insertBefore(container, input);
       container.appendChild(input);
@@ -726,7 +726,7 @@ if (logoutBtn) {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'pw-toggle';
+    btn.className = `pw-toggle pw-toggle-${inputId}`;
     btn.setAttribute('aria-pressed', 'false');
     btn.setAttribute('aria-label', 'Show password');
     btn.style.position = 'absolute';
@@ -763,12 +763,88 @@ if (logoutBtn) {
   // Attach toggles for change-password inputs if present
   ['currentPassword', 'newPassword', 'confirmNewPassword'].forEach(id => attachPasswordToggle(id));
 
+  // Password strength UI for change-password (newPassword)
+  (function attachChangePasswordStrength() {
+    const newPw = document.getElementById('newPassword');
+    const confirmPw = document.getElementById('confirmNewPassword');
+    const form = document.getElementById('changePasswordForm');
+    if (!newPw || !form) return;
+
+    const container = document.createElement('div');
+    container.id = 'changePwRequirements';
+    container.style.marginTop = '8px';
+    container.style.marginBottom = '16px';
+    container.style.fontSize = '0.65rem';
+    container.style.textAlign = 'left';
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;text-align:left;" aria-live="polite">
+        <div id="chg-pw-req-length" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters</div>
+        <div id="chg-pw-req-special" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character</div>
+        <div id="chg-pw-req-upper" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter</div>
+        <div id="chg-pw-req-number" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number</div>
+      </div>
+    `;
+    confirmPw.insertAdjacentElement('afterend', container);
+
+    const reqLength = document.getElementById('chg-pw-req-length');
+    const reqUpper = document.getElementById('chg-pw-req-upper');
+    const reqNumber = document.getElementById('chg-pw-req-number');
+    const reqSpecial = document.getElementById('chg-pw-req-special');
+
+    function checkPassword(pw) {
+      return {
+        length: pw.length >= 8,
+        upper: /[A-Z]/.test(pw),
+        number: /\d/.test(pw),
+        special: /[\W_]/.test(pw)
+      };
+    }
+
+    function updateUI() {
+      const pw = newPw.value || '';
+      const cpw = confirmPw ? confirmPw.value || '' : '';
+      const res = checkPassword(pw);
+
+      // If no input, show plain text without icons
+      if (!pw) {
+        reqLength.textContent = 'At least 8 characters';
+        reqLength.style.color = '#666';
+        reqUpper.textContent = 'At least one uppercase letter';
+        reqUpper.style.color = '#666';
+        reqNumber.textContent = 'At least one number';
+        reqNumber.style.color = '#666';
+        reqSpecial.textContent = 'At least one special character';
+        reqSpecial.style.color = '#666';
+      } else {
+        // Show checkmarks/X icons when there's input
+        reqLength.innerHTML = res.length ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least 8 characters' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters';
+        reqLength.style.color = res.length ? '#1a8a1a' : '#c33';
+        reqUpper.innerHTML = res.upper ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one uppercase letter' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter';
+        reqUpper.style.color = res.upper ? '#1a8a1a' : '#c33';
+        reqNumber.innerHTML = res.number ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one number' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number';
+        reqNumber.style.color = res.number ? '#1a8a1a' : '#c33';
+        reqSpecial.innerHTML = res.special ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one special character' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character';
+        reqSpecial.style.color = res.special ? '#1a8a1a' : '#c33';
+      }
+
+      const all = res.length && res.upper && res.number && res.special;
+      // disable submit if requirements not met
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = !all;
+    }
+
+    newPw.addEventListener('input', updateUI);
+    if (confirmPw) confirmPw.addEventListener('input', updateUI);
+    setTimeout(updateUI, 0);
+  })();
+
   // --- Change Password ---
   document.getElementById("changePasswordForm").addEventListener("submit", async function (e) {
     e.preventDefault();
     const currentPassword = document.getElementById("currentPassword").value;
     const newPassword = document.getElementById("newPassword").value;
     const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+    
     if (newPassword !== confirmNewPassword) {
       Swal.fire({
         icon: "error",
@@ -778,6 +854,17 @@ if (logoutBtn) {
       });
       return;
     }
+    
+    if (currentPassword === newPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Password",
+        text: "New password must be different from your current password.",
+        confirmButtonColor: "#0A2C59"
+      });
+      return;
+    }
+    
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
       const res = await fetch(`${API_BASE}/api/users/change-password`, {

@@ -251,22 +251,28 @@
         <div class="kk-card kk-upload-col">
           <label class="kk-label">Profile Image (ID):</label>
           <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
-          <button type="button" id="customUploadBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Image</button>
+          <div class="custom-file">
+            <button type="button" id="customUploadBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="profileImageFilename" aria-live="polite"></div>
+            <input type="file" id="profileImage" name="profileImage" accept="image/*" required class="custom-file-input">
+          </div>
           <div id="profileImagePreview" class="kk-upload-preview image-preview-container">
             <button type="button" id="removeImageBtnProfile" class="remove-image-btn" title="Remove image">&times;</button>
             <img id="profileImagePreviewImg" alt="Profile preview" />
           </div>
-          <input type="file" id="profileImage" accept="image/png, image/jpeg" style="display:none;">
         </div>
         <div class="kk-card kk-upload-col">
           <label class="kk-label">Signature Image:</label>
           <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
-          <button type="button" id="customSignatureBtn" class="kk-upload-btn"><i class="fa-solid fa-plus"></i> Upload Signature</button>
+          <div class="custom-file">
+            <button type="button" id="customSignatureBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="signatureImageFilename" aria-live="polite"></div>
+            <input type="file" id="signatureImage" name="signatureImage" accept="image/*" required class="custom-file-input">
+          </div>
           <div id="signatureImagePreview" class="kk-upload-preview image-preview-container">
             <button type="button" id="removeImageBtnSignature" class="remove-image-btn" title="Remove image">&times;</button>
             <img id="signatureImagePreviewImg" alt="Signature preview" />
           </div>
-          <input type="file" id="signatureImage" accept="image/png, image/jpeg" style="display:none;">
         </div>
       </div>
 

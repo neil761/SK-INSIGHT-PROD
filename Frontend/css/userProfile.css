@@ -103,8 +103,8 @@ body {
 }
 .pw-toggle {
   position: absolute;
-  right: 8px;
-  top: 40% !important;
+  right: 10px;
+  top: 50%;
   transform: translateY(-50%);
   display: inline-flex;
   align-items: center;
@@ -118,6 +118,23 @@ body {
   color: #143d77;
   font-size: 1.05rem;
 }
+
+/* Individual toggle styles - Add custom styling here as needed */
+.pw-toggle-currentPassword {
+  /* Current password toggle can be customized here */
+    top: 35% !important;
+}
+
+.pw-toggle-newPassword {
+  /* New password toggle can be customized here */
+    top: 35% !important;
+}
+
+.pw-toggle-confirmNewPassword {
+  /* Confirm new password toggle can be customized here */
+    top: 13% !important;
+}
+
 .pw-toggle:focus {
   outline: 2px solid rgba(20,61,119,0.18);
   outline-offset: 2px;

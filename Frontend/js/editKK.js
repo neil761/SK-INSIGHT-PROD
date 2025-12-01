@@ -367,24 +367,62 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
 
-        // If server returned a plain filename (uploads) or a remote URL, resolve the proper preview URL like view-kkyouth.js
+        // If server returned a plain filename, a Cloudinary id, or a remote URL, resolve the proper preview URL
         if (imageUrl) {
-          // If server returned something like 'uploads/profile/abc.jpg' or just 'abc.jpg', construct the public URL
+          // Project Cloudinary cloud name (used in backend email templates)
+          const CLOUDINARY_CLOUD_NAME = 'dnmawrba8';
+
+          // Helper: build cloudinary url for a public id
+          const toCloudinary = (id) => {
+            if (!id) return '';
+            // If already a full URL, return as-is
+            if (id.startsWith('http')) return id;
+            // If it already looks like a cloudinary path, ensure it has the hostname
+            if (id.includes('res.cloudinary.com') || id.includes('cloudinary')) return id.startsWith('http') ? id : `https://${id}`;
+            // Otherwise treat as public id or path and construct the URL
+            return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${id}`;
+          };
+
+          // If server returned something like full http URL, use it. Otherwise decide between uploads/ local path vs cloudinary
           let resolved;
           if (imageUrl.startsWith('http')) {
             resolved = imageUrl;
+          } else if (imageUrl.includes('uploads') || /uploads[\\/]/i.test(imageUrl)) {
+            // If the value looks like a server uploads path, point to API_BASE/uploads
+            resolved = imageUrl.startsWith('/') ? (`${API_BASE}${imageUrl}`) : (`${API_BASE}/${imageUrl}`);
+          } else if (/\.(jpg|jpeg|png|gif)$/i.test(imageUrl)) {
+            // If it looks like a filename with an image extension, assume server uploads/profile
+            resolved = `${API_BASE}/uploads/profile/${imageUrl}`;
           } else {
-            // If the value looks like a path with uploads/..., use it as-is; otherwise assume it's the profile uploads filename
-            if (imageUrl.includes('uploads')) {
-              resolved = imageUrl.startsWith('/') ? (`${API_BASE}${imageUrl}`) : (`${API_BASE}/${imageUrl}`);
-            } else {
-              resolved = `${API_BASE}/uploads/profile/${imageUrl}`;
-            }
+            // Otherwise assume it's a Cloudinary public id or path
+            resolved = toCloudinary(imageUrl);
           }
 
           // Render the preview using the resolved public URL (matches view-kkyouth.js behaviour)
           const profilePreview = document.getElementById('profileImagePreview');
           const idPreview = document.getElementById('idImagePreview');
+          // Extract a friendly filename to display beside upload controls (best-effort)
+          try {
+            const profileFilenameEl = document.getElementById('profileImageFilename');
+            if (profileFilenameEl) {
+              let name = '';
+              // Prefer the original server value if it already looks like a filename
+              if (imageUrl) {
+                try { name = (imageUrl.split('?')[0].replace(/^.*[\\\/]/, '') || ''); } catch (e) { name = ''; }
+              }
+              // Fallback to resolved URL last path segment
+              if (!name && resolved) {
+                try {
+                  const u = new URL(resolved);
+                  name = (u.pathname.split('/').filter(Boolean).pop() || '');
+                } catch (e) {
+                  name = (resolved.split(/[\\\/]/).pop() || '').split('?')[0];
+                }
+              }
+              // Trim and set if non-empty
+              if (name) profileFilenameEl.textContent = name;
+            }
+          } catch (e) { /* ignore filename display errors */ }
           // use renderPreview so edit controls (View/Change/Remove) are available
           if (profilePreview) renderPreview('profileImagePreview', resolved);
           if (idPreview) renderPreview('idImagePreview', resolved);
@@ -413,6 +451,26 @@ document.addEventListener('DOMContentLoaded', function () {
           const sigPreview = document.getElementById('signatureImagePreview');
           const sigPreviewAlt = document.getElementById('signaturePreview');
           // use renderPreview so edit controls are available
+          // Extract filename for signature and show it if UI exists
+          try {
+            const sigFilenameEl = document.getElementById('signatureImageFilename');
+            if (sigFilenameEl) {
+              let sname = '';
+              if (signatureUrl) {
+                try { sname = (signatureUrl.split('?')[0].replace(/^.*[\\\/]/, '') || ''); } catch (e) { sname = ''; }
+              }
+              if (!sname && resolvedSig) {
+                try {
+                  const u2 = new URL(resolvedSig);
+                  sname = (u2.pathname.split('/').filter(Boolean).pop() || '');
+                } catch (e) {
+                  sname = (resolvedSig.split(/[\\\/]/).pop() || '').split('?')[0];
+                }
+              }
+              if (sname) sigFilenameEl.textContent = sname;
+            }
+          } catch (e) { /* ignore */ }
+
           if (sigPreview) renderPreview('signatureImagePreview', resolvedSig);
           if (sigPreviewAlt) renderPreview('signaturePreview', resolvedSig);
 
@@ -730,8 +788,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // Render image with a small 'x' remove icon at top-right; clicking the image opens a larger view
     c.innerHTML = `
-      <div style="position:relative; display:inline-block; max-width:220px;">
-        <img src="${base64}" style="width:100%; border-radius:10px; display:block; cursor:zoom-in;" alt="${alt}"/>
+      <div style="position:relative; display:inline-block; width:220px;">
+        <img src="${base64}" style="width:220px; border-radius:10px; display:block; cursor:zoom-in;" alt="${alt}"/>
         <button data-remove="true" title="Remove" style="position:absolute; top:6px; right:6px; background:#e74c3c; color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">×</button>
       </div>`;
 

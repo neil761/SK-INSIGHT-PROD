@@ -106,7 +106,11 @@
         <div class="lcard kk-upload-col">
           <label class="label"  for="idImageFront">Upload Valid ID Image (Front):</label>
           <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
-          <input type="file" id="idImageFront" name="idImageFront" accept="image/*" required>
+          <div class="custom-file">
+            <button type="button" id="customIdFrontBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="idImageFrontFilename" aria-live="polite"></div>
+            <input type="file" id="idImageFront" name="idImageFront" accept="image/*" required class="custom-file-input">
+          </div>
           <div id="imagePreviewContainerFront" class="image-preview-container">
             <button type="button" id="removeImageBtnFront" class="remove-image-btn" title="Remove image">&times;</button>
             <img id="imagePreviewFront" alt="Front ID preview" />
@@ -117,7 +121,11 @@
         <div class="lcard kk-upload-col">
           <label class="label" for="idImageBack">Upload Valid ID Image (Back):</label>
           <p class="allow">Allowed image formats: PNG or JPEG/JPG.</p>
-          <input type="file" id="idImageBack" name="idImageBack" accept="image/*" required>
+          <div class="custom-file">
+            <button type="button" id="customIdBackBtn" class="kk-upload-btn">Choose File</button>
+            <div class="kk-upload-filename" id="idImageBackFilename" aria-live="polite"></div>
+            <input type="file" id="idImageBack" name="idImageBack" accept="image/*" required class="custom-file-input">
+          </div>
           <div id="imagePreviewContainerBack" class="image-preview-container">
             <button type="button" id="removeImageBtnBack" class="remove-image-btn" title="Remove image">&times;</button>
             <img id="imagePreviewBack" alt="Back ID preview" />
