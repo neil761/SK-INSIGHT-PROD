@@ -160,7 +160,25 @@
     });
   }
 
-  document.addEventListener('DOMContentLoaded', () => { updateBadgeOnce(); setInterval(updateBadgeOnce, 60*1000); window.addEventListener('focus', updateBadgeOnce); });
+  document.addEventListener('DOMContentLoaded', function () {
+    // Wait for user-announcement.js to load and expose updateNotificationBadge
+    const waitForBadgeFunction = () => {
+      if (typeof window.updateNotificationBadge === 'function') {
+        // Use the function from user-announcement.js
+        window.updateNotificationBadge();
+        
+        // Periodic refresh every 5 minutes (only as fallback)
+        setInterval(() => {
+          try { window.updateNotificationBadge(); } catch (e) { /* ignore */ }
+        }, 5 * 60 * 1000);
+        return;
+      }
+      // Retry after 100ms if not yet loaded
+      setTimeout(waitForBadgeFunction, 100);
+    };
+    
+    waitForBadgeFunction();
+  });
   window.updateNotificationBadge = updateBadgeOnce;
 
 })();

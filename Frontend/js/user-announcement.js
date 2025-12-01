@@ -59,6 +59,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // Update notification badge UI - THIS IS THE SOURCE OF TRUTH
+  async function updateNotificationBadge() {
+    try {
+      const badgeEl = document.querySelector('.notif-badge');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      
+      if (!badgeEl || !token) return;
+
+      const res = await fetch(`${API_BASE}/api/announcements`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+
+      const data = await res.json().catch(() => null);
+      const all = (data && Array.isArray(data.announcements)) ? data.announcements : [];
+      const now = new Date();
+      let unreadCount = 0;
+
+      all.forEach(a => {
+        try {
+          if (!a || !a.title) return;
+
+          // Skip expired announcements
+          if (a.eventDate) {
+            const ed = new Date(a.eventDate);
+            if (!isNaN(ed.getTime()) && ed < now) return;
+          }
+
+          // Check if already viewed by current user
+          const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          if (currentUserId && viewedBy.includes(String(currentUserId))) return;
+
+          // Count unread announcements (both general and personal)
+          unreadCount++;
+        } catch (e) {
+          console.warn('Error processing announcement for badge:', e);
+        }
+      });
+
+      badgeEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
+      badgeEl.style.display = unreadCount > 0 ? 'flex' : 'none';
+      console.debug('Badge updated:', unreadCount);
+    } catch (err) {
+      console.warn('Error updating badge:', err);
+    }
+  }
+
+  // Expose globally so notification-badge.js can call it
+  window.updateNotificationBadge = updateNotificationBadge;
+
+  // Load user ID first
+  await loadCurrentUserId();
+  
+  // Initial badge update
+  await updateNotificationBadge();
+  
   const tabBtns = document.querySelectorAll('.tab-btn');
   let currentTab = 'general';
 
@@ -128,18 +184,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token || !id) return;
+
+      // Skip marking expired announcements as viewed
+      try {
+        const localAnn = lastAnnouncements.find(x => String(x._id) === String(id));
+        if (localAnn && currentTab === 'expired') {
+          console.debug("Skipping markAnnouncementViewed for expired announcement");
+          return;
+        }
+      } catch (e) {
+        // ignore lookup errors and proceed
+      }
+
       const res = await fetch(`${API_BASE}/api/announcements/${id}/view`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       });
       if (!res.ok) {
-        // non-fatal: server may already have it marked or endpoint may be protected
         console.warn("Failed to mark announcement viewed", res.status);
       }
-      // refresh announcements UI and the badge (if the badge script exposes the helper)
-      try { await renderTabAnnouncements(); } catch (e) { /* ignore */ }
-      if (window.updateNotificationBadge) {
-        try { window.updateNotificationBadge(); } catch (e) { /* ignore */ }
+
+      // Only refresh and update badge if NOT in expired tab
+      if (currentTab !== 'expired') {
+        try { 
+          await renderTabAnnouncements(); 
+          await updateNotificationBadge(); // Update badge immediately
+        } catch (e) { /* ignore */ }
       }
     } catch (err) {
       console.warn("markAnnouncementViewed error", err);
@@ -163,6 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     lastAnnouncements = announcements;
     renderAnnouncementsResponsive(announcements);
+    await updateNotificationBadge(); // Update badge after rendering
   }
 
   function renderAnnouncementsResponsive(announcements) {
@@ -235,6 +306,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (a.isPinned) {
         tr.classList.add("pinned-row");
       }
+      
+      // Add grey color for expired tab
+      if (currentTab === 'expired') {
+        tr.classList.add("expired-tab");
+      }
+      
         // read/unread visual state
         try {
           const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
@@ -244,14 +321,25 @@ document.addEventListener("DOMContentLoaded", async () => {
           // ignore
         }
       // Add status hue for For You tab
-if (currentTab === 'foryou') {
-  const title = (a.title || "").toLowerCase();
-  if (title.includes("rejected") || title.includes("deleted")) {
-    tr.classList.add("announcement-row-rejected");
-  } else if (title.includes("approved") || title.includes("restored")) {
-    tr.classList.add("announcement-row-approved");
-  }
-}
+      if (currentTab === 'foryou') {
+        const title = (a.title || "").toLowerCase();
+        const isRejected = title.includes("rejected") || title.includes("deleted");
+        const isApproved = title.includes("approved") || title.includes("restored");
+        
+        if (isRejected) {
+          tr.classList.add("announcement-row-rejected");
+        } else if (isApproved) {
+          tr.classList.add("announcement-row-approved");
+        } else {
+          // For non-rejected/approved announcements, check title for open/closed keywords
+          const titleLower = title.toLowerCase();
+          if (titleLower.includes("opened") || titleLower.includes("opening")) {
+            tr.classList.add("announcement-row-cycle-open");
+          } else if (titleLower.includes("closed") || titleLower.includes("closing")) {
+            tr.classList.add("announcement-row-cycle-closed");
+          }
+        }
+      }
       tr.innerHTML = `
         <td>
           <div class="announcement-title">
@@ -306,7 +394,7 @@ if (currentTab === 'foryou') {
       displayAnnouncements = pinned.concat(unpinned);
     }
     else if (currentTab === 'expired') {
-      displayAnnouncements = (announcements || []).filter(a => {
+      displayAnnouncements = (announcements || []).filter (a => {
         if (!a.eventDate) return false;
         const ed = new Date(a.eventDate);
         if (isNaN(ed.getTime())) return false;
@@ -334,23 +422,42 @@ if (currentTab === 'foryou') {
         dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
       }
       const card = document.createElement('div');
-      // read/unread visual state for cards
-      try {
-        const viewedBy2 = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
-        const isReadCard = currentUserId ? viewedBy2.includes(String(currentUserId)) : false;
-        card.className = 'announcement-card ' + (isReadCard ? 'announcement-read' : 'announcement-notread');
-      } catch (e) {
-        card.className = 'announcement-card';
+      
+      // Add grey color for expired tab
+      if (currentTab === 'expired') {
+        card.className = 'announcement-card expired-tab';
+      } else {
+        // read/unread visual state for cards
+        try {
+          const viewedBy2 = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          const isReadCard = currentUserId ? viewedBy2.includes(String(currentUserId)) : false;
+          card.className = 'announcement-card ' + (isReadCard ? 'announcement-read' : 'announcement-notread');
+        } catch (e) {
+          card.className = 'announcement-card';
+        }
+        
+        // Add status hue for For You tab
+        if (currentTab === 'foryou') {
+          const title = (a.title || "").toLowerCase();
+          const isRejected = title.includes("rejected") || title.includes("deleted");
+          const isApproved = title.includes("approved") || title.includes("restored");
+          
+          if (isRejected) {
+            card.classList.add("announcement-card-rejected");
+          } else if (isApproved) {
+            card.classList.add("announcement-card-approved");
+          } else {
+            // For non-rejected/approved announcements, check title for open/closed keywords
+            const titleLower = title.toLowerCase();
+            if (titleLower.includes("opened") || titleLower.includes("opening")) {
+              card.classList.add("announcement-card-cycle-open");
+            } else if (titleLower.includes("closed") || titleLower.includes("closing")) {
+              card.classList.add("announcement-card-cycle-closed");
+            }
+          }
+        }
       }
-      // Add status hue for For You tab
-if (currentTab === 'foryou') {
-  const title = (a.title || "").toLowerCase();
-  if (title.includes("rejected") || title.includes("deleted")) {
-    card.classList.add("announcement-card-rejected");
-  } else if (title.includes("approved") || title.includes("restored")) {
-    card.classList.add("announcement-card-approved");
-  }
-}
+      
       card.innerHTML = `
         <div class="card-header">
           <div class="title">
@@ -361,7 +468,7 @@ if (currentTab === 'foryou') {
           </div>
         </div>
         <div class="card-meta">
-          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>
+          ${currentTab === 'foryou' ? '' : `<div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>`}
           <div class="meta-row"><i class="fa-regular fa-clock"></i> Posted: ${a.createdAt ? formatDateTime(a.createdAt) : '-'}</div>
         </div>
       `;
@@ -378,11 +485,12 @@ if (currentTab === 'foryou') {
           if (!res.ok) throw new Error("Announcement not found");
           const { announcement } = await res.json();
           modalTitle.textContent = announcement.title;
-          // For "foryou" tab, hide event date in modal
+          // For "foryou" tab, show only Posted date
+          const eventDateContainer = modalEventDate.closest('.info-item');
           if (currentTab === 'foryou') {
-            modalEventDate.style.display = "none";
+            if (eventDateContainer) eventDateContainer.style.display = "none";
           } else {
-            modalEventDate.style.display = "";
+            if (eventDateContainer) eventDateContainer.style.display = "";
             modalEventDate.textContent = formatDateTime(announcement.eventDate);
           }
           modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
@@ -420,11 +528,12 @@ if (currentTab === 'foryou') {
         if (!res.ok) throw new Error("Announcement not found");
         const { announcement } = await res.json();
         modalTitle.textContent = announcement.title;
-        // For "foryou" tab, hide event date in modal
+        // For "foryou" tab, show only Posted date
+        const eventDateContainer = modalEventDate.closest('.info-item');
         if (currentTab === 'foryou') {
-          modalEventDate.style.display = "none";
+          if (eventDateContainer) eventDateContainer.style.display = "none";
         } else {
-          modalEventDate.style.display = "";
+          if (eventDateContainer) eventDateContainer.style.display = "";
           modalEventDate.textContent = formatDateTime(announcement.eventDate);
         }
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
@@ -484,11 +593,26 @@ if (currentTab === 'foryou') {
 
   // WebSocket updates (optional, keep your logic here)
   const socket = io(API_BASE, { transports: ["websocket"] });
-  socket.on("announcement:created", renderTabAnnouncements);
-  socket.on("announcement:updated", renderTabAnnouncements);
-  socket.on("announcement:deleted", renderTabAnnouncements);
-  socket.on("announcement:pinned", renderTabAnnouncements);
-  socket.on("announcement:unpinned", renderTabAnnouncements);
+  socket.on("announcement:created", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:updated", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:deleted", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:pinned", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:unpinned", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
   
   // Listen for breakpoint changes (mobile <-> desktop) and re-render accordingly.
   // Using matchMedia 'change' is more efficient than raw resize events.
