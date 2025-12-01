@@ -1,4 +1,19 @@
 document.addEventListener('DOMContentLoaded', async function () {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
+
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   const isMobile = window.innerWidth <= 768; // Detect mobile devices (adjust breakpoint as needed)
 
   // Remove <thead> for mobile devices
@@ -18,7 +33,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     }
 
     try {
-      const response = await fetch('http://localhost:5000/api/users/me', {
+      const response = await fetch(`${API_BASE}/api/users/me`, {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${token}`
@@ -44,6 +59,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     return;
   }
 
+
+
   // Fetch and set the user's email
   const emailInput = document.getElementById('email');
   if (!emailInput) {
@@ -60,8 +77,8 @@ document.addEventListener('DOMContentLoaded', async function () {
   // Check latest application status for this user in the present cycle
   try {
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    if (token) {
-      const appRes = await fetch('http://localhost:5000/api/educational-assistance/me', {
+      if (token) {
+      const appRes = await fetch(`${API_BASE}/api/educational-assistance/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -142,6 +159,107 @@ document.addEventListener('DOMContentLoaded', async function () {
     return age;
   }
 
+  // Helper: show inline tooltip-style warning anchored to a field and highlight its row
+  function showInlineFieldWarning(targetEl, message, autoDismissMs = 6000) {
+    try {
+      if (!targetEl) return;
+      // remove existing tooltip if any
+      const existing = document.getElementById('inlineMissingTooltip');
+      if (existing && existing.parentNode) existing.parentNode.removeChild(existing);
+
+      const row = targetEl.closest ? (targetEl.closest('tr') || targetEl) : targetEl;
+      if (row && row.scrollIntoView) row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+      if (row) {
+        row.style.outline = '2px solid rgba(255,165,0,0.7)';
+        row.setAttribute('data-missing-highlight', 'true');
+      }
+
+      const tip = document.createElement('div');
+      tip.id = 'inlineMissingTooltip';
+      tip.textContent = message;
+      tip.style.cssText = 'position:absolute;background:#fff;border:1px solid #f0ad4e;color:#333;padding:10px 12px;border-radius:6px;box-shadow:0 2px 10px rgba(0,0,0,0.12);z-index:2147483647;font-size:13px;max-width:320px';
+      document.body.appendChild(tip);
+
+      // position tooltip relative to target
+      const rect = targetEl.getBoundingClientRect();
+      const tipRect = tip.getBoundingClientRect();
+      let left = rect.left + window.scrollX + (rect.width - tipRect.width) / 2;
+      if (left < 8) left = 8;
+      let top = rect.top + window.scrollY - tipRect.height - 10;
+      if (top < window.scrollY + 8) top = rect.bottom + window.scrollY + 10;
+      tip.style.left = `${Math.round(left)}px`;
+      tip.style.top = `${Math.round(top)}px`;
+
+      // Make the target focusable if it isn't
+      let prevTab = null;
+      let addedTab = false;
+      try {
+        if (typeof targetEl.tabIndex === 'number' && targetEl.tabIndex < 0) {
+          prevTab = targetEl.getAttribute('tabindex');
+          targetEl.setAttribute('tabindex', '-1');
+          addedTab = true;
+        } else if (typeof targetEl.tabIndex === 'undefined' || targetEl.tabIndex === null) {
+          // some elements may not expose tabIndex; ensure focusable
+          prevTab = targetEl.getAttribute && targetEl.getAttribute('tabindex');
+          targetEl.setAttribute && targetEl.setAttribute('tabindex', '-1');
+          addedTab = true;
+        }
+      } catch (e) { /* ignore tabindex manipulation errors */ }
+
+      // Keep focus on the target until the user interacts (input/keydown/click outside)
+      let userInteracted = false;
+
+      const onUserInteract = () => {
+        userInteracted = true;
+        cleanup();
+      };
+
+      const onBlur = (ev) => {
+        if (userInteracted) return;
+        // re-focus after a short delay to avoid focus race conditions
+        setTimeout(() => {
+          try { if (!userInteracted && typeof targetEl.focus === 'function') targetEl.focus({ preventScroll: true }); } catch (e) {}
+        }, 20);
+      };
+
+      const onDocClick = (ev) => {
+        // if click is inside target or tip, treat it as interaction
+        if (targetEl.contains && targetEl.contains(ev.target)) return;
+        if (tip.contains && tip.contains(ev.target)) return;
+        onUserInteract();
+      };
+
+      function cleanup() {
+        try { if (tip && tip.parentNode) tip.parentNode.removeChild(tip); } catch (e) {}
+        try { if (row) { row.style.outline = ''; row.removeAttribute('data-missing-highlight'); } } catch (e) {}
+        try { targetEl.removeEventListener('blur', onBlur, true); } catch (e) {}
+        try { targetEl.removeEventListener('input', onUserInteract, true); } catch (e) {}
+        try { targetEl.removeEventListener('keydown', onUserInteract, true); } catch (e) {}
+        try { document.removeEventListener('click', onDocClick, true); } catch (e) {}
+        try { tip.removeEventListener('click', onUserInteract); } catch (e) {}
+        if (addedTab) {
+          try {
+            if (prevTab !== null && prevTab !== undefined) targetEl.setAttribute('tabindex', prevTab);
+            else targetEl.removeAttribute && targetEl.removeAttribute('tabindex');
+          } catch (e) {}
+        }
+        try { clearTimeout(autoTimeout); } catch (e) {}
+      }
+
+      tip.addEventListener('click', onUserInteract);
+      targetEl.addEventListener('input', onUserInteract, true);
+      targetEl.addEventListener('keydown', onUserInteract, true);
+      targetEl.addEventListener('blur', onBlur, true);
+      document.addEventListener('click', onDocClick, true);
+
+      const autoTimeout = setTimeout(() => { if (!userInteracted) cleanup(); }, autoDismissMs);
+
+      // attempt to focus the target (prevent scrolling since we've already scrolled the row)
+      try { if (typeof targetEl.focus === 'function') targetEl.focus({ preventScroll: true }); } catch (e) {}
+    } catch (e) { /* ignore failures showing inline tooltip */ }
+  }
+
   // Set default benefit type
   document.getElementById('benefittype').value = 'Educational Assistance';
 
@@ -162,17 +280,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     if (!confirmResult.isConfirmed) return; // user cancelled
 
     // Client-side validation (match backend required fields to avoid server 500)
-    const requiredIds = [
-      'surname', 'firstName', 'middleName', 'birthday', 'placeOfBirth',
-      'gender', 'civilstatus', 'religion', 'email', 'contact', 'academicLevel', 'year',
-      'schoolname', 'schooladdress', 'fathername', 'mothername'
-    ];
-    for (const id of requiredIds) {
-      const el = document.getElementById(id);
-      if (!el || !el.value || !el.value.toString().trim()) {
-        return Swal.fire('Missing field', `Please fill the ${id} field.`, 'warning');
-      }
-    }
+
 
   // Ensure typeOfBenefiting is present and default to Applicant
     const typeEl = document.getElementById('typeOfBenefiting') || document.getElementById('benefittype');
@@ -198,26 +306,48 @@ document.addEventListener('DOMContentLoaded', async function () {
     const fatherDigits = normalize(fatherRaw);
     const motherDigits = normalize(motherRaw);
 
-    if (contactDigits.length !== 11) {
-      return Swal.fire({ icon: 'warning', title: 'Invalid Contact', text: 'Please enter an 11-digit contact number for Applicant. You can include spaces or dashes and they will be accepted.' });
+    if (contactDigits.length !== 11 || !contactDigits.startsWith('09')) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Invalid Contact Number',
+        text: "Contact number must be 11 digits and start with '09' (e.g. 09171234567).",
+      });
+      try { const t = document.getElementById('contact'); if (t && typeof t.focus === 'function') t.focus(); } catch (e) {}
+      return;
     }
-    if (fatherDigits && fatherDigits.length !== 11) {
-      return Swal.fire({ icon: 'warning', title: 'Invalid Father Contact', text: 'Please enter an 11-digit contact number for Father, or leave it empty.' });
+    if (fatherDigits) {
+      if (fatherDigits.length !== 11 || !fatherDigits.startsWith('09')) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Invalid Contact Number',
+          text: "Please enter an 11-digit contact number for Father that starts with '09', or leave it empty.",
+        });
+        try { const t = document.getElementById('fathercontact'); if (t && typeof t.focus === 'function') t.focus(); } catch (e) {}
+        return;
+      }
     }
-    if (motherDigits && motherDigits.length !== 11) {
-      return Swal.fire({ icon: 'warning', title: 'Invalid Mother Contact', text: 'Please enter an 11-digit contact number for Mother, or leave it empty.' });
+    if (motherDigits) {
+      if (motherDigits.length !== 11 || !motherDigits.startsWith('09')) {
+        await Swal.fire({
+          icon: 'error',
+          title: 'Invalid Contact Number',
+          text: "Please enter an 11-digit contact number for Mother that starts with '09', or leave it empty.",
+        });
+        try { const t = document.getElementById('mothercontact'); if (t && typeof t.focus === 'function') t.focus(); } catch (e) {}
+        return;
+      }
     }
 
     // Append normalized contact numbers as strings (preserve leading zeroes)
-    formData.append('contactNumber', contactDigits);
+    formData.append('contactNumber', String(contactDigits)); // Ensure it's sent as string
     formData.append('school', document.getElementById('schoolname')?.value || '');
     formData.append('schoolAddress', document.getElementById('schooladdress')?.value || '');
     formData.append('year', document.getElementById('year')?.value || '');
     formData.append('typeOfBenefit', typeValue); // <-- use this name
     formData.append('fatherName', document.getElementById('fathername')?.value || '');
-  formData.append('fatherPhone', fatherDigits || '');
+  formData.append('fatherPhone', String(fatherDigits || '')); // Ensure it's sent as string
     formData.append('motherName', document.getElementById('mothername')?.value || '');
-  formData.append('motherPhone', motherDigits || '');
+  formData.append('motherPhone', String(motherDigits || '')); // Ensure it's sent as string
 
     // siblings & expenses as before
     const siblings = [];
@@ -248,17 +378,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     });
 
     if (expenses.length === 0) {
-      return Swal.fire({
-        icon: 'warning',
-        title: 'Missing Expenses',
-        text: 'Please provide at least one fee or expense.',
-      });
+      const target = document.getElementById('addExpenseBtn') || document.getElementById('expensesTable') || document.getElementById('expensesTableBody');
+      showInlineFieldWarning(target || document.getElementById('addExpenseBtn'), 'Please provide at least one fee or expense.');
+      return;
     }
 
     formData.append('expenses', JSON.stringify(expenses));
 
-    // Append file inputs (requirements)
-    const fileInputs = ['frontImage', 'backImage', 'coeImage', 'voter'];
+    // Append file inputs (requirements). Exclude parent's voter certificate for Senior High students
+    const fileInputs = ['frontImage', 'backImage', 'coeImage'];
+    try {
+      const acadVal = (document.getElementById('academicLevel') && document.getElementById('academicLevel').value) ? document.getElementById('academicLevel').value : '';
+      if (!/senior\s*high/i.test(acadVal)) {
+        fileInputs.push('voter');
+      }
+    } catch (e) { /* ignore and include voter by default below */ }
+
     for (const inputId of fileInputs) {
       const input = document.getElementById(inputId);
       if (input && input.files && input.files.length > 0) {
@@ -275,7 +410,7 @@ document.addEventListener('DOMContentLoaded', async function () {
         didOpen: () => Swal.showLoading()
       });
 
-      const response = await fetch('http://localhost:5000/api/educational-assistance', {
+      const response = await fetch(`${API_BASE}/api/educational-assistance`, {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${sessionStorage.getItem('token') || localStorage.getItem('token')}`
@@ -492,6 +627,38 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Show or hide the table header based on screen size
     const expensesTableHead = expensesTable.querySelector('thead');
     if (expensesTableHead) expensesTableHead.style.display = isMobile ? 'none' : '';
+    // Attach input handlers for expense cost fields
+    attachExpenseHandlers(expensesContainer);
+
+    // Attach handlers to expense cost inputs so decimals are disallowed and .00 remains as suffix
+    function attachExpenseHandlers(container) {
+      const root = container || document;
+      root.querySelectorAll('input.expense-cost').forEach(input => {
+        // Prevent entering decimal characters and non-digits
+        input.addEventListener('keydown', function (e) {
+          // allow navigation keys, backspace, delete
+          const allowed = ['Backspace','ArrowLeft','ArrowRight','Delete','Tab'];
+          if (allowed.includes(e.key)) return;
+          // Prevent '.' and ',' and any non-digit
+          if (!/^[0-9]$/.test(e.key)) {
+            e.preventDefault();
+          }
+        });
+
+        // On input, strip any non-digits (handle paste)
+        input.addEventListener('input', function (e) {
+          const cleaned = String(this.value).replace(/[^0-9]/g, '');
+          if (this.value !== cleaned) this.value = cleaned;
+        });
+
+        // On blur, coerce to integer (remove fractional part) and leave .00 suffix visible
+        input.addEventListener('blur', function () {
+          if (!this.value) return;
+          const n = parseInt(this.value, 10);
+          this.value = isNaN(n) ? '' : String(n);
+        });
+      });
+    }
   }
 
   // Basic styles for expense-cost wrapper (added via JS to avoid editing CSS files)
@@ -500,11 +667,17 @@ document.addEventListener('DOMContentLoaded', async function () {
     const style = document.createElement('style');
     style.id = 'expense-cost-injected-styles';
     style.textContent = `
-      .expense-cost-wrapper{display:inline-flex;align-items:center;gap:6px}
-      .expense-cost-wrapper .peso-prefix{font-weight:600}
-      .expense-cost-wrapper .peso-suffix{color:#666}
-      .expense-cost-wrapper input.expense-cost{width:120px}
-      @media(max-width:480px){ .expense-cost-wrapper input.expense-cost{width:100px} }
+      /* Place peso sign and .00 visually inside the input */
+      .expense-cost-wrapper{ position:relative; display:inline-block; }
+      .expense-cost-wrapper input.expense-cost{ box-sizing:border-box; padding-left:28px; padding-right:34px; width:120px; }
+      .expense-cost-wrapper .peso-prefix{ position:absolute; left:8px; top:50%; transform:translateY(-50%); font-weight:600; pointer-events:none; }
+      .expense-cost-wrapper .peso-suffix{ position:absolute; right:8px; top:50%; transform:translateY(-50%); color:#666; pointer-events:none; }
+      /* In card (mobile) layout, make cost input match the full width of the expense item */
+      .expense-card .expense-cost-wrapper { display:block; width:100%; }
+      .expense-card .expense-cost-wrapper input.expense-cost { width:100%; }
+      /* Make remove button occupy full row width */
+      .removeExpenseBtn { width:100%; display:block; padding:8px; margin-top:10px; }
+      @media(max-width:480px){ .expense-cost-wrapper input.expense-cost{ width:100px } }
     `;
     document.head.appendChild(style);
   })();
@@ -545,13 +718,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     showImagePreview('backImage');
   });
 
-  // Navbar: Mobile menu toggle
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-
-  hamburger.addEventListener('click', function() {
-    mobileMenu.classList.toggle('active'); // Assuming 'active' class shows the menu
-  });
+  // Navbar and navigation logic is now handled by shared navbar.js
+  // All local hamburger/nav button code removed for maintainability.
 
   // Helper function to truncate file names
   function truncateFileName(fileName, maxLength = 6) {
@@ -848,6 +1016,46 @@ if (form && savedFormData) {
       yearWrapper.style.display = '';
     }
 
+    // Helper: hide/show voter ID requirement when academic level is Senior High
+    function isSeniorHigh(level) {
+      return /senior\s*high/i.test((level || '').toString());
+    }
+
+    function toggleVoterVisibility(level) {
+      try {
+        const label = document.getElementById('voterLabel');
+        const input = document.getElementById('voter');
+        const viewIcon = document.getElementById('viewVoter');
+        const deleteIcon = document.getElementById('deleteVoter');
+        // find enclosing table row if present
+        let row = null;
+        if (label) row = label.closest && label.closest('tr');
+        if (!row && viewIcon) row = viewIcon.closest && viewIcon.closest('tr');
+        // Determine desired state
+        const hide = isSeniorHigh(level);
+        if (row) row.style.display = hide ? 'none' : '';
+        // If hiding, also clear file input and filename UI so it isn't submitted
+        if (input) {
+          try {
+            // Toggle the required attribute so native validation doesn't try to focus hidden inputs
+            input.required = !hide;
+            if (!hide) input.setAttribute('required', ''); else input.removeAttribute('required');
+            // Clear value when hiding to avoid accidental submission
+            if (hide) input.value = '';
+          } catch (e) { /* ignore input toggling errors */ }
+        }
+        const fname = document.getElementById('voterFileName');
+        if (fname) {
+          if (hide) { fname.textContent = ''; fname.classList.remove('visible'); }
+        }
+        if (viewIcon) viewIcon.style.display = hide ? 'none' : '';
+        if (deleteIcon) deleteIcon.style.display = hide ? 'none' : '';
+      } catch (e) { /* ignore errors toggling voter row */ }
+    }
+
+    // Apply initial voter visibility based on restored or current value
+    try { toggleVoterVisibility(savedAcademic || academicLevelEl.value || ''); } catch (e) {}
+
     // When the user changes academic level, repopulate year options and clear invalid year
     academicLevelEl.addEventListener('change', function () {
       const lvl = academicLevelEl.value || '';
@@ -866,6 +1074,8 @@ if (form && savedFormData) {
           if (s && s.year) { delete s.year; sessionStorage.setItem('educationalAssistanceFormData', JSON.stringify(s)); }
         }
       } catch (e) { /* ignore */ }
+      // Toggle voter requirement visibility when academic level changes
+      try { toggleVoterVisibility(lvl); } catch (e) { }
     });
   } else {
     if (savedYear && yearEl) { yearEl.value = savedYear; }
@@ -1031,256 +1241,9 @@ if (form) {
   });
 });
 
-// KK Profile Navigation
-function handleKKProfileNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
-  .then(async ([cycleRes, profileRes]) => {
-    let cycleData = await cycleRes.json().catch(() => null);
-    let profileData = await profileRes.json().catch(() => ({}));
-    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-    const formName = latestCycle?.formName || "KK Profiling";
-    const isFormOpen = latestCycle?.isOpen ?? false;
-    const hasProfile = profileRes.ok && profileData && profileData._id;
-    // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `The ${formName} is currently closed`,
-        text: `but you already have a ${formName} profile. Do you want to view your response?`,
-        showCancelButton: true,
-        confirmButtonText: "Yes, view my response",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
-      });
-      return;
-    }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "warning",
-        title: `The ${formName} form is currently closed`,
-        text: "You cannot submit a new response at this time.",
-        confirmButtonText: "OK"
-      });
-      return;
-    }
-    // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
-      Swal.fire({
-        title: `You already answered ${formName} Form`,
-        text: "Do you want to view your response?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
-      });
-      return;
-    }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "kkform-personal.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-  })
-  .catch(() => window.location.href = "kkform-personal.html");
-}
+// All nav handler implementations removed; navigation is now handled by navbar.js
 
-// LGBTQ+ Profile Navigation
-function handleLGBTQProfileNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
-  .then(async ([cycleRes, profileRes]) => {
-    let cycleData = await cycleRes.json().catch(() => null);
-    let profileData = await profileRes.json().catch(() => ({}));
-    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-    const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
-    const isFormOpen = latestCycle?.isOpen ?? false;
-    const hasProfile = profileData && profileData._id ? true : false;
-    // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `The ${formName} is currently closed`,
-        text: `but you already have a ${formName} profile. Do you want to view your response?`,
-        showCancelButton: true,
-        confirmButtonText: "Yes, view my response",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-      });
-      return;
-    }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "warning",
-        title: `The ${formName} form is currently closed`,
-        text: "You cannot submit a new response at this time.",
-        confirmButtonText: "OK"
-      });
-      return;
-    }
-    // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
-      Swal.fire({
-        title: `You already answered ${formName} Form`,
-        text: "Do you want to view your response?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-      });
-      return;
-    }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "lgbtqform.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-  })
-  .catch(() => window.location.href = "lgbtqform.html");
-}
 
-// Educational Assistance Navigation
-function handleEducAssistanceNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
-  .then(async ([cycleRes, profileRes]) => {
-    let cycleData = await cycleRes.json().catch(() => null);
-    let profileData = await profileRes.json().catch(() => ({}));
-    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-    const formName = latestCycle?.formName || "Educational Assistance";
-    const isFormOpen = latestCycle?.isOpen ?? false;
-    const hasProfile = profileData && profileData._id ? true : false;
-    // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `The ${formName} is currently closed`,
-        text: `but you already have an application. Do you want to view your response?`,
-        showCancelButton: true,
-        confirmButtonText: "Yes, view my response",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-      });
-      return;
-    }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "warning",
-        title: `The ${formName} form is currently closed`,
-        text: "You cannot submit a new application at this time.",
-        confirmButtonText: "OK"
-      });
-      return;
-    }
-    // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
-      Swal.fire({
-        title: `You already applied for ${formName}`,
-        text: "Do you want to view your response?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-      });
-      return;
-    }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "Educational-assistance-user.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-  })
-  .catch(() => window.location.href = "Educational-assistance-user.html");
-}
-
-document.addEventListener('DOMContentLoaded', function() {
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
-
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-});
 
 // remove the stray removal at file bottom (do not clear saved data on load)
 // localStorage.removeItem('educationalAssistanceFormData');

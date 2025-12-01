@@ -12,5 +12,10 @@ const storage = new CloudinaryStorage({
 });
 
 const uploadLGBTQIdImage = multer({ storage });
+// Diagnostic: log when multer/cloudinary middleware is invoked
+module.exports = (...args) => {
+  console.log('==> uploadLGBTQIdImage middleware invoked');
+  return uploadLGBTQIdImage(...args);
+};
 
 module.exports = uploadLGBTQIdImage;

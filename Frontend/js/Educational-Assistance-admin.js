@@ -41,7 +41,13 @@
   }
 })();
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  // Runtime-resolved API base for dev/prod. Use window.API_BASE in production.
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   const tabButtons = document.querySelectorAll(".tab-btn");
   const tabContents = document.querySelectorAll(".tab-content");
 
@@ -85,7 +91,7 @@ let applicants = [];
   async function fetchFormCycles() {
     try {
       const token = sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/formcycle/educ", {
+      const res = await fetch(`${API_BASE}/api/formcycle/educ`, {
         headers: {
           "Content-Type": "application/json",
           ...(token && { Authorization: `Bearer ${token}` })
@@ -199,7 +205,7 @@ let applicants = [];
     if (selectedCycle) params.push(`cycle=${selectedCycle}`);
     if (searchInput.value) params.push(`search=${encodeURIComponent(searchInput.value)}`);
     const queryString = params.length ? `?${params.join('&')}` : '';
-    const endpoint = `http://localhost:5000/api/educational-assistance/filter${queryString}`;
+    const endpoint = `${API_BASE}/api/educational-assistance/filter${queryString}`;
 
     try {
       const token = sessionStorage.getItem("token");
@@ -229,6 +235,21 @@ let applicants = [];
     const pendingApps = sortByNewest(data.filter(app => app.status === "pending"));
     const approvedApps = sortByNewest(data.filter(app => app.status === "approved"));
     const rejectedApps = sortByNewest(data.filter(app => app.status === "rejected"));
+
+    // Update tab button counts
+    const pendingBtn = document.querySelector('.tab-btn[data-tab="pending"]');
+    const approvedBtn = document.querySelector('.tab-btn[data-tab="approved"]');
+    const rejectedBtn = document.querySelector('.tab-btn[data-tab="rejected"]');
+    
+    if (pendingBtn) {
+      pendingBtn.innerHTML = `<i class="fas fa-clock"></i> Pending <span style="background: #ff6b6b; color: white; border-radius: 12px; padding: 2px 8px; font-size: 12px; margin-left: 6px; font-weight: 600;">${pendingApps.length}</span>`;
+    }
+    if (approvedBtn) {
+      approvedBtn.innerHTML = `<i class="fas fa-check-circle"></i> Approved <span style="background: #51cf66; color: white; border-radius: 12px; padding: 2px 8px; font-size: 12px; margin-left: 6px; font-weight: 600;">${approvedApps.length}</span>`;
+    }
+    if (rejectedBtn) {
+      rejectedBtn.innerHTML = `<i class="fas fa-times-circle"></i> Rejected <span style="background: #ffa94d; color: white; border-radius: 12px; padding: 2px 8px; font-size: 12px; margin-left: 6px; font-weight: 600;">${rejectedApps.length}</span>`;
+    }
 
     // Search filter
     const searchTerm = searchInput.value.toLowerCase();
@@ -393,7 +414,7 @@ let applicants = [];
     // Fetch latest data from backend to ensure isRead is updated
     const token = sessionStorage.getItem("token");
     const response = await fetch(
-      `http://localhost:5000/api/educational-assistance/${app._id}`,
+      `${API_BASE}/api/educational-assistance/${app._id}`,
       {
         headers: { Authorization: `Bearer ${token}` }
       }
@@ -636,7 +657,7 @@ let applicants = [];
           const loadingModal = document.getElementById("loadingModal");
           loadingModal.style.display = "flex";
           try {
-            const res = await fetch(`http://localhost:5000/api/educational-assistance/${app._id}/status`, {
+            const res = await fetch(`${API_BASE}/api/educational-assistance/${app._id}/status`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -723,7 +744,7 @@ let applicants = [];
           loadingModal.style.display = "flex";
 
           try {
-            const res = await fetch(`http://localhost:5000/api/educational-assistance/${app._id}/status`, {
+            const res = await fetch(`${API_BASE}/api/educational-assistance/${app._id}/status`, {
               method: 'PUT',
               headers: {
                 'Content-Type': 'application/json',
@@ -816,7 +837,7 @@ function attachDeleteHandlers() {
       if (confirm.isConfirmed) {
         try {
           const token = sessionStorage.getItem("token");
-          await fetch(`http://localhost:5000/api/educational-assistance/${appId}`, {
+          await fetch(`${API_BASE}/api/educational-assistance/${appId}`, {
             method: "DELETE",
             headers: {
               Authorization: `Bearer ${token}`
@@ -893,7 +914,7 @@ clearFilterBtn.addEventListener("click", () => {
   async function fetchNotifications() {
     const token = sessionStorage.getItem("token");
     // Fetch all pending notifications (regardless of read)
-    const res = await fetch('http://localhost:5000/api/notifications/educational/pending', {
+    const res = await fetch(`${API_BASE}/api/notifications/educational/pending`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     let allNotifs = await res.json();
@@ -918,6 +939,31 @@ clearFilterBtn.addEventListener("click", () => {
     // --- Render lists as before ---
     renderNotifList(notifListNew, newNotifs, false);
     renderNotifList(notifListOverdue, overdueNotifs, true);
+
+    // --- Update bell and sidebar badges based on what's in the modal ---
+    try {
+      const totalPending = Array.isArray(allNotifs) ? allNotifs.length : 0;
+      const bellBadge = document.getElementById('notifBadge');
+      const sidebarBadge = document.getElementById('sidebarEducNotifBadge');
+      if (bellBadge) {
+        if (totalPending > 0) {
+          bellBadge.textContent = totalPending;
+          bellBadge.style.display = 'inline-block';
+        } else {
+          bellBadge.style.display = 'none';
+        }
+      }
+      if (sidebarBadge) {
+        if (totalPending > 0) {
+          sidebarBadge.textContent = totalPending;
+          sidebarBadge.style.display = 'inline-block';
+        } else {
+          sidebarBadge.style.display = 'none';
+        }
+      }
+    } catch (e) {
+      // ignore badge update errors
+    }
   }
 
   function renderNotifList(container, notifs, isOverdue) {
@@ -960,8 +1006,8 @@ clearFilterBtn.addEventListener("click", () => {
   });
 
   // --- SOCKET.IO REALTIME ARRIVAL ---
-  // Only ONE socket connection and listeners!
-  const socket = io("http://localhost:5000", { transports: ["websocket"] });
+  // Only ONE socket connection and listeners! socket will use the API_BASE defined above
+  const socket = io(API_BASE, { transports: ["websocket"] });
 
   // Real-time badge update and toast
   socket.on("educational-assistance:newSubmission", () => {
@@ -982,44 +1028,44 @@ clearFilterBtn.addEventListener("click", () => {
     updateNotifBadge();
   });
 
-  // Call badge update on page load
-  updateNotifBadge();
+  // Define updateNotifBadge function inside the listener so it has access to API_BASE
+  async function updateNotifBadge() {
+    const token = sessionStorage.getItem("token");
+    try {
+      const res = await fetch(`${API_BASE}/api/notifications/educational/pending/count`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      const count = data.count || 0;
+      const badge = document.getElementById('notifBadge');
+      if (badge) {
+        if (count > 0) {
+          badge.textContent = count;
+          badge.style.display = 'inline-block';
+        } else {
+          badge.style.display = 'none';
+        }
+      }
+    } catch (err) {
+      console.error('Failed to update notification badge:', err);
+      const badge = document.getElementById('notifBadge');
+      if (badge) badge.style.display = 'none';
+    }
+  }
+
+  // Call badge update on page load and set up polling
+  await updateNotifBadge();
+  setInterval(updateNotifBadge, 10000);
 
     const params = new URLSearchParams(window.location.search);
-  const id = params.get("id");
-  if (id && typeof showApplicantModal === "function") {
-    fetch(`http://localhost:5000/api/educational-assistance/${id}`, {
-      headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-    })
-    .then(res => res.json())
-    .then(app => {
-      if (app && app._id) showApplicantModal(app);
-    });
-  }
-});
-
-// Remove any duplicate socket initializations and listeners below this point!
-
-// --- Add or ensure this function exists ---
-async function updateNotifBadge() {
-  const token = sessionStorage.getItem("token");
-  try {
-    const res = await fetch('http://localhost:5000/api/notifications/educational/pending/count', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const data = await res.json();
-    const count = data.count || 0;
-    const badge = document.getElementById('notifBadge');
-    if (badge) {
-      if (count > 0) {
-        badge.textContent = count;
-        badge.style.display = 'inline-block';
-      } else {
-        badge.style.display = 'none';
-      }
+    const id = params.get("id");
+    if (id && typeof showApplicantModal === "function") {
+      fetch(`${API_BASE}/api/educational-assistance/${id}`, {
+        headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
+      })
+      .then(res => res.json())
+      .then(app => {
+        if (app && app._id) showApplicantModal(app);
+      });
     }
-  } catch (err) {
-    const badge = document.getElementById('notifBadge');
-    if (badge) badge.style.display = 'none';
-  }
-}
+});

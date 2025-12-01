@@ -1,6 +1,11 @@
 document.addEventListener("DOMContentLoaded", () => {
   // Only check for token, not role
   const token = sessionStorage.getItem("token"); // <-- Use only sessionStorage
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
 
 (function() {
   const token = sessionStorage.getItem("token"); // <-- Use only sessionStorage
@@ -44,9 +49,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Map export type to formcycle endpoint
   const cycleEndpoints = {
-    kk: "http://localhost:5000/api/formcycle/kk",
-    educational: "http://localhost:5000/api/formcycle/educ",
-    lgbtq: "http://localhost:5000/api/formcycle/lgbtq"
+    kk: `${API_BASE}/api/formcycle/kk`,
+    educational: `${API_BASE}/api/formcycle/educ`,
+    lgbtq: `${API_BASE}/api/formcycle/lgbtq`
   };
 
   // Show modal when export button clicked
@@ -132,13 +137,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     let endpoint = "";
-    if (exportType === "kk") {
+      if (exportType === "kk") {
       // Updated KK Profiling Export API
-      endpoint = `http://localhost:5000/api/kkprofiling/export-template?year=${year}&cycle=${cycle}`;
+      endpoint = `${API_BASE}/api/kkprofiling/export-template?year=${year}&cycle=${cycle}`;
     } else if (exportType === "educational") {
-      endpoint = `http://localhost:5000/api/educational-assistance/export/excel?year=${year}&cycle=${cycle}`;
+      endpoint = `${API_BASE}/api/educational-assistance/export/excel?year=${year}&cycle=${cycle}`;
     } else if (exportType === "lgbtq") {
-      endpoint = `http://localhost:5000/api/lgbtqprofiling/export/excel?year=${year}&cycle=${cycle}`;
+      endpoint = `${API_BASE}/api/lgbtqprofiling/export/excel?year=${year}&cycle=${cycle}`;
     }
 
     try {
@@ -229,9 +234,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const endpoints = {
-    "KK Profiling": "http://localhost:5000/api/formcycle/kk",
-    "LGBTQIA+ Profiling": "http://localhost:5000/api/formcycle/lgbtq",
-    "Educational Assistance": "http://localhost:5000/api/formcycle/educ"
+    "KK Profiling": `${API_BASE}/api/formcycle/kk`,
+    "LGBTQIA+ Profiling": `${API_BASE}/api/formcycle/lgbtq`,
+    "Educational Assistance": `${API_BASE}/api/formcycle/educ`
   };
 
   // Fetch current cycle status for all forms
@@ -351,7 +356,7 @@ document.addEventListener("DOMContentLoaded", () => {
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
-      const res = await fetch("http://localhost:5000/api/formcycle/toggle", {
+      const res = await fetch(`${API_BASE}/api/formcycle/toggle`, {
         method: "PUT",
         headers: {
           "Authorization": `Bearer ${token}`,
@@ -375,7 +380,7 @@ document.addEventListener("DOMContentLoaded", () => {
         if (!openCycle && formName === "KK Profiling") {
           const newYear = year;
           const newCycleNumber = yearCycleCount + 1;
-          await fetch("http://localhost:5000/api/cycle-predict", {
+          await fetch(`${API_BASE}/api/cycle-predict`, {
             method: "POST",
             headers: {
               "Authorization": `Bearer ${token}`,
@@ -442,7 +447,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     const token = sessionStorage.getItem("token") || "";
     try {
-      const res = await fetch(`http://localhost:5000/api/formcycle/history?formName=${encodeURIComponent(formName)}`, {
+      const res = await fetch(`${API_BASE}/api/formcycle/history?formName=${encodeURIComponent(formName)}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) {
@@ -495,8 +500,8 @@ document.addEventListener("DOMContentLoaded", () => {
   let socket = null;
   if (typeof io !== "undefined") {
     try {
-      // ensure this URL matches your backend (port 5000)
-      socket = io("http://localhost:5000", {
+      // ensure this URL matches your backend
+      socket = io(API_BASE, {
         // send token to server if you validate sockets
         auth: { token: sessionStorage.getItem("token") || "" },
         transports: ["websocket", "polling"],
@@ -524,9 +529,9 @@ document.addEventListener("DOMContentLoaded", () => {
     emptyEl.style.display = "none";
 
     const endpoints = [
-      { key: "kk", form: "KK Profiling", url: "http://localhost:5000/api/formcycle/kk" },
-      { key: "lgbtq", form: "LGBTQIA+ Profiling", url: "http://localhost:5000/api/formcycle/lgbtq" },
-      { key: "educ", form: "Educational Assistance", url: "http://localhost:5000/api/formcycle/educ" }
+      { key: "kk", form: "KK Profiling", url: `${API_BASE}/api/formcycle/kk` },
+      { key: "lgbtq", form: "LGBTQIA+ Profiling", url: `${API_BASE}/api/formcycle/lgbtq` },
+      { key: "educ", form: "Educational Assistance", url: `${API_BASE}/api/formcycle/educ` }
     ];
 
     try {
@@ -772,23 +777,23 @@ async function fetchDeletedProfiles() {
 
     if (filter === "kk") {
       // Only KK deleted profiles
-      const resKK = await fetch("http://localhost:5000/api/kkprofiling/deleted", {
+      const resKK = await fetch(`${API_BASE}/api/kkprofiling/deleted`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       profiles = (await resKK.json()).map(p => ({ ...p, type: "KK" }));
     } else if (filter === "lgbtq") {
       // Only LGBTQ deleted profiles
-      const resLGBTQ = await fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
+      const resLGBTQ = await fetch(`${API_BASE}/api/lgbtqprofiling/deleted`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       profiles = (await resLGBTQ.json()).map(p => ({ ...p, type: "LGBTQ" }));
     } else {
       // All deleted profiles (KK + LGBTQ)
-      const [resKK, resLGBTQ] = await Promise.all([
-        fetch("http://localhost:5000/api/kkprofiling/deleted", {
+        const [resKK, resLGBTQ] = await Promise.all([
+        fetch(`${API_BASE}/api/kkprofiling/deleted`, {
           headers: { Authorization: `Bearer ${token}` }
         }),
-        fetch("http://localhost:5000/api/lgbtqprofiling/deleted", {
+        fetch(`${API_BASE}/api/lgbtqprofiling/deleted`, {
           headers: { Authorization: `Bearer ${token}` }
         })
       ]);
@@ -838,8 +843,8 @@ async function fetchDeletedProfiles() {
         const id = btn.dataset.id;
         const type = btn.dataset.type;
         const endpoint = type === "KK"
-          ? `http://localhost:5000/api/kkprofiling/${id}/restore`
-          : `http://localhost:5000/api/lgbtqprofiling/${id}/restore`;
+          ? `${API_BASE}/api/kkprofiling/${id}/restore`
+          : `${API_BASE}/api/lgbtqprofiling/${id}/restore`;
         const result = await Swal.fire({
           title: "Restore Profile?",
           text: "Are you sure you want to restore this profile?",
@@ -877,8 +882,8 @@ async function fetchDeletedProfiles() {
         const id = btn.dataset.id;
         const type = btn.dataset.type;
         const endpoint = type === "KK"
-          ? `http://localhost:5000/api/kkprofiling/${id}/permanent`
-          : `http://localhost:5000/api/lgbtqprofiling/${id}/permanent`;
+          ? `${API_BASE}/api/kkprofiling/${id}/permanent`
+          : `${API_BASE}/api/lgbtqprofiling/${id}/permanent`;
         const result = await Swal.fire({
           title: "Delete ?",
           text: "This action cannot be undone. Are you sure?",

@@ -3,6 +3,11 @@ import { setupVerifyEmail } from './verify-email.js';
 // Token validation helper function
 
 document.addEventListener("DOMContentLoaded", function () {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // OTP lockout check on page load
   const unlockAt = localStorage.getItem('otpLockoutUntil');
   if (unlockAt && Date.now() < unlockAt) {
@@ -51,7 +56,7 @@ document.addEventListener("DOMContentLoaded", function () {
   // Fetch User Info
   (async function () {
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -144,12 +149,31 @@ document.addEventListener("DOMContentLoaded", function () {
           if (shouldDisable) {
             el.classList.add('disabled');
             el.setAttribute('aria-disabled', 'true');
-            // For anchors, prevent navigation via href by setting role/button
-            el.style.pointerEvents = 'auto'; // keep pointer to allow click handler to show warning
+            // Attach a blocking click handler to prevent other listeners (navbar.js) from running
+            if (!el.__unverifiedHandlerAttached) {
+              el.addEventListener('click', function (e) {
+                // Prevent default navigation and stop other handlers (including navbar.js)
+                try {
+                  e.preventDefault();
+                  e.stopImmediatePropagation();
+                } catch (err) {}
+                Swal.fire({
+                  icon: 'warning',
+                  title: 'Account Verification Required',
+                  text: 'Please verify your account to access this feature.',
+                  confirmButtonText: 'OK'
+                });
+              });
+              el.__unverifiedHandlerAttached = true;
+            }
           } else {
             el.classList.remove('disabled');
             el.removeAttribute('aria-disabled');
-            el.style.pointerEvents = '';
+            // Remove the blocking handler if present
+            if (el.__unverifiedHandlerAttached) {
+              // We cannot remove anonymous listener; mark prevents future double-attach and leave existing listener harmless
+              el.__unverifiedHandlerAttached = false;
+            }
           }
         });
       })();
@@ -203,6 +227,15 @@ document.addEventListener("DOMContentLoaded", function () {
       if (el) el.value = value || "";
     }
 
+    // Helper: convert to Title Case (first letter uppercase, rest lowercase per word)
+    function titleCase(str) {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+    }
+
     // Helper: calculate age from birthday
     function calculateAge(birthday) {
       if (!birthday) return "";
@@ -218,23 +251,19 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Fetch KKProfile Data (Full Name, Gender, etc.)
     try {
-      const kkRes = await fetch("http://localhost:5000/api/kkprofiling/me", {
+      const kkRes = await fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (kkRes.ok) {
         const kkProfile = await kkRes.json();
 
-        // Construct full name: firstname middle initial lastname
+        // Construct full name: firstname middle initial lastname (normalized to Title Case)
+        const firstNameNorm = titleCase(kkProfile.firstname || '');
         const middleInitial = kkProfile.middlename
-          ? kkProfile.middlename.charAt(0).toUpperCase() + "."
+          ? titleCase(kkProfile.middlename).charAt(0) + "."
           : "";
-        const fullName = [
-          kkProfile.firstname || "",
-          middleInitial,
-          kkProfile.lastname || ""
-        ]
-          .filter(Boolean)
-          .join(" ");
+        const lastNameNorm = titleCase(kkProfile.lastname || '');
+        const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(" ");
         setValue("fullName", fullName);
 
         // ✅ Age comes from User's birthday
@@ -250,13 +279,15 @@ document.addEventListener("DOMContentLoaded", function () {
         // If no KK profile for current cycle (404), try to fetch the user's most recent previous profile
         if (kkRes.status === 404) {
           console.info('No KK profile for current cycle; attempting to fetch previous cycle profile');
-          try {
-            const prevRes = await fetch('http://localhost:5000/api/kkprofiling/me/previous', { headers: { Authorization: `Bearer ${token}` } });
+            try {
+            const prevRes = await fetch(`${API_BASE}/api/kkprofiling/me/previous`, { headers: { Authorization: `Bearer ${token}` } });
             if (prevRes.ok) {
               const prev = await prevRes.json();
               // populate fields from previous profile
-              const middleInitial = prev.middlename ? prev.middlename.charAt(0).toUpperCase() + '.' : '';
-              const fullName = [prev.firstname || '', middleInitial, prev.lastname || ''].filter(Boolean).join(' ');
+              const firstNameNorm = titleCase(prev.firstname || '');
+              const middleInitial = prev.middlename ? titleCase(prev.middlename).charAt(0) + '.' : '';
+              const lastNameNorm = titleCase(prev.lastname || '');
+              const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user && user.birthday) setValue('age', calculateAge(user.birthday));
               if (prev.gender) setValue('gender', prev.gender);
@@ -267,16 +298,16 @@ document.addEventListener("DOMContentLoaded", function () {
               const profileImg = document.getElementById('profile-img');
               if (profileImg && prev.profileImage) {
                 const imageUrl = prev.profileImage;
-                const resolved = imageUrl.startsWith('http') ? imageUrl : `http://localhost:5000/${imageUrl}`;
+                const resolved = imageUrl.startsWith('http') ? imageUrl : `${API_BASE}/${imageUrl}`;
                 prevProfileImageUrl = resolved;
                 profileImg.src = resolved;
               }
             } else {
               console.info('No previous KK profile available; falling back to user data');
               if (user) {
-                const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
-                const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
-                const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+                const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
+                const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
+                const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
                 const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
                 if (fullName) setValue('fullName', fullName);
                 if (user.birthday) setValue('age', calculateAge(user.birthday));
@@ -285,12 +316,12 @@ document.addEventListener("DOMContentLoaded", function () {
                 if (user.civilstatus || user.civilStatus) setValue('civilStatus', user.civilstatus || user.civilStatus);
               }
             }
-          } catch (e) {
+            } catch (e) {
             console.warn('Failed to fetch previous KK profile', e);
             if (user) {
-              const firstNameFallback = user.firstname || user.firstName || user.givenName || '';
-              const lastNameFallback = user.lastname || user.lastName || user.familyName || user.surname || '';
-              const middleInitialFromUser = (user.middlename || user.middleName) ? (user.middlename || user.middleName).charAt(0).toUpperCase() + '.' : '';
+              const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
+              const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
+              const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
               const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user.birthday) setValue('age', calculateAge(user.birthday));
@@ -317,14 +348,14 @@ document.addEventListener("DOMContentLoaded", function () {
       if (prevProfileImageUrl && profileImg) {
         profileImg.src = prevProfileImageUrl;
       } else {
-      const imgRes = await fetch("http://localhost:5000/api/kkprofiling/me/image", {
+      const imgRes = await fetch(`${API_BASE}/api/kkprofiling/me/image`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (imgRes.ok) {
         const { imageUrl } = await imgRes.json();
         if (profileImg) {
           if (imageUrl) {
-            profileImg.src = imageUrl.startsWith("http") ? imageUrl : `http://localhost:5000/${imageUrl}`;
+            profileImg.src = imageUrl.startsWith("http") ? imageUrl : `${API_BASE}/${imageUrl}`;
           } else {
             // No KK profile image, use default
             profileImg.src = "../../assets/default-profile.jpg";
@@ -371,7 +402,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
         try {
-          const res = await fetch("http://localhost:5000/api/users/change-email/unverified", {
+          const res = await fetch(`${API_BASE}/api/users/change-email/unverified`, {
             method: "POST",
             headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
             body: JSON.stringify({ newEmail })
@@ -413,7 +444,7 @@ document.addEventListener("DOMContentLoaded", function () {
         }
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
         try {
-          const res = await fetch("http://localhost:5000/api/users/change-email", {
+          const res = await fetch(`${API_BASE}/api/users/change-email`, {
             method: "POST",
             headers: {
               "Content-Type": "application/json",
@@ -511,7 +542,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function checkOtpSendLockout() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -548,7 +579,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function checkVerificationOtpLockout(email) {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -632,20 +663,6 @@ if (logoutBtn) {
 }
 // ...existing code...
 
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function (e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    // Ensure the dropdown menu hides when clicking outside of it
-    document.addEventListener('click', function (e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
 
   // --- SETTINGS ICON & MODAL ---
   const settingsIcon = document.getElementById("settingsIcon");
@@ -694,8 +711,8 @@ if (logoutBtn) {
       container = document.createElement('div');
       container.className = 'pw-container';
       // make the container take the same width as the input
-      container.style.display = 'inline-block';
-      container.style.width = input.style.width || getComputedStyle(input).width || '100%';
+      container.style.display = 'block';
+      container.style.width = '100%';
       container.style.position = 'relative';
       input.parentNode.insertBefore(container, input);
       container.appendChild(input);
@@ -709,7 +726,7 @@ if (logoutBtn) {
 
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.className = 'pw-toggle';
+    btn.className = `pw-toggle pw-toggle-${inputId}`;
     btn.setAttribute('aria-pressed', 'false');
     btn.setAttribute('aria-label', 'Show password');
     btn.style.position = 'absolute';
@@ -746,12 +763,88 @@ if (logoutBtn) {
   // Attach toggles for change-password inputs if present
   ['currentPassword', 'newPassword', 'confirmNewPassword'].forEach(id => attachPasswordToggle(id));
 
+  // Password strength UI for change-password (newPassword)
+  (function attachChangePasswordStrength() {
+    const newPw = document.getElementById('newPassword');
+    const confirmPw = document.getElementById('confirmNewPassword');
+    const form = document.getElementById('changePasswordForm');
+    if (!newPw || !form) return;
+
+    const container = document.createElement('div');
+    container.id = 'changePwRequirements';
+    container.style.marginTop = '8px';
+    container.style.marginBottom = '16px';
+    container.style.fontSize = '0.65rem';
+    container.style.textAlign = 'left';
+    container.innerHTML = `
+      <div style="display:flex;flex-direction:column;gap:8px;text-align:left;" aria-live="polite">
+        <div id="chg-pw-req-length" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters</div>
+        <div id="chg-pw-req-special" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character</div>
+        <div id="chg-pw-req-upper" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter</div>
+        <div id="chg-pw-req-number" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number</div>
+      </div>
+    `;
+    confirmPw.insertAdjacentElement('afterend', container);
+
+    const reqLength = document.getElementById('chg-pw-req-length');
+    const reqUpper = document.getElementById('chg-pw-req-upper');
+    const reqNumber = document.getElementById('chg-pw-req-number');
+    const reqSpecial = document.getElementById('chg-pw-req-special');
+
+    function checkPassword(pw) {
+      return {
+        length: pw.length >= 8,
+        upper: /[A-Z]/.test(pw),
+        number: /\d/.test(pw),
+        special: /[\W_]/.test(pw)
+      };
+    }
+
+    function updateUI() {
+      const pw = newPw.value || '';
+      const cpw = confirmPw ? confirmPw.value || '' : '';
+      const res = checkPassword(pw);
+
+      // If no input, show plain text without icons
+      if (!pw) {
+        reqLength.textContent = 'At least 8 characters';
+        reqLength.style.color = '#666';
+        reqUpper.textContent = 'At least one uppercase letter';
+        reqUpper.style.color = '#666';
+        reqNumber.textContent = 'At least one number';
+        reqNumber.style.color = '#666';
+        reqSpecial.textContent = 'At least one special character';
+        reqSpecial.style.color = '#666';
+      } else {
+        // Show checkmarks/X icons when there's input
+        reqLength.innerHTML = res.length ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least 8 characters' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters';
+        reqLength.style.color = res.length ? '#1a8a1a' : '#c33';
+        reqUpper.innerHTML = res.upper ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one uppercase letter' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter';
+        reqUpper.style.color = res.upper ? '#1a8a1a' : '#c33';
+        reqNumber.innerHTML = res.number ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one number' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number';
+        reqNumber.style.color = res.number ? '#1a8a1a' : '#c33';
+        reqSpecial.innerHTML = res.special ? '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one special character' : '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character';
+        reqSpecial.style.color = res.special ? '#1a8a1a' : '#c33';
+      }
+
+      const all = res.length && res.upper && res.number && res.special;
+      // disable submit if requirements not met
+      const submitBtn = form.querySelector('button[type="submit"]');
+      if (submitBtn) submitBtn.disabled = !all;
+    }
+
+    newPw.addEventListener('input', updateUI);
+    if (confirmPw) confirmPw.addEventListener('input', updateUI);
+    setTimeout(updateUI, 0);
+  })();
+
   // --- Change Password ---
   document.getElementById("changePasswordForm").addEventListener("submit", async function (e) {
     e.preventDefault();
     const currentPassword = document.getElementById("currentPassword").value;
     const newPassword = document.getElementById("newPassword").value;
     const confirmNewPassword = document.getElementById("confirmNewPassword").value;
+    
     if (newPassword !== confirmNewPassword) {
       Swal.fire({
         icon: "error",
@@ -761,9 +854,20 @@ if (logoutBtn) {
       });
       return;
     }
+    
+    if (currentPassword === newPassword) {
+      Swal.fire({
+        icon: "error",
+        title: "Invalid Password",
+        text: "New password must be different from your current password.",
+        confirmButtonColor: "#0A2C59"
+      });
+      return;
+    }
+    
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/change-password", {
+      const res = await fetch(`${API_BASE}/api/users/change-password`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -865,7 +969,7 @@ if (logoutBtn) {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     let userData;
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -900,7 +1004,7 @@ if (logoutBtn) {
     });
 
     try {
-      const res = await fetch("http://localhost:5000/api/users/change-email/send-otp", {
+      const res = await fetch(`${API_BASE}/api/users/change-email/send-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
       });
@@ -1014,7 +1118,7 @@ if (logoutBtn) {
     verifyEmailOtpBtn.disabled = true;
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/change-email/verify-otp", {
+      const res = await fetch(`${API_BASE}/api/users/change-email/verify-otp`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ otp })
@@ -1053,7 +1157,7 @@ if (logoutBtn) {
     verifyEmailOtpBtn.disabled = true;
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/users/change-email", {
+      const res = await fetch(`${API_BASE}/api/users/change-email`, {
         method: "POST",
         headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ newEmail, otp: verifiedOtpValue })
@@ -1263,7 +1367,7 @@ if (logoutBtn) {
         didOpen: () => Swal.showLoading()
       });
       try {
-        const res = await fetch("http://localhost:5000/api/users/change-email/send-otp", {
+        const res = await fetch(`${API_BASE}/api/users/change-email/send-otp`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` }
         });
@@ -1336,7 +1440,7 @@ if (logoutBtn) {
   async function checkResendLockoutOnOpen() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/users/me", {
+      const res = await fetch(`${API_BASE}/api/users/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (res.ok) {
@@ -1364,7 +1468,7 @@ if (logoutBtn) {
   }
 
   // Connect to Socket.IO server
-  const socket = io('http://localhost:5000'); // adjust port if needed
+  const socket = io(API_BASE); // connect using runtime API_BASE
 
   // Join room for this user (use email or userId)
   const userEmail = user?.email; // get user's email from profile
@@ -1403,10 +1507,10 @@ if (logoutBtn) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -1482,10 +1586,10 @@ if (logoutBtn) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -1567,10 +1671,10 @@ if (logoutBtn) {
     }
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
+      fetch(`${API_BASE}/api/educational-assistance/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -1641,32 +1745,9 @@ if (logoutBtn) {
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }
   // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
-
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-
-    // Educational Assistance - prefer reusable helper when available
-  function attachEducHandler(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      if (window.checkAndPromptEducReapply) {
-        try { window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' }); }
-        catch (err) { handleEducAssistanceNavClick(e); }
-      } else {
-        handleEducAssistanceNavClick(e);
-      }
-    });
-  }
-
-  attachEducHandler(document.getElementById('educAssistanceNavBtnDesktop'));
-  attachEducHandler(document.getElementById('educAssistanceNavBtnMobile'));
+  // Nav buttons are handled centrally by `navbar.js`.
+  // The page exposes the handler functions (e.g. `handleKKProfileNavClick`) which
+  // `navbar.js` will call when available. Avoid binding here to prevent double-handling.
 
   // Embed educRejected helper so this page can prompt to reapply if needed
   (function () {
@@ -1678,7 +1759,7 @@ if (logoutBtn) {
         redirectUrl = 'Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();

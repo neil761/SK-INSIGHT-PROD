@@ -2,9 +2,14 @@
 
 async function updateSidebarNotifBadge() {
   const token = sessionStorage.getItem("token");
+    const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+      ? window.API_BASE
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // KK Profile badge
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/kk/unread/count', {
+      const res = await fetch(`${API_BASE}/api/notifications/kk/unread/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -22,7 +27,7 @@ async function updateSidebarNotifBadge() {
 
   // LGBTQ Profile badge
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/lgbtq/unread/count', {
+      const res = await fetch(`${API_BASE}/api/notifications/lgbtq/unread/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -40,7 +45,7 @@ async function updateSidebarNotifBadge() {
 
   // Educational Assistance badge (pending applications)
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/educational/pending/count', {
+      const res = await fetch(`${API_BASE}/api/notifications/educational/pending/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -65,7 +70,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Optional: Listen for socket events if you want real-time updates
 if (window.io) {
-  const socket = io("http://localhost:5000", { transports: ["websocket"] });
+  const SOCKET_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'http://localhost:5000' : 'https://sk-insight.online');
+  const socket = io(SOCKET_BASE, { transports: ["websocket"] });
   socket.on("kk-profile:newSubmission", () => updateSidebarNotifBadge());
   socket.on("lgbtq-profile:newSubmission", () => updateSidebarNotifBadge());
   // Optionally, emit a socket event for educational-assistance:newSubmission in your backend and listen here:
@@ -73,11 +79,16 @@ if (window.io) {
 }
 
 (async function updateEducationalBadge() {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
   const badgeEl = document.getElementById('sidebarEducNotifBadge');
   if (!badgeEl) return;
   const token = sessionStorage.getItem('token') || '';
   try {
-    const res = await fetch('http://localhost:5000/api/notifications/educational/pending/count', {
+    const res = await fetch(`${API_BASE}/api/notifications/educational/pending/count`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (!res.ok) {

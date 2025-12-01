@@ -1,232 +1,72 @@
-document.addEventListener('DOMContentLoaded', async function() {
-  // if (!validateTokenAndRedirect("Educational Assistance Profile")) {
-  //   return;
-  // }
-  
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+// Expose API_BASE at top-level so all handlers can use it
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
+// DOMContentLoaded initialization consolidated later in this file.
 
-    const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-
-  // Handle mobile menu toggle
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function(e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
-
+// Make all form fields read-only (but keep navigation/preview buttons enabled)
+function makeAllFieldsReadOnly() {
   try {
-    const res = await fetch('http://localhost:5000/api/educational-assistance/me', {
-      headers: { Authorization: `Bearer ${token}` }
+    const skipSelectors = ['#doneBtn','[data-done]','[data-action="done"]','.submit-btn','.done-btn','.view-btn','#viewFront','#viewBack','#viewCOE','#viewVoter','#closePreviewBtn'];
+    const skip = el => {
+      try {
+        if (!el) return false;
+        if (el.matches) {
+          for (const s of skipSelectors) if (el.matches(s)) return true;
+        }
+      } catch (e) {}
+      return false;
+    };
+
+    // Inputs and textareas -> readonly (but keep view/preview buttons clickable)
+    document.querySelectorAll('input, textarea').forEach(el => {
+      if (skip(el)) return;
+      // file inputs should be disabled to prevent selection
+      if (el.type === 'file') {
+        el.disabled = true;
+      } else {
+        el.readOnly = true;
+      }
+      // remove from tab order
+      try { el.tabIndex = -1; } catch (e) {}
     });
-    if (!res.ok) return;
-    const data = await res.json();
 
+    // selects and buttons (except done/preview) -> disabled
+    document.querySelectorAll('select, button').forEach(el => {
+      if (skip(el)) return;
+      try { el.disabled = true; } catch (e) {}
+    });
 
-    // try {
-    //   const userRes = await fetch('http://localhost:5000/api/kkprofiling/me', {
-    //     headers: { Authorization: `Bearer ${token}` }
-    //   });
-    //   const userInfo = userRes.ok ? await userRes.json() : {};
-
-    //   // Try to find birthday in different places
-    //   let birthday = '';
-    //   if (userInfo.birthday) {
-    //     birthday = userInfo.birthday;
-    //   } else if (userInfo.personalInfo && userInfo.personalInfo.birthday) {
-    //     birthday = userInfo.personalInfo.birthday;
-    //   } else if (data.birthday) {
-    //     birthday = data.birthday;
-    //   } else {
-    //   }
-
-    //   // Apply to input
-    //   const bdayInput = document.getElementById('birthday');
-    //   if (bdayInput) {
-    //     bdayInput.value = birthday ? birthday.split('T')[0] : '';
-    //   } else {
-    //   }
-    // } catch (err) {
-    // }
-
-    // Fill form fields with fetched data
-    document.getElementById('surname').value = data.surname || '';
-    document.getElementById('firstName').value = data.firstname || '';
-    document.getElementById('middleName').value = data.middlename || '';
-    document.getElementById('suffix').value = data.suffix || '';
-
-    // Fetch birthday from user info (from sign-in) if available
-    let birthday = "";
-    if (data.user && data.user.birthday) {
-      birthday = data.user.birthday;
-    } else if (data.kkInfo && data.kkInfo.birthday) {
-      birthday = data.kkInfo.birthday;
-    } else if (data.birthday) {
-      birthday = data.birthday;
+    // Keep Done navigation (if present) enabled so the user can proceed
+    const doneBtn = document.querySelector('#doneBtn') || document.querySelector('.submit-btn') || document.querySelector('.done-btn') || document.querySelector('[data-done]') || document.querySelector('[data-action="done"]');
+    if (doneBtn) {
+      try { doneBtn.disabled = false; doneBtn.tabIndex = 0; } catch (e) {}
     }
-    const birthdayInput = document.getElementById('birthday');
-if (birthdayInput && data.birthday) {
-  const formattedBirthday = data.birthday.split('T')[0]; // ensure it's YYYY-MM-DD
-  birthdayInput.disabled = false; // temporarily enable so Chrome will display it
-  birthdayInput.value = formattedBirthday;
-  birthdayInput.disabled = true; // disable again to prevent user editing
-}
-
-    document.getElementById('placeOfBirth').value = data.placeOfBirth || '';
-    document.getElementById('age').value = data.age || '';
-    document.getElementById('gender').value = data.sex || '';
-    document.getElementById('civilStatus').value = data.civilStatus || '';
-    document.getElementById('religion').value = data.religion || '';
-    document.getElementById('email').value = data.email || '';
-    document.getElementById('contact').value = data.contactNumber || '';
-    document.getElementById('schoolname').value = data.school || '';
-    document.getElementById('schooladdress').value = data.schoolAddress || '';
-    document.getElementById('year').value = data.year || '';
-    document.getElementById('benefittype').value = data.typeOfBenefit || '';
-    document.getElementById('fathername').value = data.fatherName || '';
-    document.getElementById('fathercontact').value = data.fatherPhone || '';
-    document.getElementById('mothername').value = data.motherName || '';
-    document.getElementById('mothercontact').value = data.motherPhone || '';
-
-    // Siblings table
-    const siblingsBody = document.getElementById('siblingsTableBody');
-    siblingsBody.innerHTML = '';
-    if (Array.isArray(data.siblings)) {
-      data.siblings.forEach(sibling => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${sibling.name || ''}</td>
-          <td>${sibling.gender || ''}</td>
-          <td>${sibling.age || ''}</td>
-        `;
-        siblingsBody.appendChild(row);
-      });
-    }
-
-    // Expenses table
-    const expensesBody = document.getElementById('expensesTableBody');
-    expensesBody.innerHTML = '';
-    if (Array.isArray(data.expenses)) {
-      data.expenses.forEach(expense => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-          <td>${expense.item || ''}</td>
-          <td>${expense.expectedCost || ''}</td>
-        `;
-        expensesBody.appendChild(row);
-      });
-    }
-
-    // Requirements: Sedula, COE, Signature (show truncated file name only, remove folder path)
-    if (data.frontImage) {
-      const fileName = data.frontImage.replace(/^.*[\\/]/, '');
-      const truncatedName = truncateFileName(fileName);
-      const element = document.getElementById('frontImageUploadColumn');
-      if (element) {
-        element.textContent = truncatedName;
-        element.title = fileName; // Show full name on hover
-      }
-    }
-    if (data.backImage) {
-      const fileName = data.backImage.replace(/^.*[\\/]/, '');
-      const truncatedName = truncateFileName(fileName);
-      const element = document.getElementById('backImageUploadColumn');
-      if (element) {
-        element.textContent = truncatedName;
-        element.title = fileName; // Show full name on hover
-      }
-    }
-    if (data.coeImage) {
-      const fileName = data.coeImage.replace(/^.*[\\/]/, '');
-      const truncatedName = truncateFileName(fileName);
-      const element = document.getElementById('coeImageUploadColumn');
-      if (element) {
-        element.textContent = truncatedName;
-        element.title = fileName; // Show full name on hover
-      }
-    }
-    if (data.voter) {
-      const fileName = data.voter.replace(/^.*[\\/]/, '');
-      const truncatedName = truncateFileName(fileName);
-      const element = document.getElementById('voterUploadColumn');
-      if (element) {
-        element.textContent = truncatedName;
-        element.title = fileName; // Show full name on hover
-      }
-    }
-
-    // Optionally, add preview logic for images if you want
-    // Example for Sedula:
-    const viewFront = document.getElementById('viewFront');
-if (viewFront) {
-  viewFront.onclick = function() {
-    if (data.frontImage) {
-      showImagePreview(data.frontImage);
-    }
-  };
-}
-
-    const viewBack = document.getElementById('viewBack');
-if (viewBack) {
-  viewBack.onclick = function() {
-    if (data.backImage) {
-      showImagePreview(data.backImage);
-    }
-  };
-}
-
-// Handle COE preview
-const viewCOE = document.getElementById('viewCOE');
-if (viewCOE) {
-  viewCOE.onclick = function() {
-    if (data.coeImage) {
-      // Use Cloudinary URL directly if it's already a full URL
-      const imageUrl = data.coeImage.startsWith('http') ? data.coeImage : `/uploads/${data.coeImage}`;
-      showImagePreview(imageUrl);
-    }
-  };
-}
-
-// Handle close preview button
-const closePreviewBtn = document.getElementById('closePreviewBtn');
-if (closePreviewBtn) {
-  closePreviewBtn.onclick = function() {
-    document.getElementById('imagePreviewModal').style.display = 'none';
-  };
-}
-
-// Repeat for COE and Signature if needed
-    const viewVoter = document.getElementById('viewVoter');
-if (viewVoter) {
-  viewVoter.onclick = function() {
-    if (data.voter) {
-      showImagePreview(data.voter);
-    }
-  };
-}
   } catch (err) {
-    console.error('Failed to fetch Educational Assistance data:', err);
+    console.warn('makeAllFieldsReadOnly error', err);
   }
-});
+}
+
+// makeAllFieldsReadOnly is scheduled from the consolidated initializer above
 
 document.addEventListener('DOMContentLoaded', function() {
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
+  // Initialize shared navbar hamburger if available
 
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
+  // Ensure form fields are set read-only shortly after population
+  try { setTimeout(makeAllFieldsReadOnly, 50); } catch (e) {}
 
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
+  // Done button handler (keep it reachable even when others are disabled)
+  const doneBtn = document.querySelector('.submit-btn, #doneBtn, .done-btn, button[data-action="done"], [data-done]');
+  if (doneBtn) {
+    try {
+      doneBtn.addEventListener('click', function (e) {
+        e && e.preventDefault();
+        window.location.href = '/Frontend/html/user/confirmation/html/educConfirmation.html';
+      });
+    } catch (e) {}
+  }
 });
 
 // KK Profile Navigation
@@ -234,10 +74,10 @@ function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
+    fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -313,13 +153,13 @@ function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
+        headers: { Authorization: `Bearer ${token}` }
+      }),
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+    ])
   .then(async ([cycleRes, profileRes]) => {
     let cycleData = await cycleRes.json().catch(() => null);
     let profileData = await profileRes.json().catch(() => ({}));
@@ -392,10 +232,10 @@ function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
+    fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -485,14 +325,14 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   try {
     // Fetch Educational Assistance data
-    const res = await fetch('http://localhost:5000/api/educational-assistance/me', {
+    const res = await fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (!res.ok) return;
     const data = await res.json();
 
     // Fetch user data (to get birthday from sign-up)
-    const userRes = await fetch('http://localhost:5000/api/users/me', {
+    const userRes = await fetch(`${API_BASE}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     const userInfo = userRes.ok ? await userRes.json() : {};
@@ -519,7 +359,70 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.getElementById('contact').value = data.contactNumber || '';
     document.getElementById('schoolname').value = data.school || '';
     document.getElementById('schooladdress').value = data.schoolAddress || '';
-    document.getElementById('year').value = data.year || '';
+    // Academic level & year handling: populate year options based on academic level
+    const acadEl = document.getElementById('academicLevel');
+    const yearEl = document.getElementById('year');
+    const yearWrapper = document.getElementById('yearWrapper');
+    const JHS_YEARS = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
+    const SHS_YEARS = ['Grade 11', 'Grade 12'];
+
+    function populateYearOptions(level, selectedYear, targetSelect) {
+      const target = targetSelect || yearEl;
+      if (!target) return;
+      target.innerHTML = '<option value="">Select Classification</option>';
+      const lvl = (level || '').toString().toLowerCase();
+      let options = [];
+      if (lvl.includes('junior')) options = JHS_YEARS;
+      else if (lvl.includes('senior')) options = SHS_YEARS;
+
+      options.forEach(opt => {
+        const o = document.createElement('option');
+        o.value = opt;
+        o.textContent = opt;
+        if (selectedYear && selectedYear === opt) o.selected = true;
+        target.appendChild(o);
+      });
+
+      if (selectedYear && options.indexOf(selectedYear) === -1) {
+        try { target.value = ''; } catch (e) {}
+      }
+    }
+
+    // Apply academic level and populate year accordingly
+    try {
+      const acadVal = (data.academicLevel || data.academiclevel || data.academic_level || data.academic || (data.user && data.user.academicLevel) || '').toString();
+      if (acadEl && acadVal) {
+        try { acadEl.value = acadVal; } catch (e) { /* ignore */ }
+      }
+      // populate year options and set visibility
+      populateYearOptions(acadVal, data.year || '', yearEl);
+      if (yearWrapper) {
+        yearWrapper.style.display = acadVal ? '' : 'none';
+      }
+
+      // Hide voter certificate row if Senior High School
+      function toggleVoterCertificateRow(level) {
+        const voterRow = Array.from(document.querySelectorAll('.requirements-table tbody tr')).find(row => 
+          row.textContent.includes("Parent's Voter's Certificate")
+        );
+        if (voterRow) {
+          const isJHS = (level || '').toLowerCase().includes('junior');
+          voterRow.style.display = isJHS ? '' : 'none';
+        }
+      }
+
+      toggleVoterCertificateRow(acadVal);
+
+      // update year options when academic level changes (defensive)
+      if (acadEl) {
+        acadEl.addEventListener('change', function () {
+          const lvl = acadEl.value || '';
+          populateYearOptions(lvl, '', yearEl);
+          if (yearWrapper) yearWrapper.style.display = lvl ? '' : 'none';
+          toggleVoterCertificateRow(lvl);
+        });
+      }
+    } catch (e) { /* ignore */ }
     document.getElementById('benefittype').value = data.typeOfBenefit || '';
     document.getElementById('fathername').value = data.fatherName || '';
     document.getElementById('fathercontact').value = data.fatherPhone || '';
@@ -632,54 +535,35 @@ function showImagePreview(imageUrl) {
   }
 }
 
-// Close the preview modal
-document.getElementById('closePreviewBtn').addEventListener('click', function () {
+// Modal close handlers (delegated) — works regardless of load timing
+(function setupPreviewModalHandlers() {
   const modal = document.getElementById('imagePreviewModal');
-  if (modal) modal.style.display = 'none';
-});
 
-// Attach Done button handler (shows confirmation then go to educConfirmation.html)
-// ...existing code...
+  // Click delegation: close when clicking the close button or the modal backdrop
+  document.addEventListener('click', function (e) {
+    const target = e.target;
+    // Close button clicked
+    if (target.closest && target.closest('#closePreviewBtn')) {
+      if (modal) modal.style.display = 'none';
+      return;
+    }
 
-// Attach Done button handler — remove SweetAlert, redirect immediately
-document.addEventListener('DOMContentLoaded', () => {
-  const doneSelector = [
-    '#doneBtn',
-    '.done-btn',
-    'button[data-action="done"]',
-    'input[type="submit"][value="Done"]',
-    'button[type="submit"].done'
-  ];
+    // Clicking directly on the modal backdrop (outside the image) closes it
+    if (modal && target === modal) {
+      modal.style.display = 'none';
+      return;
+    }
+  }, false);
 
-  let doneBtn = null;
-  for (const sel of doneSelector) {
-    try { doneBtn = document.querySelector(sel); } catch (e) {}
-    if (doneBtn) break;
-  }
-
-  // Fallback: find a button whose visible text/value is "Done"
-  if (!doneBtn) {
-    const btns = Array.from(document.querySelectorAll('button, input[type="button"], input[type="submit"]'));
-    doneBtn = btns.find(b => ((b.innerText || b.value || '').trim().toLowerCase() === 'done'));
-  }
-
-  const goToConfirmation = () => {
-    window.location.href = '/Frontend/html/user/confirmation/html/educConfirmation.html';
-  };
-
-  if (doneBtn) {
-    doneBtn.addEventListener('click', (e) => {
-      if (e && e.preventDefault) e.preventDefault();
-      goToConfirmation();
-    });
-  } else {
-    document.body.addEventListener('click', (e) => {
-      const target = e.target.closest('[data-done]');
-      if (target) {
-        e.preventDefault();
-        goToConfirmation();
+  // Close on Escape key
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' || e.key === 'Esc') {
+      if (modal && modal.style.display && modal.style.display !== 'none') {
+        modal.style.display = 'none';
       }
-    });
-  }
-});
+    }
+  });
+})();
+
+// Done handler is attached from the consolidated initializer earlier.
 

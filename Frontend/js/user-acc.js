@@ -34,12 +34,18 @@ document.addEventListener("DOMContentLoaded", () => {
   const token = sessionStorage.getItem("token") || localStorage.getItem("token"); // <-- Updated line
   const searchInput = document.getElementById("userSearch"); // <-- Add this line
 
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
   let allUsers = []; // Store all users for filtering
 
   // Fetch all users
   async function fetchUsers() {
     try {
-      const res = await fetch("http://localhost:5000/api/users", {
+      const res = await fetch(`${API_BASE}/api/users`, {
         headers: {
           "Authorization": `Bearer ${token}`,
           "Content-Type": "application/json"
@@ -106,7 +112,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial load
   fetchUsers();
 
-const socket = io("http://localhost:5000", { transports: ["websocket"] });
+const socket = io(API_BASE, { transports: ["websocket"] });
 
 socket.on("educational-assistance:newSubmission", (data) => {
   Swal.fire({
@@ -134,7 +140,7 @@ function attachUserModalOpeners() {
 
 async function showUserModal(userId) {
   try {
-    const response = await fetch(`http://localhost:5000/api/users/${userId}`, {
+    const response = await fetch(`${API_BASE}/api/users/${encodeURIComponent(userId)}`, {
       headers: {
         Authorization: `Bearer ${sessionStorage.getItem("token")}`,
       },

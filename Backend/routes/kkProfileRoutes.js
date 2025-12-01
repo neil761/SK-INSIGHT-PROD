@@ -298,6 +298,8 @@ router.get("/me", protect, ctrl.getMyProfile);
 router.get("/me/image", protect, ctrl.getProfileImage);
 // Return most recent profile for the user (previous cycles)
 router.get('/me/previous', protect, ctrl.getMyLatestProfile);
+// Return profile for active cycle or most recent fallback
+router.get('/me/recent', protect, ctrl.getMyRecentProfile);
 
 // Admin-only routes
 // router.get("/export", protect, authorizeRoles("admin"), ctrl.exportProfilesToExcel);

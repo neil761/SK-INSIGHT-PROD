@@ -1,8 +1,22 @@
 // =========================
 // ANNOUNCEMENT SECTION
 // =========================
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
 
 document.addEventListener("DOMContentLoaded", async () => {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   const tableBody = document.querySelector(".announcement-table tbody");
   const tableHead = document.querySelector(".announcement-table thead tr");
   const modal = document.getElementById("announcementModal");
@@ -11,6 +25,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   const modalCreatedDate = modal.querySelector(".created-date");
   const modalDescription = modal.querySelector(".description-box");
   const closeModalBtn = modal.querySelector(".close-modal");
+
+  // using top-level `API_BASE`
 
   let cardsContainer = document.querySelector(".announcement-cards");
   if (!cardsContainer) {
@@ -32,7 +48,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       if (!token) return;
-      const res = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) return;
       const data = await res.json().catch(() => null);
       // API may return { user: {...} } or the user object directly
@@ -43,6 +59,62 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // Update notification badge UI - THIS IS THE SOURCE OF TRUTH
+  async function updateNotificationBadge() {
+    try {
+      const badgeEl = document.querySelector('.notif-badge');
+      const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+      
+      if (!badgeEl || !token) return;
+
+      const res = await fetch(`${API_BASE}/api/announcements`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+
+      const data = await res.json().catch(() => null);
+      const all = (data && Array.isArray(data.announcements)) ? data.announcements : [];
+      const now = new Date();
+      let unreadCount = 0;
+
+      all.forEach(a => {
+        try {
+          if (!a || !a.title) return;
+
+          // Skip expired announcements
+          if (a.eventDate) {
+            const ed = new Date(a.eventDate);
+            if (!isNaN(ed.getTime()) && ed < now) return;
+          }
+
+          // Check if already viewed by current user
+          const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          if (currentUserId && viewedBy.includes(String(currentUserId))) return;
+
+          // Count unread announcements (both general and personal)
+          unreadCount++;
+        } catch (e) {
+          console.warn('Error processing announcement for badge:', e);
+        }
+      });
+
+      badgeEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
+      badgeEl.style.display = unreadCount > 0 ? 'flex' : 'none';
+      console.debug('Badge updated:', unreadCount);
+    } catch (err) {
+      console.warn('Error updating badge:', err);
+    }
+  }
+
+  // Expose globally so notification-badge.js can call it
+  window.updateNotificationBadge = updateNotificationBadge;
+
+  // Load user ID first
+  await loadCurrentUserId();
+  
+  // Initial badge update
+  await updateNotificationBadge();
+  
   const tabBtns = document.querySelectorAll('.tab-btn');
   let currentTab = 'general';
 
@@ -71,7 +143,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function fetchGeneralAndExpired() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/api/announcements", {
+    const res = await fetch(`${API_BASE}/api/announcements`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -98,7 +170,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function fetchForYou() {
     const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-    const res = await fetch("http://localhost:5000/api/announcements/myannouncements", {
+    const res = await fetch(`${API_BASE}/api/announcements/myannouncements`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     const data = await res.json();
@@ -112,18 +184,32 @@ document.addEventListener("DOMContentLoaded", async () => {
     try {
       const token = localStorage.getItem("token") || sessionStorage.getItem("token");
       if (!token || !id) return;
-      const res = await fetch(`http://localhost:5000/api/announcements/${id}/view`, {
+
+      // Skip marking expired announcements as viewed
+      try {
+        const localAnn = lastAnnouncements.find(x => String(x._id) === String(id));
+        if (localAnn && currentTab === 'expired') {
+          console.debug("Skipping markAnnouncementViewed for expired announcement");
+          return;
+        }
+      } catch (e) {
+        // ignore lookup errors and proceed
+      }
+
+      const res = await fetch(`${API_BASE}/api/announcements/${id}/view`, {
         method: "POST",
         headers: { "Authorization": `Bearer ${token}`, "Content-Type": "application/json" },
       });
       if (!res.ok) {
-        // non-fatal: server may already have it marked or endpoint may be protected
         console.warn("Failed to mark announcement viewed", res.status);
       }
-      // refresh announcements UI and the badge (if the badge script exposes the helper)
-      try { await renderTabAnnouncements(); } catch (e) { /* ignore */ }
-      if (window.updateNotificationBadge) {
-        try { window.updateNotificationBadge(); } catch (e) { /* ignore */ }
+
+      // Only refresh and update badge if NOT in expired tab
+      if (currentTab !== 'expired') {
+        try { 
+          await renderTabAnnouncements(); 
+          await updateNotificationBadge(); // Update badge immediately
+        } catch (e) { /* ignore */ }
       }
     } catch (err) {
       console.warn("markAnnouncementViewed error", err);
@@ -147,6 +233,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     lastAnnouncements = announcements;
     renderAnnouncementsResponsive(announcements);
+    await updateNotificationBadge(); // Update badge after rendering
   }
 
   function renderAnnouncementsResponsive(announcements) {
@@ -219,6 +306,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (a.isPinned) {
         tr.classList.add("pinned-row");
       }
+      
+      // Add grey color for expired tab
+      if (currentTab === 'expired') {
+        tr.classList.add("expired-tab");
+      }
+      
         // read/unread visual state
         try {
           const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
@@ -228,14 +321,25 @@ document.addEventListener("DOMContentLoaded", async () => {
           // ignore
         }
       // Add status hue for For You tab
-if (currentTab === 'foryou') {
-  const title = (a.title || "").toLowerCase();
-  if (title.includes("rejected") || title.includes("deleted")) {
-    tr.classList.add("announcement-row-rejected");
-  } else if (title.includes("approved") || title.includes("restored")) {
-    tr.classList.add("announcement-row-approved");
-  }
-}
+      if (currentTab === 'foryou') {
+        const title = (a.title || "").toLowerCase();
+        const isRejected = title.includes("rejected") || title.includes("deleted");
+        const isApproved = title.includes("approved") || title.includes("restored");
+        
+        if (isRejected) {
+          tr.classList.add("announcement-row-rejected");
+        } else if (isApproved) {
+          tr.classList.add("announcement-row-approved");
+        } else {
+          // For non-rejected/approved announcements, check title for open/closed keywords
+          const titleLower = title.toLowerCase();
+          if (titleLower.includes("opened") || titleLower.includes("opening")) {
+            tr.classList.add("announcement-row-cycle-open");
+          } else if (titleLower.includes("closed") || titleLower.includes("closing")) {
+            tr.classList.add("announcement-row-cycle-closed");
+          }
+        }
+      }
       tr.innerHTML = `
         <td>
           <div class="announcement-title">
@@ -290,7 +394,7 @@ if (currentTab === 'foryou') {
       displayAnnouncements = pinned.concat(unpinned);
     }
     else if (currentTab === 'expired') {
-      displayAnnouncements = (announcements || []).filter(a => {
+      displayAnnouncements = (announcements || []).filter (a => {
         if (!a.eventDate) return false;
         const ed = new Date(a.eventDate);
         if (isNaN(ed.getTime())) return false;
@@ -318,23 +422,42 @@ if (currentTab === 'foryou') {
         dateCol = a.eventDate ? formatDateTime(a.eventDate) : "-";
       }
       const card = document.createElement('div');
-      // read/unread visual state for cards
-      try {
-        const viewedBy2 = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
-        const isReadCard = currentUserId ? viewedBy2.includes(String(currentUserId)) : false;
-        card.className = 'announcement-card ' + (isReadCard ? 'announcement-read' : 'announcement-notread');
-      } catch (e) {
-        card.className = 'announcement-card';
+      
+      // Add grey color for expired tab
+      if (currentTab === 'expired') {
+        card.className = 'announcement-card expired-tab';
+      } else {
+        // read/unread visual state for cards
+        try {
+          const viewedBy2 = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          const isReadCard = currentUserId ? viewedBy2.includes(String(currentUserId)) : false;
+          card.className = 'announcement-card ' + (isReadCard ? 'announcement-read' : 'announcement-notread');
+        } catch (e) {
+          card.className = 'announcement-card';
+        }
+        
+        // Add status hue for For You tab
+        if (currentTab === 'foryou') {
+          const title = (a.title || "").toLowerCase();
+          const isRejected = title.includes("rejected") || title.includes("deleted");
+          const isApproved = title.includes("approved") || title.includes("restored");
+          
+          if (isRejected) {
+            card.classList.add("announcement-card-rejected");
+          } else if (isApproved) {
+            card.classList.add("announcement-card-approved");
+          } else {
+            // For non-rejected/approved announcements, check title for open/closed keywords
+            const titleLower = title.toLowerCase();
+            if (titleLower.includes("opened") || titleLower.includes("opening")) {
+              card.classList.add("announcement-card-cycle-open");
+            } else if (titleLower.includes("closed") || titleLower.includes("closing")) {
+              card.classList.add("announcement-card-cycle-closed");
+            }
+          }
+        }
       }
-      // Add status hue for For You tab
-if (currentTab === 'foryou') {
-  const title = (a.title || "").toLowerCase();
-  if (title.includes("rejected") || title.includes("deleted")) {
-    card.classList.add("announcement-card-rejected");
-  } else if (title.includes("approved") || title.includes("restored")) {
-    card.classList.add("announcement-card-approved");
-  }
-}
+      
       card.innerHTML = `
         <div class="card-header">
           <div class="title">
@@ -345,7 +468,7 @@ if (currentTab === 'foryou') {
           </div>
         </div>
         <div class="card-meta">
-          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>
+          ${currentTab === 'foryou' ? '' : `<div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>`}
           <div class="meta-row"><i class="fa-regular fa-clock"></i> Posted: ${a.createdAt ? formatDateTime(a.createdAt) : '-'}</div>
         </div>
       `;
@@ -356,17 +479,18 @@ if (currentTab === 'foryou') {
         }
         try {
           const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-          const res = await fetch(`http://localhost:5000/api/announcements/${a._id}`, {
+          const res = await fetch(`${API_BASE}/api/announcements/${a._id}`, {
             headers: { "Authorization": `Bearer ${token}` }
           });
           if (!res.ok) throw new Error("Announcement not found");
           const { announcement } = await res.json();
           modalTitle.textContent = announcement.title;
-          // For "foryou" tab, hide event date in modal
+          // For "foryou" tab, show only Posted date
+          const eventDateContainer = modalEventDate.closest('.info-item');
           if (currentTab === 'foryou') {
-            modalEventDate.style.display = "none";
+            if (eventDateContainer) eventDateContainer.style.display = "none";
           } else {
-            modalEventDate.style.display = "";
+            if (eventDateContainer) eventDateContainer.style.display = "";
             modalEventDate.textContent = formatDateTime(announcement.eventDate);
           }
           modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
@@ -398,17 +522,18 @@ if (currentTab === 'foryou') {
       const id = e.target.closest(".view-btn").dataset.id;
       try {
         const token = localStorage.getItem("token") || sessionStorage.getItem("token");
-        const res = await fetch(`http://localhost:5000/api/announcements/${id}`, {
+        const res = await fetch(`${API_BASE}/api/announcements/${id}`, {
           headers: { "Authorization": `Bearer ${token}` }
         });
         if (!res.ok) throw new Error("Announcement not found");
         const { announcement } = await res.json();
         modalTitle.textContent = announcement.title;
-        // For "foryou" tab, hide event date in modal
+        // For "foryou" tab, show only Posted date
+        const eventDateContainer = modalEventDate.closest('.info-item');
         if (currentTab === 'foryou') {
-          modalEventDate.style.display = "none";
+          if (eventDateContainer) eventDateContainer.style.display = "none";
         } else {
-          modalEventDate.style.display = "";
+          if (eventDateContainer) eventDateContainer.style.display = "";
           modalEventDate.textContent = formatDateTime(announcement.eventDate);
         }
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
@@ -444,6 +569,15 @@ if (currentTab === 'foryou') {
 
   function getAnnouncementStatus(announcement) {
     if (!announcement) return "Unknown";
+    
+    // Check if announcement is about closing or opening form cycle
+    const title = (announcement.title || "").toLowerCase();
+    if (title.includes("closing") || title.includes("opening") || 
+        title.includes("close") || title.includes("open") ||
+        title.includes("form cycle") || title.includes("cycle")) {
+      return "No Expiry";
+    }
+    
     const eventDate = announcement.eventDate;
     if (!eventDate) return "Unknown";
     const ed = new Date(eventDate);
@@ -458,12 +592,27 @@ if (currentTab === 'foryou') {
   await renderTabAnnouncements();
 
   // WebSocket updates (optional, keep your logic here)
-  const socket = io("http://localhost:5000", { transports: ["websocket"] });
-  socket.on("announcement:created", renderTabAnnouncements);
-  socket.on("announcement:updated", renderTabAnnouncements);
-  socket.on("announcement:deleted", renderTabAnnouncements);
-  socket.on("announcement:pinned", renderTabAnnouncements);
-  socket.on("announcement:unpinned", renderTabAnnouncements);
+  const socket = io(API_BASE, { transports: ["websocket"] });
+  socket.on("announcement:created", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:updated", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:deleted", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:pinned", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
+  socket.on("announcement:unpinned", async () => {
+    await renderTabAnnouncements();
+    await updateNotificationBadge();
+  });
   
   // Listen for breakpoint changes (mobile <-> desktop) and re-render accordingly.
   // Using matchMedia 'change' is more efficient than raw resize events.
@@ -517,30 +666,18 @@ if (currentTab === 'foryou') {
 // NAVBAR & KK PROFILING SECTION
 // =========================
 document.addEventListener('DOMContentLoaded', function() {
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function(e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
+  // Define page-specific handlers but do NOT bind DOM elements here.
+  // `navbar.js` will prefer its own local handlers and otherwise call these.
 
   // KK Profile Navigation
   function handleKKProfileNavClick(event) {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+      fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
         headers: { Authorization: `Bearer ${token}` }
       }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
+      fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
     ])
@@ -551,7 +688,6 @@ document.addEventListener('DOMContentLoaded', function() {
       const formName = latestCycle?.formName || "KK Profiling";
       const isFormOpen = latestCycle?.isOpen ?? false;
       const hasProfile = profileRes.ok && profileData && profileData._id;
-      // CASE 1: Form closed, user already has profile
       if (!isFormOpen && hasProfile) {
         Swal.fire({
           icon: "info",
@@ -565,48 +701,18 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         return;
       }
-      // CASE 2: Form closed, user has NO profile
       if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
+        Swal.fire({ icon: "warning", title: `The ${formName} form is currently closed`, text: "You cannot submit a new response at this time.", confirmButtonText: "OK" });
         return;
       }
-      // CASE 3: Form open, user already has a profile
       if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
-        });
+        Swal.fire({ title: `You already answered ${formName} Form`, text: "Do you want to view your response?", icon: "info", showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html"; });
         return;
       }
-      // CASE 4: Form open, no profile → Show SweetAlert and go to form
       if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "kkform-personal.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
+        Swal.fire({ icon: "info", title: `No profile found`, text: `You don't have a profile yet. Please fill out the form to create one.`, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "kkform-personal.html"; });
+        return;
+      }
     })
     .catch(() => window.location.href = "kkform-personal.html");
   }
@@ -616,12 +722,8 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, { headers: { Authorization: `Bearer ${token}` } })
     ])
     .then(async ([cycleRes, profileRes]) => {
       let cycleData = await cycleRes.json().catch(() => null);
@@ -630,62 +732,10 @@ document.addEventListener('DOMContentLoaded', function() {
       const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
       const isFormOpen = latestCycle?.isOpen ?? false;
       const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have a ${formName} profile. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-      // CASE 4: Form open, no profile → Show SweetAlert and go to form
-      if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "lgbtqform.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
+      if (!isFormOpen && hasProfile) { Swal.fire({ icon: "info", title: `The ${formName} is currently closed`, text: `but you already have a ${formName} profile. Do you want to view your response?`, showCancelButton: true, confirmButtonText: "Yes, view my response", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html"; }); return; }
+      if (!isFormOpen && !hasProfile) { Swal.fire({ icon: "warning", title: `The ${formName} form is currently closed`, text: "You cannot submit a new response at this time.", confirmButtonText: "OK" }); return; }
+      if (isFormOpen && hasProfile) { Swal.fire({ title: `You already answered ${formName} Form`, text: "Do you want to view your response?", icon: "info", showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html"; }); return; }
+      if (isFormOpen && !hasProfile) { Swal.fire({ icon: "info", title: `No profile found`, text: `You don't have a profile yet. Please fill out the form to create one.`, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "lgbtqform.html"; }); return; }
     })
     .catch(() => window.location.href = "lgbtqform.html");
   }
@@ -695,12 +745,8 @@ document.addEventListener('DOMContentLoaded', function() {
     event.preventDefault();
     const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
+      fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, { headers: { Authorization: `Bearer ${token}` } }),
+      fetch(`${API_BASE}/api/educational-assistance/me`, { headers: { Authorization: `Bearer ${token}` } })
     ])
     .then(async ([cycleRes, profileRes]) => {
       let cycleData = await cycleRes.json().catch(() => null);
@@ -709,92 +755,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const formName = latestCycle?.formName || "Educational Assistance";
       const isFormOpen = latestCycle?.isOpen ?? false;
       const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have an application. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new application at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already applied for ${formName}`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-        });
-        return;
-      }
-      // CASE 4: Form open, no profile → Show SweetAlert and go to form
-      if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "Educational-assistance-user.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
+      const statusVal = (profileData && (profileData.status || profileData.decision || profileData.adminDecision || profileData.result)) || '';
+      if (!isFormOpen && hasProfile) { Swal.fire({ icon: "info", title: `The ${formName} is currently closed`, text: `but you already have an application. Do you want to view your response?`, showCancelButton: true, confirmButtonText: "Yes, view my response", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html"; }); return; }
+      if (!isFormOpen && !hasProfile) { Swal.fire({ icon: "warning", title: `The ${formName} form is currently closed`, text: "You cannot submit a new application at this time.", confirmButtonText: "OK" }); return; }
+      if (isFormOpen && hasProfile) { Swal.fire({ title: `You already applied for ${formName}`, text: "Do you want to view your response?", icon: "info", showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html"; }); return; }
+      if (isFormOpen && !hasProfile) { Swal.fire({ icon: "info", title: `No profile found`, text: `You don't have a profile yet. Please fill out the form to create one.`, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" }).then(result => { if (result.isConfirmed) window.location.href = "Educational-assistance-user.html"; }); return; }
     })
     .catch(() => window.location.href = "Educational-assistance-user.html");
   }
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
 
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
-
-    // Educational Assistance - prefer reusable helper when available
-  function attachEducHandler(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      if (window.checkAndPromptEducReapply) {
-        try { window.checkAndPromptEducReapply({ event: e, redirectUrl: 'Educational-assistance-user.html' }); }
-        catch (err) { handleEducAssistanceNavClick(e); }
-      } else {
-        handleEducAssistanceNavClick(e);
-      }
-    });
-  }
-
-  attachEducHandler(document.getElementById('educAssistanceNavBtnDesktop'));
-  attachEducHandler(document.getElementById('educAssistanceNavBtnMobile'));
+  // Handlers remain defined here for page-specific logic, but we do NOT
+  // expose them on `window`. `navbar.js` owns navbar binding and will
+  // prefer its own `localHandlers`. Keeping implementations local prevents
+  // accidental override of the centralized behavior.
 
   // Embed educRejected helper so this page can prompt to reapply if needed
   (function () {
@@ -806,7 +779,7 @@ document.addEventListener('DOMContentLoaded', function() {
         redirectUrl = 'Educational-assistance-user.html',
         draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
         formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
+        apiBase = API_BASE
       } = opts || {};
 
       if (event && typeof event.preventDefault === 'function') event.preventDefault();
@@ -829,14 +802,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const hasProfile = Boolean(profileData && (profileData._id || profileData.id));
 
         const statusVal = (profileData && (profileData.status || profileData.decision || profileData.adminDecision || profileData.result)) || '';
-        const isRejected = Boolean(
-          (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
-          (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
-        );
-        const isApproved = Boolean(
-          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
-          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
-        );
+        const isRejected = Boolean((profileData && (profileData.rejected === true || profileData.isRejected === true)) || (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal)));
+        const isApproved = Boolean((profileData && (profileData.status === 'approved' || profileData.approved === true)) || (typeof statusVal === 'string' && /approve|approved/i.test(statusVal)));
 
         if (isFormOpen && (!hasProfile || isRejected)) {
           if (isRejected) {
@@ -876,7 +843,7 @@ document.addEventListener('DOMContentLoaded', function () {
   const verificationStrip = document.getElementById('verification-strip');
 
   if (token) {
-    fetch('http://localhost:5000/api/users/me', {
+    fetch(`${API_BASE}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
       .then(response => response.json())
@@ -898,19 +865,13 @@ document.addEventListener('DOMContentLoaded', function () {
             '.announcement-btn'
           ];
           navSelectors.forEach(selector => {
+            // Do not attach click handlers here - let `navbar.js` centrally handle clicks.
+            // Only mark buttons as disabled for accessibility; `navbar.js` will handle
+            // preventing navigation or showing verification UI when needed.
             document.querySelectorAll(selector).forEach(btn => {
               btn.classList.add('disabled');
               btn.setAttribute('tabindex', '-1');
               btn.setAttribute('aria-disabled', 'true');
-              btn.addEventListener('click', function (e) {
-                e.preventDefault();
-                Swal.fire({
-                  icon: 'warning',
-                  title: 'Account Verification Required',
-                  text: 'Please verify your account to access this feature.',
-                  confirmButtonText: 'OK'
-                });
-              });
             });
           });
         }

@@ -5,7 +5,24 @@
   - Handles profile/signature preview and base64 storage.
 */
 
+// dynamic API base for deploy vs local development
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? 'http://localhost:5000'
+  : 'https://sk-insight.online';
+
 document.addEventListener('DOMContentLoaded', function () {
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
+
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return; // nothing to do when not logged in
   let _kkProfileId = null; // will hold existing profile id when fetched
@@ -93,27 +110,14 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
 
-    // Hamburger menu code
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-  if (hamburger && mobileMenu) {
-    hamburger.addEventListener('click', function(e) {
-      e.stopPropagation();
-      mobileMenu.classList.toggle('active');
-    });
-    document.addEventListener('click', function(e) {
-      if (!hamburger.contains(e.target) && !mobileMenu.contains(e.target)) {
-        mobileMenu.classList.remove('active');
-      }
-    });
-  }
+  // Navbar handling is centralized in `navbar.js` — do not duplicate hamburger handlers here.
 
   
 
   // Populate fields using returned profile object
   async function populateFromServer() {
     try {
-      const res = await fetch('http://localhost:5000/api/kkprofiling/me', {
+      const res = await fetch(`${API_BASE}/api/kkprofiling/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -350,7 +354,7 @@ document.addEventListener('DOMContentLoaded', function () {
         // If no direct URL, try the dedicated endpoint
         if (!imageUrl) {
           try {
-            const imgRes = await fetch('http://localhost:5000/api/kkprofiling/me/image', {
+            const imgRes = await fetch(`${API_BASE}/api/kkprofiling/me/image`, {
               headers: { Authorization: `Bearer ${token}` }
             });
             if (imgRes.ok) {
@@ -363,24 +367,62 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         }
 
-        // If server returned a plain filename (uploads) or a remote URL, resolve the proper preview URL like view-kkyouth.js
+        // If server returned a plain filename, a Cloudinary id, or a remote URL, resolve the proper preview URL
         if (imageUrl) {
-          // If server returned something like 'uploads/profile/abc.jpg' or just 'abc.jpg', construct the public URL
+          // Project Cloudinary cloud name (used in backend email templates)
+          const CLOUDINARY_CLOUD_NAME = 'dnmawrba8';
+
+          // Helper: build cloudinary url for a public id
+          const toCloudinary = (id) => {
+            if (!id) return '';
+            // If already a full URL, return as-is
+            if (id.startsWith('http')) return id;
+            // If it already looks like a cloudinary path, ensure it has the hostname
+            if (id.includes('res.cloudinary.com') || id.includes('cloudinary')) return id.startsWith('http') ? id : `https://${id}`;
+            // Otherwise treat as public id or path and construct the URL
+            return `https://res.cloudinary.com/${CLOUDINARY_CLOUD_NAME}/image/upload/${id}`;
+          };
+
+          // If server returned something like full http URL, use it. Otherwise decide between uploads/ local path vs cloudinary
           let resolved;
           if (imageUrl.startsWith('http')) {
             resolved = imageUrl;
+          } else if (imageUrl.includes('uploads') || /uploads[\\/]/i.test(imageUrl)) {
+            // If the value looks like a server uploads path, point to API_BASE/uploads
+            resolved = imageUrl.startsWith('/') ? (`${API_BASE}${imageUrl}`) : (`${API_BASE}/${imageUrl}`);
+          } else if (/\.(jpg|jpeg|png|gif)$/i.test(imageUrl)) {
+            // If it looks like a filename with an image extension, assume server uploads/profile
+            resolved = `${API_BASE}/uploads/profile/${imageUrl}`;
           } else {
-            // If the value looks like a path with uploads/..., use it as-is; otherwise assume it's the profile uploads filename
-            if (imageUrl.includes('uploads')) {
-              resolved = imageUrl.startsWith('/') ? (`http://localhost:5000${imageUrl}`) : (`http://localhost:5000/${imageUrl}`);
-            } else {
-              resolved = `http://localhost:5000/uploads/profile/${imageUrl}`;
-            }
+            // Otherwise assume it's a Cloudinary public id or path
+            resolved = toCloudinary(imageUrl);
           }
 
           // Render the preview using the resolved public URL (matches view-kkyouth.js behaviour)
           const profilePreview = document.getElementById('profileImagePreview');
           const idPreview = document.getElementById('idImagePreview');
+          // Extract a friendly filename to display beside upload controls (best-effort)
+          try {
+            const profileFilenameEl = document.getElementById('profileImageFilename');
+            if (profileFilenameEl) {
+              let name = '';
+              // Prefer the original server value if it already looks like a filename
+              if (imageUrl) {
+                try { name = (imageUrl.split('?')[0].replace(/^.*[\\\/]/, '') || ''); } catch (e) { name = ''; }
+              }
+              // Fallback to resolved URL last path segment
+              if (!name && resolved) {
+                try {
+                  const u = new URL(resolved);
+                  name = (u.pathname.split('/').filter(Boolean).pop() || '');
+                } catch (e) {
+                  name = (resolved.split(/[\\\/]/).pop() || '').split('?')[0];
+                }
+              }
+              // Trim and set if non-empty
+              if (name) profileFilenameEl.textContent = name;
+            }
+          } catch (e) { /* ignore filename display errors */ }
           // use renderPreview so edit controls (View/Change/Remove) are available
           if (profilePreview) renderPreview('profileImagePreview', resolved);
           if (idPreview) renderPreview('idImagePreview', resolved);
@@ -403,12 +445,32 @@ document.addEventListener('DOMContentLoaded', function () {
           } else {
             // strip any path and use uploads/signatures/<filename>
             const fname = signatureUrl.replace(/^.*[\\\/]/, '');
-            resolvedSig = `http://localhost:5000/uploads/signatures/${fname}`;
+            resolvedSig = `${API_BASE}/uploads/signatures/${fname}`;
           }
 
           const sigPreview = document.getElementById('signatureImagePreview');
           const sigPreviewAlt = document.getElementById('signaturePreview');
           // use renderPreview so edit controls are available
+          // Extract filename for signature and show it if UI exists
+          try {
+            const sigFilenameEl = document.getElementById('signatureImageFilename');
+            if (sigFilenameEl) {
+              let sname = '';
+              if (signatureUrl) {
+                try { sname = (signatureUrl.split('?')[0].replace(/^.*[\\\/]/, '') || ''); } catch (e) { sname = ''; }
+              }
+              if (!sname && resolvedSig) {
+                try {
+                  const u2 = new URL(resolvedSig);
+                  sname = (u2.pathname.split('/').filter(Boolean).pop() || '');
+                } catch (e) {
+                  sname = (resolvedSig.split(/[\\\/]/).pop() || '').split('?')[0];
+                }
+              }
+              if (sname) sigFilenameEl.textContent = sname;
+            }
+          } catch (e) { /* ignore */ }
+
           if (sigPreview) renderPreview('signatureImagePreview', resolvedSig);
           if (sigPreviewAlt) renderPreview('signaturePreview', resolvedSig);
 
@@ -532,7 +594,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (hasNewSignatureImage) formData.append('signatureImage', base64ToFile(finalStep3.signatureImage, 'signature.png'));
           if (hasNewIdImage) formData.append('idImage', base64ToFile(finalStep3.idImage, 'id.jpg'));
 
-          const url = `http://localhost:5000/api/kkprofiling/${_kkProfileId}`;
+          const url = `${API_BASE}/api/kkprofiling/${_kkProfileId}`;
           const res = await fetch(url, {
             method: 'PUT',
             headers: { Authorization: `Bearer ${token}` },
@@ -585,7 +647,7 @@ document.addEventListener('DOMContentLoaded', function () {
           }
         });
 
-        const url = `http://localhost:5000/api/kkprofiling/${_kkProfileId}`;
+        const url = `${API_BASE}/api/kkprofiling/${_kkProfileId}`;
         const res = await fetch(url, {
           method: 'PUT',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
@@ -633,7 +695,7 @@ document.addEventListener('DOMContentLoaded', function () {
         formData.append('signatureImage', base64ToFile(finalStep3.signatureImage, 'signature.png'));
       }
 
-      const res = await fetch('http://localhost:5000/api/kkprofiling', {
+      const res = await fetch(`${API_BASE}/api/kkprofiling`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -724,20 +786,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const storageKey = isProfile ? 'profileImage' : 'signatureImage';
     const alt = isProfile ? 'Profile Image' : 'Signature Image';
 
-    // Render image with a small 'x' remove icon at top-right; clicking the image opens a larger view
+    // Render using the shared preview classes so CSS controls sizing.
+    // `.preview-inner` / `.preview-img` are defined in `kkform.css` and
+    // ensure the image fills the container responsively (width:100%).
     c.innerHTML = `
-      <div style="position:relative; display:inline-block; max-width:220px;">
-        <img src="${base64}" style="width:100%; border-radius:10px; display:block; cursor:zoom-in;" alt="${alt}"/>
-        <button data-remove="true" title="Remove" style="position:absolute; top:6px; right:6px; background:#e74c3c; color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">×</button>
+      <div class="preview-inner">
+        <img src="${base64}" class="preview-img" alt="${alt}" />
+        <button data-remove="true" class="remove-image-btn" title="Remove">×</button>
       </div>`;
 
     // Image click handler: open SweetAlert with the image (works for base64 or remote URLs)
-    const imgEl = c.querySelector('img');
+    const imgEl = c.querySelector('.preview-img');
     if (imgEl) imgEl.addEventListener('click', function (ev) {
       ev.stopPropagation();
       try {
+        // Do not pass a `title` so SweetAlert does not render the <h2> header.
+        // We still pass `imageUrl` and `imageAlt` for accessibility and display.
         Swal.fire({
-          title: alt,
           imageUrl: base64,
           imageAlt: alt,
           showCloseButton: true,
@@ -873,357 +938,16 @@ document.addEventListener('DOMContentLoaded', function () {
   populateFromServer();
 });
 
-// -----------------------
-// Navigation button wiring
-// -----------------------
+// Replace local navbar wiring with centralized navbar binding (if available)
 document.addEventListener('DOMContentLoaded', function () {
-  // ✅ Attach KK Profiling nav
-  const kkProfileNavBtn = document.getElementById('kkProfileNavBtn');
-  if (kkProfileNavBtn) kkProfileNavBtn.addEventListener('click', handleKKProfileNavClick);
-
-  const kkProfileNavBtnDesktop = document.getElementById('kkProfileNavBtnDesktop');
-  if (kkProfileNavBtnDesktop) kkProfileNavBtnDesktop.addEventListener('click', handleKKProfileNavClick);
-
-  const kkProfileNavBtnMobile = document.getElementById('kkProfileNavBtnMobile');
-  if (kkProfileNavBtnMobile) kkProfileNavBtnMobile.addEventListener('click', handleKKProfileNavClick);
-
-  // ✅ Attach LGBTQ nav
-  const lgbtqProfileNavBtnDesktop = document.getElementById('lgbtqProfileNavBtnDesktop');
-  if (lgbtqProfileNavBtnDesktop) lgbtqProfileNavBtnDesktop.addEventListener('click', handleLGBTQProfileNavClick);
-
-  const lgbtqProfileNavBtnMobile = document.getElementById('lgbtqProfileNavBtnMobile');
-  if (lgbtqProfileNavBtnMobile) lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // ✅ Attach Educational Assistance nav
-  const educAssistanceNavBtnDesktop = document.getElementById('educAssistanceNavBtnDesktop');
-  if (educAssistanceNavBtnDesktop) educAssistanceNavBtnDesktop.addEventListener('click', handleEducAssistanceNavClick);
-
-  const educAssistanceNavBtnMobile = document.getElementById('educAssistanceNavBtnMobile');
-  if (educAssistanceNavBtnMobile) educAssistanceNavBtnMobile.addEventListener('click', handleEducAssistanceNavClick);
-   
-  function attachEducHandler(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      if (window.checkAndPromptEducReapply) {
-        try { window.checkAndPromptEducReapply({ event: e, redirectUrl: '../../Educational-assistance-user.html' }); }
-        catch (err) { handleEducAssistanceNavClick(e); }
-      } else {
-        handleEducAssistanceNavClick(e);
-      }
-    });
+  if (window && typeof window.bindNavButton === 'function') {
+    try {
+      window.bindNavButton('kkProfileNavBtnDesktop', 'kkProfileNavBtnMobile', 'handleKKProfileNavClick');
+      window.bindNavButton('lgbtqProfileNavBtnDesktop', 'lgbtqProfileNavBtnMobile', 'handleLGBTQProfileNavClick');
+      window.bindNavButton('educAssistanceNavBtnDesktop', 'educAssistanceNavBtnMobile', 'handleEducAssistanceNavClick');
+    } catch (e) {
+      // fail safe: do nothing
+      console.warn('navbar binding failed', e);
+    }
   }
-
-  attachEducHandler(document.getElementById('educAssistanceNavBtnDesktop'));
-  attachEducHandler(document.getElementById('educAssistanceNavBtnMobile'));
-
-  // Embed educRejected helper so this page can prompt to reapply if needed
-  (function () {
-    async function getJsonSafe(res) { try { return await res.json(); } catch (e) { return null; } }
-
-    async function checkAndPromptEducReapply(opts = {}) {
-      const {
-        event,
-        redirectUrl = '../../Educational-assistance-user.html',
-        draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
-        formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
-      } = opts || {};
-
-      if (event && typeof event.preventDefault === 'function') event.preventDefault();
-
-      const token = opts.token || sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) return { redirected: false, isRejected: false, hasProfile: false, isFormOpen: false };
-
-      try {
-        const cycleUrl = `${apiBase}/api/formcycle/status?formName=${encodeURIComponent(formName)}`;
-        const profileUrl = `${apiBase}/api/educational-assistance/me`;
-        const [cycleRes, profileRes] = await Promise.all([
-          fetch(cycleUrl, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(profileUrl, { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-
-        const cycleData = await getJsonSafe(cycleRes);
-        const profileData = await getJsonSafe(profileRes) || {};
-        const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-        const isFormOpen = latestCycle?.isOpen ?? false;
-        const hasProfile = Boolean(profileData && (profileData._id || profileData.id));
-
-        const statusVal = (profileData && (profileData.status || profileData.decision || profileData.adminDecision || profileData.result)) || '';
-        const isRejected = Boolean(
-          (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
-          (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
-        );
-        const isApproved = Boolean(
-          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
-          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
-        );
-
-        if (isFormOpen && (!hasProfile || isRejected)) {
-          if (isRejected) {
-            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
-            try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
-            window.location.href = redirectUrl;
-            return { redirected: true, isRejected, hasProfile, isFormOpen };
-          } else {
-            const text = `You don't have a profile yet. Please fill out the form to create one.`;
-            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
-            if (result && result.isConfirmed) {
-              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
-              window.location.href = redirectUrl;
-              return { redirected: true, isRejected, hasProfile, isFormOpen };
-            }
-          }
-        }
-
-        if (!isFormOpen && hasProfile && isApproved) {
-          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
-          if (res2 && res2.isConfirmed) { window.location.href = `educConfirmation.html`; return { redirected: true, isRejected, hasProfile, isFormOpen }; }
-        }
-
-        return { redirected: false, isRejected, hasProfile, isFormOpen };
-      } catch (err) {
-        console.error('checkAndPromptEducReapply error', err);
-        return { redirected: false, isRejected: false, hasProfile: false, isFormOpen: false };
-      }
-    }
-
-    window.checkAndPromptEducReapply = checkAndPromptEducReapply;
-  })();
 });
-
-// KK Profile Navigation
-function handleKKProfileNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
-  .then(async ([cycleRes, profileRes]) => {
-    let cycleData = await cycleRes.json().catch(() => null);
-    let profileData = await profileRes.json().catch(() => ({}));
-    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-    const formName = latestCycle?.formName || "KK Profiling";
-    const isFormOpen = latestCycle?.isOpen ?? false;
-    const hasProfile = profileRes.ok && profileData && profileData._id;
-    // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `The ${formName} is currently closed`,
-        text: `but you already have a ${formName} profile. Do you want to view your response?`,
-        showCancelButton: true,
-        confirmButtonText: "Yes, view my response",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "kkcofirmation.html";
-      });
-      return;
-    }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "warning",
-        title: `The ${formName} form is currently closed`,
-        text: "You cannot submit a new response at this time.",
-        confirmButtonText: "OK"
-      });
-      return;
-    }
-    // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
-      Swal.fire({
-        title: `You already answered ${formName} Form`,
-        text: "Do you want to view your response?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "kkcofirmation.html";
-      });
-      return;
-    }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "../../kkform-personal.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-  })
-  .catch(() => window.location.href = "../../kkform-personal.html");
-}
-
-// LGBTQ+ Profile Navigation
-function handleLGBTQProfileNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
-  .then(async ([cycleRes, profileRes]) => {
-    let cycleData = await cycleRes.json().catch(() => null);
-    let profileData = await profileRes.json().catch(() => ({}));
-    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-    const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
-    const isFormOpen = latestCycle?.isOpen ?? false;
-    const hasProfile = profileData && profileData._id ? true : false;
-    // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `The ${formName} is currently closed`,
-        text: `but you already have a ${formName} profile. Do you want to view your response?`,
-        showCancelButton: true,
-        confirmButtonText: "Yes, view my response",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
-      });
-      return;
-    }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "warning",
-        title: `The ${formName} form is currently closed`,
-        text: "You cannot submit a new response at this time.",
-        confirmButtonText: "OK"
-      });
-      return;
-    }
-    // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
-      Swal.fire({
-        title: `You already answered ${formName} Form`,
-        text: "Do you want to view your response?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "lgbtqconfirmation.html";
-      });
-      return;
-    }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "../../lgbtqform.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-  })
-  .catch(() => window.location.href = "../../lgbtqform.html");
-}
-
-// Educational Assistance Navigation
-function handleEducAssistanceNavClick(event) {
-  event.preventDefault();
-  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-  Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
-      headers: { Authorization: `Bearer ${token}` }
-    }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-  ])
-  .then(async ([cycleRes, profileRes]) => {
-    let cycleData = await cycleRes.json().catch(() => null);
-    let profileData = await profileRes.json().catch(() => ({}));
-    const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-    const formName = latestCycle?.formName || "Educational Assistance";
-    const isFormOpen = latestCycle?.isOpen ?? false;
-    const hasProfile = profileData && profileData._id ? true : false;
-    // CASE 1: Form closed, user already has profile
-    if (!isFormOpen && hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `The ${formName} is currently closed`,
-        text: `but you already have an application. Do you want to view your response?`,
-        showCancelButton: true,
-        confirmButtonText: "Yes, view my response",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "educConfirmation.html";
-      });
-      return;
-    }
-    // CASE 2: Form closed, user has NO profile
-    if (!isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "warning",
-        title: `The ${formName} form is currently closed`,
-        text: "You cannot submit a new application at this time.",
-        confirmButtonText: "OK"
-      });
-      return;
-    }
-    // CASE 3: Form open, user already has a profile
-    if (isFormOpen && hasProfile) {
-      Swal.fire({
-        title: `You already applied for ${formName}`,
-        text: "Do you want to view your response?",
-        icon: "info",
-        showCancelButton: true,
-        confirmButtonText: "Yes",
-        cancelButtonText: "No"
-      }).then(result => {
-        if (result.isConfirmed) window.location.href = "educConfirmation.html";
-      });
-      return;
-    }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "../../Educational-assistance-user.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-  })
-  .catch(() => window.location.href = "../../Educational-assistance-user.html");
-}

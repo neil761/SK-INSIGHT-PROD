@@ -431,9 +431,9 @@ exports.verifyEmailOtp = asyncHandler(async (req, res) => {
     console.log('Computed age:', computedAge);
 
     // Only allow age 15-30 inclusive
-    if (computedAge < 15 || computedAge > 30) {
+    if (computedAge < 11 || computedAge > 30) {
       return res.status(400).json({
-        message: "Only users aged 15 to 30 are allowed to sign up.",
+        message: "Only users aged 11 to 30 are allowed to sign up.",
         code: "age_not_allowed"
       });
     }
@@ -845,3 +845,52 @@ exports.sendChangeEmailOtp = async (req, res) => {
       res.status(500).json({ message: "Server error" });
     }
   };
+
+// Create admin account (minimal input: username + password, optional email)
+exports.createAdmin = async (req, res) => {
+  try {
+    const { username, password, email } = req.body;
+    if (!username || !password) {
+      return res.status(400).json({ message: "username and password are required" });
+    }
+
+    // Prevent duplicate username/email
+    const existsUser = await User.findOne({ $or: [{ username }, { email }] });
+    if (existsUser) {
+      return res.status(400).json({ message: "Username or email already in use" });
+    }
+
+    // Default email if not provided (keeps email required satisfied)
+    const safeEmail = email || `${username}@admin.local`;
+
+    // Set birthday to 25 years ago so age is valid and accessLevel can be 'full'
+    const b = new Date();
+    b.setFullYear(b.getFullYear() - 25);
+
+    const computedAge = (new Date()).getFullYear() - b.getFullYear();
+
+    const user = new User({
+      lastName: "Administrator",
+      firstName: username,
+      middleName: "",
+      suffix: "",
+      username,
+      email: safeEmail,
+      password,
+      role: "admin",
+      isVerified: true,
+      birthday: b,
+      accessLevel: "full",
+      age: computedAge
+    });
+
+    await user.save();
+
+    const out = user.toObject();
+    delete out.password;
+    res.status(201).json({ message: "Admin created", user: out });
+  } catch (err) {
+    console.error("createAdmin error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};

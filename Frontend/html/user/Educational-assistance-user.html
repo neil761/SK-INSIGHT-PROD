@@ -78,12 +78,12 @@
 
   <div class="card">
     <label class="label"  for="birthday">Birthday:</label>
-    <input type="date" id="birthday" class="birthday-input" name="birthday" required>
+    <input type="date" id="birthday" class="birthday-input" name="birthday" readonly>
   </div>
 
   <div class="card">
     <label class="label"  for="placeOfBirth">Place of Birth:</label>
-    <input type="text" id="placeOfBirth" name="placeOfBirth" placeholder="Your Answer">
+    <input type="text" id="placeOfBirth" name="placeOfBirth" placeholder="Your Answer" required>
   </div>
   
   <div class="card">
@@ -117,27 +117,27 @@
 
   <div class="card">
     <label class="label"  for="religion">Religion:</label>
-    <input type="text" id="religion" name="religion" placeholder="Your Answer">
+    <input type="text" id="religion" name="religion" placeholder="Your Answer" required>
   </div>
 
   <div class="card">
     <label class="label"  for="email">E-mail Address:</label>
-    <input type="email" id="email" name="email" placeholder="Your Answer" required>
+    <input type="email" id="email" name="email" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label class="label"  for="contact">Contact Number:</label>
-    <input type="tel" id="contact" name="contact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
+    <input type="tel" id="contact" name="contact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number" required>
   </div>
 
   <div class="card">
     <label class="label"  for="schoolname">Name of School:</label>
-    <input type="text" id="schoolname" name="schoolname" placeholder="Your Answer">
+    <input type="text" id="schoolname" name="schoolname" placeholder="Your Answer" required>
   </div>
 
   <div class="card">
     <label class="label"  for="schooladdress">School Address:</label>
-    <input type="text" id="schooladdress" name="schooladdress" placeholder="Your Answer">
+    <input type="text" id="schooladdress" name="schooladdress" placeholder="Your Answer" required>
   </div>
 
   <div class="card">
@@ -159,27 +159,27 @@
 
   <div class="card">
     <label class="label"  for="benefittype">Types of Benefiting as Applicant:</label>
-    <input type="text" id="benefittype" name="benefittype" placeholder="Your Answer">
+    <input type="text" id="benefittype" name="benefittype" placeholder="Your Answer" readonly>
   </div>
 
   <div class="card">
     <label class="label"  for="fathername">Father's Name:</label>
-    <input type="text" id="fathername" name="fathername" placeholder="Your Answer">
+    <input type="text" id="fathername" name="fathername" placeholder="Your Answer" required>
   </div>
 
   <div class="card">
     <label class="label"  for="fathercontact">Father's Contact Number:</label>
-    <input type="tel" id="fathercontact" name="fathercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
+    <input type="tel" id="fathercontact" name="fathercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number" required>
   </div>
 
   <div class="card">
     <label class="label"  for="mothername">Mother's Name:</label>
-    <input type="text" id="mothername" name="mothername" placeholder="Your Answer">
+    <input type="text" id="mothername" name="mothername" placeholder="Your Answer" required>
   </div>
 
   <div class="card">
     <label class="label"  for="mothercontact">Mother's Contact Number:</label>
-    <input type="tel" id="mothercontact" name="mothercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number">
+    <input type="tel" id="mothercontact" name="mothercontact" placeholder="Your Answer" minlength="11" maxlength="11" pattern="\d{11}" inputmode="numeric" title="Enter 11 digit contact number" required>
   </div>
 
   <!-- Siblings Section -->
@@ -242,7 +242,7 @@
             <label for="frontImage" class="upload-plus" id="frontLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="frontImage" name="frontImage" accept="image/*" required>
+            <input type="file" id="frontImage" name="frontImage" accept="image/*">
             <span class="file-name" id="frontFileName"></span>
           </td>
         </tr>
@@ -254,7 +254,7 @@
             <label for="backImage" class="upload-plus" id="backLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="backImage" name="backImage" accept="image/*" required>
+            <input type="file" id="backImage" name="backImage" accept="image/*" >
             <span class="file-name" id="backFileName"></span>
           </td>
         </tr>
@@ -266,7 +266,7 @@
             <label for="coeImage" class="upload-plus" id="coeLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="coeImage" name="coeImage" accept="image/*" required>
+            <input type="file" id="coeImage" name="coeImage" accept="image/*" >
             <span class="file-name" id="coeFileName"></span>
           </td>
         </tr>
@@ -278,7 +278,7 @@
             <label for="voter" class="upload-plus" id="voterLabel">
               <i class="fa-solid fa-plus"></i>
             </label>
-            <input type="file" id="voter" name="voter" accept="image/*" required>
+            <input type="file" id="voter" name="voter" accept="image/*" >
             <span class="file-name" id="voterFileName"></span>
           </td>
         </tr>
@@ -331,5 +331,6 @@
     <script src="../../js/notification-badge.js" defer></script>
   <script src="../../js/educ-user.js"></script>
   <script src="../../js/check-rejected.js" defer></script>
+  <script src="../../js/navbar.js" defer></script>
 </body>
 </html>

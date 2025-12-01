@@ -2,8 +2,13 @@
 // If rejected, show SweetAlert with option to update and redirect to edit page
 
 (function () {
-  // Configure API base for development
-  const API_BASE = (typeof window !== 'undefined' && window.API_BASE) ? window.API_BASE : 'http://localhost:5000';
+  // Configure API base: prefer injected `window.API_BASE`, fall back to localhost for dev,
+  // otherwise use production host.
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
 
   async function checkRejectedAndRedirect() {
     try {

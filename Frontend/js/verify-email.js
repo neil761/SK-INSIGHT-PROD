@@ -1,5 +1,11 @@
 async function verifyOtp(email, otp) {
-  const verifyRes = await fetch('http://localhost:5000/api/users/verify/confirm', {
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
+  const verifyRes = await fetch(`${API_BASE}/api/users/verify/confirm`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, otp })
@@ -117,18 +123,26 @@ export function setupVerifyEmail(user) {
   // Send OTP
   sendVerifyOtpBtn.addEventListener("click", async function () {
     sendVerifyOtpBtn.disabled = true;
+    const emailToSend = (verifyEmailInput && verifyEmailInput.value) ? verifyEmailInput.value : '';
+    console.log('sendVerifyOtp ->', { api: `${API_BASE}/api/users/verify/send`, email: emailToSend });
     Swal.fire({
       title: "Sending OTP...",
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading()
     });
     try {
-      const res = await fetch('http://localhost:5000/api/users/verify/send', {
+      const res = await fetch(`${API_BASE}/api/users/verify/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: verifyEmailInput.value })
+        body: JSON.stringify({ email: emailToSend })
       });
-      const data = await res.json();
+      // Read raw response text for robust parsing and logging
+      const rawText = await res.text().catch(() => null);
+      let data = null;
+      if (rawText) {
+        try { data = JSON.parse(rawText); } catch (e) { data = rawText; }
+      }
+      console.log('sendVerifyOtp response', { status: res.status, statusText: res.statusText, body: data });
       Swal.close();
       if (res.ok) {
         Swal.fire({
@@ -145,23 +159,27 @@ export function setupVerifyEmail(user) {
         otpExpiresAt = Date.now() + 10 * 60 * 1000;
         startVerifyOtpTimer();
       } else {
+        console.error('sendVerifyOtp failed', res.status, res.statusText, data);
+        const message = (data && typeof data === 'object' && data.message) ? data.message : (typeof data === 'string' ? data : `Failed to send OTP (status ${res.status})`);
         Swal.fire({
           icon: "error",
           title: "Send Failed",
-          text: data.message || "Failed to send OTP.",
+          text: message,
           confirmButtonColor: "#0A2C59"
         });
       }
     } catch (err) {
       Swal.close();
+      console.error('sendVerifyOtp network/error', err);
       Swal.fire({
         icon: "error",
         title: "Server Error",
-        text: "Could not send OTP. Please try again.",
+        text: err && err.message ? `Could not send OTP: ${err.message}` : "Could not send OTP. Please try again.",
         confirmButtonColor: "#0A2C59"
       });
+    } finally {
+      sendVerifyOtpBtn.disabled = false;
     }
-    sendVerifyOtpBtn.disabled = false;
   });
 
   // Setup OTP inputs
@@ -213,7 +231,7 @@ export function setupVerifyEmail(user) {
     }
     verifyOtpBtn.disabled = true;
     try {
-      const res = await fetch('http://localhost:5000/api/users/verify/confirm', {
+      const res = await fetch(`${API_BASE}/api/users/verify/confirm`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: verifyEmailInput.value, otp })
@@ -253,18 +271,25 @@ export function setupVerifyEmail(user) {
     hasResent = true;
     verifyResendOtp.textContent = "Sending...";
     verifyResendOtp.style.pointerEvents = "none";
+    const emailToSend = (verifyEmailInput && verifyEmailInput.value) ? verifyEmailInput.value : '';
+    console.log('resendVerifyOtp ->', { api: `${API_BASE}/api/users/verify/send`, email: emailToSend });
     Swal.fire({
       title: "Sending OTP...",
       allowOutsideClick: false,
       didOpen: () => Swal.showLoading()
     });
     try {
-      const res = await fetch('http://localhost:5000/api/users/verify/send', {
+      const res = await fetch(`${API_BASE}/api/users/verify/send`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: verifyEmailInput.value })
+        body: JSON.stringify({ email: emailToSend })
       });
-      const data = await res.json();
+      const rawText = await res.text().catch(() => null);
+      let data = null;
+      if (rawText) {
+        try { data = JSON.parse(rawText); } catch (e) { data = rawText; }
+      }
+      console.log('resendVerifyOtp response', { status: res.status, statusText: res.statusText, body: data });
       Swal.close();
 
       // show resend-info always, only permanently hide resend if backend says 429
@@ -273,7 +298,7 @@ export function setupVerifyEmail(user) {
       if (res.status === 429) {
         // backend signals too many requests -> remove resend button
         verifyResendOtp.style.display = "none";
-        verifyResendInfo.textContent = data.message || "Too many requests. Please wait.";
+        verifyResendInfo.textContent = data && data.message ? data.message : "Too many requests. Please wait.";
         // keep hasResent true (no further attempts)
       } else {
         // otherwise keep the resend control available
@@ -294,15 +319,18 @@ export function setupVerifyEmail(user) {
         startVerifyOtpTimer();
         setupOtpInputs();
       } else if (res.status !== 429) {
+        console.error('resend OTP failed', res.status, res.statusText, data);
+        const message = (data && typeof data === 'object' && data.message) ? data.message : (typeof data === 'string' ? data : `Failed to resend OTP (status ${res.status})`);
         Swal.fire({
           icon: "error",
           title: "Send Failed",
-          text: data.message || "Failed to resend OTP.",
+          text: message,
           confirmButtonColor: "#0A2C59"
         });
       }
     } catch (err) {
       Swal.close();
+      console.error('resend OTP network/error', err);
       // make resend clickable again on network/server error
       verifyResendInfo.style.display = "";
       verifyResendOtp.style.pointerEvents = "";
@@ -311,7 +339,7 @@ export function setupVerifyEmail(user) {
       Swal.fire({
         icon: "error",
         title: "Server Error",
-        text: "Could not resend OTP. Please try again.",
+        text: err && err.message ? `Could not resend OTP: ${err.message}` : "Could not resend OTP. Please try again.",
         confirmButtonColor: "#0A2C59"
       });
     } finally {
@@ -324,3 +352,10 @@ export function setupVerifyEmail(user) {
     }
   });
 }
+
+// Module-level API base so other handlers (send/resend) can use it.
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';

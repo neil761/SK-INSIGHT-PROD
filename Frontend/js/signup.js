@@ -1,4 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
+    const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+      ? window.API_BASE
+      : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+        ? 'http://localhost:5000'
+        : 'https://sk-insight.online';
     // Stepper logic
     const step1 = document.getElementById('signupStep1');
     const step2 = document.getElementById('signupStep2');
@@ -84,7 +89,7 @@ document.addEventListener('DOMContentLoaded', () => {
                   row.textContent = String(d);
                   dayCustom.optionsContainer.appendChild(row);
                 }
-            }
+                }
         }
         setDays(31);
 
@@ -312,6 +317,84 @@ document.addEventListener('DOMContentLoaded', () => {
         : '<i class="fa-solid fa-eye"></i>';
     });
 
+    // Password strength UI and live validation
+    (function attachPasswordStrength() {
+      if (!passwordField) return;
+      // Create requirements container and insert before form-actions
+      const step2Form = document.getElementById('signupStep2');
+      const formActions = step2Form.querySelector('.form-actions');
+      
+      const reqHtml = `
+        <div id="passwordRequirements" style="margin-bottom:16px;font-size:0.85rem;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" aria-live="polite">
+            <div id="pw-req-length" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters</div>
+            <div id="pw-req-special" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character</div>
+            <div id="pw-req-upper" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter</div>
+            <div id="pw-req-match" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> Passwords must match</div>
+            <div id="pw-req-number" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number</div>
+          </div>
+        </div>
+      `;
+      if (formActions) {
+        formActions.insertAdjacentHTML('beforebegin', reqHtml);
+      }
+
+      const reqLength = document.getElementById('pw-req-length');
+      const reqUpper = document.getElementById('pw-req-upper');
+      const reqNumber = document.getElementById('pw-req-number');
+      const reqSpecial = document.getElementById('pw-req-special');
+      const reqMatch = document.getElementById('pw-req-match');
+
+      function checkPassword(pw) {
+        return {
+          length: pw.length >= 8,
+          upper: /[A-Z]/.test(pw),
+          number: /\d/.test(pw),
+          special: /[\W_]/.test(pw)
+        };
+      }
+
+      function updateUI() {
+        const pw = passwordField.value || '';
+        const cpw = confirmPasswordField ? confirmPasswordField.value || '' : '';
+        const res = checkPassword(pw);
+
+        // If no input, show plain text without icons
+        if (!pw) {
+          reqLength.textContent = 'At least 8 characters';
+          reqLength.style.color = '#666';
+          reqUpper.textContent = 'At least one uppercase letter';
+          reqUpper.style.color = '#666';
+          reqNumber.textContent = 'At least one number';
+          reqNumber.style.color = '#666';
+          reqSpecial.textContent = 'At least one special character';
+          reqSpecial.style.color = '#666';
+          reqMatch.textContent = 'Passwords must match';
+          reqMatch.style.color = '#666';
+        } else {
+          // Show checkmarks/X icons when there's input
+          if (res.length) { reqLength.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least 8 characters'; reqLength.style.color = '#1a8a1a'; } else { reqLength.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters'; reqLength.style.color = '#c33'; }
+          if (res.upper) { reqUpper.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one uppercase letter'; reqUpper.style.color = '#1a8a1a'; } else { reqUpper.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter'; reqUpper.style.color = '#c33'; }
+          if (res.number) { reqNumber.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one number'; reqNumber.style.color = '#1a8a1a'; } else { reqNumber.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number'; reqNumber.style.color = '#c33'; }
+          if (res.special) { reqSpecial.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one special character'; reqSpecial.style.color = '#1a8a1a'; } else { reqSpecial.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character'; reqSpecial.style.color = '#c33'; }
+
+          if (pw && cpw && pw === cpw) { reqMatch.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> Passwords match'; reqMatch.style.color = '#1a8a1a'; } else { reqMatch.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> Passwords must match'; reqMatch.style.color = '#c33'; }
+        }
+
+        const all = res.length && res.upper && res.number && res.special;
+        const submitBtn = step2.querySelector('button[type="submit"]');
+        if (submitBtn) {
+          submitBtn.disabled = !(all && pw && cpw && pw === cpw);
+        }
+      }
+
+      passwordField.addEventListener('input', updateUI);
+      if (confirmPasswordField) confirmPasswordField.addEventListener('input', updateUI);
+
+      // initialize state on load
+      setTimeout(updateUI, 0);
+    })();
+
     // On page load, restore step and values
     if (sessionStorage.getItem('signupStep2Active') === 'true') {
       goToStep2();
@@ -334,6 +417,19 @@ document.addEventListener('DOMContentLoaded', () => {
         Swal.fire({ icon: 'error', title: 'Password Mismatch', text: 'Passwords do not match.' });
         return;
       }
+      // Strong password requirement: min 8 chars, at least one uppercase, one number, one special char
+      try {
+        const pwd = step2.elements['password'].value || '';
+        const strongPw = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[\W_]).{8,}$/;
+        if (!strongPw.test(pwd)) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'Weak password',
+            html: 'Password must be at least 8 characters long and include at least one uppercase letter, one number, and one special character.'
+          });
+          return;
+        }
+      } catch (e) { /* ignore and proceed */ }
       
       // Gather all data
       saveStep2ToSession();
@@ -345,11 +441,23 @@ document.addEventListener('DOMContentLoaded', () => {
         ? `${step1Data.birthdayYear}-${step1Data.birthdayMonth}-${step1Data.birthdayDay}` 
         : '';
       
+      // Helper: Title-case a name (First letter uppercase, rest lowercase)
+      function titleCase(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map(s => s.charAt(0).toUpperCase() + s.slice(1))
+          .join(' ');
+      }
+
       const payload = {
-        firstName: step1Data.firstName || '',
-        middleName: step1Data.middleName || '',
-        lastName: step1Data.lastName || '',
-        suffix: step1Data.suffix || '',
+        firstName: titleCase(step1Data.firstName || ''),
+        middleName: titleCase(step1Data.middleName || ''),
+        lastName: titleCase(step1Data.lastName || ''),
+        suffix: titleCase(step1Data.suffix || ''),
         birthday: birthday,
         username: step2Data.username || '',
         email: step2Data.email || '',
@@ -376,7 +484,7 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
       try {
-        const response = await fetch('http://localhost:5000/api/users/smart/register', {
+        const response = await fetch(`${API_BASE}/api/users/smart/register`, {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',
@@ -410,7 +518,7 @@ document.addEventListener('DOMContentLoaded', () => {
           if (data && data.code === 'email_exists') alertText = 'This email is already registered.';
           if (data && data.code === 'username_exists') alertText = 'This username is already taken.';
           if (data && data.code === 'birthday_invalid') alertText = 'Invalid birthday format.';
-          if (data && data.code === 'age_not_allowed') alertText = 'Only users aged 15 to 30 are allowed to sign up.';
+          if (data && data.code === 'age_not_allowed') alertText = 'Only users aged 11 to 30 are allowed to sign up.';
 
           Swal.fire({ 
             icon: 'error', 

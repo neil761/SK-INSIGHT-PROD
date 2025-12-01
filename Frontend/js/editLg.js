@@ -6,10 +6,33 @@
   - Confirm + show loading on submit and PUT/POST to server (multipart when files changed)
 */
 
+
+
+// Make a single runtime-resolved API base available to all handlers in this file.
+const API_BASE =
+  (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (typeof window !== 'undefined' && (window.location && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')))
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
+// Re-open DOMContentLoaded for attaching nav handlers and helpers that also use `API_BASE`.
 document.addEventListener('DOMContentLoaded', function () {
+
+
+  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
+    try { 
+      window.initNavbarHamburger(); 
+    } catch (e) {
+       /* ignore */ 
+      }
+  } 
+
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   if (!token) return;
   let _profileId = null;
+
+  
 
   // helpers
   function base64ToFile(base64, filename) {
@@ -46,6 +69,29 @@ document.addEventListener('DOMContentLoaded', function () {
     el.value = value ?? '';
   }
 
+  // Extract a friendly filename from a URL or server value (best-effort)
+  function extractFilenameFromUrl(url) {
+    if (!url) return '';
+    try {
+      // If it's a plain public id or filename (no scheme), just take last segment
+      if (!/^https?:\/\//i.test(url)) return String(url).split(/[\\\/]/).pop().split('?')[0] || '';
+      const u = new URL(url);
+      const segments = u.pathname.split('/').filter(Boolean);
+      return (segments.pop() || '').split('?')[0] || '';
+    } catch (e) {
+      try { return String(url).split(/[\\\/]/).pop().split('?')[0] || ''; } catch (e2) { return ''; }
+    }
+  }
+
+  function setFilenameIfExists(id, name) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = name || '';
+    try {
+      if (name) el.classList.add('visible'); else el.classList.remove('visible');
+    } catch (e) { /* ignore */ }
+  }
+
   function renderPreview(containerId, src) {
     const c = document.getElementById(containerId);
     if (!c) return;
@@ -56,16 +102,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     c.style.display = 'block';
     c.innerHTML = `
-      <button type="button" class="remove-image-btn" data-remove aria-label="Remove image">×</button>
-      <img src="${src}" alt="preview" />
+      <div class="preview-inner">
+        <img class="preview-img" src="${src}" alt="preview" />
+        <button type="button" class="remove-image-btn" data-remove aria-label="Remove image">×</button>
+      </div>
     `;
     const btn = c.querySelector('[data-remove]');
     if (btn) btn.addEventListener('click', () => {
       // clear preview and mark removed
-      frontState.removed = true;
-      backState.removed = backState.removed; // noop for clarity
-      if (containerId.includes('Front')) frontState.base64 = null;
-      if (containerId.includes('Back')) backState.base64 = null;
+      if (containerId.includes('Front')) {
+        frontState.removed = true;
+        frontState.base64 = null;
+        setFilenameIfExists('idImageFrontFilename', '');
+      }
+      if (containerId.includes('Back')) {
+        backState.removed = true;
+        backState.base64 = null;
+        setFilenameIfExists('idImageBackFilename', '');
+      }
       renderPreview(containerId, null);
     });
     const img = c.querySelector('img');
@@ -99,7 +153,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // populate from server
   async function populate() {
     try {
-      const res = await fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+      const res = await fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       if (!res.ok) return;
@@ -124,6 +178,8 @@ document.addEventListener('DOMContentLoaded', function () {
           frontState.base64 = b64;
           frontState.removed = false;
           renderPreview('imagePreviewContainerFront', b64);
+          // display filename extracted from the returned URL/value
+          try { setFilenameIfExists('idImageFrontFilename', extractFilenameFromUrl(frontUrl) || ''); } catch (e) {}
         }
       }
       if (backUrl) {
@@ -132,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
           backState.base64 = b64;
           backState.removed = false;
           renderPreview('imagePreviewContainerBack', b64);
+          try { setFilenameIfExists('idImageBackFilename', extractFilenameFromUrl(backUrl) || ''); } catch (e) {}
         }
       }
     } catch (e) {
@@ -155,6 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
       frontState.base64 = fr.result;
       frontState.removed = false;
       renderPreview('imagePreviewContainerFront', fr.result);
+      // show the filename next to upload control
+      try { setFilenameIfExists('idImageFrontFilename', f.name || ''); } catch (e) {}
     };
     fr.readAsDataURL(f);
   });
@@ -168,6 +227,8 @@ document.addEventListener('DOMContentLoaded', function () {
       backState.base64 = fr.result;
       backState.removed = false;
       renderPreview('imagePreviewContainerBack', fr.result);
+      // show the filename next to upload control
+      try { setFilenameIfExists('idImageBackFilename', f.name || ''); } catch (e) {}
     };
     fr.readAsDataURL(f);
   });
@@ -208,7 +269,7 @@ document.addEventListener('DOMContentLoaded', function () {
           if (backState.removed) fd.append('_removed', JSON.stringify({ back: true }));
           if (hasNewFront) fd.append('idImageFront', base64ToFile(frontState.base64, 'front.png'));
           if (hasNewBack) fd.append('idImageBack', base64ToFile(backState.base64, 'back.png'));
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` }, body: fd });
+          const res = await fetch(`${API_BASE}/api/lgbtqprofiling/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}` }, body: fd });
           const text = await res.text();
           if (!res.ok) throw new Error(text || 'Update failed');
           try { Swal.close(); } catch (e) {}
@@ -217,7 +278,7 @@ document.addEventListener('DOMContentLoaded', function () {
           return;
         } else {
           // send JSON PUT
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+          const res = await fetch(`${API_BASE}/api/lgbtqprofiling/me`, { method: 'PUT', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
           const j = await res.json().catch(()=>null);
           if (!res.ok) throw new Error((j && j.error) || 'Update failed');
           try { Swal.close(); } catch (e) {}
@@ -231,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function () {
         Object.entries(payload).forEach(([k,v]) => fd.append(k, v));
         if (hasNewFront) fd.append('idImageFront', base64ToFile(frontState.base64, 'front.png'));
         if (hasNewBack) fd.append('idImageBack', base64ToFile(backState.base64, 'back.png'));
-        const res = await fetch('http://localhost:5000/api/lgbtqprofiling', { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
+        const res = await fetch(`${API_BASE}/api/lgbtqprofiling`, { method: 'POST', headers: { Authorization: `Bearer ${token}` }, body: fd });
         const text = await res.text();
         if (!res.ok) throw new Error(text || 'Create failed');
   try { Swal.close(); } catch (e) {}
@@ -246,165 +307,25 @@ document.addEventListener('DOMContentLoaded', function () {
     }
   });
 
-  // initialize
-  // mobile hamburger menu toggle (connect navbar hamburger to mobile menu)
-  const navbarHamburgerEl = document.getElementById('navbarHamburger');
-  const navbarMobileMenuEl = document.getElementById('navbarMobileMenu');
-  if (navbarHamburgerEl && navbarMobileMenuEl) {
-    // ensure menu is hidden by default
-    try { navbarMobileMenuEl.style.display = navbarMobileMenuEl.style.display || 'none'; } catch (e) {}
-
-    const setMenuVisible = (visible) => {
-      try {
-        navbarMobileMenuEl.style.display = visible ? 'block' : 'none';
-        if (visible) navbarHamburgerEl.classList.add('open'); else navbarHamburgerEl.classList.remove('open');
-      } catch (e) {}
-    };
-
-    navbarHamburgerEl.addEventListener('click', (ev) => {
-      ev.stopPropagation();
-      const isOpen = navbarMobileMenuEl.style.display === 'block';
-      setMenuVisible(!isOpen);
-    });
-
-    // Close menu when clicking outside
-    document.addEventListener('click', (ev) => {
-      if (!navbarMobileMenuEl.contains(ev.target) && !navbarHamburgerEl.contains(ev.target)) {
-        setMenuVisible(false);
-      }
-    });
-  }
+  // Navbar and navigation logic is now handled by shared navbar.js
+  // All local hamburger/nav button code removed for maintainability.
 
   populate();
 
 
 });
 
-document.addEventListener('DOMContentLoaded', function () {
-  // ✅ Attach KK Profiling nav
-  const kkProfileNavBtn = document.getElementById('kkProfileNavBtn');
-  if (kkProfileNavBtn) kkProfileNavBtn.addEventListener('click', handleKKProfileNavClick);
-
-  const kkProfileNavBtnDesktop = document.getElementById('kkProfileNavBtnDesktop');
-  if (kkProfileNavBtnDesktop) kkProfileNavBtnDesktop.addEventListener('click', handleKKProfileNavClick);
-
-  const kkProfileNavBtnMobile = document.getElementById('kkProfileNavBtnMobile');
-  if (kkProfileNavBtnMobile) kkProfileNavBtnMobile.addEventListener('click', handleKKProfileNavClick);
-
-  // ✅ Attach LGBTQ nav
-  const lgbtqProfileNavBtnDesktop = document.getElementById('lgbtqProfileNavBtnDesktop');
-  if (lgbtqProfileNavBtnDesktop) lgbtqProfileNavBtnDesktop.addEventListener('click', handleLGBTQProfileNavClick);
-
-  const lgbtqProfileNavBtnMobile = document.getElementById('lgbtqProfileNavBtnMobile');
-  if (lgbtqProfileNavBtnMobile) lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // ✅ Attach Educational Assistance nav
-  const educAssistanceNavBtnDesktop = document.getElementById('educAssistanceNavBtnDesktop');
-  if (educAssistanceNavBtnDesktop) educAssistanceNavBtnDesktop.addEventListener('click', handleEducAssistanceNavClick);
-
-  const educAssistanceNavBtnMobile = document.getElementById('educAssistanceNavBtnMobile');
-  if (educAssistanceNavBtnMobile) educAssistanceNavBtnMobile.addEventListener('click', handleEducAssistanceNavClick);
-
-     
-  function attachEducHandler(btn) {
-    if (!btn) return;
-    btn.addEventListener('click', function (e) {
-      if (window.checkAndPromptEducReapply) {
-        try { window.checkAndPromptEducReapply({ event: e, redirectUrl: '../../Educational-assistance-user.html' }); }
-        catch (err) { handleEducAssistanceNavClick(e); }
-      } else {
-        handleEducAssistanceNavClick(e);
-      }
-    });
-  }
-
-  attachEducHandler(document.getElementById('educAssistanceNavBtnDesktop'));
-  attachEducHandler(document.getElementById('educAssistanceNavBtnMobile'));
-
-  // Embed educRejected helper so this page can prompt to reapply if needed
-  (function () {
-    async function getJsonSafe(res) { try { return await res.json(); } catch (e) { return null; } }
-
-    async function checkAndPromptEducReapply(opts = {}) {
-      const {
-        event,
-        redirectUrl = '../../Educational-assistance-user.html',
-        draftKeys = ['educDraft','educationalDraft','educAssistanceDraft'],
-        formName = 'Educational Assistance',
-        apiBase = 'http://localhost:5000'
-      } = opts || {};
-
-      if (event && typeof event.preventDefault === 'function') event.preventDefault();
-
-      const token = opts.token || sessionStorage.getItem('token') || localStorage.getItem('token');
-      if (!token) return { redirected: false, isRejected: false, hasProfile: false, isFormOpen: false };
-
-      try {
-        const cycleUrl = `${apiBase}/api/formcycle/status?formName=${encodeURIComponent(formName)}`;
-        const profileUrl = `${apiBase}/api/educational-assistance/me`;
-        const [cycleRes, profileRes] = await Promise.all([
-          fetch(cycleUrl, { headers: { Authorization: `Bearer ${token}` } }),
-          fetch(profileUrl, { headers: { Authorization: `Bearer ${token}` } })
-        ]);
-
-        const cycleData = await getJsonSafe(cycleRes);
-        const profileData = await getJsonSafe(profileRes) || {};
-        const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-        const isFormOpen = latestCycle?.isOpen ?? false;
-        const hasProfile = Boolean(profileData && (profileData._id || profileData.id));
-
-        const statusVal = (profileData && (profileData.status || profileData.decision || profileData.adminDecision || profileData.result)) || '';
-        const isRejected = Boolean(
-          (profileData && (profileData.rejected === true || profileData.isRejected === true)) ||
-          (typeof statusVal === 'string' && /reject|denied|denied_by_admin|rejected/i.test(statusVal))
-        );
-        const isApproved = Boolean(
-          (profileData && (profileData.status === 'approved' || profileData.approved === true)) ||
-          (typeof statusVal === 'string' && /approve|approved/i.test(statusVal))
-        );
-
-        if (isFormOpen && (!hasProfile || isRejected)) {
-          if (isRejected) {
-            await Swal.fire({ icon: 'warning', title: 'Previous Application Rejected', text: 'Your previous application was rejected. You will be redirected to the form to submit a new application.' });
-            try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
-            window.location.href = redirectUrl;
-            return { redirected: true, isRejected, hasProfile, isFormOpen };
-          } else {
-            const text = `You don't have a profile yet. Please fill out the form to create one.`;
-            const result = await Swal.fire({ icon: 'info', title: 'No profile found', text, showCancelButton: true, confirmButtonText: 'Go to form', cancelButtonText: 'No' });
-            if (result && result.isConfirmed) {
-              try { draftKeys.forEach(k => sessionStorage.removeItem(k)); } catch (e) {}
-              window.location.href = redirectUrl;
-              return { redirected: true, isRejected, hasProfile, isFormOpen };
-            }
-          }
-        }
-
-        if (!isFormOpen && hasProfile && isApproved) {
-          const res2 = await Swal.fire({ icon: 'info', title: `The ${formName} is currently closed`, text: `Your application has been approved. Do you want to view your response?`, showCancelButton: true, confirmButtonText: 'Yes, view my response', cancelButtonText: 'No' });
-          if (res2 && res2.isConfirmed) { window.location.href = `educConfirmation.html`; return { redirected: true, isRejected, hasProfile, isFormOpen }; }
-        }
-
-        return { redirected: false, isRejected, hasProfile, isFormOpen };
-      } catch (err) {
-        console.error('checkAndPromptEducReapply error', err);
-        return { redirected: false, isRejected: false, hasProfile: false, isFormOpen: false };
-      }
-    }
-
-    window.checkAndPromptEducReapply = checkAndPromptEducReapply;
-  })();
-});
+// All nav button event listeners and hamburger logic removed; navigation is now handled by navbar.js
 
 // KK Profile Navigation
 function handleKKProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=KK%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/kkprofiling/me', {
+    fetch(`${API_BASE}/api/kkprofiling/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -480,10 +401,10 @@ function handleLGBTQProfileNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=LGBTQIA%2B%20Profiling`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
+    fetch(`${API_BASE}/api/lgbtqprofiling/me/profile`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])
@@ -559,10 +480,10 @@ function handleEducAssistanceNavClick(event) {
   event.preventDefault();
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   Promise.all([
-    fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
+    fetch(`${API_BASE}/api/formcycle/status?formName=Educational%20Assistance`, {
       headers: { Authorization: `Bearer ${token}` }
     }),
-    fetch('http://localhost:5000/api/educational-assistance/me', {
+    fetch(`${API_BASE}/api/educational-assistance/me`, {
       headers: { Authorization: `Bearer ${token}` }
     })
   ])

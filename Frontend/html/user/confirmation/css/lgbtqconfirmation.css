@@ -171,6 +171,7 @@ body::before {
   font-size: 14px;
   line-height: 1.6;
   margin-bottom: 20px;
+  text-align: justify;
 }
 
 .views, .edit {
@@ -433,6 +434,11 @@ body::before {
     gap: 20px;
   }
 
+      .card-header {
+
+  margin-bottom: 5px;
+}
+
   .footer-left,
   .footer-middle,
   .footer-right {
@@ -451,9 +457,12 @@ body::before {
   height: 50px;
 
   }
+  .card{
+    padding: 20px 25px 40px 25px;
+  }
   .card h2{
-    font-size: 1rem;
-    margin-top: 10%;
+    font-size: 1.2rem;
+    margin-top: 2%;
   }
   .views, .edit {
     padding: 5% 3%;

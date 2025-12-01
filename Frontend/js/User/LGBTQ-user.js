@@ -1,4 +1,10 @@
 document.addEventListener("DOMContentLoaded", () => {
+  // runtime-configurable API base. In production inject `window.API_BASE = 'https://sk-insight.online'`.
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
   // if (!validateTokenAndRedirect("LGBTQ+ Form")) {
   //   return;
   // }
@@ -133,7 +139,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Autofill birthday and name fields from /api/users/me when token is available
   if (token && birthdayInput) {
-    fetch("http://localhost:5000/api/users/me", {
+    fetch(`${API_BASE}/api/users/me`, {
       headers: { Authorization: `Bearer ${token}` },
     })
       .then((res) => (res.ok ? res.json() : null))
@@ -175,6 +181,119 @@ document.addEventListener("DOMContentLoaded", () => {
         } catch (e) { /* ignore DOM errors */ }
       })
       .catch((err) => console.error("❌ Fetch me error:", err));
+
+    // Also fetch the user's most recent profile (active cycle or fallback)
+    // and populate only editable/changeable fields so users don't re-enter
+    // information that doesn't change often. We respect any existing draft
+    // in sessionStorage (do not overwrite draft values).
+    (async () => {
+      try {
+        const resp = await fetch(`${API_BASE}/api/lgbtqprofiling/me/recent`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!resp.ok) return;
+        const recent = await resp.json().catch(() => null);
+        if (!recent) return;
+
+        // support both { profile, isForActiveCycle } and plain profile responses
+        const p = recent.profile || recent;
+        if (!p) return;
+
+        // Only populate if user has no draft for the editable fields
+        const existingDraft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+        let didPopulate = false;
+
+        // sexAssignedAtBirth -> select#sex
+        try {
+          const sexEl = document.getElementById('sex');
+          if (sexEl && (!existingDraft.sex && (!sexEl.value || sexEl.value === ''))) {
+            if (p.sexAssignedAtBirth) { sexEl.value = p.sexAssignedAtBirth; didPopulate = true; }
+          }
+        } catch (e) { /* ignore DOM errors */ }
+
+        // lgbtqClassification -> select#identity
+        try {
+          const identityEl = document.getElementById('identity');
+          if (identityEl && (!existingDraft.identity && (!identityEl.value || identityEl.value === ''))) {
+            if (p.lgbtqClassification) { identityEl.value = p.lgbtqClassification; didPopulate = true; }
+          }
+        } catch (e) { /* ignore DOM errors */ }
+
+        // ID images: show previous uploaded images as previews (user can replace them)
+        try {
+          if (p.idImageFront) {
+            const preview = document.getElementById('imagePreviewFront');
+            const container = document.getElementById('imagePreviewContainerFront');
+            const nameEl = document.getElementById('idImageFrontFilename');
+            if (preview && container) {
+              if (!existingDraft.idImageFront) {
+                preview.src = p.idImageFront;
+                preview.style.display = 'block';
+                container.style.display = 'block';
+                // derive filename from URL when possible
+                let derivedName = 'Previously uploaded';
+                try {
+                  if (typeof p.idImageFront === 'string' && /^https?:\/\//i.test(p.idImageFront)) {
+                    derivedName = (p.idImageFront.split('/').pop() || '').split('?')[0] || derivedName;
+                  }
+                } catch (e) { /* ignore */ }
+                if (nameEl) { nameEl.textContent = derivedName; nameEl.classList.add('visible'); }
+                // store into draft so it's preserved on reload but can be overwritten by user
+                const save = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+                if (!save.idImageFront) { save.idImageFront = p.idImageFront; save.idImageFrontName = derivedName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(save)); }
+                didPopulate = true;
+              }
+            }
+          }
+        } catch (e) { /* ignore preview issues */ }
+
+        try {
+          if (p.idImageBack) {
+            const preview = document.getElementById('imagePreviewBack');
+            const container = document.getElementById('imagePreviewContainerBack');
+            const nameEl = document.getElementById('idImageBackFilename');
+            if (preview && container) {
+              if (!existingDraft.idImageBack) {
+                preview.src = p.idImageBack;
+                preview.style.display = 'block';
+                container.style.display = 'block';
+                // derive filename from URL when possible
+                let derivedName = 'Previously uploaded';
+                try {
+                  if (typeof p.idImageBack === 'string' && /^https?:\/\//i.test(p.idImageBack)) {
+                    derivedName = (p.idImageBack.split('/').pop() || '').split('?')[0] || derivedName;
+                  }
+                } catch (e) { /* ignore */ }
+                if (nameEl) { nameEl.textContent = derivedName; nameEl.classList.add('visible'); }
+                const save = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+                if (!save.idImageBack) { save.idImageBack = p.idImageBack; save.idImageBackName = derivedName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(save)); }
+                didPopulate = true;
+              }
+            }
+          }
+        } catch (e) { /* ignore preview issues */ }
+
+        // If we populated any editable field, show an informational alert with cycle info
+        try {
+          if (didPopulate) {
+            const cycle = p.formCycle || (recent.profile && recent.profile.formCycle) || null;
+            let cycleText = '';
+            if (cycle && (cycle.cycleNumber || cycle.year)) {
+              const num = cycle.cycleNumber ? `Cycle ${cycle.cycleNumber}` : '';
+              const yr = cycle.year ? `${cycle.year}` : '';
+              cycleText = `${num}${num && yr ? ', ' : ''}${yr}`.trim();
+            }
+            const title = cycleText ? 'Previous Submission Loaded' : 'Previous Submission Found';
+            const message = cycleText
+              ? `We've pre-filled editable fields using your most recent submission (${cycleText}). You can review and update any of these before submitting.`
+              : 'We\'ve pre-filled editable fields using your most recent submission. You can review and update any of these before submitting.';
+            Swal.fire({ icon: 'info', title, text: message, confirmButtonText: 'OK' });
+          }
+        } catch (e) { /* ignore alert failures */ }
+      } catch (err) {
+        console.warn('Failed to fetch recent LGBTQ profile:', err);
+      }
+    })();
   }
 
   // ✅ Handle submit
@@ -222,7 +341,43 @@ document.addEventListener("DOMContentLoaded", () => {
 
     try {
       const formData = new FormData(form);
-      const res = await fetch("http://localhost:5000/api/lgbtqprofiling", {
+
+      // If user didn't choose files but we have previous images in draft (URL or base64), attach them
+      const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+      async function attachIfMissing(inputId, fieldName) {
+        try {
+          const input = document.getElementById(inputId);
+          const hasFile = input && input.files && input.files.length > 0;
+          const draftVal = existing && existing[inputId];
+          const draftName = existing && (existing[`${inputId}Name`] || existing[`${inputId}Name`.toString()]);
+          if (!hasFile && draftVal) {
+            // data URL
+            if (typeof draftVal === 'string' && draftVal.startsWith('data:')) {
+              const file = base64ToFile(draftVal, draftName || `${inputId}.png`);
+              formData.append(fieldName, file);
+            }
+            // remote URL
+            else if (typeof draftVal === 'string' && /^https?:\/\//i.test(draftVal)) {
+              try {
+                const resp = await fetch(draftVal);
+                if (resp.ok) {
+                  const blob = await resp.blob();
+                  const filename = draftName || (draftVal.split('/').pop() || `${inputId}.png`).split('?')[0];
+                  const file = new File([blob], filename, { type: blob.type || 'application/octet-stream' });
+                  formData.append(fieldName, file);
+                }
+              } catch (e) { /* ignore network errors when attaching fallback images */ }
+            }
+          }
+        } catch (e) { /* ignore */ }
+      }
+
+      // Attach known image inputs if missing
+      await attachIfMissing('idImageFront', 'idImageFront');
+      await attachIfMissing('idImageBack', 'idImageBack');
+      await attachIfMissing('profileImage', 'profileImage');
+      await attachIfMissing('signatureImage', 'signatureImage');
+      const res = await fetch(`${API_BASE}/api/lgbtqprofiling`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -267,364 +422,25 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // KK Profile Navigation
-  function handleKKProfileNavClick(event) {
-    event.preventDefault();
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=KK%20Profiling', {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch('http://localhost:5000/api/kkprofiling/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "KK Profiling";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileRes.ok && profileData && profileData._id;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have a ${formName} profile. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "./confirmation/html/kkcofirmation.html";
-        });
-        return;
+  // Helper: convert base64 data URL to File
+  function base64ToFile(dataurl, filename) {
+    try {
+      const arr = dataurl.split(',');
+      const mime = arr[0].match(/:(.*?);/)[1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
       }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/kkcofirmation.html";
-        });
-        return;
-      }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "kkform-personal.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
+      return new File([u8arr], filename, { type: mime });
+    } catch (e) {
+      // fallback: return a small empty blob file
+      return new File([new Blob()], filename || 'file.bin');
     }
-    })
-    .catch(() => window.location.href = "kkform-personal.html");
   }
 
-  // LGBTQ+ Profile Navigation
-  function handleLGBTQProfileNavClick(event) {
-    event.preventDefault();
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have a ${formName} profile. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "lgbtqform.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-    })
-    .catch(() => window.location.href = "lgbtqform.html");
-  }
-
-  // Educational Assistance Navigation
-  function handleEducAssistanceNavClick(event) {
-    event.preventDefault();
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=Educational%20Assistance', {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch('http://localhost:5000/api/educational-assistance/me', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "Educational Assistance";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have an application. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new application at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already applied for ${formName}`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/educConfirmation.html";
-        });
-        return;
-      }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "Educational-assistance-user.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-    })
-    .catch(() => window.location.href = "Educational-assistance-user.html");
-  }
-
-  // Attach to desktop nav button
-  const kkProfileNavBtnDesktop = document.getElementById("kkProfileNavBtnDesktop");
-  if (kkProfileNavBtnDesktop) {
-    kkProfileNavBtnDesktop.addEventListener("click", handleKKProfileNavClick);
-  }
-  // Attach to mobile nav button
-  const kkProfileNavBtnMobile = document.getElementById("kkProfileNavBtnMobile");
-  if (kkProfileNavBtnMobile) {
-    kkProfileNavBtnMobile.addEventListener("click", handleKKProfileNavClick);
-  }
-
-  // Hamburger menu toggle
-  const hamburger = document.getElementById('navbarHamburger');
-  const mobileMenu = document.getElementById('navbarMobileMenu');
-
-  hamburger.addEventListener('click', function() {
-
-      mobileMenu.classList.toggle('active');
-  });
-
-  // LGBTQ+ Profile Navigation
-  function handleLGBTQProfileNavClick(event) {
-    event.preventDefault();
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
-    Promise.all([
-      fetch('http://localhost:5000/api/formcycle/status?formName=LGBTQIA%2B%20Profiling', {
-        headers: { Authorization: `Bearer ${token}` }
-      }),
-      fetch('http://localhost:5000/api/lgbtqprofiling/me/profile', {
-        headers: { Authorization: `Bearer ${token}` }
-      })
-    ])
-    .then(async ([cycleRes, profileRes]) => {
-      let cycleData = await cycleRes.json().catch(() => null);
-      let profileData = await profileRes.json().catch(() => ({}));
-      const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
-      const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
-      const isFormOpen = latestCycle?.isOpen ?? false;
-      const hasProfile = profileData && profileData._id ? true : false;
-      // CASE 1: Form closed, user already has profile
-      if (!isFormOpen && hasProfile) {
-        Swal.fire({
-          icon: "info",
-          title: `The ${formName} is currently closed`,
-          text: `but you already have a ${formName} profile. Do you want to view your response?`,
-          showCancelButton: true,
-          confirmButtonText: "Yes, view my response",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-      // CASE 2: Form closed, user has NO profile
-      if (!isFormOpen && !hasProfile) {
-        Swal.fire({
-          icon: "warning",
-          title: `The ${formName} form is currently closed`,
-          text: "You cannot submit a new response at this time.",
-          confirmButtonText: "OK"
-        });
-        return;
-      }
-      // CASE 3: Form open, user already has a profile
-      if (isFormOpen && hasProfile) {
-        Swal.fire({
-          title: `You already answered ${formName} Form`,
-          text: "Do you want to view your response?",
-          icon: "info",
-          showCancelButton: true,
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        }).then(result => {
-          if (result.isConfirmed) window.location.href = "confirmation/html/lgbtqconfirmation.html";
-        });
-        return;
-      }
-    // CASE 4: Form open, no profile → Show SweetAlert and go to form
-    if (isFormOpen && !hasProfile) {
-      Swal.fire({
-        icon: "info",
-        title: `No profile found`,
-        text: `You don't have a profile yet. Please fill out the form to create one.`,
-        showCancelButton: true, // Show the "No" button
-        confirmButtonText: "Go to form", // Text for the "Go to Form" button
-        cancelButtonText: "No", // Text for the "No" button
-      }).then(result => {
-        if (result.isConfirmed) {
-          // Redirect to the form page when "Go to Form" is clicked
-          window.location.href = "lgbtqform.html";
-        } else if (result.dismiss === Swal.DismissReason.cancel) {
-        }
-      });
-      return;
-    }
-    })
-    .catch(() => window.location.href = "lgbtqform.html");
-  }
-
-  // Attach to desktop nav button
-  const lgbtqProfileNavBtnDesktop = document.getElementById('lgbtqProfileNavBtnDesktop');
-  if (lgbtqProfileNavBtnDesktop) {
-    lgbtqProfileNavBtnDesktop.addEventListener('click', handleLGBTQProfileNavClick);
-  }
-  // Attach to mobile nav button
-  const lgbtqProfileNavBtnMobile = document.getElementById('lgbtqProfileNavBtnMobile');
-  if (lgbtqProfileNavBtnMobile) {
-    lgbtqProfileNavBtnMobile.addEventListener('click', handleLGBTQProfileNavClick);
-  }
-
-  // KK Profile
-  document.getElementById('kkProfileNavBtnDesktop')?.addEventListener('click', handleKKProfileNavClick);
-  document.getElementById('kkProfileNavBtnMobile')?.addEventListener('click', handleKKProfileNavClick);
-
-  // LGBTQ+ Profile
-  document.getElementById('lgbtqProfileNavBtnDesktop')?.addEventListener('click', handleLGBTQProfileNavClick);
-  document.getElementById('lgbtqProfileNavBtnMobile')?.addEventListener('click', handleLGBTQProfileNavClick);
-
-  // Educational Assistance
-  document.getElementById('educAssistanceNavBtnDesktop')?.addEventListener('click', handleEducAssistanceNavClick);
-  document.getElementById('educAssistanceNavBtnMobile')?.addEventListener('click', handleEducAssistanceNavClick);
+  // Navigation handled by shared navbar.js — local nav/hamburger handlers removed
 
   /* ✅ IMAGE PREVIEW + VALIDATION + REMOVE */
   function handleImageInputChange(inputId, previewContainerId, previewImgId, allowedTypes = ['image/png', 'image/jpeg']) {
@@ -833,7 +649,7 @@ document.getElementById('removeImageBtnFront').addEventListener('click', functio
   document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
   try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageFront; delete existing.idImageFrontName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
-  const nameEl = document.getElementById('idImageFrontFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+  const nameEl = document.getElementById('idImageFrontFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
 });
 
 // Back ID image preview
@@ -895,7 +711,7 @@ document.getElementById('removeImageBtnBack').addEventListener('click', function
   document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
   document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
   try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageBack; delete existing.idImageBackName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
-  const nameEl = document.getElementById('idImageBackFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.style.display = 'none'; }
+  const nameEl = document.getElementById('idImageBackFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
 });
 
 // --- View (enlarge) previews using SweetAlert (adds a close button) ---

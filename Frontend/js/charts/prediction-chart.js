@@ -1,6 +1,11 @@
 let lastPredictedCycle = null;
 let lastPredictedYear = null;
 let lastPredictionResult = null;
+const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+  ? window.API_BASE
+  : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+    ? 'http://localhost:5000'
+    : 'https://sk-insight.online';
 export async function renderPredictionChart(year, cycle) {
   const chartElem = document.getElementById("predictionChart");
   if (chartElem) {
@@ -57,7 +62,7 @@ export async function renderPredictionChart(year, cycle) {
   // Fetch all predictions from the new GET API
   let predictionsArr = [];
   try {
-    const res = await fetch("http://localhost:5000/api/cycle-predict", {
+    const res = await fetch(`${API_BASE}/api/cycle-predict`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     if (res.ok) {
@@ -374,7 +379,7 @@ function renderPredictionChartWithData({ predicted, suggestions }, year, cycle, 
 async function fetchActualData(year, cycle, token, chartLabels) {
   let actual = {};
   try {
-    let url = "http://localhost:5000/api/kkprofiling";
+    let url = `${API_BASE}/api/kkprofiling`;
     if (year && cycle) url += `?year=${year}&cycle=${cycle}`;
     const resActual = await fetch(url, {
       headers: {
