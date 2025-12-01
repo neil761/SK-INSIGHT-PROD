@@ -69,6 +69,29 @@ document.addEventListener('DOMContentLoaded', function () {
     el.value = value ?? '';
   }
 
+  // Extract a friendly filename from a URL or server value (best-effort)
+  function extractFilenameFromUrl(url) {
+    if (!url) return '';
+    try {
+      // If it's a plain public id or filename (no scheme), just take last segment
+      if (!/^https?:\/\//i.test(url)) return String(url).split(/[\\\/]/).pop().split('?')[0] || '';
+      const u = new URL(url);
+      const segments = u.pathname.split('/').filter(Boolean);
+      return (segments.pop() || '').split('?')[0] || '';
+    } catch (e) {
+      try { return String(url).split(/[\\\/]/).pop().split('?')[0] || ''; } catch (e2) { return ''; }
+    }
+  }
+
+  function setFilenameIfExists(id, name) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = name || '';
+    try {
+      if (name) el.classList.add('visible'); else el.classList.remove('visible');
+    } catch (e) { /* ignore */ }
+  }
+
   function renderPreview(containerId, src) {
     const c = document.getElementById(containerId);
     if (!c) return;
@@ -79,16 +102,24 @@ document.addEventListener('DOMContentLoaded', function () {
     }
     c.style.display = 'block';
     c.innerHTML = `
-      <button type="button" class="remove-image-btn" data-remove aria-label="Remove image">×</button>
-      <img src="${src}" alt="preview" />
+      <div class="preview-inner">
+        <img class="preview-img" src="${src}" alt="preview" />
+        <button type="button" class="remove-image-btn" data-remove aria-label="Remove image">×</button>
+      </div>
     `;
     const btn = c.querySelector('[data-remove]');
     if (btn) btn.addEventListener('click', () => {
       // clear preview and mark removed
-      frontState.removed = true;
-      backState.removed = backState.removed; // noop for clarity
-      if (containerId.includes('Front')) frontState.base64 = null;
-      if (containerId.includes('Back')) backState.base64 = null;
+      if (containerId.includes('Front')) {
+        frontState.removed = true;
+        frontState.base64 = null;
+        setFilenameIfExists('idImageFrontFilename', '');
+      }
+      if (containerId.includes('Back')) {
+        backState.removed = true;
+        backState.base64 = null;
+        setFilenameIfExists('idImageBackFilename', '');
+      }
       renderPreview(containerId, null);
     });
     const img = c.querySelector('img');
@@ -147,6 +178,8 @@ document.addEventListener('DOMContentLoaded', function () {
           frontState.base64 = b64;
           frontState.removed = false;
           renderPreview('imagePreviewContainerFront', b64);
+          // display filename extracted from the returned URL/value
+          try { setFilenameIfExists('idImageFrontFilename', extractFilenameFromUrl(frontUrl) || ''); } catch (e) {}
         }
       }
       if (backUrl) {
@@ -155,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
           backState.base64 = b64;
           backState.removed = false;
           renderPreview('imagePreviewContainerBack', b64);
+          try { setFilenameIfExists('idImageBackFilename', extractFilenameFromUrl(backUrl) || ''); } catch (e) {}
         }
       }
     } catch (e) {
@@ -178,6 +212,8 @@ document.addEventListener('DOMContentLoaded', function () {
       frontState.base64 = fr.result;
       frontState.removed = false;
       renderPreview('imagePreviewContainerFront', fr.result);
+      // show the filename next to upload control
+      try { setFilenameIfExists('idImageFrontFilename', f.name || ''); } catch (e) {}
     };
     fr.readAsDataURL(f);
   });
@@ -191,6 +227,8 @@ document.addEventListener('DOMContentLoaded', function () {
       backState.base64 = fr.result;
       backState.removed = false;
       renderPreview('imagePreviewContainerBack', fr.result);
+      // show the filename next to upload control
+      try { setFilenameIfExists('idImageBackFilename', f.name || ''); } catch (e) {}
     };
     fr.readAsDataURL(f);
   });

@@ -480,8 +480,7 @@ textarea:focus {
             font-size: 0.95rem;
         }
         .expense-cost-wrapper input.expense-cost {
-    width: 20vw;
-    margin: 1% 2%;
+    width: 37 !important;
 }
   .close-preview-btn {
     top: 10px;

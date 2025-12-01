@@ -49,6 +49,7 @@
   function countUnread(list, userId, now) {
     let count = 0;
     (list||[]).forEach(a => {
+      // Skip inactive announcements
       const isActive = (a.isActive === undefined) ? true : Boolean(a.isActive);
       if (!isActive) return;
       // Check if eventDate has passed (announcement has expired)

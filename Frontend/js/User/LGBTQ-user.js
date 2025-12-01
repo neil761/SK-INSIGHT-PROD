@@ -1,14 +1,4 @@
 document.addEventListener("DOMContentLoaded", () => {
-
-  if (typeof window !== 'undefined' && typeof window.initNavbarHamburger === 'function') {
-    try { 
-      window.initNavbarHamburger(); 
-    } catch (e) {
-       /* ignore */ 
-      }
-  } 
-
-
   // runtime-configurable API base. In production inject `window.API_BASE = 'https://sk-insight.online'`.
   const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     ? window.API_BASE

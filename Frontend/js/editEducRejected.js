@@ -339,6 +339,8 @@ try {
       });
       try { console.debug('renderExpenses appended count=', appended, 'tbodyExists=', !!tbody, 'tableExists=', !!table, 'wrapperExists=', !!wrapper); } catch(e) {}
     }
+    // Attach handlers to expense cost inputs after rendering
+    attachExpenseCostHandlers(document);
   }
   renderExpenses(app.expenses || []);
 
@@ -890,6 +892,8 @@ try {
       }
       wrapper.appendChild(created);
     }
+    // Attach handlers to newly added expense cost input
+    attachExpenseCostHandlers(document);
     try { saveDraft(); } catch(e) {}
   });
 
@@ -902,6 +906,54 @@ try {
   } catch (e) { /* ignore */ }
 
   // On submit: build FormData mapping front-end ids -> backend keys
+  // Inject CSS for expense cost wrapper with peso sign and .00
+  (function injectExpenseCostStyles() {
+    if (document.getElementById('editeduc-rejected-expense-cost-injected-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'editeduc-rejected-expense-cost-injected-styles';
+    style.textContent = `
+      /* Place peso sign and .00 visually inside the input */
+      .expense-cost-wrapper{ position:relative; display:inline-block; }
+      .expense-cost-wrapper input.expense-cost{ box-sizing:border-box; padding-left:28px; padding-right:34px; width:120px; }
+      .expense-cost-wrapper .peso-prefix{ position:absolute; left:8px; top:50%; transform:translateY(-50%); font-weight:600; pointer-events:none; }
+      .expense-cost-wrapper .peso-suffix{ position:absolute; right:8px; top:50%; transform:translateY(-50%); color:#666; pointer-events:none; }
+      /* In card (mobile) layout, make cost input match the full width of the expense item */
+      .expense-card .expense-cost-wrapper { display:block; width:100%; }
+      .expense-card .expense-cost-wrapper input.expense-cost { width:100%; }
+      /* Make remove button occupy full row width */
+      .removeExpenseBtn { width:100%; display:block; padding:8px; margin-top:10px; }
+    `;
+    document.head.appendChild(style);
+  })();
+
+  // Helper: attach input handlers for expense cost fields
+  function attachExpenseCostHandlers(container) {
+    const root = container || document;
+    root.querySelectorAll('input.expense-cost').forEach(input => {
+      // Prevent entering decimal characters and non-digits
+      input.addEventListener('keydown', function (e) {
+        const allowed = ['Backspace','ArrowLeft','ArrowRight','Delete','Tab'];
+        if (allowed.includes(e.key)) return;
+        if (!/^[0-9]$/.test(e.key)) {
+          e.preventDefault();
+        }
+      });
+
+      // On input, strip any non-digits (handle paste)
+      input.addEventListener('input', function (e) {
+        const cleaned = String(this.value).replace(/[^0-9]/g, '');
+        if (this.value !== cleaned) this.value = cleaned;
+      });
+
+      // On blur, coerce to integer (remove fractional part)
+      input.addEventListener('blur', function () {
+        if (!this.value) return;
+        const n = parseInt(this.value, 10);
+        this.value = isNaN(n) ? '' : String(n);
+      });
+    });
+  }
+
   document.getElementById("editEducForm").addEventListener("submit", async (e) => {
     e.preventDefault();
     // Validate required fields (siblings are excluded from this check)

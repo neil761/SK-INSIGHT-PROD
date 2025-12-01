@@ -100,27 +100,88 @@ document.addEventListener('DOMContentLoaded', function () {
                                     didOpen: () => {
                                         const togglePassword = document.getElementById('togglePassword');
                                         const passwordInput = document.getElementById('newPassword');
+                                                                                // insert password requirements UI
+                                                                                const reqWrap = document.createElement('div');
+                                                                                reqWrap.id = 'swal-password-reqs';
+                                                                                reqWrap.style.marginTop = '10px';
+                                                                                reqWrap.style.fontSize = '0.65rem';
+                                                                                reqWrap.style.textAlign = 'left';
+                                                                                reqWrap.setAttribute('aria-live','polite');
+                                                                                reqWrap.innerHTML = `
+                                                                                    <div style="display:flex;flex-direction:column;gap:8px;">
+                                                                                        <div id="swal-pw-length" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters</div>
+                                                                                        <div id="swal-pw-special" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character</div>
+                                                                                        <div id="swal-pw-upper" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter</div>
+                                                                                        <div id="swal-pw-number" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number</div>
+                                                                                    </div>
+                                                                                `;
+                                                                                passwordInput.parentElement.insertAdjacentElement('afterend', reqWrap);
 
-                                        togglePassword.addEventListener('click', () => {
-                                            const isHidden = passwordInput.type === "password";
-                                        
-                                            passwordInput.type = isHidden ? "text" : "password";
-                                        
-                                            if (isHidden) {
-                                                togglePassword.classList.remove("fa-eye");
-                                                togglePassword.classList.add("fa-eye-slash");
-                                            } else {
-                                                togglePassword.classList.remove("fa-eye-slash");
-                                                togglePassword.classList.add("fa-eye");
-                                            }
-                                        });
+                                                                                const reqLength = document.getElementById('swal-pw-length');
+                                                                                const reqUpper = document.getElementById('swal-pw-upper');
+                                                                                const reqNumber = document.getElementById('swal-pw-number');
+                                                                                const reqSpecial = document.getElementById('swal-pw-special');
+
+                                                                                function checkPassword(pw) {
+                                                                                    return {
+                                                                                        length: pw.length >= 8,
+                                                                                        upper: /[A-Z]/.test(pw),
+                                                                                        number: /\d/.test(pw),
+                                                                                        special: /[\W_]/.test(pw)
+                                                                                    };
+                                                                                }
+
+                                                                                const confirmBtn = Swal.getConfirmButton();
+                                                                                if (confirmBtn) confirmBtn.disabled = true; // start disabled until checks pass
+
+                                        function updateReqs() {
+                                          const pw = passwordInput.value || '';
+                                          const r = checkPassword(pw);
+
+                                          // If no input, show plain text without icons
+                                          if (!pw) {
+                                            reqLength.textContent = 'At least 8 characters';
+                                            reqLength.style.color = '#666';
+                                            reqUpper.textContent = 'At least one uppercase letter';
+                                            reqUpper.style.color = '#666';
+                                            reqNumber.textContent = 'At least one number';
+                                            reqNumber.style.color = '#666';
+                                            reqSpecial.textContent = 'At least one special character';
+                                            reqSpecial.style.color = '#666';
+                                          } else {
+                                            // Show checkmarks/X icons when there's input
+                                            if (r.length) { reqLength.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least 8 characters'; reqLength.style.color = '#1a8a1a'; } else { reqLength.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters'; reqLength.style.color = '#c33'; }
+                                            if (r.upper) { reqUpper.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one uppercase letter'; reqUpper.style.color = '#1a8a1a'; } else { reqUpper.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one uppercase letter'; reqUpper.style.color = '#c33'; }
+                                            if (r.number) { reqNumber.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one number'; reqNumber.style.color = '#1a8a1a'; } else { reqNumber.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one number'; reqNumber.style.color = '#c33'; }
+                                            if (r.special) { reqSpecial.innerHTML = '<i class="fa-solid fa-circle-check" style="color: #25d443;"></i> At least one special character'; reqSpecial.style.color = '#1a8a1a'; } else { reqSpecial.innerHTML = '<i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character'; reqSpecial.style.color = '#c33'; }
+                                          }
+
+                                          const ok = r.length && r.upper && r.number && r.special;
+                                          if (confirmBtn) confirmBtn.disabled = !ok;
+                                        }                                                                                passwordInput.addEventListener('input', updateReqs);
+
+                                                                                togglePassword.addEventListener('click', () => {
+                                                                                        const isHidden = passwordInput.type === "password";
+
+                                                                                        passwordInput.type = isHidden ? "text" : "password";
+
+                                                                                        if (isHidden) {
+                                                                                                togglePassword.classList.remove("fa-eye");
+                                                                                                togglePassword.classList.add("fa-eye-slash");
+                                                                                        } else {
+                                                                                                togglePassword.classList.remove("fa-eye-slash");
+                                                                                                togglePassword.classList.add("fa-eye");
+                                                                                        }
+                                                                                });
+                                                                                // initialize
+                                                                                setTimeout(updateReqs, 0);
                                     }
                                 }).then(async (pwResult) => {
                                     if (pwResult.isConfirmed) {
                                         const newPassword = document.getElementById('newPassword').value;
 
                                         // Send new password to backend
-                                            const resetRes = await fetch(`${API_BASE}/api/auth/reset-password`, {
+                                            const resetRes = await fetch(`${API_BASE}/api/auth/verify-otp-reset`, {
                                             method: 'POST',
                                             headers: { 'Content-Type': 'application/json' },
                                             body: JSON.stringify({ email, otpCode, newPassword })
@@ -131,7 +192,13 @@ document.addEventListener('DOMContentLoaded', function () {
                                                 window.location.href = '../../html/user/login.html';
                                             });
                                         } else {
-                                            Swal.fire('Error', resetData.error || 'Failed to reset password', 'error');
+                                            Swal.fire({
+                                                icon: 'error',
+                                                title: 'Error',
+                                                text: resetData.error || 'Failed to reset password',
+                                                allowOutsideClick: false,
+                                                confirmButtonColor: '#0A2C59'
+                                            });
                                         }
                                     }
                                 });
