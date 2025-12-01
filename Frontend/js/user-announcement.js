@@ -361,7 +361,7 @@ if (currentTab === 'foryou') {
           </div>
         </div>
         <div class="card-meta">
-          <div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>
+          ${currentTab === 'foryou' ? '' : `<div class="meta-row"><i class="fa-regular fa-calendar"></i> ${dateCol}</div>`}
           <div class="meta-row"><i class="fa-regular fa-clock"></i> Posted: ${a.createdAt ? formatDateTime(a.createdAt) : '-'}</div>
         </div>
       `;
@@ -378,11 +378,12 @@ if (currentTab === 'foryou') {
           if (!res.ok) throw new Error("Announcement not found");
           const { announcement } = await res.json();
           modalTitle.textContent = announcement.title;
-          // For "foryou" tab, hide event date in modal
+          // For "foryou" tab, show only Posted date
+          const eventDateContainer = modalEventDate.closest('.info-item');
           if (currentTab === 'foryou') {
-            modalEventDate.style.display = "none";
+            if (eventDateContainer) eventDateContainer.style.display = "none";
           } else {
-            modalEventDate.style.display = "";
+            if (eventDateContainer) eventDateContainer.style.display = "";
             modalEventDate.textContent = formatDateTime(announcement.eventDate);
           }
           modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
@@ -420,11 +421,12 @@ if (currentTab === 'foryou') {
         if (!res.ok) throw new Error("Announcement not found");
         const { announcement } = await res.json();
         modalTitle.textContent = announcement.title;
-        // For "foryou" tab, hide event date in modal
+        // For "foryou" tab, show only Posted date
+        const eventDateContainer = modalEventDate.closest('.info-item');
         if (currentTab === 'foryou') {
-          modalEventDate.style.display = "none";
+          if (eventDateContainer) eventDateContainer.style.display = "none";
         } else {
-          modalEventDate.style.display = "";
+          if (eventDateContainer) eventDateContainer.style.display = "";
           modalEventDate.textContent = formatDateTime(announcement.eventDate);
         }
         modalCreatedDate.textContent = `Posted: ${formatDateTime(announcement.createdAt)}`;
