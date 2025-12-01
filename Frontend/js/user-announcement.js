@@ -460,6 +460,15 @@ if (currentTab === 'foryou') {
 
   function getAnnouncementStatus(announcement) {
     if (!announcement) return "Unknown";
+    
+    // Check if announcement is about closing or opening form cycle
+    const title = (announcement.title || "").toLowerCase();
+    if (title.includes("closing") || title.includes("opening") || 
+        title.includes("close") || title.includes("open") ||
+        title.includes("form cycle") || title.includes("cycle")) {
+      return "No Expiry";
+    }
+    
     const eventDate = announcement.eventDate;
     if (!eventDate) return "Unknown";
     const ed = new Date(eventDate);
