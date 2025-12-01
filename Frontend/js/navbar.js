@@ -6,6 +6,16 @@ document.addEventListener('DOMContentLoaded', function () {
       ? 'http://localhost:5000'
       : 'https://sk-insight.online';
 
+  // Wrapper for SweetAlert2 to ensure consistent responsive sizing across
+  // navbar alerts. Use `responsiveSwal({...})` instead of `Swal.fire({...})`
+  // so modals use a viewport-friendly width by default.
+  function responsiveSwal(options) {
+    const defaults = {
+      width: 'min(95vw, 640px)'
+    };
+    return Swal.fire(Object.assign({}, defaults, options));
+  }
+
   // Mobile menu toggle
   // Mobile menu toggle logic extracted into an initializer so other pages can
   // call it (in case scripts load in different orders).
@@ -182,7 +192,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
           const accountAge = await fetchAccountAge(token);
           if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            await responsiveSwal({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
             return;
           }
           // Fallback: if no account age, try profile-derived age as before
@@ -202,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
           }
           if (ageVal !== null && ageVal >= 11 && ageVal <= 14) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            await responsiveSwal({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
             return;
           }
         } catch (ageErr) { /* ignore age check errors */ }
@@ -212,21 +222,21 @@ document.addEventListener('DOMContentLoaded', function () {
         const hasProfile = profileRes.ok && profileData && profileData._id;
 
         if (!isFormOpen && hasProfile) {
-          const result = await Swal.fire({ icon: "info", title: `The ${formName} is currently closed`, text: `but you already have a ${formName} profile. Do you want to view your response?`, showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" });
+          const result = await responsiveSwal({ icon: "info", title: `The ${formName} is currently closed`, text: `but you already have a ${formName} profile. Do you want to view your response?`, showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" });
           if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/kkcofirmation.html";
           return;
         }
         if (!isFormOpen && !hasProfile) {
-          await Swal.fire({ icon: "warning", title: `The ${formName} form is currently closed`, text: "You cannot submit a new response at this time.", confirmButtonText: "OK" });
+          await responsiveSwal({ icon: "warning", title: `The ${formName} form is currently closed`, text: "You cannot submit a new response at this time.", confirmButtonText: "OK" });
           return;
         }
         if (isFormOpen && hasProfile) {
-          const result = await Swal.fire({ title: `You already answered ${formName} Form`, text: "Do you want to view your response?", icon: "info", showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" });
+          const result = await responsiveSwal({ title: `You already answered ${formName} Form`, text: "Do you want to view your response?", icon: "info", showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" });
           if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/kkcofirmation.html";
           return;
         }
         if (isFormOpen && !hasProfile) {
-          const result = await Swal.fire({ icon: "info", title: `No profile found`, text: `You don't have a profile yet. Please fill out the form to create one.`, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" });
+          const result = await responsiveSwal({ icon: "info", title: `No profile found`, text: `You don't have a profile yet. Please fill out the form to create one.`, showCancelButton: true, confirmButtonText: "Go to form", cancelButtonText: "No" });
           if (result.isConfirmed) window.location.href = "/Frontend/html/user/kkform-personal.html";
           return;
         }
@@ -251,7 +261,7 @@ document.addEventListener('DOMContentLoaded', function () {
         try {
           const accountAge = await fetchAccountAge(token);
           if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            await responsiveSwal({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
             return;
           }
           // Fallback: if no account age, try profile-derived age as before

@@ -215,7 +215,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         ? data.profileImage
         : `${API_BASE}/uploads/profile/${data.profileImage}`;
       document.getElementById('idImagePreview').innerHTML =
-        `<img id="kky_profile_img_2" src="${imageUrl}" alt="Profile Image" style="width:220px;border-radius:10px;cursor:pointer;">`;
+        `<img id="kky_profile_img_2" src="${imageUrl}" alt="Profile Image" style="border-radius:10px;cursor:pointer;">`;
       try {
         const img2 = document.getElementById('kky_profile_img_2');
         if (img2) img2.addEventListener('click', () => {
@@ -232,7 +232,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         ? data.signatureImagePath
         : `${API_BASE}/uploads/signatures/${data.signatureImagePath.replace(/^.*[\\/]/, '')}`;
       document.getElementById('signaturePreview').innerHTML =
-        `<img id="kky_signature_img_2" src="${signatureUrl}" alt="Signature Image" style="width:220px;border-radius:10px;cursor:pointer;">`;
+        `<img id="kky_signature_img_2" src="${signatureUrl}" alt="Signature Image" style="border-radius:10px;cursor:pointer;">`;
       try {
         const sig2 = document.getElementById('kky_signature_img_2');
         if (sig2) sig2.addEventListener('click', () => {
@@ -289,26 +289,6 @@ function openGlobalImagePreview(src) {
 }
 
 // Centralize navbar wiring: remove page-local nav listeners (if any) and let navbar.js bind handlers.
-document.addEventListener('DOMContentLoaded', function () {
-  try {
-    // Replace nav elements with clones to remove previously attached listeners
-    const ids = ['navbarHamburger','navbarMobileMenu','kkProfileNavBtnDesktop','kkProfileNavBtnMobile','lgbtqProfileNavBtnDesktop','lgbtqProfileNavBtnMobile','educAssistanceNavBtnDesktop','educAssistanceNavBtnMobile'];
-    ids.forEach(id => {
-      const el = document.getElementById(id);
-      if (el && el.parentNode) {
-        const clone = el.cloneNode(true);
-        el.parentNode.replaceChild(clone, el);
-      }
-    });
-
-    if (window && typeof window.bindNavButton === 'function') {
-      try {
-        window.bindNavButton('kkProfileNavBtnDesktop','kkProfileNavBtnMobile','handleKKProfileNavClick');
-        window.bindNavButton('lgbtqProfileNavBtnDesktop','lgbtqProfileNavBtnMobile','handleLGBTQProfileNavClick');
-        window.bindNavButton('educAssistanceNavBtnDesktop','educAssistanceNavBtnMobile','handleEducAssistanceNavClick');
-      } catch (e) { console.warn('navbar binding failed', e); }
-    }
-  } catch (e) {
-    console.warn('Failed to centralize navbar wiring', e);
-  }
-});
+// Navbar wiring is handled centrally by `navbar.js`. This file will call
+// `window.initNavbarHamburger()` earlier if available to initialize the
+// hamburger and navigation; no page-local cloning or binding is required.
