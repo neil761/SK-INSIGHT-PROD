@@ -5,9 +5,132 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
     ? 'http://localhost:5000'
     : 'https://sk-insight.online';
 
-// Navbar UI and wiring moved to `Frontend/js/navbar.js`.
-// Keep token available for other handlers in this file.
+// ============================================
+// AGREEMENT MODAL FUNCTIONALITY
+// ============================================
+function initAgreementModal() {
+  const modal = document.getElementById('agreementModal');
+  const agreeCheckbox = document.getElementById('agreeCheckbox');
+  const acceptBtn = document.getElementById('acceptBtn');
+  const declineBtn = document.getElementById('declineBtn');
+  const AGREEMENT_KEY = 'sk-insight-agreement-accepted';
 
+  if (!modal) return; // Modal not on this page
+
+  // Hide by default until we verify login + server state
+  modal.classList.add('hidden');
+
+  // Only show modal for authenticated users who haven't accepted
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) {
+    // Not logged in — do not show modal (login flow will handle it)
+    return;
+  }
+
+  // Fetch current user to check agreementAccepted flag
+  fetch(`${API_BASE}/api/users/me`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+    .then(res => res.json())
+    .then(user => {
+      // If server indicates user already accepted, also persist locally and keep modal hidden
+      if (user && user.agreementAccepted) {
+        localStorage.setItem(AGREEMENT_KEY, 'true');
+        modal.classList.add('hidden');
+        return;
+      }
+
+      // Not accepted yet -> show modal
+      localStorage.removeItem(AGREEMENT_KEY);
+      modal.classList.remove('hidden');
+
+      // Wire up controls (only when modal shown)
+      if (agreeCheckbox) {
+        agreeCheckbox.checked = false;
+        acceptBtn.disabled = true;
+        agreeCheckbox.addEventListener('change', function () {
+          acceptBtn.disabled = !this.checked;
+        });
+      }
+
+      if (acceptBtn) {
+        acceptBtn.addEventListener('click', async function () {
+          acceptBtn.disabled = true;
+          const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+          console.debug('PUT /api/users/agree token:', token);
+          try {
+            const resp = await fetch(`${API_BASE}/api/users/agree`, {
+              method: 'PUT',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`
+              },
+              body: JSON.stringify({ acceptedAt: new Date().toISOString() })
+            });
+            if (!resp.ok) {
+              // Try to read JSON/text error from server for debugging
+              let errBody = 'no body';
+              try {
+                errBody = await resp.json();
+              } catch (e) {
+                try { errBody = await resp.text(); } catch (e2) {}
+              }
+              console.error('Agreement save failed', resp.status, errBody);
+              throw new Error(`Server responded ${resp.status}: ${JSON.stringify(errBody)}`);
+            }
+            localStorage.setItem(AGREEMENT_KEY, 'true');
+            modal.classList.add('hidden');
+            console.debug('User accepted agreement (saved to server)');
+          } catch (err) {
+            console.error('Agreement save error:', err);
+            Swal.fire({ icon: 'error', title: 'Error', text: 'Could not save agreement. Please try again.' });
+            acceptBtn.disabled = false;
+          }
+        });
+      }
+
+      if (declineBtn) {
+        declineBtn.addEventListener('click', function (e) {
+          e.preventDefault();
+          if (declineBtn.disabled) return;
+          // immediate disable to prevent double-clicks
+          declineBtn.disabled = true;
+          // hide modal right away so UI responds immediately
+          try { modal.classList.add('hidden'); } catch (err) {}
+
+          // NEW: hide verification strip so only the alert dialog is visible when user declines
+          const verificationStrip = document.getElementById('verification-strip');
+          if (verificationStrip) verificationStrip.style.display = 'none';
+
+          Swal.fire({
+            icon: 'info',
+            title: 'Agreement Required',
+            text: 'You must accept the agreement to use SK-INSIGHT. You will be logged out.',
+            confirmButtonText: 'OK',
+            allowOutsideClick: false
+          }).then(() => {
+            // Clear session and redirect to login
+            try { sessionStorage.clear(); } catch (err) {}
+            try { localStorage.removeItem('token'); } catch (err) {}
+            // short delay to allow modal hide animation / cleanup
+            setTimeout(() => { window.location.href = '/Frontend/html/user/login.html'; }, 80);
+          }).catch(() => {
+            // on error, ensure button is re-enabled so user can try again
+            declineBtn.disabled = false;
+          });
+        });
+      }
+    })
+    .catch(err => {
+      console.error('Failed to fetch current user for agreement check', err);
+      // Fail safe: hide modal if anything goes wrong to avoid blocking the user
+      modal.classList.add('hidden');
+    });
+}
+
+// ============================================
+// USER VERIFICATION FUNCTIONALITY
+// ============================================
 function initIndexVerification() {
   const token = sessionStorage.getItem('token') || localStorage.getItem('token');
   const verificationStrip = document.getElementById('verification-strip');
@@ -61,8 +184,12 @@ function initIndexVerification() {
 
 // Run now if DOM already parsed, otherwise wait for DOMContentLoaded.
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initIndexVerification);
+  document.addEventListener('DOMContentLoaded', () => {
+    initAgreementModal();
+    initIndexVerification();
+  });
 } else {
+  initAgreementModal();
   initIndexVerification();
 }
 
