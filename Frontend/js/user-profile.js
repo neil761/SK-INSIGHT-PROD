@@ -212,8 +212,6 @@ document.addEventListener("DOMContentLoaded", function () {
         noteEl.style.fontStyle = 'italic';
         ageInput.parentNode.insertBefore(noteEl, ageInput.nextSibling);
       }
-      // Update note text every time so it reflects the current computed age
-      noteEl.textContent = `Age computed from account birthday (${dateStr}): ${age}`;
     }
 
     if (user && user.birthday) {
