@@ -1,4 +1,11 @@
 // lgbtqprofile.js
+// 
+// IMPORTANT: Backend Integration Notes
+// - When a profile is updated via PUT/POST, the backend MUST set isRead = false
+//   This ensures the profile shows as unread in the admin dashboard when an edit is made
+// - The socket event 'lgbtq-profile:updated' should be emitted when a profile is modified
+//   so the frontend can refresh the list and notification badge in real-time
+//
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
   ? window.API_BASE
   : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -967,6 +974,16 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("lgbtq-profile:deleted", () => {
     updateLGBTQNotifBadge();
     fetchNotifications();
+    fetchProfiles({});
+  });
+  socket.on("lgbtq-profile:updated", (data) => {
+    // When a profile is edited, mark it as unread again and refresh
+    // data should contain the updated profileId if sent from backend
+    updateLGBTQNotifBadge();
+    fetchNotifications();
+    
+    // Refresh the profiles list to get the updated isRead status from server
+    currentPage = 1; // Reset to first page to show updated profiles
     fetchProfiles({});
   });
 

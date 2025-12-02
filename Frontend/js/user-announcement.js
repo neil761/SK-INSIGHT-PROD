@@ -60,28 +60,55 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // Update notification badge UI - THIS IS THE SOURCE OF TRUTH
+  // Counts unread announcements from BOTH General AND Personal (For You) tabs
   async function updateNotificationBadge() {
     try {
       const badgeEl = document.querySelector('.notif-badge');
       const token = sessionStorage.getItem('token') || localStorage.getItem('token');
       
-      if (!badgeEl || !token) return;
+      if (!badgeEl || !token) {
+        console.warn('Badge element or token not found');
+        return;
+      }
 
-      const res = await fetch(`${API_BASE}/api/announcements`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      if (!res.ok) return;
+      // Fetch both General and Personal announcements
+      const [generalRes, personalRes] = await Promise.all([
+        fetch(`${API_BASE}/api/announcements`, {
+          headers: { Authorization: `Bearer ${token}` }
+        }),
+        fetch(`${API_BASE}/api/announcements/myannouncements`, {
+          headers: { Authorization: `Bearer ${token}` }
+        })
+      ]);
 
-      const data = await res.json().catch(() => null);
-      const all = (data && Array.isArray(data.announcements)) ? data.announcements : [];
+      if (!generalRes.ok || !personalRes.ok) {
+        console.warn('Failed to fetch announcements:', generalRes.status, personalRes.status);
+        return;
+      }
+
+      const generalData = await generalRes.json().catch(() => null);
+      const personalData = await personalRes.json().catch(() => null);
+      
+      const generalAnnouncements = (generalData && Array.isArray(generalData.announcements)) ? generalData.announcements : [];
+      const personalAnnouncements = (personalData && Array.isArray(personalData.announcements)) ? personalData.announcements : [];
+      
       const now = new Date();
       let unreadCount = 0;
+      let unreadGeneral = 0;
+      let unreadPersonal = 0;
 
-      all.forEach(a => {
+      console.debug('Badge calculation:', {
+        generalCount: generalAnnouncements.length,
+        personalCount: personalAnnouncements.length,
+        currentUserId
+      });
+
+      // Count unread from General announcements
+      generalAnnouncements.forEach(a => {
         try {
           if (!a || !a.title) return;
 
-          // Skip expired announcements
+          // Skip expired announcements (check eventDate)
           if (a.eventDate) {
             const ed = new Date(a.eventDate);
             if (!isNaN(ed.getTime()) && ed < now) return;
@@ -91,18 +118,70 @@ document.addEventListener("DOMContentLoaded", async () => {
           const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
           if (currentUserId && viewedBy.includes(String(currentUserId))) return;
 
-          // Count unread announcements (both general and personal)
+          // Count this as unread
+          unreadGeneral++;
           unreadCount++;
         } catch (e) {
-          console.warn('Error processing announcement for badge:', e);
+          console.warn('Error processing general announcement for badge:', e);
         }
       });
 
-      badgeEl.textContent = unreadCount > 0 ? String(unreadCount) : '';
-      badgeEl.style.display = unreadCount > 0 ? 'flex' : 'none';
-      console.debug('Badge updated:', unreadCount);
+      // Count unread from Personal announcements (my announcements)
+      // These are already filtered by the backend to only show announcements with recipient: userId
+      personalAnnouncements.forEach(a => {
+        try {
+          if (!a || !a.title) return;
+
+          // Personal announcements typically don't have expiry logic, but check if they're active
+          if (a.isActive === false) return; // Skip inactive announcements
+
+          // Check if already viewed by current user
+          const viewedBy = Array.isArray(a.viewedBy) ? a.viewedBy.map(String) : [];
+          if (currentUserId && viewedBy.includes(String(currentUserId))) return;
+
+          // Count this as unread
+          unreadPersonal++;
+          unreadCount++;
+        } catch (e) {
+          console.warn('Error processing personal announcement for badge:', e);
+        }
+      });
+
+      // Update main bell badge
+      if (unreadCount > 0) {
+        badgeEl.textContent = String(unreadCount);
+        badgeEl.style.display = 'flex';
+      } else {
+        badgeEl.textContent = '';
+        badgeEl.style.display = 'none';
+      }
+
+      // Update individual tab badges
+      const generalBadge = document.getElementById('badge-general');
+      if (generalBadge) {
+        if (unreadGeneral > 0) {
+          generalBadge.textContent = String(unreadGeneral);
+          generalBadge.style.display = 'inline-block';
+        } else {
+          generalBadge.textContent = '';
+          generalBadge.style.display = 'none';
+        }
+      }
+
+      const forYouBadge = document.getElementById('badge-foryou');
+      if (forYouBadge) {
+        if (unreadPersonal > 0) {
+          forYouBadge.textContent = String(unreadPersonal);
+          forYouBadge.style.display = 'inline-block';
+        } else {
+          forYouBadge.textContent = '';
+          forYouBadge.style.display = 'none';
+        }
+      }
+
+      console.debug('Badge updated:', { unreadCount, unreadGeneral, unreadPersonal });
     } catch (err) {
-      console.warn('Error updating badge:', err);
+      console.error('Error updating badge:', err);
     }
   }
 
@@ -202,13 +281,15 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
       if (!res.ok) {
         console.warn("Failed to mark announcement viewed", res.status);
+        return;
       }
 
       // Only refresh and update badge if NOT in expired tab
       if (currentTab !== 'expired') {
         try { 
-          await renderTabAnnouncements(); 
-          await updateNotificationBadge(); // Update badge immediately
+          // Update badge FIRST, then re-render tab
+          await updateNotificationBadge();
+          await renderTabAnnouncements();
         } catch (e) { /* ignore */ }
       }
     } catch (err) {
@@ -593,10 +674,120 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // WebSocket updates (optional, keep your logic here)
   const socket = io(API_BASE, { transports: ["websocket"] });
-  socket.on("announcement:created", async () => {
-    await renderTabAnnouncements();
+  socket.on("announcement:created", async (data) => {
+    console.log('New announcement created in real-time:', data);
+    try {
+      // If it's a general announcement (recipient null), add it to the list and re-render
+      if (data && !data.recipient) {
+        const newAnnouncement = {
+          _id: data.id,
+          title: data.title,
+          content: data.content,
+          eventDate: data.eventDate,
+          isPinned: data.isPinned || false,
+          createdAt: data.createdAt,
+          createdBy: data.createdBy,
+          recipient: null,
+          isActive: true,
+          viewedBy: []
+        };
+        
+        // Add to the top of general announcements
+        generalAnnouncements.unshift(newAnnouncement);
+        
+        // If currently viewing general tab, re-render immediately
+        if (currentTab === 'general') {
+          renderTabAnnouncements();
+        }
+      }
+      // If it's a personal announcement (recipient set) and it's for the current user
+      else if (data && data.recipient && currentUserId && String(data.recipient) === String(currentUserId)) {
+        const newAnnouncement = {
+          _id: data.id,
+          title: data.title,
+          content: data.content,
+          eventDate: data.eventDate,
+          createdAt: data.createdAt,
+          createdBy: data.createdBy,
+          recipient: data.recipient,
+          isActive: true,
+          viewedBy: [],
+          isPinned: data.isPinned || false
+        };
+        
+        // Add to the top of for-you announcements
+        forYouAnnouncements.unshift(newAnnouncement);
+        
+        // If currently viewing for-you tab, re-render immediately
+        if (currentTab === 'foryou') {
+          renderTabAnnouncements();
+        }
+      }
+    } catch (err) {
+      console.warn('Error handling real-time announcement creation:', err);
+    }
+    // Update badge to reflect any changes
     await updateNotificationBadge();
   });
+
+  // Listen for form status changes (forms opened/closed)
+  socket.on("form:statusChanged", async (data) => {
+    console.log('Form status changed in real-time:', data);
+    // This can trigger a UI update if needed, such as showing a message that a form is now open
+    // or refreshing form availability on the dashboard
+    try {
+      // Optional: Show a toast or notification to user that a form status changed
+      if (data && data.formName && data.isOpen !== undefined) {
+        // Could show: "LGBTQ Profiling is now OPEN" or "KK Profiling is now CLOSED"
+        console.debug(`${data.formName} is now ${data.isOpen ? 'OPEN' : 'CLOSED'}`);
+      }
+    } catch (err) {
+      console.warn('Error handling form status change:', err);
+    }
+  });
+
+  // Listen for application status changes (approved/rejected)
+  socket.on("educational-assistance:statusChanged", async (data) => {
+    console.log('Educational Assistance status changed in real-time:', data);
+    try {
+      if (data && data.status) {
+        // Announcement is already created and broadcasted via announcement:created event
+        // This event is mainly for UI updates like refreshing application list
+        await updateNotificationBadge();
+      }
+    } catch (err) {
+      console.warn('Error handling educational assistance status change:', err);
+    }
+  });
+
+  // Listen for profile deletions
+  socket.on("kk-profile:deleted", async (data) => {
+    console.log('KK Profile deleted in real-time:', data);
+    // Profile deletion announcement already sent via announcement:created event
+    // Update badge and potentially refresh profile list
+    await updateNotificationBadge();
+  });
+
+  socket.on("lgbtq-profile:deleted", async (data) => {
+    console.log('LGBTQ Profile deleted in real-time:', data);
+    // Profile deletion announcement already sent via announcement:created event
+    // Update badge and potentially refresh profile list
+    await updateNotificationBadge();
+  });
+
+  // Listen for profile restorations
+  socket.on("kk-profile:restored", async (data) => {
+    console.log('KK Profile restored in real-time:', data);
+    // Profile restoration announcement already sent via announcement:created event
+    await updateNotificationBadge();
+  });
+
+  socket.on("lgbtq-profile:restored", async (data) => {
+    console.log('LGBTQ Profile restored in real-time:', data);
+    // Profile restoration announcement already sent via announcement:created event
+    await updateNotificationBadge();
+  });
+
   socket.on("announcement:updated", async () => {
     await renderTabAnnouncements();
     await updateNotificationBadge();

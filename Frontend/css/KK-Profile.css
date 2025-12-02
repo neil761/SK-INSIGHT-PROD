@@ -710,6 +710,19 @@ body.modal-open .sidebar * {
   gap: 0;
 }
 
+.profile-details-rows {
+  align-items: center;
+  justify-content: center;
+  display: flex;
+  gap: 32px;
+  margin-bottom: 0;
+}
+
+.profile-details-rows.full {
+  flex-direction: row;
+  gap: 0;
+}
+
 .profile-detail {
   flex: 1;
   display: flex;
@@ -739,6 +752,37 @@ body.modal-open .sidebar * {
   letter-spacing: 0.01em;
 }
 
+
+.profile-details {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 30vw;
+  background: #fff;
+  border-radius: 14px;
+  padding: 14px 20px;
+  box-shadow: 0 2px 8px rgba(10,44,89,0.06);
+  border: 1px solid #f0f4fa;
+  align-items: center;
+}
+
+.profile-details .label {
+  color: #64748b;
+  font-size: 1.01rem;
+  font-weight: 500;
+  margin-bottom: 2px;
+  letter-spacing: 0.02em;
+}
+
+.profile-details .value {
+  color: #0A2C59;
+  font-size: 1.13rem;
+  font-weight: 600;
+  word-break: break-word;
+  letter-spacing: 0.01em;
+}
+
+
 .profile-details-row.full .profile-detail {
   flex: 3;
   background: #f8fafc;
@@ -747,6 +791,7 @@ body.modal-open .sidebar * {
   padding-left: 0;
   padding-right: 0;
 }
+
 
 /* Table header and cell alignment */
 .tables th, .tables td {
@@ -780,6 +825,13 @@ body.modal-open .sidebar * {
   border: white 2px solid;
   z-index: 10;
   cursor: pointer;
+}
+
+.modern-modal-download:hover {
+  background-color: #ffffff;
+  color: #0A2C59;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
 }
 
 /* Notification Bell Dropdown Modal */
