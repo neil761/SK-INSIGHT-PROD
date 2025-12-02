@@ -1,3 +1,25 @@
+// Image modal functions
+function openImageModal(imageSrc) {
+  const modal = document.getElementById('imageModal');
+  const modalImage = document.getElementById('modalImage');
+  modalImage.src = imageSrc;
+  modal.style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeImageModal() {
+  const modal = document.getElementById('imageModal');
+  modal.style.display = 'none';
+  document.body.style.overflow = 'auto';
+}
+
+// Close modal on escape key
+document.addEventListener('keydown', function(event) {
+  if (event.key === 'Escape') {
+    closeImageModal();
+  }
+});
+
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
   ? window.API_BASE
   : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -30,13 +52,17 @@ document.addEventListener('DOMContentLoaded', async function() {
     // Front ID image preview (if exists)
     if (data.idImageFront) {
       document.getElementById('imagePreviewContainerFront').style.display = 'block';
-      document.getElementById('imagePreviewFront').src = data.idImageFront;
+      const frontImg = document.getElementById('imagePreviewFront');
+      frontImg.src = data.idImageFront;
+      frontImg.addEventListener('click', () => openImageModal(data.idImageFront));
     }
 
     // Back ID image preview (if exists)
     if (data.idImageBack) {
       document.getElementById('imagePreviewContainerBack').style.display = 'block';
-      document.getElementById('imagePreviewBack').src = data.idImageBack;
+      const backImg = document.getElementById('imagePreviewBack');
+      backImg.src = data.idImageBack;
+      backImg.addEventListener('click', () => openImageModal(data.idImageBack));
     }
 
     // Set personal info fields if they exist in the response

@@ -105,7 +105,7 @@
         <div class="card kk-upload-col">
           <label for="idImageFront">Valid ID Image (Front):</label>
           <div id="imagePreviewContainerFront" class="image-preview-container">
-            <img id="imagePreviewFront" alt="Front ID preview" />
+            <img id="imagePreviewFront" alt="Front ID preview" style="cursor: pointer;" />
           </div>
         </div>
 
@@ -113,7 +113,7 @@
         <div class="card kk-upload-col">
           <label for="idImageBack">Valid ID Image (Back):</label>
           <div id="imagePreviewContainerBack" class="image-preview-container">
-            <img id="imagePreviewBack" alt="Back ID preview" />
+            <img id="imagePreviewBack" alt="Back ID preview" style="cursor: pointer;" />
           </div>
         </div>
        </div>
@@ -127,6 +127,14 @@
     </form>
   </div>
 
+  <!-- Image Modal -->
+  <div id="imageModal" class="image-modal">
+    <div class="image-modal-overlay" onclick="closeImageModal()"></div>
+    <div class="image-modal-content">
+      <button class="image-modal-close" onclick="closeImageModal()">&times;</button>
+      <img id="modalImage" src="" alt="Enlarged image" class="image-modal-img" />
+    </div>
+  </div>
 
         <!-- Footer -->
     <footer class="footer">

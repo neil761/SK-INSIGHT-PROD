@@ -289,6 +289,9 @@ exports.updateProfileById = async (req, res) => {
       return res.status(403).json({ error: "Not authorized" });
     }
 
+    // ✅ Mark profile as unread if user (not admin) is editing
+    const isUserEdit = profile.user.toString() === req.user.id && req.user.role !== "admin";
+
     // If new files were uploaded via multer (CloudinaryStorage), replace the stored URLs
     try {
       if (req.files && req.files.profileImage && req.files.profileImage[0]) {
@@ -411,12 +414,27 @@ exports.updateProfileById = async (req, res) => {
     // Merge sanitized body into profile
     Object.assign(profile, body);
 
+    // ✅ Mark as unread if user is editing
+    if (isUserEdit) {
+      profile.isRead = false;
+    }
+
     try {
       await profile.save();
     } catch (saveErr) {
       console.error('Failed to save updated profile:', saveErr);
       // give more context in development; do not expose stack in production
       return res.status(400).json({ error: saveErr.message || 'Validation error', details: saveErr.errors || null });
+    }
+
+    // ✅ Emit socket event to notify admins that profile was updated and is now unread
+    if (req.app.get("io") && isUserEdit) {
+      req.app.get("io").emit("kk-profile:newSubmission", {
+        id: profile._id,
+        userId: profile.user,
+        updated: true,
+        message: "User updated their KK Profile"
+      });
     }
 
     res.json({ message: "Profile updated", profile });
@@ -450,7 +468,7 @@ exports.deleteProfileById = async (req, res) => {
 
     // Send announcement to the user
     const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
-    await Announcement.create({
+    const announcement = await Announcement.create({
       title: "KK Profiling Form Deleted",
       content: `The admin has observed that your KK Profiling form has inaccuracies. As a result, your KK Profiling form for this cycle has been deleted and moved to the recycle bin. You may submit a new form if the cycle is still open, please make sure all information is accurate.`,
       category: "KK Profiling",
@@ -462,6 +480,22 @@ exports.deleteProfileById = async (req, res) => {
       isActive: true,
       viewedBy: [],
     });
+
+    // --- EMIT SOCKET EVENT FOR REAL-TIME ANNOUNCEMENT DISPLAY ---
+    if (req.app.get("io")) {
+      req.app.get("io").emit("announcement:created", {
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        eventDate: announcement.eventDate,
+        createdAt: announcement.createdAt,
+        createdBy: req.user.id,
+        recipient: announcement.recipient,
+        isPinned: announcement.isPinned,
+        isActive: announcement.isActive,
+        category: announcement.category
+      });
+    }
 
     res.json({ message: "Profile moved to recycle bin." });
   } catch (err) {
@@ -857,9 +891,12 @@ exports.restoreProfileById = async (req, res) => {
     profile.deletedAt = null;
     await profile.save();
 
+    // Populate user for announcement
+    await profile.populate("user");
+
     // Send announcement to the user
     const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
-    await Announcement.create({
+    const announcement = await Announcement.create({
       title: "KK Profiling Form Restored",
       content: `Your KK Profiling form for this cycle has been restored.`,
       category: "KK Profiling",
@@ -871,6 +908,22 @@ exports.restoreProfileById = async (req, res) => {
       isActive: true,
       viewedBy: [],
     });
+
+    // --- EMIT SOCKET EVENT FOR REAL-TIME ANNOUNCEMENT DISPLAY ---
+    if (req.app.get("io")) {
+      req.app.get("io").emit("announcement:created", {
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        eventDate: announcement.eventDate,
+        createdAt: announcement.createdAt,
+        createdBy: req.user.id,
+        recipient: announcement.recipient,
+        isPinned: announcement.isPinned,
+        isActive: announcement.isActive,
+        category: announcement.category
+      });
+    }
 
     res.json({ message: "Profile restored" });
   } catch (err) {

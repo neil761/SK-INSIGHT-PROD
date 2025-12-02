@@ -1,4 +1,11 @@
 // lgbtqprofile.js
+// 
+// IMPORTANT: Backend Integration Notes
+// - When a profile is updated via PUT/POST, the backend MUST set isRead = false
+//   This ensures the profile shows as unread in the admin dashboard when an edit is made
+// - The socket event 'lgbtq-profile:updated' should be emitted when a profile is modified
+//   so the frontend can refresh the list and notification badge in real-time
+//
 const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
   ? window.API_BASE
   : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
@@ -682,167 +689,6 @@ document.addEventListener("DOMContentLoaded", () => {
           cancelButtonText: "No"
         });
         if (result.isConfirmed) {
-          const res = await fetch(`http://localhost:5000/api/lgbtqprofiling/${id}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
-          });
-          if (res.ok) {
-            Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
-            fetchProfiles(); // Refresh table
-          }
-        }
-      });
-    });
-  }
-
-  // Add this function for pagination controls:
-  function renderPagination(totalProfiles, totalPages) {
-    const pagination = document.getElementById("pagination");
-    pagination.innerHTML = "";
-
-    if (totalPages <= 1) return;
-
-    // Previous button
-    const prevBtn = document.createElement("button");
-    prevBtn.className = "pagination-btn";
-    prevBtn.textContent = "Prev";
-    prevBtn.disabled = currentPage === 1;
-    prevBtn.onclick = () => {
-      if (currentPage > 1) {
-        currentPage--;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(prevBtn);
-
-    // Page numbers (show max 5 pages at a time)
-    let startPage = Math.max(1, currentPage - 2);
-    let endPage = Math.min(totalPages, startPage + 4);
-    if (endPage - startPage < 4) startPage = Math.max(1, endPage - 4);
-
-    for (let i = startPage; i <= endPage; i++) {
-      const pageBtn = document.createElement("button");
-      pageBtn.className = "pagination-btn" + (i === currentPage ? " active" : "");
-      pageBtn.textContent = i;
-      pageBtn.onclick = () => {
-        currentPage = i;
-        renderProfiles(allProfiles);
-      };
-      pagination.appendChild(pageBtn);
-    }
-
-    // Next button
-    const nextBtn = document.createElement("button");
-    nextBtn.className = "pagination-btn";
-    nextBtn.textContent = "Next";
-    nextBtn.disabled = currentPage === totalPages;
-    nextBtn.onclick = () => {
-      if (currentPage < totalPages) {
-        currentPage++;
-        renderProfiles(allProfiles);
-      }
-    };
-    pagination.appendChild(nextBtn);
-  }
-
-  // 🔹 Render profiles
-  function renderProfiles(profiles) {
-    const totalPages = Math.ceil(profiles.length / PROFILES_PER_PAGE);
-    const startIdx = (currentPage - 1) * PROFILES_PER_PAGE;
-    const endIdx = startIdx + PROFILES_PER_PAGE;
-    const pageProfiles = profiles.slice(startIdx, endIdx);
-
-    tableBody.innerHTML = "";
-    if (!pageProfiles.length) {
-      tableBody.innerHTML = `<tr><td colspan="7">No profiles found</td></tr>`;
-      renderPagination(profiles.length, totalPages);
-      return;
-    }
-
-    pageProfiles.forEach((p, i) => {
-      const birthday = p.displayData?.birthday
-        ? new Date(p.displayData.birthday).toLocaleDateString()
-        : "N/A";
-      const age = p.displayData?.age ?? "N/A";
-      // Build name: Last Name, First Name M.
-      let formattedName = "N/A";
-      if (p.lastname || p.firstname || p.middlename) {
-        const last = p.lastname ? p.lastname.trim() : "";
-        const first = p.firstname ? p.firstname.trim() : "";
-        const middle = p.middlename && p.middlename.trim() !== ""
-          ? p.middlename.trim()[0].toUpperCase() + "."
-          : "";
-        formattedName = [last, first].filter(Boolean).join(", ");
-        if (middle) formattedName += " " + middle;
-      } else if (p.displayData?.residentName) {
-        formattedName = p.displayData.residentName;
-      }
-      const row = document.createElement("tr");
-      row.className = p.isRead ? 'row-read' : 'row-unread';
-      row.setAttribute('data-id', p._id); // Ensure this is set correctly
-      row.innerHTML = `
-        <td>${startIdx + i + 1}</td>
-        <td>${formattedName}</td>
-        <td>${age}</td>
-        <td>${birthday}</td>
-        <td>${p.displayData?.lgbtqClassification ?? "N/A"}</td>
-        <td>${p.displayData?.sexAssignedAtBirth ?? "N/A"}</td>
-        <td>
-          <button class="view-btn" data-id="${p._id}" style="color: white;">
-            <i class="fa-solid fa-eye" style="color: #ffffffff"></i>
-          </button>
-        </td>
-      `;
-      tableBody.appendChild(row);
-    });
-
-    renderPagination(profiles.length, totalPages);
-
-    // Attach modal openers
-    document.querySelectorAll(".view-btn").forEach((btn) =>
-      btn.addEventListener("click", async () => {
-        const res = await fetch(
-          `${API_BASE}/api/lgbtqprofiling/${btn.dataset.id}`,
-          {
-            headers: {
-              Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-            },
-          }
-        );
-        const profile = await res.json();
-        if (!profile || !profile._id) {
-          Swal.fire("Error", profile.error || "Profile not found.", "error");
-          return;
-        }
-        showProfileModal(profile);
-
-        // After modal is opened and profile is fetched:
-        const row = document.querySelector(`tr[data-id="${profile._id}"]`);
-        if (row) {
-          row.classList.remove('row-unread');
-          row.classList.add('row-read');
-        }
-      })
-    );
-
-    document.querySelectorAll(".delete-btn").forEach(btn => {
-      btn.addEventListener("click", async () => {
-        const id = btn.dataset.id;
-        if (!id) {
-          Swal.fire("Error", "Profile ID is missing. Please refresh the page.", "error");
-          return;
-        }
-        const result = await Swal.fire({
-          title: "Are you sure?",
-          text: "Do you really want to delete this form?",
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#0A2C59",
-          cancelButtonColor: "#d33",
-          confirmButtonText: "Yes",
-          cancelButtonText: "No"
-        });
-        if (result.isConfirmed) {
           const res = await fetch(`${API_BASE}/api/lgbtqprofiling/${id}`, {
             method: "DELETE",
             headers: { Authorization: `Bearer ${sessionStorage.getItem("token")}` }
@@ -916,7 +762,7 @@ document.addEventListener("DOMContentLoaded", () => {
     const header = document.getElementById("profileHeader");
     const details = document.getElementById("profileDetails");
 
-    // Build full name from root-level fields, fallback to displayData.residentName
+    // Build full name
     let fullName = "N/A";
     if (p.firstname || p.middlename || p.lastname) {
       const firstname = p.firstname ? p.firstname.trim() : "";
@@ -945,20 +791,20 @@ document.addEventListener("DOMContentLoaded", () => {
     const lgbtqClassification =
       p.displayData?.lgbtqClassification ?? p.lgbtqClassification ?? "N/A";
 
-    // Use Cloudinary URLs for ID images
     const idImageFront = p.idImageFront || null;
     const idImageBack = p.idImageBack || null;
-
-    // Default profile image
     const defaultProfileImage = "/Frontend/assets/default-profile.jpg";
 
-    // Modern modal header: include profile image and full name
+    // Updated header with download button on the right
     header.innerHTML = `
-      <div class="profile-header">
-        <img src="${defaultProfileImage}" alt="Profile" class="profile-image" />
-        <div class="profile-name">${fullName || "N/A"}</div>
-      </div>
-    `;
+  <div class="profile-header">
+    <img src="${defaultProfileImage}" alt="Profile" class="profile-avatar" />
+    <h2 class="profile-name">${fullName || "N/A"}</h2>
+  </div>
+  <button id="downloadProfileBtn" class="download-profile-btn" data-id="${p._id}" title="Download Profile">
+    <i class="fas fa-download"></i> Download
+  </button>
+`;
 
     details.innerHTML = `
       <div class="profile-details-modal">
@@ -1014,14 +860,19 @@ document.addEventListener("DOMContentLoaded", () => {
     `;
 
     details.innerHTML += `
-  <div class="profile-details-row">
-    <button id="deleteProfileBtn" class="modal-delete-btn" data-id="${p._id}">
-      Delete Profile
-    </button>
-  </div>
-`;
+      <div class="profile-details-row">
+        <button id="deleteProfileBtn" class="modal-delete-btn" data-id="${p._id}">
+          <i class="fas fa-trash"></i> Delete Profile
+        </button>
+      </div>
+    `;
 
-    // Modal delete logic (use p._id directly, not dataset.id)
+    // Download button handler
+    document.getElementById("downloadProfileBtn").addEventListener("click", () => {
+      downloadLGBTQProfileDocx(p._id, fullName);
+    });
+
+    // Delete button handler
     const deleteBtn = document.getElementById("deleteProfileBtn");
     deleteBtn.addEventListener("click", async () => {
       if (!p._id) {
@@ -1045,8 +896,8 @@ document.addEventListener("DOMContentLoaded", () => {
         });
         if (res.ok) {
           Swal.fire("Deleted!", "Profile moved to recycle bin.", "success");
-          fetchProfiles(); // Refresh table
-          modal.style.display = "none"; // Close modal
+          fetchProfiles();
+          modal.style.display = "none";
         } else {
           Swal.fire("Error", "Failed to delete profile.", "error");
         }
@@ -1062,15 +913,6 @@ document.addEventListener("DOMContentLoaded", () => {
         document.body.classList.remove("modal-open");
       };
     }
-
-    // Add click event to images for lightbox functionality
-    const images = modal.querySelectorAll(".clickable-image");
-    images.forEach((image) => {
-      image.addEventListener("click", (e) => {
-        const imageUrl = e.target.getAttribute("data-image-src");
-        openImageLightbox(imageUrl);
-      });
-    });
   }
 
   // 🔹 Filter button logic
@@ -1132,6 +974,16 @@ document.addEventListener("DOMContentLoaded", () => {
   socket.on("lgbtq-profile:deleted", () => {
     updateLGBTQNotifBadge();
     fetchNotifications();
+    fetchProfiles({});
+  });
+  socket.on("lgbtq-profile:updated", (data) => {
+    // When a profile is edited, mark it as unread again and refresh
+    // data should contain the updated profileId if sent from backend
+    updateLGBTQNotifBadge();
+    fetchNotifications();
+    
+    // Refresh the profiles list to get the updated isRead status from server
+    currentPage = 1; // Reset to first page to show updated profiles
     fetchProfiles({});
   });
 
@@ -1326,3 +1178,69 @@ async function updateLGBTQNotifBadge() {
 
 // Always show the unread notification badge on page load
 document.addEventListener("DOMContentLoaded", updateNotifBadge);
+
+// Add this function OUTSIDE DOMContentLoaded (at the top level)
+async function downloadLGBTQProfileDocx(profileId, profileName) {
+  if (!profileId) return Swal.fire('Error', 'No profile selected.', 'error');
+  
+  const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+  if (!token) return Swal.fire('Not authenticated', 'Please sign in.', 'warning');
+
+  Swal.fire({
+    title: 'Preparing download...',
+    didOpen: () => Swal.showLoading(),
+    allowOutsideClick: false,
+    allowEscapeKey: false
+  });
+
+  try {
+    const res = await fetch(`${API_BASE}/api/lgbtqprofiling/export/${profileId}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Accept': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document, application/json'
+      }
+    });
+
+    const contentType = res.headers.get('content-type') || '';
+
+    if (!res.ok) {
+      if (contentType.includes('application/json')) {
+        const err = await res.json().catch(() => ({ message: `Status ${res.status}` }));
+        Swal.close();
+        return Swal.fire('Export Failed', err.message || err.error || `Status ${res.status}`, 'error');
+      } else {
+        Swal.close();
+        return Swal.fire('Export Failed', `Status ${res.status}`, 'error');
+      }
+    }
+
+    if (contentType.includes('application/json')) {
+      const payload = await res.json().catch(() => null);
+      Swal.close();
+      return Swal.fire('Export Failed', (payload && (payload.message || payload.error)) || 'Server returned JSON instead of file', 'error');
+    }
+
+    const blob = await res.blob();
+    let filename = `LGBTQProfile_${profileName}.docx`;
+    const disposition = res.headers.get('Content-Disposition') || '';
+    if (disposition && disposition.indexOf('filename=') !== -1) {
+      filename = disposition.split('filename=')[1].trim().replace(/["']/g, '');
+    }
+
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => window.URL.revokeObjectURL(url), 2000);
+
+    Swal.close();
+  } catch (err) {
+    Swal.close();
+    console.error('Download exception:', err);
+    Swal.fire('Error', 'Could not download file.', 'error');
+  }
+}

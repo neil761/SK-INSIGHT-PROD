@@ -1,3 +1,6 @@
+// --- SessionStorage draft key (global scope so remove handlers can access it) ---
+const DRAFT_KEY = 'lgbtqDraft';
+
 document.addEventListener("DOMContentLoaded", () => {
   // runtime-configurable API base. In production inject `window.API_BASE = 'https://sk-insight.online'`.
   const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
@@ -20,9 +23,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // Get token
   const token = sessionStorage.getItem("token") || localStorage.getItem("token");
-
-  // --- SessionStorage draft key ---
-  const DRAFT_KEY = 'lgbtqDraft';
 
   // Restore draft if present (persists across reloads, cleared on tab close)
   const savedDraft = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
@@ -120,13 +120,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
       draft.idImageFront = existing.idImageFront || document.getElementById('imagePreviewFront')?.src || '';
       draft.idImageBack = existing.idImageBack || document.getElementById('imagePreviewBack')?.src || '';
-      draft.profileImage = existing.profileImage || document.getElementById('imagePreviewProfile')?.src || '';
-      draft.signatureImage = existing.signatureImage || document.getElementById('imagePreviewSignature')?.src || '';
       // Preserve filenames so they survive reloads
       draft.idImageFrontName = existing.idImageFrontName || document.getElementById('idImageFront')?.files?.[0]?.name || '';
       draft.idImageBackName = existing.idImageBackName || document.getElementById('idImageBack')?.files?.[0]?.name || '';
-      draft.profileImageName = existing.profileImageName || document.getElementById('profileImage')?.files?.[0]?.name || '';
-      draft.signatureImageName = existing.signatureImageName || document.getElementById('signatureImage')?.files?.[0]?.name || '';
       sessionStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
     } catch (e) {
       console.warn('Failed to save LGBTQ draft:', e);
@@ -326,6 +322,40 @@ document.addEventListener("DOMContentLoaded", () => {
       return; // Stop submission if user cancels
     }
 
+    // Validate required files BEFORE showing loading dialog
+    const formData = new FormData(form);
+    const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
+
+    // Client-side validation: ensure required file inputs are present (either chosen now
+    // or still present in draft). This respects native `required` attributes on file inputs.
+    const requiredFileInputs = Array.from(form.querySelectorAll('input[type="file"]')).filter(i => i.required || i.dataset.required === 'true');
+    const missing = [];
+    for (const inp of requiredFileInputs) {
+      const id = inp.id;
+      const hasFile = inp.files && inp.files.length > 0;
+      const draftVal = existing && existing[id];
+      const explicitlyRemoved = existing && existing[`${id}Removed`];
+      if (!hasFile && !draftVal) {
+        missing.push(id);
+      }
+      // If user explicitly removed this previously-saved file, treat as missing even if draftVal existed
+      if (!hasFile && explicitlyRemoved) {
+        if (!missing.includes(id)) missing.push(id);
+      }
+    }
+    if (missing.length) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Missing files',
+        text: `Please provide the following file(s) before submitting: ${missing.join(', ')}`,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      });
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = "Submitting...";
 
@@ -340,16 +370,17 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 
     try {
-      const formData = new FormData(form);
 
-      // If user didn't choose files but we have previous images in draft (URL or base64), attach them
-      const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
       async function attachIfMissing(inputId, fieldName) {
         try {
           const input = document.getElementById(inputId);
           const hasFile = input && input.files && input.files.length > 0;
           const draftVal = existing && existing[inputId];
+          const explicitlyRemoved = existing && existing[`${inputId}Removed`];
           const draftName = existing && (existing[`${inputId}Name`] || existing[`${inputId}Name`.toString()]);
+          // If user explicitly removed a previously-saved file, do not re-attach it
+          if (explicitlyRemoved) return;
+
           if (!hasFile && draftVal) {
             // data URL
             if (typeof draftVal === 'string' && draftVal.startsWith('data:')) {
@@ -478,6 +509,8 @@ document.addEventListener("DOMContentLoaded", () => {
             try {
               const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
               existing[inputId] = evt.target.result;
+              // Clear any explicit-removed flag when user selects a new file
+              delete existing[`${inputId}Removed`];
               // save filename if available
                 if (file && file.name) {
                   existing[`${inputId}Name`] = file.name;
@@ -500,6 +533,8 @@ document.addEventListener("DOMContentLoaded", () => {
             delete existing[inputId];
             // delete saved filename as well
             delete existing[`${inputId}Name`];
+            // mark as explicitly removed so submit doesn't re-attach previously saved images
+            existing[`${inputId}Removed`] = true;
             const nameEl = document.getElementById(`${inputId}Filename`);
             if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
             sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
@@ -525,6 +560,8 @@ document.addEventListener("DOMContentLoaded", () => {
             const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
             delete existing[inputId];
             delete existing[`${inputId}Name`];
+            // mark explicitly removed so attachIfMissing knows not to re-attach
+            existing[`${inputId}Removed`] = true;
             sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing));
           } catch (e) { /* ignore */ }
           const nameEl = document.getElementById(`${inputId}Filename`);
@@ -556,41 +593,40 @@ document.addEventListener("DOMContentLoaded", () => {
   if (customBackBtn) {
     customBackBtn.addEventListener('click', () => document.getElementById('idImageBack')?.click());
   }
-});
 
-// ✅ Image preview + remove logic
-const idImageInput = document.getElementById("idImage");
-const imagePreview = document.getElementById("imagePreview");
-const imagePreviewContainer = document.getElementById("imagePreviewContainer");
-const removeImageBtn = document.getElementById("removeImageBtn");
+  // ✅ Image preview + remove logic (inside DOMContentLoaded)
+  const idImageInput = document.getElementById("idImage");
+  const imagePreview = document.getElementById("imagePreview");
+  const imagePreviewContainer = document.getElementById("imagePreviewContainer");
+  const removeImageBtn = document.getElementById("removeImageBtn");
 
-if (idImageInput && imagePreview && removeImageBtn) {
-  // Hide preview by default
-  imagePreviewContainer.style.display = "none";
-
-  // When user selects a file
-  idImageInput.addEventListener("change", (event) => {
-    const file = event.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        imagePreview.src = e.target.result;
-        imagePreviewContainer.style.display = "inline-block";
-      };
-      reader.readAsDataURL(file);
-    }
-  });
-
-  // When user clicks the X button
-  removeImageBtn.addEventListener("click", () => {
-    idImageInput.value = ""; // clear file input
-    imagePreview.src = "";
+  if (idImageInput && imagePreview && removeImageBtn) {
+    // Hide preview by default
     imagePreviewContainer.style.display = "none";
-  });
-}
 
-// Front ID image preview
-document.getElementById('idImageFront').addEventListener('change', function(e) {
+    // When user selects a file
+    idImageInput.addEventListener("change", (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          imagePreview.src = e.target.result;
+          imagePreviewContainer.style.display = "inline-block";
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // When user clicks the X button
+    removeImageBtn.addEventListener("click", () => {
+      idImageInput.value = ""; // clear file input
+      imagePreview.src = "";
+      imagePreviewContainer.style.display = "none";
+    });
+  }
+
+  // Front ID image preview
+  document.getElementById('idImageFront').addEventListener('change', function(e) {
   const file = e.target.files[0];
   const previewContainer = document.getElementById('imagePreviewContainerFront');
   const previewImg = document.getElementById('imagePreviewFront');
@@ -623,6 +659,8 @@ document.getElementById('idImageFront').addEventListener('change', function(e) {
       try {
         const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
         existing.idImageFront = evt.target.result;
+        // clear removed flag when user selects a new file
+        delete existing['idImageFrontRemoved'];
         // store original filename too
         if (file && file.name) {
           existing.idImageFrontName = file.name;
@@ -643,14 +681,21 @@ document.getElementById('idImageFront').addEventListener('change', function(e) {
   }
 });
 
-// Remove front image
-document.getElementById('removeImageBtnFront').addEventListener('click', function () {
-  document.getElementById('idImageFront').value = ''; // Clear the file input
-  document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
-  document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
-  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageFront; delete existing.idImageFrontName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
-  const nameEl = document.getElementById('idImageFrontFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
-});
+  // Remove front image
+  document.getElementById('removeImageBtnFront').addEventListener('click', function () {
+    document.getElementById('idImageFront').value = ''; // Clear the file input
+    document.getElementById('imagePreviewFront').src = ''; // Clear the preview image
+    document.getElementById('imagePreviewContainerFront').style.display = 'none'; // Hide the preview container
+    try { 
+      const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); 
+      delete existing.idImageFront; 
+      delete existing.idImageFrontName; 
+      existing.idImageFrontRemoved = true; 
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); 
+    } catch (e) {}
+    const nameEl = document.getElementById('idImageFrontFilename'); 
+    if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
+  });
 
 // Back ID image preview
 document.getElementById('idImageBack').addEventListener('change', function (e) {
@@ -686,6 +731,8 @@ document.getElementById('idImageBack').addEventListener('change', function (e) {
       try {
         const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}');
         existing.idImageBack = evt.target.result;
+        // clear removed flag when user selects a new file
+        delete existing['idImageBackRemoved'];
         if (file && file.name) {
           existing.idImageBackName = file.name;
           const nameEl = document.getElementById('idImageBackFilename');
@@ -703,15 +750,23 @@ document.getElementById('idImageBack').addEventListener('change', function (e) {
     const nameEl = document.getElementById('idImageBackFilename');
     if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
   }
-});
+  });
 
-// Remove back image
-document.getElementById('removeImageBtnBack').addEventListener('click', function () {
-  document.getElementById('idImageBack').value = ''; // Clear the file input
-  document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
-  document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
-  try { const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); delete existing.idImageBack; delete existing.idImageBackName; sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); } catch (e) {}
-  const nameEl = document.getElementById('idImageBackFilename'); if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
+  // Remove back image
+  document.getElementById('removeImageBtnBack').addEventListener('click', function () {
+    document.getElementById('idImageBack').value = ''; // Clear the file input
+    document.getElementById('imagePreviewBack').src = ''; // Clear the preview image
+    document.getElementById('imagePreviewContainerBack').style.display = 'none'; // Hide the preview container
+    try { 
+      const existing = JSON.parse(sessionStorage.getItem(DRAFT_KEY) || '{}'); 
+      delete existing.idImageBack; 
+      delete existing.idImageBackName; 
+      existing.idImageBackRemoved = true; 
+      sessionStorage.setItem(DRAFT_KEY, JSON.stringify(existing)); 
+    } catch (e) {}
+    const nameEl = document.getElementById('idImageBackFilename'); 
+    if (nameEl) { nameEl.textContent = ''; nameEl.classList.remove('visible'); }
+  });
 });
 
 // --- View (enlarge) previews using SweetAlert (adds a close button) ---

@@ -133,6 +133,12 @@ document.addEventListener('DOMContentLoaded', function () {
     return null;
   }
 
+  // Helper: check if age is within valid range (15-30)
+  function isAgeValid(age) {
+    if (age === null || age === undefined) return null; // unknown
+    return age >= 15 && age <= 30;
+  }
+
   // Bind KK and LGBTQ navs to page-provided handlers when available
   bindNavButton('kkProfileNavBtnDesktop', 'kkProfileNavBtnMobile', 'handleKKProfileNavClick');
   bindNavButton('lgbtqProfileNavBtnDesktop', 'lgbtqProfileNavBtnMobile', 'handleLGBTQProfileNavClick');
@@ -188,34 +194,22 @@ document.addEventListener('DOMContentLoaded', function () {
         ]);
         const cycleData = await cycleRes.json().catch(() => null);
         const profileData = await profileRes.json().catch(() => ({}));
-        // Age restriction: prefer account-level age from /api/users/me so users without a profile are still checked
+        
+        // Age restriction: check if age is valid (15-30)
         try {
           const accountAge = await fetchAccountAge(token);
-          if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
-            await responsiveSwal({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
-            return;
-          }
-          // Fallback: if no account age, try profile-derived age as before
-          let ageVal = null;
-          if (profileData) {
-            if (typeof profileData.age !== 'undefined' && profileData.age !== null) ageVal = Number(profileData.age);
-            else if (profileData.birthday) {
-              const bd = (profileData.birthday.split ? profileData.birthday.split('T')[0] : profileData.birthday);
-              const d = new Date(bd);
-              if (!isNaN(d)) {
-                const today = new Date();
-                let a = today.getFullYear() - d.getFullYear();
-                const m = today.getMonth() - d.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
-                ageVal = a;
-              }
+          const ageValidation = isAgeValid(accountAge);
+          
+          if (ageValidation === false) {
+            if (accountAge < 15) {
+              await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            } else if (accountAge > 30) {
+              await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only youth aged 15-30 years old can access this form.' });
             }
-          }
-          if (ageVal !== null && ageVal >= 11 && ageVal <= 14) {
-            await responsiveSwal({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
             return;
           }
-        } catch (ageErr) { /* ignore age check errors */ }
+        } catch (ageErr) { console.debug('Age check error:', ageErr); }
+        
         const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
         const formName = latestCycle?.formName || "KK Profiling";
         const isFormOpen = latestCycle?.isOpen ?? false;
@@ -257,41 +251,29 @@ document.addEventListener('DOMContentLoaded', function () {
         ]);
         const cycleData = await cycleRes.json().catch(() => null);
         const profileData = await profileRes.json().catch(() => ({}));
-        // Age restriction: prefer account-level age from /api/users/me so users without a profile are still checked
+        
+        // Age restriction: check if age is valid (15-30)
         try {
           const accountAge = await fetchAccountAge(token);
-          if (accountAge !== null && accountAge >= 11 && accountAge <= 14) {
-            await responsiveSwal({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
-            return;
-          }
-          // Fallback: if no account age, try profile-derived age as before
-          let ageVal = null;
-          if (profileData) {
-            if (typeof profileData.age !== 'undefined' && profileData.age !== null) ageVal = Number(profileData.age);
-            else if (profileData.birthday) {
-              const bd = (profileData.birthday.split ? profileData.birthday.split('T')[0] : profileData.birthday);
-              const d = new Date(bd);
-              if (!isNaN(d)) {
-                const today = new Date();
-                let a = today.getFullYear() - d.getFullYear();
-                const m = today.getMonth() - d.getMonth();
-                if (m < 0 || (m === 0 && today.getDate() < d.getDate())) a--;
-                ageVal = a;
-              }
+          const ageValidation = isAgeValid(accountAge);
+          
+          if (ageValidation === false) {
+            if (accountAge < 15) {
+              await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
+            } else if (accountAge > 30) {
+              await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only youth aged 15-30 years old can access this form.' });
             }
-          }
-          if (ageVal !== null && ageVal >= 11 && ageVal <= 14 ) {
-            await Swal.fire({ icon: 'warning', title: 'Age Restriction', text: 'Only 15 years old and above can access this form.' });
             return;
           }
-        } catch (ageErr) { /* ignore age check errors */ }
+        } catch (ageErr) { console.debug('Age check error:', ageErr); }
+        
         const latestCycle = Array.isArray(cycleData) ? cycleData[cycleData.length - 1] : cycleData;
         const formName = latestCycle?.formName || "LGBTQIA+ Profiling";
         const isFormOpen = latestCycle?.isOpen ?? false;
         const hasProfile = profileData && profileData._id ? true : false;
 
         if (!isFormOpen && hasProfile) {
-          const result = await Swal.fire({ icon: "info", title: `The ${formName} is currently closed`, text: `but you already have a ${formName} profile. Do you want to view your response?`, showCancelButton: true, confirmButtonText: " Yes", cancelButtonText: "No" });
+          const result = await Swal.fire({ icon: "info", title: `The ${formName} is currently closed`, text: `but you already have a ${formName} profile. Do you want to view your response?`, showCancelButton: true, confirmButtonText: "Yes", cancelButtonText: "No" });
           if (result.isConfirmed) window.location.href = "/Frontend/html/user/confirmation/html/lgbtqconfirmation.html";
           return;
         }
