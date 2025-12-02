@@ -902,8 +902,12 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
       });
       const unreadNotifs = await unreadRes.json();
 
-      renderNotifList(notifListNew, newNotifs, false);
-      renderNotifList(notifListUnread, unreadNotifs, true);
+      // Filter out already-read notifications from both lists
+      const newNotifsFilt = Array.isArray(newNotifs) ? newNotifs.filter(n => !n.isRead) : [];
+      const unreadNotifsFilt = Array.isArray(unreadNotifs) ? unreadNotifs.filter(n => !n.isRead) : [];
+
+      renderNotifList(notifListNew, newNotifsFilt, false);
+      renderNotifList(notifListUnread, unreadNotifsFilt, true);
     }
 
     function renderNotifList(container, notifs, isUnread) {

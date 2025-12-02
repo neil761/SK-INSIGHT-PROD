@@ -412,46 +412,70 @@ async function fetchDashboardSummaries() {
   const token = sessionStorage.getItem("token");
   const headers = token ? { Authorization: `Bearer ${token}` } : {};
 
-  // User Accounts (Unfiltered)
-  fetch(`${API_BASE}/api/users`, { headers })
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("userAccountCount").textContent = Array.isArray(data) ? data.length : "0";
-    })
-    .catch(() => {
-      document.getElementById("userAccountCount").textContent = "0";
-    });
+  // Fetch user count first (needed for calculating percentages)
+  try {
+    const userRes = await fetch(`${API_BASE}/api/users`, { headers });
+    const userData = await userRes.json();
+    const totalUsers = Array.isArray(userData) ? userData.length : 0;
+    document.getElementById("userAccountCount").textContent = totalUsers;
 
-  // KK Profiling (Unfiltered for summary box)
-  fetch(`${API_BASE}/api/kkprofiling`, { headers })
-    .then(res => res.json())
-    .then(data => {
-      // Filter out deleted profiles
-      const validProfiles = Array.isArray(data) ? data.filter(profile => !profile.isDeleted) : [];
-      document.getElementById("kkProfilingCount").textContent = validProfiles.length;
-    })
-    .catch(() => {
-      document.getElementById("kkProfilingCount").textContent = "0";
-    });
+    // KK Profiling (Unfiltered for summary box)
+    fetch(`${API_BASE}/api/kkprofiling`, { headers })
+      .then(res => res.json())
+      .then(data => {
+        // Filter out deleted profiles
+        const validProfiles = Array.isArray(data) ? data.filter(profile => !profile.isDeleted) : [];
+        const kkCount = validProfiles.length;
+        document.getElementById("kkProfilingCount").textContent = kkCount;
+        updateProgressBar('kkProgressBar', kkCount, totalUsers);
+      })
+      .catch(() => {
+        document.getElementById("kkProfilingCount").textContent = "0";
+        updateProgressBar('kkProgressBar', 0, totalUsers);
+      });
 
-  // LGBTQ Profiling (Unfiltered)
-  fetch(`${API_BASE}/api/lgbtqprofiling`, { headers })
-    .then(res => res.json())
-    .then(data => {
-      document.getElementById("lgbtqProfilingCount").textContent = Array.isArray(data) ? data.length : "0";
-    })
-    .catch(() => {
-      document.getElementById("lgbtqProfilingCount").textContent = "0";
-    });
+    // LGBTQ Profiling (Unfiltered)
+    fetch(`${API_BASE}/api/lgbtqprofiling`, { headers })
+      .then(res => res.json())
+      .then(data => {
+        const lgbtqCount = Array.isArray(data) ? data.length : 0;
+        document.getElementById("lgbtqProfilingCount").textContent = lgbtqCount;
+        updateProgressBar('lgbtqProgressBar', lgbtqCount, totalUsers);
+      })
+      .catch(() => {
+        document.getElementById("lgbtqProfilingCount").textContent = "0";
+        updateProgressBar('lgbtqProgressBar', 0, totalUsers);
+      });
 
-  // Educational Assistance (Unfiltered)
-  Promise.all([
-    fetch(`${API_BASE}/api/educational-assistance/status?status=pending`, { headers }).then(res => res.json()),
-    fetch(`${API_BASE}/api/educational-assistance/status?status=accepted`, { headers }).then(res => res.json())
-  ]).then(([pending, accepted]) => {
-    const total = (Array.isArray(pending) ? pending.length : 0) + (Array.isArray(accepted) ? accepted.length : 0);
-    document.getElementById("educationalAssistanceCount").textContent = total;
-  });
+    // Educational Assistance (Unfiltered)
+    Promise.all([
+      fetch(`${API_BASE}/api/educational-assistance/status?status=pending`, { headers }).then(res => res.json()),
+      fetch(`${API_BASE}/api/educational-assistance/status?status=accepted`, { headers }).then(res => res.json())
+    ]).then(([pending, accepted]) => {
+      const educCount = (Array.isArray(pending) ? pending.length : 0) + (Array.isArray(accepted) ? accepted.length : 0);
+      document.getElementById("educationalAssistanceCount").textContent = educCount;
+      updateProgressBar('educProgressBar', educCount, totalUsers);
+    });
+  } catch (err) {
+    console.error("Error fetching user count:", err);
+    document.getElementById("userAccountCount").textContent = "0";
+  }
+}
+
+// Helper function to update progress bar
+function updateProgressBar(elementId, applications, totalUsers) {
+  const progressBar = document.getElementById(elementId);
+  if (!progressBar) return;
+
+  const percentage = totalUsers > 0 ? Math.round((applications / totalUsers) * 100) : 0;
+  progressBar.style.width = `${percentage}%`;
+  progressBar.setAttribute('aria-valuenow', percentage);
+  
+  // Update text inside progress bar if element exists
+  const progressText = progressBar.querySelector('.progress-text');
+  if (progressText) {
+    progressText.textContent = `${percentage}%`;
+  }
 }
 
 // --- SOCKET.IO REALTIME ARRIVAL ---

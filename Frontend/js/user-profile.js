@@ -257,13 +257,14 @@ document.addEventListener("DOMContentLoaded", function () {
       if (kkRes.ok) {
         const kkProfile = await kkRes.json();
 
-        // Construct full name: firstname middle initial lastname (normalized to Title Case)
+        // Construct full name: firstname middle initial lastname suffix (normalized to Title Case)
         const firstNameNorm = titleCase(kkProfile.firstname || '');
         const middleInitial = kkProfile.middlename
           ? titleCase(kkProfile.middlename).charAt(0) + "."
           : "";
         const lastNameNorm = titleCase(kkProfile.lastname || '');
-        const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(" ");
+        const suffix = user && user.suffix ? titleCase(user.suffix) : '';
+        const fullName = [firstNameNorm, middleInitial, lastNameNorm, suffix].filter(Boolean).join(" ");
         setValue("fullName", fullName);
 
         // ✅ Age comes from User's birthday
@@ -287,7 +288,8 @@ document.addEventListener("DOMContentLoaded", function () {
               const firstNameNorm = titleCase(prev.firstname || '');
               const middleInitial = prev.middlename ? titleCase(prev.middlename).charAt(0) + '.' : '';
               const lastNameNorm = titleCase(prev.lastname || '');
-              const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(' ');
+              const suffix = user && user.suffix ? titleCase(user.suffix) : '';
+              const fullName = [firstNameNorm, middleInitial, lastNameNorm, suffix].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user && user.birthday) setValue('age', calculateAge(user.birthday));
               if (prev.gender) setValue('gender', prev.gender);
@@ -308,7 +310,8 @@ document.addEventListener("DOMContentLoaded", function () {
                 const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
                 const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
                 const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
-                const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
+                const suffix = user.suffix ? titleCase(user.suffix) : '';
+                const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback, suffix].filter(Boolean).join(' ');
                 if (fullName) setValue('fullName', fullName);
                 if (user.birthday) setValue('age', calculateAge(user.birthday));
                 if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -322,7 +325,8 @@ document.addEventListener("DOMContentLoaded", function () {
               const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
               const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
               const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
-              const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
+              const suffix = user.suffix ? titleCase(user.suffix) : '';
+              const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback, suffix].filter(Boolean).join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user.birthday) setValue('age', calculateAge(user.birthday));
               if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -671,7 +675,8 @@ if (logoutBtn) {
   const tabs = document.querySelectorAll(".settings-tab");
   const tabContents = {
     password: document.getElementById("settingsTabPassword"),
-    email: document.getElementById("settingsTabEmail")
+    email: document.getElementById("settingsTabEmail"),
+    account: document.getElementById("settingsTabAccount")
   };
 
   // Open modal
@@ -679,6 +684,14 @@ if (logoutBtn) {
     settingsModal.classList.add("active");
     document.getElementById("currentEmail").value =
       document.querySelector(".profile-container p").textContent || "";
+    // Populate account info fields if user data is available
+    if (user) {
+      document.getElementById("updateUsername").value = user.username || "";
+      document.getElementById("updateFirstName").value = user.firstName || "";
+      document.getElementById("updateMiddleName").value = user.middleName || "";
+      document.getElementById("updateLastName").value = user.lastName || "";
+      document.getElementById("updateSuffix").value = user.suffix || "";
+    }
     checkResendLockoutOnOpen();
     checkOtpSendLockout();
   });
@@ -1181,6 +1194,86 @@ if (logoutBtn) {
       // Do NOT reload or reset modal here
     }
   });
+
+  // --- Update Account Info Form ---
+  const updateAccountInfoForm = document.getElementById("updateAccountInfoForm");
+  if (updateAccountInfoForm) {
+    updateAccountInfoForm.addEventListener("submit", async function (e) {
+      e.preventDefault();
+      
+      const username = document.getElementById("updateUsername").value.trim();
+      const firstName = document.getElementById("updateFirstName").value.trim();
+      const middleName = document.getElementById("updateMiddleName").value.trim();
+      const lastName = document.getElementById("updateLastName").value.trim();
+      const suffix = document.getElementById("updateSuffix").value.trim();
+
+      if (!username || !firstName || !lastName) {
+        Swal.fire({
+          icon: "warning",
+          title: "Missing Fields",
+          text: "Please fill in username, first name, and last name.",
+          confirmButtonColor: "#0A2C59"
+        });
+        return;
+      }
+
+      const submitBtn = this.querySelector('button[type="submit"]');
+      submitBtn.disabled = true;
+
+      const token = localStorage.getItem("token") || sessionStorage.getItem("token");
+      try {
+        const res = await fetch(`${API_BASE}/api/users/me/update-info`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            username,
+            firstName,
+            middleName,
+            lastName,
+            suffix
+          })
+        });
+
+        const data = await res.json();
+        if (!res.ok) {
+          Swal.fire({
+            icon: "error",
+            title: "Update Failed",
+            text: data.error || "Failed to update account info.",
+            confirmButtonColor: "#0A2C59"
+          });
+          submitBtn.disabled = false;
+          return;
+        }
+
+        // Update local user object
+        user = data.user;
+
+        Swal.fire({
+          icon: "success",
+          title: "Updated",
+          text: "Your account info has been updated successfully.",
+          confirmButtonColor: "#0A2C59"
+        }).then(() => {
+          settingsModal.classList.remove("active");
+          resetSettingsModal();
+          window.location.reload();
+        });
+      } catch (err) {
+        console.error("Update account info error:", err);
+        Swal.fire({
+          icon: "error",
+          title: "Server Error",
+          text: "Could not update account info. Please try again.",
+          confirmButtonColor: "#0A2C59"
+        });
+        submitBtn.disabled = false;
+      }
+    });
+  }
 
   /**
    * Start email OTP countdown and update UI.

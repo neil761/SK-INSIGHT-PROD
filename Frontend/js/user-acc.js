@@ -112,48 +112,47 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial load
   fetchUsers();
 
-const socket = io(API_BASE, { transports: ["websocket"] });
+  const socket = io(API_BASE, { transports: ["websocket"] });
 
-socket.on("educational-assistance:newSubmission", (data) => {
-  Swal.fire({
-    icon: 'info',
-    title: 'New Educational Assistance Application',
-    text: 'A new application has arrived!',
-    timer: 8000,
-    showConfirmButton: false,
-    toast: true,
-    position: 'top-end'
-  });
-  // Optionally refresh or update something if needed
-});
-});
-
-function attachUserModalOpeners() {
-  document.querySelectorAll(".view-btn").forEach(btn => {
-    btn.addEventListener("click", async () => {
-      const userId = btn.dataset.id;
-      // Fetch user details if needed, then show modal
-      showUserModal(userId);
+  socket.on("educational-assistance:newSubmission", (data) => {
+    Swal.fire({
+      icon: 'info',
+      title: 'New Educational Assistance Application',
+      text: 'A new application has arrived!',
+      timer: 8000,
+      showConfirmButton: false,
+      toast: true,
+      position: 'top-end'
     });
+    // Optionally refresh or update something if needed
   });
-}
 
-async function showUserModal(userId) {
-  try {
-    const response = await fetch(`${API_BASE}/api/users/${encodeURIComponent(userId)}`, {
-      headers: {
-        Authorization: `Bearer ${sessionStorage.getItem("token")}`,
-      },
+  function attachUserModalOpeners() {
+    document.querySelectorAll(".view-btn").forEach(btn => {
+      btn.addEventListener("click", async () => {
+        const userId = btn.dataset.id;
+        // Fetch user details if needed, then show modal
+        showUserModal(userId);
+      });
     });
-    const payload = await response.json();
-    const user = payload.user || payload;
-    const profiles = payload.profiles || {};
-    console.log("Modal profile IDs:", profiles);
+  }
 
-    // Resolve profile IDs (prefer answered-latest id, fallback to any-profile id, keep legacy keys)
-    const kkId = profiles.kkAnsweredLatestId || profiles.kkAnyProfileId || profiles.kkProfileId || null;
-    const lgbtqId = profiles.lgbtqAnsweredLatestId || profiles.lgbtqAnyProfileId || profiles.lgbtqProfileId || null;
-    const educId = profiles.educationalAnsweredLatestId || profiles.educationalAnyProfileId || profiles.educationalProfileId || null;
+  async function showUserModal(userId) {
+    try {
+      const response = await fetch(`${API_BASE}/api/users/${encodeURIComponent(userId)}`, {
+        headers: {
+          Authorization: `Bearer ${sessionStorage.getItem("token")}`,
+        },
+      });
+      const payload = await response.json();
+      const user = payload.user || payload;
+      const profiles = payload.profiles || {};
+      console.log("Modal profile IDs:", profiles);
+
+      // Resolve profile IDs (prefer answered-latest id, fallback to any-profile id, keep legacy keys)
+      const kkId = profiles.kkAnsweredLatestId || profiles.kkAnyProfileId || profiles.kkProfileId || null;
+      const lgbtqId = profiles.lgbtqAnsweredLatestId || profiles.lgbtqAnyProfileId || profiles.lgbtqProfileId || null;
+      const educId = profiles.educationalAnsweredLatestId || profiles.educationalAnyProfileId || profiles.educationalProfileId || null;
     
     Swal.fire({
       showCloseButton: true,
@@ -239,6 +238,8 @@ async function showUserModal(userId) {
     });
   }
 }
+
+});
 
 // Helper to open profile tab and transfer session token via BroadcastChannel
 function openProfileTabWithToken(url, profileId) {
