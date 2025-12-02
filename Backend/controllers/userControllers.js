@@ -895,6 +895,28 @@ exports.createAdmin = async (req, res) => {
   }
 };
 
+// Mark agreement accepted for current user
+exports.acceptAgreement = async (req, res) => {
+  console.debug('acceptAgreement called, req.user:', req.user && { id: req.user._id, role: req.user.role });
+  try {
+    const userId = req.user && req.user._id;
+    if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    user.agreementAccepted = true;
+    user.agreementAcceptedAt = new Date();
+    await user.save();
+
+    const safeUser = user.toObject();
+    delete safeUser.password;
+    res.json({ message: 'Agreement recorded', user: safeUser });
+  } catch (err) {
+    console.error('acceptAgreement error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
 // POST /api/users/me/update-info
 // Update current user's own account info (username, firstName, middleName, lastName, suffix)
 exports.updateMyInfo = asyncHandler(async (req, res) => {

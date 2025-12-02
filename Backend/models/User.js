@@ -46,6 +46,8 @@ const userSchema = new mongoose.Schema({
   },
   gender: { type: String },
   civilStatus: { type: String },
+  agreementAccepted: { type: Boolean, default: false },
+  agreementAcceptedAt: { type: Date, default: null },
 },
 {
   timestamps: true // adds createdAt and updatedAt

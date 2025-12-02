@@ -1,4 +1,11 @@
 (function () {
+  // Get API_BASE from window or determine dynamically
+  const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
+    ? window.API_BASE
+    : (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000'
+      : 'https://sk-insight.online';
+
   try {
     if (!window.__checkRejectedLoaderAdded) {
       window.__checkRejectedLoaderAdded = true;
@@ -23,7 +30,7 @@
   async function fetchCurrentUser(token) {
     if (!token) return null;
     try {
-      const res = await fetch('http://localhost:5000/api/users/me', { headers: { Authorization: `Bearer ${token}` } });
+      const res = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
       if (!res.ok) return null;
       const data = await getJsonSafe(res);
       return data && (data.user || data.userData || data) || null;
@@ -46,17 +53,45 @@
     return viewedBy.map(String).includes(String(userId));
   }
 
-  function countUnread(list, userId, now) {
+  // Count unread announcements with proper expiry logic
+  // For General announcements: skip if eventDate has passed
+  // For Personal announcements: skip if isActive === false (don't use eventDate)
+  function countUnreadGeneral(list, userId, now) {
     let count = 0;
     (list||[]).forEach(a => {
+      if (!a || !a.title) return;
+      
       // Skip inactive announcements
       const isActive = (a.isActive === undefined) ? true : Boolean(a.isActive);
       if (!isActive) return;
-      // Check if eventDate has passed (announcement has expired)
-      if (a.eventDate) { const ed = Date.parse(a.eventDate); if (!isNaN(ed) && ed < now) return; }
-      // Check if expiresAt has passed
-      if (a.expiresAt) { const exp = Date.parse(a.expiresAt); if (!isNaN(exp) && exp < now) return; }
-      if (!userId) count++; else if (!isViewedByUser(a, userId)) count++;
+      
+      // For general announcements, check if eventDate has passed
+      if (a.eventDate) { 
+        const ed = new Date(a.eventDate).getTime();
+        if (!isNaN(ed) && ed < now) return; // Skip expired
+      }
+      
+      // Check if already viewed by current user
+      if (userId && isViewedByUser(a, userId)) return;
+      
+      count++;
+    });
+    return count;
+  }
+
+  // For Personal/ForYou announcements: only skip if isActive === false
+  function countUnreadPersonal(list, userId, now) {
+    let count = 0;
+    (list||[]).forEach(a => {
+      if (!a || !a.title) return;
+      
+      // Personal announcements: skip only if explicitly marked inactive
+      if (a.isActive === false) return;
+      
+      // Check if already viewed by current user
+      if (userId && isViewedByUser(a, userId)) return;
+      
+      count++;
     });
     return count;
   }
@@ -72,17 +107,17 @@
     const token = getToken();
     const navbarBadges = Array.from(document.querySelectorAll('.notif-badge'));
     const tabBadges = Array.from(document.querySelectorAll('.tab-notif-badge'));
+    
     if (navbarBadges.length === 0 && tabBadges.length === 0) return;
     if (!token) { navbarBadges.forEach(el=>setBadgeElement(el,0)); tabBadges.forEach(el=>setBadgeElement(el,0)); return; }
-    // Prefer counting unread announcements from the rendered DOM (table rows or cards).
-    // Allocate counts to the active tab category so reading an item in "Overdue/Expired"
-    // decreases the expired count (not the general count).
+    
+    // First, try to count from DOM (currently visible/rendered announcements)
     let domGeneral = 0, domPersonal = 0, domExpired = 0;
     try {
       const activeTabBtn = document.querySelector('.tab-btn.active');
       const activeTab = activeTabBtn ? activeTabBtn.dataset.tab : null; // 'general', 'foryou', 'expired'
 
-      // Table rows and cards that are currently visible on the page will reflect the active tab.
+      // Count unread rows/cards visible on the page
       const tableUnread = document.querySelectorAll('.announcement-table tbody tr.announcement-notread');
       const cardUnread = document.querySelectorAll('.announcement-cards .announcement-card.announcement-notread');
       const visibleUnreadCount = (tableUnread ? tableUnread.length : 0) + (cardUnread ? cardUnread.length : 0);
@@ -99,14 +134,12 @@
       console.warn('DOM-based badge count failed', e);
     }
 
-    // If we found any DOM-based announcements, use them. Otherwise, fall back to fetching.
+    // If we found DOM-based announcements, use them
     if (domGeneral > 0 || domPersonal > 0 || domExpired > 0) {
-      // Bell/navbar badge should only count General + Personal (for-you), not Expired/Overdue
-      const navbarTotal = domGeneral + domPersonal;
+      const navbarTotal = domGeneral + domPersonal; // Bell badge = General + Personal (NOT expired)
       navbarBadges.forEach(el => setBadgeElement(el, navbarTotal, { display: 'flex' }));
       ['badge-general','notif-general'].forEach(id => setBadgeElement(document.getElementById(id), domGeneral, { display: 'inline-block' }));
       ['badge-foryou','notif-foryou'].forEach(id => setBadgeElement(document.getElementById(id), domPersonal, { display: 'inline-block' }));
-      // If there are any tab badge elements that indicate expired/overdue, try common ids
       ['badge-expired','notif-expired','badge-overdue','notif-overdue'].forEach(id => setBadgeElement(document.getElementById(id), domExpired, { display: 'inline-block' }));
 
       // fallback for other tab-badges based on data-tab
@@ -117,38 +150,48 @@
           if (tabName === 'general') setBadgeElement(el, domGeneral, { display: 'inline-block' });
           else if (tabName === 'foryou' || tabName === 'personal') setBadgeElement(el, domPersonal, { display: 'inline-block' });
           else if (tabName === 'expired' || tabName === 'overdue') setBadgeElement(el, domExpired, { display: 'inline-block' });
-          else setBadgeElement(el, (domGeneral+domPersonal+domExpired), { display: 'inline-block' });
+          else setBadgeElement(el, (domGeneral+domPersonal), { display: 'inline-block' }); // Default to General + Personal
         }
       });
       return;
     }
 
-    // No DOM announcements found: fallback to previous network-based computation
+    // No DOM announcements found: fetch from API and count
     const user = await fetchCurrentUser(token);
     const userId = user && (user._id || user.id) ? (user._id || user.id) : null;
     let generalList=[], personalList=[];
+    
     try {
-      const [gRes,pRes] = await Promise.all([
-        fetch('http://localhost:5000/api/announcements', { headers: { Authorization: `Bearer ${token}` } }),
-        fetch('http://localhost:5000/api/announcements/myannouncements', { headers: { Authorization: `Bearer ${token}` } })
+      const [gRes, pRes] = await Promise.all([
+        fetch(`${API_BASE}/api/announcements`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_BASE}/api/announcements/myannouncements`, { headers: { Authorization: `Bearer ${token}` } })
       ]);
-      const gData = await getJsonSafe(gRes); const pData = await getJsonSafe(pRes);
+      const gData = await getJsonSafe(gRes); 
+      const pData = await getJsonSafe(pRes);
+      
       generalList = extractAnnouncementsFromResponse(gData).filter(a => (a.recipient == null || a.recipient === undefined));
       personalList = extractAnnouncementsFromResponse(pData);
-    } catch (err) { console.warn('Failed to fetch announcements for badge', err); }
+    } catch (err) { 
+      console.warn('Failed to fetch announcements for badge', err); 
+    }
 
     const now = Date.now();
-    const unreadGeneral = countUnread(generalList, userId, now);
-    const unreadPersonal = countUnread(personalList, userId, now);
-    const totalUnread = unreadGeneral + unreadPersonal;
+    
+    // Use the same counting logic as user-announcement.js
+    const unreadGeneral = countUnreadGeneral(generalList, userId, now);
+    const unreadPersonal = countUnreadPersonal(personalList, userId, now);
+    const totalUnread = unreadGeneral + unreadPersonal; // Bell badge = General + Personal (NOT expired)
 
+    console.debug('Badge counts:', { general: unreadGeneral, personal: unreadPersonal, total: totalUnread });
+
+    // Update main bell badge (navbar)
     navbarBadges.forEach(el => setBadgeElement(el, totalUnread, { display: 'flex' }));
 
-    // update specific tab ids if present
+    // Update tab-specific badges
     ['badge-general','notif-general'].forEach(id => setBadgeElement(document.getElementById(id), unreadGeneral, { display: 'inline-block' }));
     ['badge-foryou','notif-foryou'].forEach(id => setBadgeElement(document.getElementById(id), unreadPersonal, { display: 'inline-block' }));
 
-    // fallback: update any remaining .tab-notif-badge elements
+    // Update any remaining .tab-notif-badge elements
     tabBadges.forEach(el => {
       if (!el.id || !['badge-general','notif-general','badge-foryou','notif-foryou'].includes(el.id)){
         const parent = el.closest('[data-tab]');
@@ -164,7 +207,7 @@
     // Wait for user-announcement.js to load and expose updateNotificationBadge
     const waitForBadgeFunction = () => {
       if (typeof window.updateNotificationBadge === 'function') {
-        // Use the function from user-announcement.js
+        // Use the function from user-announcement.js which has more complete logic
         window.updateNotificationBadge();
         
         // Periodic refresh every 5 minutes (only as fallback)
@@ -179,6 +222,8 @@
     
     waitForBadgeFunction();
   });
+  
+  // Expose updateBadgeOnce as fallback if user-announcement.js doesn't load
   window.updateNotificationBadge = updateBadgeOnce;
 
 })();
