@@ -562,7 +562,16 @@ exports.updateMyProfile = async (req, res) => {
       profile.idImageBack = req.files.idImageBack[0].path;
     }
 
+    // Mark profile as unread so admin sees it as updated
+    profile.isRead = false;
+    
     await profile.save();
+    
+    // Emit socket event to notify admin dashboard in real-time
+    if (req.app.get("io")) {
+      req.app.get("io").emit("lgbtq-profile:updated", { id: profile._id });
+    }
+    
     return res.json({ message: 'Profile updated', profile });
   } catch (err) {
     console.error('updateMyProfile error:', err);
@@ -588,7 +597,7 @@ exports.deleteProfileById = async (req, res) => {
 
     // Send announcement to the user
     const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
-    await Announcement.create({
+    const announcement = await Announcement.create({
       title: "LGBTQ Profiling Form Deleted",
       content: `The admin has observed that your LGBTQ Profiling form has inaccuracies. As a result, your LGBTQ Profiling form for this cycle has been deleted and moved to the recycle bin. You may submit a new form if the cycle is still open, please make sure all information is accurate.`,
       category: "LGBTQ Profiling",
@@ -600,6 +609,22 @@ exports.deleteProfileById = async (req, res) => {
       isActive: true,
       viewedBy: [],
     });
+
+    // --- EMIT SOCKET EVENT FOR REAL-TIME ANNOUNCEMENT DISPLAY ---
+    if (req.app.get("io")) {
+      req.app.get("io").emit("announcement:created", {
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        eventDate: announcement.eventDate,
+        createdAt: announcement.createdAt,
+        createdBy: req.user.id,
+        recipient: announcement.recipient,
+        isPinned: announcement.isPinned,
+        isActive: announcement.isActive,
+        category: announcement.category
+      });
+    }
 
     res.json({ message: "Profile moved to recycle bin" });
   } catch (err) {
@@ -634,7 +659,7 @@ exports.restoreProfileById = async (req, res) => {
 
     // Send announcement to the user
     const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
-    await Announcement.create({
+    const announcement = await Announcement.create({
       title: "LGBTQ Profiling Form Restored",
       content: `Your LGBTQ Profiling form for this cycle has been restored.`,
       category: "LGBTQ Profiling",
@@ -646,6 +671,22 @@ exports.restoreProfileById = async (req, res) => {
       isActive: true,
       viewedBy: [],
     });
+
+    // --- EMIT SOCKET EVENT FOR REAL-TIME ANNOUNCEMENT DISPLAY ---
+    if (req.app.get("io")) {
+      req.app.get("io").emit("announcement:created", {
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        eventDate: announcement.eventDate,
+        createdAt: announcement.createdAt,
+        createdBy: req.user.id,
+        recipient: announcement.recipient,
+        isPinned: announcement.isPinned,
+        isActive: announcement.isActive,
+        category: announcement.category
+      });
+    }
 
     res.json({ message: "Profile restored" });
   } catch (err) {

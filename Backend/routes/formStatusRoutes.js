@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const FormStatus = require('../models/FormStatus');
+const Announcement = require('../models/Announcement');
 const { protect, authorizeRoles } = require('../middleware/authMiddleware');
 
 // PUT /api/formstatus/toggle
@@ -27,6 +28,16 @@ router.put('/toggle', protect, authorizeRoles('admin'), async (req, res) => {
     }
 
     await form.save();
+
+    // --- EMIT SOCKET EVENT FOR REAL-TIME FORM STATUS UPDATE ---
+    const io = req.app.get("io");
+    if (io) {
+      io.emit("form:statusChanged", {
+        formName: form.formName,
+        isOpen: form.isOpen,
+        cycleId: form.cycleId
+      });
+    }
 
     res.json({
       message: `Form is now ${form.isOpen ? 'OPEN' : 'CLOSED'}`,

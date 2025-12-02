@@ -385,16 +385,57 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     formData.append('expenses', JSON.stringify(expenses));
 
-    // Append file inputs (requirements). Exclude parent's voter certificate for Senior High students
+    // Validate required file inputs (requirements)
     const fileInputs = ['frontImage', 'backImage', 'coeImage'];
+    let requiresVoter = false;
     try {
       const acadVal = (document.getElementById('academicLevel') && document.getElementById('academicLevel').value) ? document.getElementById('academicLevel').value : '';
       if (!/senior\s*high/i.test(acadVal)) {
         fileInputs.push('voter');
+        requiresVoter = true;
       }
-    } catch (e) { /* ignore and include voter by default below */ }
+    } catch (e) { /* ignore */ }
+
+    // Check for missing required files
+    const missingFiles = [];
+    const fileLabels = {
+      'frontImage': 'Valid ID (Front)',
+      'backImage': 'Valid ID (Back)',
+      'coeImage': 'Certificate of Enrollment (COE)',
+      'voter': 'Voters Certificate'
+    };
 
     for (const inputId of fileInputs) {
+      const input = document.getElementById(inputId);
+      const hasFile = input && input.files && input.files.length > 0;
+      if (!hasFile) {
+        missingFiles.push(fileLabels[inputId] || inputId);
+      }
+    }
+
+    // Show error alert if any required files are missing
+    if (missingFiles.length > 0) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Missing Required Files',
+        html: `<p>Please upload the following files before submitting:</p><ul style="text-align: left; display: inline-block;">
+          ${missingFiles.map(file => `<li>${file}</li>`).join('')}
+        </ul>`,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59',
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+      return;
+    }
+
+    // Append file inputs to FormData (all required files are present)
+    const requiredFiles = ['frontImage', 'backImage', 'coeImage'];
+    if (requiresVoter) {
+      requiredFiles.push('voter');
+    }
+    
+    for (const inputId of requiredFiles) {
       const input = document.getElementById(inputId);
       if (input && input.files && input.files.length > 0) {
         formData.append(inputId, input.files[0]); // Append file to FormData

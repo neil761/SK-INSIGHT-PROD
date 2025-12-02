@@ -92,6 +92,46 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) { /* ignore */ }
   }
 
+  // Create modal for image preview
+  function createImageModal() {
+    let modal = document.getElementById('imageModalPreview');
+    if (!modal) {
+      modal = document.createElement('div');
+      modal.id = 'imageModalPreview';
+      modal.style.cssText = `
+        display: none;
+        position: fixed;
+        z-index: 10000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        align-items: center;
+        justify-content: center;
+      `;
+      modal.innerHTML = `
+        <div style="position: relative; background: white; padding: 20px; border-radius: 8px; max-width: 90%; max-height: 90vh; display: flex; flex-direction: column; align-items: center;">
+          <button type="button" id="closeImageModal" style="position: absolute; top: 10px; right: 10px; font-size: 28px; font-weight: bold; border: none; background: none; cursor: pointer; color: #333;">&times;</button>
+          <img id="modalImageContent" src="" alt="Preview" style="max-width: 100%; max-height: 80vh; object-fit: contain; border-radius: 6px;">
+        </div>
+      `;
+      document.body.appendChild(modal);
+      
+      const closeBtn = modal.querySelector('#closeImageModal');
+      closeBtn.addEventListener('click', () => {
+        modal.style.display = 'none';
+      });
+      
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+          modal.style.display = 'none';
+        }
+      });
+    }
+    return modal;
+  }
+
   function renderPreview(containerId, src) {
     const c = document.getElementById(containerId);
     if (!c) return;
@@ -124,12 +164,14 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     const img = c.querySelector('img');
     if (img) {
-      // ensure very tall images open scaled in SweetAlert (SweetAlert will size to image naturally,
-      // but we provide a constrained preview behavior here by passing the same src)
+      // Click to open in modal
       img.addEventListener('click', () => {
-        try { Swal.fire({ imageUrl: img.src, imageAlt: 'Preview', showCloseButton: true }); } catch (e) { window.open(img.src); }
+        const modal = createImageModal();
+        modal.querySelector('#modalImageContent').src = img.src;
+        modal.style.display = 'flex';
       });
-      // also make sure inline preview doesn't force layout: apply style attributes that respect CSS max-height
+      // Style the image
+      img.style.cursor = 'pointer';
       img.style.maxWidth = '100%';
       img.style.width = 'auto';
       img.style.height = 'auto';
@@ -145,6 +187,15 @@ document.addEventListener('DOMContentLoaded', function () {
   const backInput = document.getElementById('idImageBack');
   const frontPreviewContainer = document.getElementById('imagePreviewContainerFront');
   const backPreviewContainer = document.getElementById('imagePreviewContainerBack');
+
+  // Hide native file inputs and wire custom buttons
+  if (frontInput) frontInput.style.display = 'none';
+  if (backInput) backInput.style.display = 'none';
+
+  const customFrontBtn = document.getElementById('customIdFrontBtn');
+  const customBackBtn = document.getElementById('customIdBackBtn');
+  if (customFrontBtn) customFrontBtn.addEventListener('click', (e) => { e.preventDefault(); frontInput?.click(); });
+  if (customBackBtn) customBackBtn.addEventListener('click', (e) => { e.preventDefault(); backInput?.click(); });
 
   // state for images
   const frontState = { base64: null, removed: false };
@@ -205,30 +256,56 @@ document.addEventListener('DOMContentLoaded', function () {
 
   if (frontInput) frontInput.addEventListener('change', function (e) {
     const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    if (!validateImageFile(f)) { Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); frontInput.value = ''; return; }
+    if (!f) {
+      console.warn('No front file selected');
+      return;
+    }
+    if (!validateImageFile(f)) { 
+      console.warn('Invalid file type:', f.type);
+      Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); 
+      frontInput.value = ''; 
+      return; 
+    }
     const fr = new FileReader();
     fr.onload = () => {
+      console.log('Front image loaded successfully');
       frontState.base64 = fr.result;
       frontState.removed = false;
       renderPreview('imagePreviewContainerFront', fr.result);
       // show the filename next to upload control
       try { setFilenameIfExists('idImageFrontFilename', f.name || ''); } catch (e) {}
     };
+    fr.onerror = () => {
+      console.error('Failed to read front image');
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to read image file.' });
+    };
     fr.readAsDataURL(f);
   });
 
   if (backInput) backInput.addEventListener('change', function (e) {
     const f = e.target.files && e.target.files[0];
-    if (!f) return;
-    if (!validateImageFile(f)) { Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); backInput.value = ''; return; }
+    if (!f) {
+      console.warn('No back file selected');
+      return;
+    }
+    if (!validateImageFile(f)) { 
+      console.warn('Invalid file type:', f.type);
+      Swal.fire({ icon: 'error', title: 'Invalid file', text: 'Only PNG and JPEG allowed.' }); 
+      backInput.value = ''; 
+      return; 
+    }
     const fr = new FileReader();
     fr.onload = () => {
+      console.log('Back image loaded successfully');
       backState.base64 = fr.result;
       backState.removed = false;
       renderPreview('imagePreviewContainerBack', fr.result);
       // show the filename next to upload control
       try { setFilenameIfExists('idImageBackFilename', f.name || ''); } catch (e) {}
+    };
+    fr.onerror = () => {
+      console.error('Failed to read back image');
+      Swal.fire({ icon: 'error', title: 'Error', text: 'Failed to read image file.' });
     };
     fr.readAsDataURL(f);
   });
@@ -238,9 +315,36 @@ document.addEventListener('DOMContentLoaded', function () {
   if (submitBtn) submitBtn.addEventListener('click', async function (ev) {
     ev.preventDefault();
     try {
-      const confirmed = await Swal.fire({ title: 'Are you sure you want to save changes?', icon: 'question', showCancelButton: true, confirmButtonText: 'Yes, save', cancelButtonText: 'Cancel', confirmButtonColor: '#0A2C59' });
+      const confirmed = await Swal.fire({ title: 'Are you sure you want to save changes?', icon: 'question', showCancelButton: true, confirmButtonText: 'Yes', cancelButtonText: 'Cancel', confirmButtonColor: '#0A2C59' });
       if (!confirmed || !confirmed.isConfirmed) return;
     } catch (e) { console.warn('Swal failed, proceeding'); }
+
+    // Validate required fields BEFORE showing loading dialog
+    const lastNameEl = document.getElementById('lastName');
+    const firstNameEl = document.getElementById('firstName');
+    const sexEl = document.getElementById('sex');
+    const identityEl = document.getElementById('identity');
+    
+    const missingFields = [];
+    if (!lastNameEl || !lastNameEl.value || lastNameEl.value.trim() === '') missingFields.push('Last Name');
+    if (!firstNameEl || !firstNameEl.value || firstNameEl.value.trim() === '') missingFields.push('First Name');
+    if (!sexEl || !sexEl.value || sexEl.value.trim() === '') missingFields.push('Sex Assigned at Birth');
+    if (!identityEl || !identityEl.value || identityEl.value.trim() === '') missingFields.push('LGBTQIA+ Classification');
+    if (!frontState.base64 && !frontState.removed) missingFields.push('ID Image (Front)');
+    if (!backState.base64 && !backState.removed) missingFields.push('ID Image (Back)');
+
+    if (missingFields.length > 0) {
+      await Swal.fire({
+        icon: 'error',
+        title: 'Missing Required Fields',
+        text: `Please fill in the following fields before saving:\n\n${missingFields.join('\n')}`,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+      });
+      return;
+    }
 
     // show loading
     try { Swal.fire({ title: 'Saving changes...', allowOutsideClick: false, allowEscapeKey: false, didOpen: () => Swal.showLoading(), showConfirmButton: false }); } catch (e) {}

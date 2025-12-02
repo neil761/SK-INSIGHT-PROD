@@ -649,12 +649,28 @@ document.addEventListener('DOMContentLoaded', function() {
         text: 'Please upload a profile image before submitting.',
         icon: 'warning',
         showConfirmButton: true,
-        confirmButtonText: 'OK'
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59'
       });
       return;
     }
 
-    // Show loading SweetAlert after confirmation and after validation
+    // Check if signature image is present (either in file input or sessionStorage)
+    const hasSignature = form.signatureImage.files.length > 0 || (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').signatureImage);
+
+    if (!hasSignature) {
+      await Swal.fire({
+        title: 'Missing Signature',
+        text: 'Please upload a signature image before submitting.',
+        icon: 'warning',
+        showConfirmButton: true,
+        confirmButtonText: 'OK',
+        confirmButtonColor: '#0A2C59'
+      });
+      return;
+    }
+
+    // Show loading SweetAlert AFTER all validations pass
     Swal.fire({
       title: "Submitting...",
       text: "Please wait...",
@@ -670,7 +686,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const step2 = JSON.parse(sessionStorage.getItem('kkProfileStep2') || '{}');
     const step3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
 
-    // In your submit handler, after loading step3:
+    // Convert boolean fields
     const booleanFields = [
       'registeredSKVoter',
       'registeredNationalVoter',
@@ -686,34 +702,13 @@ document.addEventListener('DOMContentLoaded', function() {
       }
     });
 
-    // Validate image presence
-    if (
-      form.profileImage.files.length === 0 &&
-      !step3.profileImage
-    ) {
-      Swal.close();
-      await Swal.fire("Missing Image", "Please upload a profile image before submitting.", "warning");
-      return;
-    }
-
-    // Check if signature image is present (either in file input or sessionStorage)
-    const hasSignature =
-      form.signatureImage.files.length > 0 ||
-      (JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}').signatureImage);
-
-    if (!hasSignature) {
-      Swal.close();
-      await Swal.fire("Missing Signature", "Please upload a signature image before submitting.", "warning");
-      return;
-    }
-
     const formData = new FormData();
 
     // Step 1
     Object.entries(step1).forEach(([k, v]) => formData.append(k, v));
     // Step 2
     Object.entries(step2).forEach(([k, v]) => formData.append(k, v));
-    // Step 3 (excluding profileImage)
+    // Step 3 (excluding profileImage and signatureImage)
     Object.entries(step3).forEach(([k, v]) => {
       // Only send attendanceCount if attended
       if (k === 'attendanceCount' && step3.attendedKKAssembly) {
@@ -723,8 +718,8 @@ document.addEventListener('DOMContentLoaded', function() {
       else if (k === 'reasonDidNotAttend' && !step3.attendedKKAssembly) {
         formData.append(k, v);
       }
-      // Send other fields
-      else if (k !== 'profileImage' && k !== 'attendanceCount' && k !== 'reasonDidNotAttend') {
+      // Send other fields (skip images)
+      else if (k !== 'profileImage' && k !== 'signatureImage' && k !== 'attendanceCount' && k !== 'reasonDidNotAttend' && k !== 'profileImageName' && k !== 'signatureImageName') {
         formData.append(k, v);
       }
     });
@@ -748,11 +743,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       } catch (e) {
         console.debug('kkform-youth: failed to attach profile image from sessionStorage', e);
+        Swal.close();
+        await Swal.fire({
+          icon: 'error',
+          title: 'Image Error',
+          text: 'Failed to process profile image.',
+          confirmButtonColor: '#0A2C59'
+        });
+        return;
       }
     }
 
     // Add signature image file if selected
-    if (form.signatureImage && form.signatureImage.files.length > 0) {
+    if (form.signatureImage.files.length > 0) {
       formData.append('signatureImage', form.signatureImage.files[0]);
     } else if (step3.signatureImage) {
       try {
@@ -769,6 +772,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       } catch (e) {
         console.debug('kkform-youth: failed to attach signature image from sessionStorage', e);
+        Swal.close();
+        await Swal.fire({
+          icon: 'error',
+          title: 'Signature Error',
+          text: 'Failed to process signature image.',
+          confirmButtonColor: '#0A2C59'
+        });
+        return;
       }
     }
 
@@ -779,6 +790,7 @@ document.addEventListener('DOMContentLoaded', function() {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
+
       // Close loading
       Swal.close();
 
@@ -787,7 +799,7 @@ document.addEventListener('DOMContentLoaded', function() {
       try { body = await response.json(); } catch (e) { try { body = await response.text(); } catch (_) { body = null; } }
 
       if (response.ok) {
-        // Try to update user name fields on the backend so /api/users/me reflects submitted names
+        // Try to update user name fields on the backend
         try {
           const token = sessionStorage.getItem('token') || localStorage.getItem('token');
           if (token && step1) {
@@ -816,6 +828,7 @@ document.addEventListener('DOMContentLoaded', function() {
           showConfirmButton: true,
           confirmButtonText: "OK",
           allowOutsideClick: false,
+          confirmButtonColor: '#0A2C59'
         });
 
         // Remove sessionStorage data for all steps before redirecting
@@ -832,28 +845,48 @@ document.addEventListener('DOMContentLoaded', function() {
         return;
       }
 
-      // Non-OK: show helpful message including status and backend body when available
+      // Non-OK: show helpful message
       console.error('kkform-youth submit failed', { status: response.status, body });
 
       if (response.status === 409) {
-        await Swal.fire("Already Submitted", "You already submitted a KKProfile for this cycle.", "error");
+        await Swal.fire({
+          icon: 'error',
+          title: "Already Submitted",
+          text: "You already submitted a KKProfile for this cycle.",
+          confirmButtonColor: '#0A2C59'
+        });
         return;
       }
 
       if (response.status === 403) {
         const msg = (body && (body.error || body.message)) || 'You are not eligible to submit this form due to access/age restrictions.';
-        await Swal.fire({ icon: 'error', title: 'Not Eligible', text: msg, confirmButtonColor: '#0A2C59' });
+        await Swal.fire({
+          icon: 'error',
+          title: 'Not Eligible',
+          text: msg,
+          confirmButtonColor: '#0A2C59'
+        });
         return;
       }
 
-      // For validation or other server errors, display server-provided details when available
+      // For validation or other server errors
       const serverMsg = (body && (body.error || body.message)) || (typeof body === 'string' ? body : null) || `Server responded with status ${response.status}`;
-      await Swal.fire({ icon: 'error', title: 'Submission Failed', text: serverMsg });
+      await Swal.fire({
+        icon: 'error',
+        title: 'Submission Failed',
+        text: serverMsg,
+        confirmButtonColor: '#0A2C59'
+      });
     } catch (error) {
       // Network or unexpected error
       console.error('kkform-youth network/exception during submit', error);
       Swal.close();
-      await Swal.fire({ icon: 'error', title: 'Submission Error', text: `Failed to submit form: ${error && error.message ? error.message : 'Network or unexpected error'}` });
+      await Swal.fire({
+        icon: 'error',
+        title: 'Submission Error',
+        text: `Failed to submit form: ${error && error.message ? error.message : 'Network or unexpected error'}`,
+        confirmButtonColor: '#0A2C59'
+      });
     }
   });
 

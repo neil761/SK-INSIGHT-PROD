@@ -25,6 +25,24 @@ exports.createAnnouncement = async (req, res) => {
       createdBy: req.user.id,
       isActive: true // Ensure new announcements are active by default
     });
+
+    // Populate createdBy for the response
+    await announcement.populate("createdBy", "username email");
+
+    // Emit real-time Socket.IO event to notify all connected clients
+    if (req.app.get("io")) {
+      req.app.get("io").emit("announcement:created", {
+        id: announcement._id,
+        title: announcement.title,
+        content: announcement.content,
+        eventDate: announcement.eventDate,
+        isPinned: announcement.isPinned,
+        createdAt: announcement.createdAt,
+        createdBy: announcement.createdBy,
+        recipient: announcement.recipient
+      });
+    }
+
     res.status(201).json({ success: true, announcement });
   } catch (err) {
     res.status(500).json({ success: false, message: "Error creating announcement", error: err.message });

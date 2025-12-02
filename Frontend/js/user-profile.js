@@ -257,13 +257,22 @@ document.addEventListener("DOMContentLoaded", function () {
       if (kkRes.ok) {
         const kkProfile = await kkRes.json();
 
-        // Construct full name: firstname middle initial lastname (normalized to Title Case)
+        // Construct full name: firstname middle initial lastname suffix (normalized to Title Case)
         const firstNameNorm = titleCase(kkProfile.firstname || '');
         const middleInitial = kkProfile.middlename
           ? titleCase(kkProfile.middlename).charAt(0) + "."
           : "";
         const lastNameNorm = titleCase(kkProfile.lastname || '');
-        const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(" ");
+        const suffixNorm = kkProfile.suffix 
+          ? titleCase(kkProfile.suffix) 
+          : "";
+        
+        // Only include suffix if it's not "N/A" or empty
+        const suffix = (suffixNorm && suffixNorm.toLowerCase() !== 'n/a') ? suffixNorm : "";
+        
+        const fullName = [firstNameNorm, middleInitial, lastNameNorm, suffix]
+          .filter(Boolean)
+          .join(" ");
         setValue("fullName", fullName);
 
         // ✅ Age comes from User's birthday
@@ -287,7 +296,16 @@ document.addEventListener("DOMContentLoaded", function () {
               const firstNameNorm = titleCase(prev.firstname || '');
               const middleInitial = prev.middlename ? titleCase(prev.middlename).charAt(0) + '.' : '';
               const lastNameNorm = titleCase(prev.lastname || '');
-              const fullName = [firstNameNorm, middleInitial, lastNameNorm].filter(Boolean).join(' ');
+              const suffixNorm = prev.suffix 
+                ? titleCase(prev.suffix) 
+                : "";
+              
+              // Only include suffix if it's not "N/A" or empty
+              const suffix = (suffixNorm && suffixNorm.toLowerCase() !== 'n/a') ? suffixNorm : "";
+              
+              const fullName = [firstNameNorm, middleInitial, lastNameNorm, suffix]
+                .filter(Boolean)
+                .join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user && user.birthday) setValue('age', calculateAge(user.birthday));
               if (prev.gender) setValue('gender', prev.gender);
@@ -308,7 +326,14 @@ document.addEventListener("DOMContentLoaded", function () {
                 const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
                 const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
                 const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
-                const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
+                const suffixFromUser = user.suffix ? titleCase(user.suffix) : "";
+                
+                // Only include suffix if it's not "N/A" or empty
+                const suffix = (suffixFromUser && suffixFromUser.toLowerCase() !== 'n/a') ? suffixFromUser : "";
+                
+                const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback, suffix]
+                  .filter(Boolean)
+                  .join(' ');
                 if (fullName) setValue('fullName', fullName);
                 if (user.birthday) setValue('age', calculateAge(user.birthday));
                 if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
@@ -322,7 +347,14 @@ document.addEventListener("DOMContentLoaded", function () {
               const firstNameFallback = titleCase(user.firstname || user.firstName || user.givenName || '');
               const lastNameFallback = titleCase(user.lastname || user.lastName || user.familyName || user.surname || '');
               const middleInitialFromUser = (user.middlename || user.middleName) ? titleCase(user.middlename || user.middleName).charAt(0) + '.' : '';
-              const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback].filter(Boolean).join(' ');
+              const suffixFromUser = user.suffix ? titleCase(user.suffix) : "";
+              
+              // Only include suffix if it's not "N/A" or empty
+              const suffix = (suffixFromUser && suffixFromUser.toLowerCase() !== 'n/a') ? suffixFromUser : "";
+              
+              const fullName = [firstNameFallback, middleInitialFromUser, lastNameFallback, suffix]
+                .filter(Boolean)
+                .join(' ');
               if (fullName) setValue('fullName', fullName);
               if (user.birthday) setValue('age', calculateAge(user.birthday));
               if (user.gender || user.sex) setValue('gender', user.gender || user.sex);
