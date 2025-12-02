@@ -181,7 +181,7 @@ router.get("/export/:id", protect, async (req, res) => {
       email: profile.email || "",
       contact: profile.contactNumber || "",
 
-// Civil Status checkboxes
+  // Civil Status checkboxes
       single: checkbox(profile.civilStatus, "Single"),
       livein: checkbox(profile.civilStatus, "Live-in"),
       married: checkbox(profile.civilStatus, "Married"),

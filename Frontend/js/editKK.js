@@ -539,7 +539,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // gather step1/2/3 from DOM if present, otherwise from localStorage
     const fromDomOrStorage = (idList, storageKey) => {
       const out = {};
-      const stored = JSON.parse(localStorage.getItem(storageKey) || '{}');
+      const stored = JSON.parse(sessionStorage.getItem(storageKey) || '{}');
       idList.forEach(id => {
         const el = document.getElementById(id);
         out[id] = el ? el.value : (stored[id] || '');
@@ -556,6 +556,99 @@ document.addEventListener('DOMContentLoaded', function () {
     // merge with existing step3 to preserve images
     const existing3 = JSON.parse(sessionStorage.getItem('kkProfileStep3') || '{}');
     const finalStep3 = Object.assign({}, existing3, step3);
+
+    // ✅ VALIDATION: Check for required fields
+    const requiredFields = {
+      'firstname': 'First Name',
+      'lastname': 'Last Name',
+      'gender': 'Gender',
+      'birthday': 'Birthday',
+      'region': 'Region',
+      'province': 'Province',
+      'municipality': 'Municipality',
+      'barangay': 'Barangay',
+      'purok': 'Purok',
+      'email': 'Email',
+      'contactNumber': 'Contact Number',
+      'civilStatus': 'Civil Status',
+      'youthAgeGroup': 'Youth Age Group',
+      'youthClassification': 'Youth Classification',
+      'educationalBackground': 'Educational Background',
+      'workStatus': 'Work Status',
+      'registeredSKVoter': 'SK Voter Registration',
+      'registeredNationalVoter': 'National Voter Registration',
+      'votedLastSKElection': 'Voted Last SK Election',
+      'attendedKKAssembly': 'Attended KK Assembly'
+    };
+
+    const missingFields = [];
+
+    Object.entries(requiredFields).forEach(([fieldKey, fieldLabel]) => {
+      let value = step1[fieldKey] || step2[fieldKey] || finalStep3[fieldKey];
+      
+      // Check if value is empty or invalid
+      if (!value || String(value).trim() === '' || String(value).toLowerCase() === 'n/a') {
+        missingFields.push(fieldLabel);
+      }
+    });
+
+    // ✅ Special validation for Youth with Specific Needs
+    if (finalStep3.youthClassification === 'Youth with Specific Needs') {
+      if (!finalStep3.specificNeedType || String(finalStep3.specificNeedType).trim() === '') {
+        missingFields.push('Specific Need Type');
+      }
+    }
+
+    // ✅ Special validation for attendance
+    if (finalStep3.attendedKKAssembly === 'Yes') {
+      if (!finalStep3.attendanceCount || String(finalStep3.attendanceCount).trim() === '') {
+        missingFields.push('Attendance Count');
+      }
+    } else if (finalStep3.attendedKKAssembly === 'No') {
+      if (!finalStep3.reasonDidNotAttend || String(finalStep3.reasonDidNotAttend).trim() === '') {
+        missingFields.push('Reason Did Not Attend');
+      }
+    }
+
+    // ✅ Validate images are present
+    const hasProfileImage = finalStep3.profileImage && 
+      (String(finalStep3.profileImage).startsWith('data:') || 
+       String(finalStep3.profileImage).startsWith('http'));
+    
+    const hasSignatureImage = finalStep3.signatureImage && 
+      (String(finalStep3.signatureImage).startsWith('data:') || 
+       String(finalStep3.signatureImage).startsWith('http'));
+
+    if (!hasProfileImage) {
+      missingFields.push('Profile Image');
+    }
+    if (!hasSignatureImage) {
+      missingFields.push('Signature Image');
+    }
+
+    // ✅ Show error if any required fields are missing
+    if (missingFields.length > 0) {
+      const missingList = missingFields.map(f => `• ${f}`).join('\n');
+      
+      // First close any existing loading/spinner dialogs
+      Swal.close();
+      
+      // Small delay to ensure previous dialog is fully closed
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Now show the error dialog with proper confirm button
+      await Swal.fire({
+        icon: 'error',
+        title: 'Missing Required Information',
+        html: `<p style="text-align: left;">Please provide the following information before updating:</p><pre style="text-align: left; font-family: inherit; white-space: pre-wrap;">${missingList}</pre>`,
+        confirmButtonColor: '#0A2C59',
+        confirmButtonText: 'OK',
+        allowOutsideClick: false,
+        allowEscapeKey: false,
+        showConfirmButton: true
+      });
+      return false;
+    }
 
     // Update sessionStorage first
     sessionStorage.setItem('kkProfileStep1', JSON.stringify(step1));
@@ -603,7 +696,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
           if (res.ok) {
             await Swal.fire({ icon: 'success', title: 'Updated', text: 'Profile updated successfully.', confirmButtonColor: '#0A2C59' });
-            try { localStorage.removeItem('kkProfileStep1'); localStorage.removeItem('kkProfileStep2'); localStorage.removeItem('kkProfileStep3'); } catch (e) {}
+            try { sessionStorage.removeItem('kkProfileStep1'); sessionStorage.removeItem('kkProfileStep2'); sessionStorage.removeItem('kkProfileStep3'); } catch (e) {}
             window.location.href = 'kkcofirmation.html';
             return true;
           } else {
@@ -656,7 +749,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (res.ok) {
           await Swal.fire({ icon: 'success', title: 'Updated', text: 'Profile updated successfully.', confirmButtonColor: '#0A2C59' });
-          try { localStorage.removeItem('kkProfileStep1'); localStorage.removeItem('kkProfileStep2'); localStorage.removeItem('kkProfileStep3'); } catch (e) {}
+          try { sessionStorage.removeItem('kkProfileStep1'); sessionStorage.removeItem('kkProfileStep2'); sessionStorage.removeItem('kkProfileStep3'); } catch (e) {}
           window.location.href = 'kkcofirmation.html';
           return true;
         } else {
@@ -703,8 +796,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (res.ok) {
         await Swal.fire({ icon: 'success', title: 'Updated', text: 'Profile updated successfully.', confirmButtonColor: '#0A2C59' });
-        // remove localStorage cached steps to reflect persisted state
-        try { localStorage.removeItem('kkProfileStep1'); localStorage.removeItem('kkProfileStep2'); localStorage.removeItem('kkProfileStep3'); } catch (e) {}
+        // remove sessionStorage cached steps to reflect persisted state
+        try { sessionStorage.removeItem('kkProfileStep1'); sessionStorage.removeItem('kkProfileStep2'); sessionStorage.removeItem('kkProfileStep3'); } catch (e) {}
         // redirect to confirmation page (same folder)
         window.location.href = 'kkcofirmation.html';
         return true;
@@ -724,7 +817,27 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // Attach save button if present
   const saveBtn = document.getElementById('saveChangesBtn');
-  if (saveBtn) saveBtn.addEventListener('click', saveChangesToServer);
+  if (saveBtn) saveBtn.addEventListener('click', async () => {
+    // Show a loading indicator while validating
+    Swal.fire({
+      title: 'Validating...',
+      allowOutsideClick: false,
+      allowEscapeKey: false,
+      didOpen: () => {
+        Swal.showLoading();
+      },
+      showConfirmButton: false
+    });
+
+    // Small delay to ensure dialog is ready
+    await new Promise(resolve => setTimeout(resolve, 50));
+
+    // Call save function
+    const result = await saveChangesToServer();
+    
+    // Always close loading state after save completes
+    Swal.close();
+  });
 
   // Wire the Done / Next buttons (class .kk-next-btns) to trigger save-and-update
   const doneButtons = document.querySelectorAll('.kk-next-btns');
@@ -732,19 +845,21 @@ document.addEventListener('DOMContentLoaded', function () {
     doneButtons.forEach(btn => {
       btn.addEventListener('click', async function (e) {
         e.preventDefault();
+        
         // Confirm with the user before saving
         try {
           const result = await Swal.fire({
             title: 'Are you sure you want to save changes?',
             icon: 'question',
             showCancelButton: true,
-            confirmButtonText: 'Yes, save',
+            confirmButtonText: 'Yes',
             cancelButtonText: 'Cancel',
-            confirmButtonColor: '#0A2C59'
+            confirmButtonColor: '#0A2C59',
+            allowOutsideClick: false,
+            allowEscapeKey: false
           });
           if (!result || !result.isConfirmed) return; // user cancelled
         } catch (swalErr) {
-          // If SweetAlert fails for any reason, fall back to direct save
           console.warn('Confirmation dialog failed, proceeding to save:', swalErr);
         }
 
@@ -763,12 +878,19 @@ document.addEventListener('DOMContentLoaded', function () {
           console.warn('Failed to show loading modal:', swalErr);
         }
 
+        // Small delay to ensure loading dialog is ready
+        await new Promise(resolve => setTimeout(resolve, 50));
+
         // disable to avoid double clicks while saving
         btn.dataset.disabledPrev = btn.disabled;
         try { btn.disabled = true; btn.classList.add('kk-btn-disabled'); } catch (er) {}
-        await saveChangesToServer();
-        // close loading modal if still present (saveChangesToServer shows its own Swal on success/failure)
-        try { if (Swal.isVisible()) Swal.close(); } catch (e) {}
+        
+        // Call save function
+        const saveResult = await saveChangesToServer();
+        
+        // Always close loading modal after save completes
+        Swal.close();
+        
         try { btn.disabled = false; btn.classList.remove('kk-btn-disabled'); } catch (er) {}
       });
     });
@@ -825,13 +947,39 @@ document.addEventListener('DOMContentLoaded', function () {
       if (isProfile) {
         const p1 = document.getElementById('profileImagePreview');
         const p2 = document.getElementById('idImagePreview');
-        if (p1) p1.innerHTML = '';
-        if (p2) p2.innerHTML = '';
+        const p1Filename = document.getElementById('profileImageFilename');
+        
+        if (p1) {
+          p1.innerHTML = '';
+          p1.style.display = 'none';
+        }
+        if (p2) {
+          p2.innerHTML = '';
+          p2.style.display = 'none';
+        }
+        // ✅ Clear filename display
+        if (p1Filename) {
+          p1Filename.innerHTML = '';
+          p1Filename.style.display = 'none';
+        }
       } else {
         const s1 = document.getElementById('signatureImagePreview');
         const s2 = document.getElementById('signaturePreview');
-        if (s1) s1.innerHTML = '';
-        if (s2) s2.innerHTML = '';
+        const s1Filename = document.getElementById('signatureImageFilename');
+        
+        if (s1) {
+          s1.innerHTML = '';
+          s1.style.display = 'none';
+        }
+        if (s2) {
+          s2.innerHTML = '';
+          s2.style.display = 'none';
+        }
+        // ✅ Clear filename display
+        if (s1Filename) {
+          s1Filename.innerHTML = '';
+          s1Filename.style.display = 'none';
+        }
       }
 
       // update sessionStorage _removed flags and remove base64
@@ -842,6 +990,12 @@ document.addEventListener('DOMContentLoaded', function () {
         s3._removed[storageKey] = true;
         // remove the actual base64 payload so it won't be re-uploaded
         if (storageKey in s3) delete s3[storageKey];
+        // ✅ Also clear the filename from storage
+        if (isProfile) {
+          delete s3.profileImageName;
+        } else {
+          delete s3.signatureImageName;
+        }
         sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
       } catch (e) {
         console.warn('Failed to update sessionStorage on image remove', e);
@@ -859,7 +1013,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const extOK = nameLower.endsWith('.png') || nameLower.endsWith('.jpg') || nameLower.endsWith('.jpeg');
       if (!allowed.includes(file.type) && !extOK) {
         try { Swal.fire({ icon: 'error', title: 'Unsupported file', text: 'Please upload PNG or JPG/JPEG images only.', confirmButtonColor: '#0A2C59' }); } catch (e) { alert('Please upload PNG or JPG/JPEG images only.'); }
-        // reset the input so same file can be chosen again if needed
         try { profileInput.value = ''; } catch (er) {}
         return;
       }
@@ -871,15 +1024,31 @@ document.addEventListener('DOMContentLoaded', function () {
         s3._removed = s3._removed || {};
         delete s3._removed.profileImage;
         s3.profileImage = b64;
+        // ✅ Store the original filename
+        s3.profileImageName = file.name;
         sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
-        // update both profile preview containers if present
+        
+        // ✅ Display the original filename in the UI
+        const filenameEl = document.getElementById('profileImageFilename');
+        if (filenameEl) {
+          filenameEl.textContent = file.name;
+          filenameEl.style.display = 'block';
+        }
+        
+        // ✅ Show preview containers before rendering
+        const p1 = document.getElementById('profileImagePreview');
+        const p2 = document.getElementById('idImagePreview');
+        if (p1) p1.style.display = 'block';
+        if (p2) p2.style.display = 'block';
+        
+        // ✅ Render image preview (this shows the image with remove button)
         renderPreview('profileImagePreview', b64);
-        const altPreview = document.getElementById('idImagePreview');
-        if (altPreview) renderPreview('idImagePreview', b64);
+        renderPreview('idImagePreview', b64);
       };
       reader.readAsDataURL(file);
     });
   }
+  
   if (signatureInput) {
     signatureInput.addEventListener('change', function (e) {
       const file = e.target.files[0];
@@ -901,11 +1070,26 @@ document.addEventListener('DOMContentLoaded', function () {
         s3._removed = s3._removed || {};
         delete s3._removed.signatureImage;
         s3.signatureImage = b64;
+        // ✅ Store the original filename
+        s3.signatureImageName = file.name;
         sessionStorage.setItem('kkProfileStep3', JSON.stringify(s3));
-        // update both signature preview containers if present
+        
+        // ✅ Display the original filename in the UI
+        const filenameEl = document.getElementById('signatureImageFilename');
+        if (filenameEl) {
+          filenameEl.textContent = file.name;
+          filenameEl.style.display = 'block';
+        }
+        
+        // ✅ Show preview containers before rendering
+        const s1 = document.getElementById('signatureImagePreview');
+        const s2 = document.getElementById('signaturePreview');
+        if (s1) s1.style.display = 'block';
+        if (s2) s2.style.display = 'block';
+        
+        // ✅ Render image preview (this shows the image with remove button)
         renderPreview('signatureImagePreview', b64);
-        const altSig = document.getElementById('signaturePreview');
-        if (altSig) renderPreview('signaturePreview', b64);
+        renderPreview('signaturePreview', b64);
       };
       reader.readAsDataURL(file);
     });

@@ -371,7 +371,19 @@ exports.updateMyApplication = async (req, res) => {
       return res.status(400).json({ error: 'academicLevel is required for the application. Provide `academicLevel` or a Year so it can be inferred.' });
     }
 
+    // Mark as unread when user edits
+    application.isRead = false;
     await application.save();
+
+    // Emit socket event to notify admin dashboard
+    if (req.app.get("io")) {
+      req.app.get("io").emit("educational-assistance:updated", {
+        id: application._id,
+        user: userId,
+        updatedAt: new Date(),
+      });
+    }
+
     return res.json({ message: 'Application updated', application });
   } catch (err) {
     console.error('updateMyApplication error:', err);
@@ -674,7 +686,7 @@ exports.updateApplicationStatus = async (req, res) => {
       try {
         // Set expiresAt to 3 days from now (like KK/LGBTQ), or null if you want permanent
         const expiresAt = new Date(Date.now() + 3 * 24 * 60 * 60 * 1000); // 3 days from now
-        await Announcement.create({
+        const announcement = await Announcement.create({
           title,
           content,
           category: "Educational Assistance",
@@ -686,6 +698,22 @@ exports.updateApplicationStatus = async (req, res) => {
           isActive: true,
           viewedBy: [],
         });
+
+        // --- EMIT SOCKET EVENT FOR REAL-TIME ANNOUNCEMENT DISPLAY ---
+        if (req.app.get("io")) {
+          req.app.get("io").emit("announcement:created", {
+            id: announcement._id,
+            title: announcement.title,
+            content: announcement.content,
+            eventDate: announcement.eventDate,
+            createdAt: announcement.createdAt,
+            createdBy: req.user.id,
+            recipient: announcement.recipient,
+            isPinned: announcement.isPinned,
+            isActive: announcement.isActive,
+            category: announcement.category
+          });
+        }
       } catch (annErr) {
         console.error("Failed to create announcement:", annErr);
         // Don't throw, just log

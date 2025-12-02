@@ -60,15 +60,15 @@ const educationalAssistanceSchema = new mongoose.Schema({
     default: "Educational Assistance",
   },
   fatherName: { type: String, required: true },
-  fatherPhone: { type: String },
+  fatherPhone: { type: String, required: true},
   motherName: { type: String, required: true },
-  motherPhone: { type: String },
+  motherPhone: { type: String, required: true},
   siblings: [siblingSchema],
   expenses: [expenseSchema],
-  frontImage: { type: String },
-  backImage: { type: String }, // path or filename
-  coeImage: { type: String }, 
-  voter: { type: String },   // path or filename
+  frontImage: { type: String, required: true },
+  backImage: { type: String, required: true }, // path or filename
+  coeImage: { type: String, required: true }, 
+  voter: { type: String, required: false },   // optional - only required for JHS students
 
   status: {
     type: String,

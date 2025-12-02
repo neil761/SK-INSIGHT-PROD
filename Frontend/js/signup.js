@@ -325,7 +325,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const formActions = step2Form.querySelector('.form-actions');
       
       const reqHtml = `
-        <div id="passwordRequirements" style="margin-bottom:16px;font-size:0.85rem;">
+        <div id="passwordRequirements" style="margin-bottom:16px;font-size:0.65rem;">
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;" aria-live="polite">
             <div id="pw-req-length" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least 8 characters</div>
             <div id="pw-req-special" style="color:#c33"><i class="fa-solid fa-circle-xmark" style="color: #e64814;"></i> At least one special character</div>

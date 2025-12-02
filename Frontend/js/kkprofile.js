@@ -499,10 +499,10 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
                 </div>`
           }
         </div>
-        <div class="profile-details-row">
-          <div class="profile-detail">
+        <div class="profile-details-rows">
+          <div class="profile-details">
             <span class="label">Signature</span>
-            <img src="${signatureImgUrl}" alt="Signature" style="max-width: 200px; max-height: 100px;" />
+            <img id="signatureImageModal" src="${signatureImgUrl}" alt="Signature" style="max-width: 50%; max-height: 50%; cursor: pointer; border-radius: 8px; transition: transform 0.2s;" />
           </div>
         </div>
         <div class="profile-details-row">
@@ -510,6 +510,23 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
         </div>
       </div>
     `;
+
+    // Add click handler for signature image to open lightbox
+    const signatureImg = document.getElementById('signatureImageModal');
+    if (signatureImg) {
+      signatureImg.addEventListener('click', () => {
+        openImageLightbox(signatureImgUrl);
+      });
+      // Add hover effect
+      signatureImg.addEventListener('mouseenter', function() {
+        this.style.transform = 'scale(1.05)';
+        this.style.boxShadow = '0 4px 12px rgba(0,0,0,0.2)';
+      });
+      signatureImg.addEventListener('mouseleave', function() {
+        this.style.transform = 'scale(1)';
+        this.style.boxShadow = 'none';
+      });
+    }
 
     // Set modal data attribute and download button data-id so download uses the modal owner
     modal.dataset.currentProfile = p._id;
@@ -1052,4 +1069,63 @@ function getAgeFromProfile(p) {
   if (p.age !== undefined && p.age !== null) return p.age;
   if (p.user && p.user.age !== undefined && p.user.age !== null) return p.user.age;
   return null;
+}
+
+// Lightbox function for viewing images
+function openImageLightbox(imageUrl) {
+  const lightbox = document.createElement('div');
+  lightbox.id = 'imageLightbox';
+  lightbox.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+    padding: 20px;
+  `;
+
+  const img = document.createElement('img');
+  img.src = imageUrl;
+  img.style.cssText = `
+    max-width: 90%;
+    max-height: 90%;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  `;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerHTML = '&times;';
+  closeBtn.style.cssText = `
+    position: absolute;
+    top: 20px;
+    right: 30px;
+    background: none;
+    border: none;
+    color: white;
+    font-size: 40px;
+    cursor: pointer;
+    transition: color 0.2s;
+  `;
+  closeBtn.onmouseover = () => closeBtn.style.color = '#ff6b6b';
+  closeBtn.onmouseout = () => closeBtn.style.color = 'white';
+
+  closeBtn.addEventListener('click', () => {
+    document.body.removeChild(lightbox);
+  });
+
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) {
+      document.body.removeChild(lightbox);
+    }
+  });
+
+  lightbox.appendChild(img);
+  lightbox.appendChild(closeBtn);
+  document.body.appendChild(lightbox);
 }
