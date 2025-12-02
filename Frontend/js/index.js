@@ -97,6 +97,11 @@ function initAgreementModal() {
           declineBtn.disabled = true;
           // hide modal right away so UI responds immediately
           try { modal.classList.add('hidden'); } catch (err) {}
+
+          // NEW: hide verification strip so only the alert dialog is visible when user declines
+          const verificationStrip = document.getElementById('verification-strip');
+          if (verificationStrip) verificationStrip.style.display = 'none';
+
           Swal.fire({
             icon: 'info',
             title: 'Agreement Required',
