@@ -122,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btnEl.addEventListener('click', async () => {
       const src = state.base64;
       if (!src) return Swal.fire({ icon: 'info', title: 'No image', text: 'No image available.' });
-      try { Swal.fire({ imageUrl: src, imageAlt: 'Preview', showCloseButton: true }); } catch (e) { window.open(src); }
+      try { Swal.fire({ imageUrl: src, imageAlt: 'Preview', showCloseButton: true, showConfirmButton: false }); } catch (e) { window.open(src); }
     });
   }
 

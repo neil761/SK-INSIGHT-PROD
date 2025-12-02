@@ -919,9 +919,13 @@ const API_BASE = (typeof window !== 'undefined' && window.API_BASE)
       });
       const unreadNotifs = await unreadRes.json();
 
-      // Filter out already-read notifications from both lists
-      const newNotifsFilt = Array.isArray(newNotifs) ? newNotifs.filter(n => !n.isRead) : [];
-      const unreadNotifsFilt = Array.isArray(unreadNotifs) ? unreadNotifs.filter(n => !n.isRead) : [];
+      // Filter out already-read notifications - check BOTH the notification's isRead AND the referenced profile's isRead
+      const newNotifsFilt = Array.isArray(newNotifs) 
+        ? newNotifs.filter(n => !n.isRead && (!n.referenceId || !n.referenceId.isRead)) 
+        : [];
+      const unreadNotifsFilt = Array.isArray(unreadNotifs) 
+        ? unreadNotifs.filter(n => !n.isRead && (!n.referenceId || !n.referenceId.isRead)) 
+        : [];
 
       renderNotifList(notifListNew, newNotifsFilt, false);
       renderNotifList(notifListUnread, unreadNotifsFilt, true);

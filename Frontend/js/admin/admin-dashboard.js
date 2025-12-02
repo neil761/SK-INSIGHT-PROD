@@ -482,6 +482,33 @@ function updateProgressBar(elementId, applications, totalUsers) {
 // Only ONE socket connection and listeners!
 const socket = io(API_BASE, { transports: ["websocket"] });
 
+// KK Profile real-time updates
+socket.on("kk-profile:newSubmission", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+socket.on("kk-profile:read", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+socket.on("kk-profile:deleted", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+// LGBTQ Profile real-time updates
+socket.on("lgbtq-profile:newSubmission", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+socket.on("lgbtq-profile:read", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+socket.on("lgbtq-profile:deleted", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+// Educational Assistance real-time updates
 socket.on("educational-assistance:newSubmission", () => {
   Swal.fire({
     icon: 'info',
@@ -496,6 +523,10 @@ socket.on("educational-assistance:newSubmission", () => {
 });
 
 socket.on("educational-assistance:statusChanged", () => {
+  fetchDashboardSummaries(); // Update summary boxes in real time
+});
+
+socket.on("educational-assistance:deleted", () => {
   fetchDashboardSummaries(); // Update summary boxes in real time
 });
 
