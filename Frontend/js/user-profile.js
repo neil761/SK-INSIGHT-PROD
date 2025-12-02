@@ -660,34 +660,24 @@ if (logoutBtn) {
       cancelButtonText: 'Cancel'
     }).then((result) => {
       if (result.isConfirmed) {
-          // Clear persistent localStorage completely (user intentionally logs out)
-          try { localStorage.clear(); } catch (e) { /* ignore */ }
+        try { localStorage.clear(); } catch (e) { /* ignore */ }
 
-          // Remove common session keys used by multi-step forms and auth
-          try {
-            sessionStorage.removeItem('token');
-            sessionStorage.removeItem('user');
-            sessionStorage.removeItem('kkProfileStep1');
-            sessionStorage.removeItem('kkProfileStep2');
-            sessionStorage.removeItem('kkProfileStep3');
-            sessionStorage.removeItem('lgbtqDraft');
+        // Clear all sessionStorage (removes drafts and transient state)
+        try { sessionStorage.clear(); } catch (e) { /* ignore */ }
 
-            // Remove any other session keys that look like drafts or kkProfile data
-            const toRemove = [];
-            for (let i = 0; i < sessionStorage.length; i++) {
-              const key = sessionStorage.key(i);
-              if (!key) continue;
-              const lower = key.toLowerCase();
-              if (lower.includes('draft') || lower.includes('kkprofil') || lower.includes('kkprofile') || lower.startsWith('kkprofile')) {
-                toRemove.push(key);
-              }
-            }
-            toRemove.forEach(k => sessionStorage.removeItem(k));
-          } catch (e) { /* ignore storage errors */ }
+        // Additional safety: remove any known draft keys if present (no-op if already cleared)
+        try {
+          const knownKeys = [
+            'token','user','kkProfileStep1','kkProfileStep2','kkProfileStep3',
+            'lgbtqDraft','educDraft','educationalDraft','educAssistanceDraft'
+          ];
+          knownKeys.forEach(k => sessionStorage.removeItem(k));
+          knownKeys.forEach(k => localStorage.removeItem(k));
+        } catch (e) { /* ignore */ }
 
-          // Finally redirect to home
-          window.location.href = './index.html'; // Adjust path if needed
-        }
+        // Finally redirect to home / login
+        window.location.href = './index.html';
+      }
     });
   });
 }
@@ -1764,6 +1754,7 @@ if (logoutBtn) {
         title: `No profile found`,
         text: `You don't have a profile yet. Please fill out the form to create one.`,
         showCancelButton: true, // Show the "No" button
+       
         confirmButtonText: "Go to form", // Text for the "Go to Form" button
         cancelButtonText: "No", // Text for the "No" button
       }).then(result => {
