@@ -19,7 +19,11 @@ router.post('/verify/confirm', userCtrl.verifyEmailOtp);
 // 📌 Authenticated User Route
 router.get('/me', protect, userCtrl.getCurrentUser);
 
-// 📌 Admin-only Routes
+// PUT /api/users/agree  -> mark current user's agreement accepted
+// Ensure this is NOT behind any authorizeRoles('admin') middleware
+router.put('/agree', protect, userCtrl.acceptAgreement);
+
+// Admin-only routes (keep authorizeRoles on them)
 router.get('/', protect, authorizeRoles('admin'), userCtrl.getUsers);
 router.get('/:id', protect, authorizeRoles('admin'), userCtrl.getUserById);
 router.put('/:id', protect, authorizeRoles('admin'), userCtrl.updateUser);
@@ -43,5 +47,8 @@ router.post("/change-email/unverified", protect, userCtrl.changeEmailUnverified)
 
 
 router.post('/create-admin', userCtrl.createAdmin);
+
+// PUT /api/users/agree  -> mark current user's agreement accepted
+router.put('/agree', protect, userCtrl.acceptAgreement);
 
 module.exports = router;

@@ -297,6 +297,39 @@ document.addEventListener('DOMContentLoaded', function () {
         return;
       }
 
+      // Check age eligibility (must be between 11-30 years old)
+      try {
+        const userRes = await fetch(`${API_BASE}/api/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (userRes.ok) {
+          const userData = await userRes.json().catch(() => null);
+          const user = (userData && userData.user) ? userData.user : userData;
+          const age = user && user.age ? parseInt(user.age, 10) : null;
+          
+          if (age !== null) {
+            if (age <= 10) {
+              await Swal.fire({
+                icon: 'error',
+                title: 'Age Restriction',
+                text: 'You must be at least 11 years old to apply for Educational Assistance.',
+                confirmButtonText: 'OK'
+              });
+              return;
+            }
+            if (age >= 31) {
+              await Swal.fire({
+                icon: 'error',
+                title: 'Age Restriction',
+                text: 'Educational Assistance is available only for individuals aged 30 years old and below.',
+                confirmButtonText: 'OK'
+              });
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking age eligibility:', err);
+      }
+
       // Check if the user's latest application was rejected
       try {
         const checkRes = await fetch(`${API_BASE}/api/educational-assistance/check-rejected`, { headers: { Authorization: `Bearer ${token}` } });

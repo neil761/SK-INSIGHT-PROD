@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 
   <head>
@@ -15,6 +15,36 @@
   </head>
 
   <body>
+    <!-- Agreement Modal -->
+    <div id="agreementModal" class="agreement-modal">
+      <div class="agreement-modal-content">
+        <div class="agreement-header">
+          <h2>User Agreement & Terms of Service</h2>
+          <p class="agreement-subtitle">SK-INSIGHT • Barangay Puting Bato West</p>
+        </div>
+
+        <div class="agreement-body">
+          <div class="agreement-scroll">
+            <p>By creating an account and accessing SK-INSIGHT, residents of Barangay Puting Bato West agree to adhere to the terms and conditions established by the Sangguniang Kabataan. Users are expected to provide accurate and truthful information, protect the confidentiality of their account credentials, and refrain from any actions that may compromise, disrupt, or misuse the platform. SK-INSIGHT collects and processes personal data solely for legitimate and official purposes—such as identity verification, application evaluation, communication, and record management—in accordance with the Data Privacy Act of 2012. By using the platform, residents also acknowledge and consent to receiving system-generated announcements, updates, and notifications related to SK programs and services.</p>
+
+            <p>The Sangguniang Kabataan of Barangay Puting Bato West is committed to safeguarding all information submitted through SK-INSIGHT and ensuring that it is not disclosed to unauthorized parties; however, the SK does not guarantee uninterrupted system availability or immediate processing of applications due to potential technical or operational limitations. Residents are strictly prohibited from engaging in fraudulent activities, impersonation, submission of misleading documents, uploading harmful files, or any behavior that undermines the security and integrity of the platform. Any violation of these terms may result in account suspension or restricted access to SK services. Continued use of SK-INSIGHT constitutes acceptance of this agreement and any future amendments made by the SK.</p>
+          </div>
+
+          <div class="agreement-checkbox">
+            <input type="checkbox" id="agreeCheckbox" />
+            <label for="agreeCheckbox">
+              I have read and understand the terms and conditions, and I agree to comply with them
+            </label>
+          </div>
+        </div>
+
+        <div class="agreement-footer">
+          <button id="declineBtn" type="button" class="btn-decline">Decline</button>
+          <button id="acceptBtn" type="button" class="btn-accept" disabled>Accept & Continue</button>
+        </div>
+      </div>
+    </div>
+
     <!-- Navbar -->
     <div class="navbar">
       <div class="navbar-left">
