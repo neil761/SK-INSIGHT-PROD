@@ -955,6 +955,54 @@ div.chartjs-legend {
   box-shadow: 0 6px 24px rgba(10,44,89,0.13);
   transform: translateY(-2px) scale(1.03);
 }
+
+/* Progress bar styles for summary cards */
+.progress-container {
+  width: 100%;
+  margin-top: 0.8rem;
+  padding: 0 1rem;
+}
+
+.progress-bar-bg {
+  width: 100%;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: width 0.4s ease;
+  position: relative;
+  background: linear-gradient(90deg, #07B0F2 0%, #0A9FD9 100%);
+}
+
+#kkProgressBar {
+  background: linear-gradient(90deg, #07B0F2 0%, #0A9FD9 100%);
+}
+
+#lgbtqProgressBar {
+  background: linear-gradient(90deg, #f472b6 0%, #ec4899 100%);
+}
+
+#educProgressBar {
+  background: linear-gradient(90deg, #FED600 0%, #FCCF00 100%);
+}
+
+.progress-text {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  white-space: nowrap;
+}
+
 .work-status-summary{
 }
 

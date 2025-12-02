@@ -62,6 +62,7 @@
     <div class="settings-tabs">
       <button class="settings-tab active" data-tab="password">Change Password</button>
       <button class="settings-tab" data-tab="email">Change Email</button>
+      <button class="settings-tab" data-tab="account">Account Info</button>
     </div>
     <div class="settings-tab-content" id="settingsTabPassword">
       <form id="changePasswordForm">
@@ -102,6 +103,21 @@
           <input type="email" id="newEmailInput">
           <button type="submit" class="settings-action-btn">Change Email</button>
         </div>
+      </form>
+    </div>
+    <div class="settings-tab-content" id="settingsTabAccount" style="display:none;">
+      <form id="updateAccountInfoForm">
+        <label>Username</label>
+        <input type="text" id="updateUsername" placeholder="Enter username" required>
+        <label>First Name</label>
+        <input type="text" id="updateFirstName" placeholder="Enter first name" required>
+        <label>Middle Name</label>
+        <input type="text" id="updateMiddleName" placeholder="Enter middle name (optional)">
+        <label>Last Name</label>
+        <input type="text" id="updateLastName" placeholder="Enter last name" required>
+        <label>Suffix</label>
+        <input type="text" id="updateSuffix" placeholder="Enter suffix (optional)">
+        <button type="submit" class="settings-action-btn">Update Account Info</button>
       </form>
     </div>
   </div>

@@ -44,7 +44,7 @@ router.post("/change-email/send-otp", protect, sendChangeEmailOtp);
 router.post("/change-email/verify-otp", protect, userCtrl.verifyChangeEmailOtp); // <-- new
 router.post("/change-email", protect, changeEmail);
 router.post("/change-email/unverified", protect, userCtrl.changeEmailUnverified);
-
+router.post("/me/update-info", protect, userCtrl.updateMyInfo);
 
 router.post('/create-admin', userCtrl.createAdmin);
 

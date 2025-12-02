@@ -917,3 +917,78 @@ exports.acceptAgreement = async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 };
+// POST /api/users/me/update-info
+// Update current user's own account info (username, firstName, middleName, lastName, suffix)
+exports.updateMyInfo = asyncHandler(async (req, res) => {
+  try {
+    const userId = req.user._id;
+    const { username, firstName, middleName, lastName, suffix } = req.body;
+
+    // Find the current user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Helper: convert to Title Case
+    function titleCase(str) {
+      if (!str || typeof str !== 'string') return '';
+      return str
+        .trim()
+        .toLowerCase()
+        .replace(/\b\w/g, (c) => c.toUpperCase());
+    }
+
+    // Validate required fields: firstName, lastName cannot be empty
+    if (!firstName || !firstName.trim()) {
+      return res.status(400).json({ error: "First name is required and cannot be empty" });
+    }
+    if (!lastName || !lastName.trim()) {
+      return res.status(400).json({ error: "Last name is required and cannot be empty" });
+    }
+
+    // Check if username is being changed and if it's already taken
+    if (username && username !== user.username) {
+      const existingUser = await User.findOne({ username });
+      if (existingUser) {
+        return res.status(400).json({ error: "Username is already taken" });
+      }
+      user.username = username;
+    }
+
+    // Update name fields (apply title case)
+    // firstName and lastName are required (already validated above)
+    user.firstName = titleCase(firstName);
+    user.lastName = titleCase(lastName);
+    
+    // middleName is optional - update only if provided
+    if (middleName && middleName.trim()) {
+      user.middleName = titleCase(middleName);
+    } else {
+      user.middleName = ''; // Allow clearing middle name
+    }
+    
+    // suffix is optional and can be cleared
+    if (suffix && suffix.trim()) {
+      user.suffix = titleCase(suffix);
+    } else {
+      user.suffix = ''; // Allow clearing suffix
+    }
+
+    // Save the updated user
+    await user.save();
+
+    // Return updated user data (without password)
+    const updatedUser = user.toObject();
+    delete updatedUser.password;
+
+    res.json({
+      message: "Account info updated successfully",
+      user: updatedUser
+    });
+  } catch (err) {
+    console.error("updateMyInfo error:", err);
+    res.status(500).json({ error: err.message || "Server error" });
+  }
+});
+
