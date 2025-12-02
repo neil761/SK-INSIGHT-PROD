@@ -908,20 +908,23 @@ document.addEventListener('DOMContentLoaded', function () {
     const storageKey = isProfile ? 'profileImage' : 'signatureImage';
     const alt = isProfile ? 'Profile Image' : 'Signature Image';
 
-    // Render image with a small 'x' remove icon at top-right; clicking the image opens a larger view
+    // Render using the shared preview classes so CSS controls sizing.
+    // `.preview-inner` / `.preview-img` are defined in `kkform.css` and
+    // ensure the image fills the container responsively (width:100%).
     c.innerHTML = `
-      <div style="position:relative; display:inline-block; width:220px;">
-        <img src="${base64}" style="width:220px; border-radius:10px; display:block; cursor:zoom-in;" alt="${alt}"/>
-        <button data-remove="true" title="Remove" style="position:absolute; top:6px; right:6px; background:#e74c3c; color:#fff; border:none; border-radius:50%; width:28px; height:28px; cursor:pointer; font-size:16px; line-height:1; display:flex; align-items:center; justify-content:center;">×</button>
+      <div class="preview-inner">
+        <img src="${base64}" class="preview-img" alt="${alt}" />
+        <button data-remove="true" class="remove-image-btn" title="Remove">×</button>
       </div>`;
 
     // Image click handler: open SweetAlert with the image (works for base64 or remote URLs)
-    const imgEl = c.querySelector('img');
+    const imgEl = c.querySelector('.preview-img');
     if (imgEl) imgEl.addEventListener('click', function (ev) {
       ev.stopPropagation();
       try {
+        // Do not pass a `title` so SweetAlert does not render the <h2> header.
+        // We still pass `imageUrl` and `imageAlt` for accessibility and display.
         Swal.fire({
-          title: alt,
           imageUrl: base64,
           imageAlt: alt,
           showCloseButton: true,
